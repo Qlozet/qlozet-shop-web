@@ -118,11 +118,11 @@ export default function OrdersSection({
               </div>
 
               {hasTailoring && (
-                <div className="flex" style={{ gap: '0' }}>
+                <div className="flex flex-col lg:flex-row" style={{ gap: '12px' }}>
                   {(isBespoke ? ['Design', 'Embroidery', 'Finishing'] : ['Styles', 'Add-ons', 'Accessories']).map((cat, ci) => (
-                    <div key={cat} className="flex-1 flex flex-col" style={{ gap: '8px', padding: '0 8px', borderLeft: ci > 0 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}>
+                    <div key={cat} className="flex-1 flex flex-col" style={{ gap: '8px', padding: ci > 0 ? '12px 0 0 0' : '0', borderTop: ci > 0 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}>
                       <span style={{ fontSize: '9px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{cat}</span>
-                      <div className="grid grid-cols-3" style={{ gap: '4px' }}>
+                      <div className="flex flex-wrap" style={{ gap: '4px' }}>
                         {[Package, Scissors, User, Package, Scissors, User].slice(0, ci === 2 ? 4 : 6).map((Ic, j) => (
                           <div key={j} className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '5px', background: '#F5F5F5' }}>
                             <Ic size={11} color="#888" />
