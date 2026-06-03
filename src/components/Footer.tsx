@@ -127,112 +127,181 @@ export const Footer = () => {
       </footer>
 
       {/* ═══════════════════════════════════════════════════════════
-          DESKTOP FOOTER (≥ lg) — Full premium layout
+          DESKTOP FOOTER (≥ lg) — Premium refined layout
           ═══════════════════════════════════════════════════════════ */}
-      <footer className="hidden lg:flex w-full flex-col justify-between overflow-hidden rounded-[3rem] bg-gradient-to-br from-[#2D1B13] to-[#110A07] text-white shadow-2xl border border-[#3E2519]" style={{ height: 'auto', minHeight: '390px', padding: 'clamp(64px, 10vw, 80px) clamp(32px, 8vw, 80px)' }}>
-        <div className="grid gap-20 lg:gap-12 lg:grid-cols-12 relative z-10">
+      <footer className="hidden lg:flex w-full flex-col overflow-hidden rounded-[2.5rem] text-white relative" style={{ background: 'linear-gradient(145deg, #1E1410 0%, #110A06 50%, #0D0805 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        
+        {/* Ambient glow effects */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2.5rem]">
+          <div className="absolute -top-[40%] -left-[5%] w-[45%] h-[80%] bg-[#D4AF37] opacity-[0.025] blur-[100px] rounded-full" />
+          <div className="absolute -bottom-[30%] -right-[10%] w-[35%] h-[60%] bg-[#8B5E3C] opacity-[0.03] blur-[80px] rounded-full" />
+        </div>
+
+        {/* Top Section — Logo + Description | Newsletter */}
+        <div className="relative z-10 flex items-start justify-between" style={{ padding: '56px 56px 0' }}>
           
-          {/* Subtle background glow effect inside the footer */}
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none rounded-[4rem]">
-              <div className="absolute -top-[50%] -left-[10%] w-[50%] h-[100%] bg-[#D4AF37] opacity-[0.03] blur-[120px] rounded-full"></div>
+          {/* Left — Branding */}
+          <div className="flex flex-col" style={{ gap: '20px', maxWidth: '340px' }}>
+            <Link href="/">
+              <QlozetLogo width={72} color="#FFFFFF" className="opacity-90 hover:opacity-100 transition-opacity" />
+            </Link>
+            <p style={{ fontSize: '14px', lineHeight: 1.7, color: 'rgba(255,255,255,0.45)', fontWeight: 400 }}>
+              Designing the future of fashion-tech through seamless fit intelligence and curated designer experiences.
+            </p>
           </div>
 
-          {/* Branding & Newsletter Column */}
-          <div className="flex flex-col gap-10 lg:col-span-5 relative z-10">
-            <div className="flex flex-col gap-3">
-              <Link href="/" className="font-display text-4xl font-bold tracking-[0.2em] bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-500 hover:scale-[1.02] transition-transform origin-left w-max">
-                QLZT
-              </Link>
-              <p className="max-w-md font-body text-base leading-relaxed text-white/60 font-light">
-                Designing the future of fashion-tech through seamless fit intelligence and curated designer experiences.
-              </p>
+          {/* Right — Newsletter */}
+          <div className="flex flex-col items-end" style={{ gap: '12px', maxWidth: '380px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
+              Stay Ahead
+            </span>
+            <div
+              className="flex items-center w-full transition-all duration-300 focus-within:border-white/20 focus-within:bg-white/[0.07]"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: '100px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                padding: '4px 4px 4px 20px',
+              }}
+            >
+              <input
+                type="email"
+                placeholder="Your email address"
+                className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/25"
+                style={{ fontSize: '13px', padding: '10px 0', background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none' }}
+              />
+              <button
+                className="flex-shrink-0 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.97]"
+                style={{
+                  padding: '11px 32px',
+                  borderRadius: '100px',
+                  background: '#FFFFFF',
+                  color: '#1A1A1A',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Subscribe
+              </button>
             </div>
-
-            {/* Newsletter Signup */}
-            <div className="flex flex-col gap-3">
-              <h4 className="font-display text-base font-semibold uppercase tracking-[0.25em] text-white">
-                Stay Ahead
-              </h4>
-              <div className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:max-w-sm sm:overflow-hidden rounded-3xl sm:rounded-full border border-white/10 bg-white/5 p-2 sm:p-1 backdrop-blur-md transition-all focus-within:border-white/50 focus-within:bg-white/10 focus-within:shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="w-full rounded-full bg-transparent px-4 py-2.5 font-body text-base text-white placeholder-white/30 outline-none transition-all sm:w-auto sm:flex-1"
-                />
-                <button 
-                  className="w-fit self-start sm:self-auto shrink-0 whitespace-nowrap rounded-full bg-white py-2.5 font-body text-sm font-bold uppercase tracking-widest text-[#3A3A3A] transition-all hover:bg-neutral-100 hover:shadow-[0_0_15px_rgba(255,255,255,0.4)] active:scale-[0.98]"
-                  style={{ paddingLeft: '40px', paddingRight: '40px' }}
-                >
-                  Join
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Links Grid */}
-          <div className="grid grid-cols-2 gap-10 lg:grid-cols-4 lg:col-span-7 relative z-10 pt-2 lg:pl-12">
-            
-            <div className="flex flex-col gap-4">
-              <span className="font-display text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">
-                Solutions
-              </span>
-              <ul className="flex flex-col gap-3">
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">Qlozet App</Link></li>
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">AI Engine</Link></li>
-                <li><Link href="/bespoke" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">Virtual Fitting</Link></li>
-              </ul>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <span className="font-display text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">
-                Company
-              </span>
-              <ul className="flex flex-col gap-3">
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">Customers</Link></li>
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">Features</Link></li>
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">About Us</Link></li>
-              </ul>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <span className="font-display text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">
-                Care
-              </span>
-              <ul className="flex flex-col gap-3">
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">Help & FAQ</Link></li>
-                <li><Link href="/" className="font-body text-base text-white/70 transition-all duration-300 hover:translate-x-1.5 hover:text-[#D4AF37] inline-block">Returns</Link></li>
-              </ul>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <span className="font-display text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">
-                Region
-              </span>
-              <ul className="flex flex-col gap-3">
-                <li><span className="font-body text-base text-white/70 flex items-center gap-2 cursor-pointer hover:text-white transition-colors"><span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span> Nigeria</span></li>
-                <li><span className="font-body text-base text-white/70 flex items-center gap-2 cursor-pointer hover:text-white transition-colors"><span className="w-1.5 h-1.5 rounded-full bg-white/20"></span> UK</span></li>
-              </ul>
-            </div>
-
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-20 flex flex-col items-center gap-8 border-t border-white/10 pt-10 sm:mt-auto sm:flex-row sm:justify-between relative z-10">
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <span className="font-body text-[12px] uppercase tracking-[0.25em] text-white/40 font-semibold">
-              © {new Date().getFullYear()} QLOZET STUDIOS. ALL RIGHTS RESERVED.
-            </span>
-          </div>
+        {/* Divider */}
+        <div style={{ margin: '40px 56px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }} />
 
-          {/* Social & Legal Group */}
-          <div className="flex flex-wrap items-center justify-center gap-6 font-body text-[12px] font-bold uppercase tracking-[0.2em] text-white/50">
-            <Link href="#" className="transition-all hover:text-[#D4AF37] hover:tracking-[0.25em]">Instagram</Link>
-            <Link href="#" className="transition-all hover:text-[#D4AF37] hover:tracking-[0.25em]">Twitter</Link>
-            <Link href="#" className="transition-all hover:text-[#D4AF37] hover:tracking-[0.25em]">LinkedIn</Link>
-            <div className="hidden h-px w-6 bg-white/20 sm:block"></div>
-            <Link href="#" className="transition-all hover:text-white">Privacy</Link>
-            <Link href="#" className="transition-all hover:text-white">Terms</Link>
+        {/* Link Columns */}
+        <div className="relative z-10 grid grid-cols-4" style={{ padding: '36px 56px 0', gap: '24px' }}>
+          
+          {[
+            {
+              title: 'Solutions',
+              links: [
+                { label: 'Qlozet App', href: '/' },
+                { label: 'AI Engine', href: '/' },
+                { label: 'Virtual Fitting', href: '/bespoke' },
+                { label: 'Size Intelligence', href: '/' },
+              ],
+            },
+            {
+              title: 'Company',
+              links: [
+                { label: 'About Us', href: '/' },
+                { label: 'Customers', href: '/' },
+                { label: 'Features', href: '/' },
+                { label: 'Careers', href: '/' },
+              ],
+            },
+            {
+              title: 'Support',
+              links: [
+                { label: 'Help & FAQ', href: '/' },
+                { label: 'Returns', href: '/' },
+                { label: 'Shipping Info', href: '/' },
+                { label: 'Contact Us', href: '/' },
+              ],
+            },
+            {
+              title: 'Region',
+              links: [],
+              custom: (
+                <ul className="flex flex-col" style={{ gap: '14px' }}>
+                  <li>
+                    <span className="flex items-center cursor-pointer transition-colors hover:text-white" style={{ gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px rgba(34,197,94,0.5)' }} />
+                      Nigeria
+                    </span>
+                  </li>
+                  <li>
+                    <span className="flex items-center cursor-pointer transition-colors hover:text-white" style={{ gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+                      United Kingdom
+                    </span>
+                  </li>
+                </ul>
+              ),
+            },
+          ].map((col) => (
+            <div key={col.title} className="flex flex-col" style={{ gap: '18px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+                {col.title}
+              </span>
+              {col.custom ? col.custom : (
+                <ul className="flex flex-col" style={{ gap: '14px' }}>
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="transition-all duration-300 hover:text-white hover:translate-x-1"
+                        style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', textDecoration: 'none', display: 'inline-block' }}
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom Bar */}
+        <div
+          className="relative z-10 flex items-center justify-between"
+          style={{ margin: '40px 56px 0', padding: '24px 0 40px', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          {/* Copyright */}
+          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+            © {new Date().getFullYear()} Qlozet Studios. All rights reserved.
+          </span>
+
+          {/* Social + Legal */}
+          <div className="flex items-center" style={{ gap: '28px' }}>
+            {['Instagram', 'Twitter', 'LinkedIn'].map((s) => (
+              <Link
+                key={s}
+                href="#"
+                className="transition-all duration-300 hover:text-[#D4AF37]"
+                style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}
+              >
+                {s}
+              </Link>
+            ))}
+            <span style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.1)' }} />
+            {['Privacy', 'Terms'].map((l) => (
+              <Link
+                key={l}
+                href="#"
+                className="transition-all duration-300 hover:text-white"
+                style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}
+              >
+                {l}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>
