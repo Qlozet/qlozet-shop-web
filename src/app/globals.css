@@ -1,0 +1,294 @@
+@import "tailwindcss";
+
+/* Explicit source paths — ensures Tailwind v4 always scans our code */
+ @source "../../src/app";
+ @source "../../src/components";
+ @source "../../src/context";
+ @source "../../src/data";
+
+ /* Qlozet Cohesive Premium Design System - Vanilla CSS Modules Core */
+
+ :root {
+   /* Colors */
+   --bg-base: #F8F9FA;
+   --bg-surface: #FFFFFF;
+   --bg-surface-elevated: #F0F0F0;
+
+   --primary-brand: #FF2E63;
+   --primary-brand-hover: #FF577F;
+
+   --brand-brown: #462814;
+   --brand-brown-hover: #331C0D;
+   --brand-brown-light: #8B5A2B;
+
+   --accent-gold: #D4AF37;
+   --accent-gold-hover: #FFDF00;
+
+   --text-primary: #1A1A1A;
+   --text-secondary: #666666;
+   --text-muted: #999999;
+
+   --border-glass: rgba(0, 0, 0, 0.08);
+   --border-focus: rgba(70, 40, 20, 0.5);
+
+   --glass-bg: rgba(255, 255, 255, 0.9);
+   --glass-bg-dense: rgba(255, 255, 255, 1);
+   --glass-blur: blur(16px);
+
+   /* Fonts */
+   --font-display: 'Outfit', sans-serif;
+   --font-body: 'Inter', sans-serif;
+
+   /* Radii */
+   --radius-sm: 6px;
+   --radius-md: 12px;
+   --radius-lg: 20px;
+   --radius-full: 9999px;
+
+   /* Shadows & Glows */
+   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.7);
+   --glow-gold: 0 0 15px rgba(212, 175, 55, 0.2);
+   --glow-brand: 0 0 15px rgba(255, 46, 99, 0.25);
+
+   /* Transitions */
+   --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+   --transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+   --transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+ }
+
+ /* Base Styles & Resets */
+ * {
+   box-sizing: border-box;
+   margin: 0;
+   padding: 0;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+ }
+
+ html,
+ body {
+   background-color: var(--bg-base);
+   color: var(--text-primary);
+   font-family: var(--font-body);
+   scroll-behavior: smooth;
+   overflow-x: hidden;
+   height: 100%;
+ }
+
+ h1,
+ h2,
+ h3,
+ h4,
+ h5,
+ h6 {
+   font-family: var(--font-display);
+   font-weight: 600;
+   letter-spacing: -0.02em;
+ }
+
+ /* Custom Scrollbars */
+ ::-webkit-scrollbar {
+   width: 8px;
+   height: 8px;
+ }
+
+ ::-webkit-scrollbar-track {
+   background: var(--bg-base);
+ }
+
+ ::-webkit-scrollbar-thumb {
+   background: var(--border-glass);
+   border-radius: var(--radius-full);
+ }
+
+ ::-webkit-scrollbar-thumb:hover {
+   background: var(--text-muted);
+ }
+
+ /* Hide scrollbar but keep scroll functionality */
+ .hide-scrollbar {
+   -ms-overflow-style: none !important;
+   scrollbar-width: none !important;
+ }
+
+ .hide-scrollbar::-webkit-scrollbar {
+   display: none !important;
+   width: 0 !important;
+   height: 0 !important;
+   background: transparent !important;
+ }
+
+ /* Custom Input Ring Transitions */
+ input,
+ textarea,
+ select {
+   font-family: var(--font-body);
+   background: rgba(0, 0, 0, 0.03);
+   border: 1px solid var(--border-glass);
+   color: var(--text-primary);
+   border-radius: var(--radius-md);
+   padding: 14px 16px;
+   outline: none;
+   transition: all var(--transition-normal);
+ }
+
+ input:focus,
+ textarea:focus,
+ select:focus {
+   border-color: var(--brand-brown);
+   background: rgba(0, 0, 0, 0.05);
+ }
+
+ /* Premium Animations */
+ @keyframes slideUp {
+   from {
+     opacity: 0;
+     transform: translateY(20px);
+   }
+
+   to {
+     opacity: 1;
+     transform: translateY(0);
+   }
+ }
+
+ @keyframes fadeIn {
+   from {
+     opacity: 0;
+   }
+
+   to {
+     opacity: 1;
+   }
+ }
+
+ @keyframes pulseGlow {
+
+   0%,
+   100% {
+     box-shadow: 0 0 15px rgba(255, 46, 99, 0.2);
+   }
+
+   50% {
+     box-shadow: 0 0 25px rgba(255, 46, 99, 0.45);
+   }
+ }
+
+ .animate-slide-up {
+   animation: slideUp var(--transition-slow) forwards;
+ }
+
+ .animate-fade-in {
+   animation: fadeIn var(--transition-normal) forwards;
+ }
+
+ /* Layout Utilities & Shell Elements */
+ .glass-panel {
+   background: var(--glass-bg);
+   backdrop-filter: var(--glass-blur);
+   border: 1px solid var(--border-glass);
+   border-radius: var(--radius-lg);
+ }
+
+ .glass-panel-elevated {
+   background: var(--glass-bg-dense);
+   backdrop-filter: var(--glass-blur);
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   border-radius: var(--radius-lg);
+   box-shadow: var(--shadow-lg);
+ }
+
+ /* Custom Checkmark Styling */
+ .checkmark {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 20px;
+   height: 20px;
+   border-radius: var(--radius-full);
+   background-color: var(--text-primary);
+   color: var(--bg-base);
+   font-weight: bold;
+ }
+
+ /* Brand Vertical Logo Block */
+ .brand-logo-stacked {
+   display: flex;
+   flex-direction: column;
+   line-height: 0.85;
+   font-family: var(--font-display);
+   font-weight: 800;
+   font-size: 28px;
+   letter-spacing: 0.15em;
+   color: var(--text-primary);
+   user-select: none;
+   text-transform: uppercase;
+ }
+
+ .brand-logo-stacked div {
+   display: flex;
+   justify-content: space-between;
+ }
+
+ /* Buttons Custom Styles */
+ .btn-primary {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   background-color: var(--brand-brown);
+   color: var(--text-primary);
+   border: none;
+   font-weight: 600;
+   padding: 14px 28px;
+   border-radius: var(--radius-md);
+   cursor: pointer;
+   transition: all var(--transition-fast);
+   text-decoration: none;
+   font-family: var(--font-display);
+ }
+
+ .btn-primary:hover {
+   background-color: var(--brand-brown-hover);
+   box-shadow: var(--glow-gold);
+ }
+
+ .btn-secondary {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   background: rgba(255, 255, 255, 0.04);
+   border: 1px solid var(--border-glass);
+   color: var(--text-primary);
+   font-weight: 600;
+   padding: 14px 28px;
+   border-radius: var(--radius-md);
+   cursor: pointer;
+   transition: all var(--transition-fast);
+   text-decoration: none;
+ }
+
+ .btn-secondary:hover {
+   background: rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.25);
+ }
+
+ /* Custom Tribal Geometric Pattern (Simulated in CSS background code) */
+ .tribal-pattern-bg {
+   background-color: #261103;
+   background-image:
+     linear-gradient(45deg, #4A2306 25%, transparent 25%, transparent 75%, #4A2306 75%, #4A2306),
+     linear-gradient(45deg, #4A2306 25%, transparent 25%, transparent 75%, #4A2306 75%, #4A2306);
+   background-size: 40px 40px;
+   background-position: 0 0, 20px 20px;
+   opacity: 0.15;
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   pointer-events: none;
+ }
