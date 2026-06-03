@@ -20,7 +20,8 @@ import {
   Image as ImageIcon,
   Scissors,
   Package,
-  ChevronDown
+  ChevronDown,
+  Wand2
 } from 'lucide-react';
 
 interface CustomerShellProps {
@@ -44,6 +45,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const isAuthPage = pathname.startsWith('/auth');
+  const isSearchPage = pathname.startsWith('/search');
 
   if (isAuthPage) {
     return <div className="min-h-screen bg-[#F5F5F5] relative overflow-hidden">{children}</div>;
@@ -54,8 +56,9 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
       setIsSearchFocused(false);
+      setMobileSearchOpen(false);
     }
   };
 
@@ -114,9 +117,11 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           <div style={{ padding: '24px 20px 20px 20px' }}>
             {children}
           </div>
-          <div style={{ padding: '20px' }}>
-            <Footer />
-          </div>
+          {!isSearchPage && (
+            <div style={{ padding: '20px' }}>
+              <Footer />
+            </div>
+          )}
         </main>
 
         {/* ── Floating Search Button — above bottom bar, right side ── */}
@@ -129,13 +134,16 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             width: '52px',
             height: '52px',
             borderRadius: '50%',
-            background: '#FFFFFF',
+            background: isSearchPage ? '#2C1810' : '#FFFFFF',
             boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
-            border: '1px solid rgba(0,0,0,0.05)',
+            border: isSearchPage ? 'none' : '1px solid rgba(0,0,0,0.05)',
             cursor: 'pointer',
           }}
         >
-          <Search size={20} strokeWidth={2} color="#1A1A1A" />
+          {isSearchPage
+            ? <Wand2 size={20} strokeWidth={2} color="#FFFFFF" />
+            : <Search size={20} strokeWidth={2} color="#1A1A1A" />
+          }
         </button>
 
         {/* ── Mobile Search Overlay ── */}
@@ -144,16 +152,19 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             {/* Search Header */}
             <div className="flex items-center" style={{ padding: '20px 16px', gap: '12px', borderBottom: '1px solid #F2F2F2' }}>
               <form
-                onSubmit={(e) => { handleSearchSubmit(e); setMobileSearchOpen(false); }}
-                className="flex-1 flex items-center bg-[#F5F5F5] rounded-full"
-                style={{ padding: '10px 16px', gap: '10px' }}
+                onSubmit={handleSearchSubmit}
+                className="flex-1 flex items-center rounded-full"
+                style={{ padding: '10px 16px', gap: '10px', background: isSearchPage ? '#F0EDE8' : '#F5F5F5' }}
               >
-                <Search size={18} strokeWidth={2} color="#999" />
+                {isSearchPage
+                  ? <Wand2 size={18} strokeWidth={2} color="#D4AF37" />
+                  : <Search size={18} strokeWidth={2} color="#999" />
+                }
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="What are you looking for?"
+                  placeholder={isSearchPage ? 'Ask anything about fashion...' : 'What are you looking for?'}
                   className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#111] placeholder-[#999]"
                   style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0 }}
                   autoFocus
@@ -317,9 +328,11 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             <div className="flex-1 flex flex-col">
               {children}
             </div>
-            <div className="w-full" style={{ marginTop: 'auto', paddingTop: '80px' }}>
-              <Footer />
-            </div>
+            {!isSearchPage && (
+              <div className="w-full" style={{ marginTop: 'auto', paddingTop: '80px' }}>
+                <Footer />
+              </div>
+            )}
           </main>
 
           {/* ── Sticky Search Bar — fixed at bottom center of this container ── */}
