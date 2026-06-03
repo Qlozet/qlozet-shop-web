@@ -225,14 +225,14 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                 <IconComp
                   size={20}
                   strokeWidth={tab.match ? 0 : 1.8}
-                  fill={tab.match ? '#1A1A1A' : 'none'}
-                  color={tab.match ? '#1A1A1A' : '#AAAAAA'}
+                  fill={tab.match ? '#2C1810' : 'none'}
+                  color={tab.match ? '#2C1810' : '#AAAAAA'}
                 />
                 <span
                   style={{
                     fontSize: '9px',
                     fontWeight: tab.match ? 800 : 600,
-                    color: tab.match ? '#1A1A1A' : '#AAAAAA',
+                    color: tab.match ? '#2C1810' : '#AAAAAA',
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                   }}
@@ -255,42 +255,42 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           
           {/* Logo */}
           <Link href="/" className="flex items-center justify-center">
-            <QlozetLogo width={36} color="#2C1810" />
+            <QlozetLogo width={46} color="#2C1810" />
           </Link>
 
           {/* Navigation Icons */}
           <nav className="flex flex-col gap-6">
             <Link 
               href="/" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/' ? 'text-[#462814]' : 'text-gray-400 hover:text-[#462814]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
               <Home size={22} fill={pathname === '/' ? 'currentColor' : 'none'} strokeWidth={pathname === '/' ? 0 : 2} />
             </Link>
             
             <Link 
               href="/products" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/products') ? 'text-[#462814]' : 'text-gray-400 hover:text-[#462814]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/products') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
               <Compass size={22} fill={pathname.startsWith('/products') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/products') ? 0 : 2} />
             </Link>
 
             <Link 
               href="/bespoke" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/bespoke') ? 'text-[#462814]' : 'text-gray-400 hover:text-[#462814]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/bespoke') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
               <ImageIcon size={22} fill={pathname.startsWith('/bespoke') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/bespoke') ? 0 : 2} />
             </Link>
 
             <Link 
               href="/wishlist" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/wishlist' ? 'text-[#462814]' : 'text-gray-400 hover:text-[#462814]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/wishlist' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
               <Heart size={22} fill={pathname === '/wishlist' ? 'currentColor' : 'none'} strokeWidth={pathname === '/wishlist' ? 0 : 2} />
             </Link>
 
             <Link 
               href="/cart" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all relative ${pathname === '/cart' ? 'text-[#462814]' : 'text-gray-400 hover:text-[#462814]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all relative ${pathname === '/cart' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
               <ShoppingCart size={22} fill={pathname === '/cart' ? 'currentColor' : 'none'} strokeWidth={pathname === '/cart' ? 0 : 2} />
               {cartCount > 0 && (
@@ -305,7 +305,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           <div className="flex flex-col gap-6 items-center">
             <Link 
               href={user ? '/profile' : '/auth/login'} 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/profile' ? 'text-[#462814]' : 'text-gray-400 hover:text-[#462814]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/profile' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
               <User size={22} fill={pathname === '/profile' ? 'currentColor' : 'none'} strokeWidth={pathname === '/profile' ? 0 : 2} />
             </Link>
