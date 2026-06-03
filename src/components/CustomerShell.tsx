@@ -70,7 +70,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
     { href: '/', label: 'HOME', icon: Home, match: pathname === '/' },
     { href: '/products', label: 'DISCOVER', icon: Compass, match: pathname.startsWith('/products') },
     { href: '/bespoke', label: 'BESPOKE', icon: Scissors, match: pathname.startsWith('/bespoke') },
-    { href: '/cart', label: 'ORDERS', icon: Package, match: pathname === '/cart' },
+    { href: '/cart', label: 'CART', icon: ShoppingCart, match: pathname === '/cart' },
     { href: user ? '/profile' : '/auth/login', label: 'PROFILE', icon: User, match: pathname === '/profile' },
   ];
 
@@ -105,14 +105,6 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           <div className="flex items-center" style={{ gap: '16px' }}>
             <Link href="/wishlist" className="relative text-[#1A1A1A]">
               <Heart size={20} strokeWidth={1.8} />
-            </Link>
-            <Link href="/cart" className="relative text-[#1A1A1A]">
-              <ShoppingCart size={20} strokeWidth={1.8} />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#FF2E63] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
             </Link>
           </div>
         </header>
@@ -219,15 +211,22 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               <Link
                 key={tab.href + tab.label}
                 href={tab.href}
-                className="flex flex-col items-center justify-center"
+                className="flex flex-col items-center justify-center relative"
                 style={{ gap: '4px', flex: 1 }}
               >
-                <IconComp
-                  size={20}
-                  strokeWidth={tab.match ? 0 : 1.8}
-                  fill={tab.match ? '#2C1810' : 'none'}
-                  color={tab.match ? '#2C1810' : '#AAAAAA'}
-                />
+                <div className="relative">
+                  <IconComp
+                    size={20}
+                    strokeWidth={tab.match ? 0 : 1.8}
+                    fill={tab.match ? '#2C1810' : 'none'}
+                    color={tab.match ? '#2C1810' : '#AAAAAA'}
+                  />
+                  {tab.label === 'CART' && cartCount > 0 && (
+                    <span className="absolute -top-1 -right-2 bg-[#FF2E63] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </div>
                 <span
                   style={{
                     fontSize: '9px',
