@@ -44,3 +44,6 @@ next-env.d.ts
 /image
 /src/app/page.tsx
 /src/app/auth/
+
+/Home-Page
+/Signin-Signup flow
