@@ -79,7 +79,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       {/* ═══════════════════════════════════════════════════════════════
           MOBILE LAYOUT (< lg)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="lg:hidden flex flex-col min-h-screen bg-white text-[#1a1a1a] font-body">
+      <div className="lg:hidden flex flex-col min-h-screen bg-white text-[#1a1a1a] font-body hide-scrollbar">
         
         {/* ── Mobile Top Bar ── */}
         <header
