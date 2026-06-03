@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { Footer } from '@/components/Footer';
+import { QlozetLogo } from '@/components/QlozetLogo';
 import { 
   Home, 
   Compass, 
@@ -97,11 +98,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
 
           {/* Center — QLOZET Logo */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-            <div className="brand-logo-stacked" style={{ fontSize: '16px', letterSpacing: '0.12em', color: '#462814' }}>
-              <div><span>Q</span><span>L</span></div>
-              <div><span>O</span><span>Z</span></div>
-              <div><span>E</span><span>T</span></div>
-            </div>
+            <QlozetLogo width={42} color="#2C1810" />
           </Link>
 
           {/* Right — Action Icons */}
@@ -256,11 +253,9 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {/* 1. SIDEBAR (Left Navigation) - On grey background */}
         <aside className="w-[100px] flex-shrink-0 flex flex-col items-center justify-between py-8" style={{ paddingTop: '32px', paddingBottom: '32px' }}>
           
-          {/* Logo Stacked */}
-          <Link href="/" className="flex flex-col font-bold text-[#462814] text-xl leading-none">
-            <div className="flex justify-between w-6"><span>Q</span><span>L</span></div>
-            <div className="flex justify-between w-6"><span>O</span><span>Z</span></div>
-            <div className="flex justify-between w-6"><span>E</span><span>T</span></div>
+          {/* Logo */}
+          <Link href="/" className="flex items-center justify-center">
+            <QlozetLogo width={36} color="#2C1810" />
           </Link>
 
           {/* Navigation Icons */}

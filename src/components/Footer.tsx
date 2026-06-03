@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
+import { QlozetLogo } from '@/components/QlozetLogo';
 
 export const Footer = () => {
   return (
@@ -19,13 +20,8 @@ export const Footer = () => {
             marginBottom: '16px',
           }}
         >
-          <div
-            className="brand-logo-stacked"
-            style={{ fontSize: '18px', letterSpacing: '0.15em', color: '#FFFFFF', marginBottom: '12px' }}
-          >
-            <div><span>Q</span><span>L</span></div>
-            <div><span>O</span><span>Z</span></div>
-            <div><span>E</span><span>T</span></div>
+          <div style={{ marginBottom: '12px' }}>
+            <QlozetLogo width={48} color="#FFFFFF" />
           </div>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, maxWidth: '260px', marginBottom: '20px' }}>
             The future of fashion-tech. Seamless fit intelligence & curated designer experiences.
