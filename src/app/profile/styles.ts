@@ -3,7 +3,7 @@ import React from 'react';
 // ─── Shared Styles ───────────────────────────────────────────
 export const cardStyle: React.CSSProperties = {
   background: '#FFFFFF',
-  borderRadius: '16px',
+  borderRadius: '24px',
   border: '1px solid rgba(0,0,0,0.05)',
   boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
   overflow: 'hidden',

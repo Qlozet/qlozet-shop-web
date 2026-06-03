@@ -150,7 +150,7 @@ export default function ProfilePage() {
       )}
 
       {/* ─── Two-Column Layout (hidden on mobile when sub-section active) ── */}
-      <div className={`flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8 ${isSubSection ? 'hidden lg:flex' : ''} w-full lg:w-fit lg:mx-auto`}>
+      <div className={`flex flex-col lg:flex-row lg:items-start lg:justify-center gap-6 lg:gap-8 ${isSubSection ? 'hidden lg:flex' : ''} w-full`}>
 
         {/* ══════ LEFT COLUMN — Profile & Settings ══════ */}
         <div className="flex flex-col lg:flex-shrink-0 w-full lg:w-[380px]" style={{ gap: '16px' }}>
