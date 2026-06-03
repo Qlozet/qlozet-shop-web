@@ -42,9 +42,6 @@ next-env.d.ts
 
 # Excluded from push
 /image
-/src/app/page.tsx
-/src/app/auth/
-
 /Home-Page
 /Signin-Signup flow
 .vercel
