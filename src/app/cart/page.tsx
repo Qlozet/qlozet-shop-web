@@ -158,22 +158,18 @@ export default function CartPage() {
                       </Link>
                       <button
                         onClick={() => toggleWishlist(item.id)}
-                        className="flex items-center gap-1.5 transition-colors hover:opacity-90"
+                        className="flex items-center justify-center transition-all hover:opacity-90 active:scale-90"
                         style={{
-                          padding: '5px 14px',
-                          borderRadius: '6px',
-                          background: '#462814',
-                          border: 'none',
-                          fontSize: '10px',
-                          fontWeight: 800,
-                          color: '#FFFFFF',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '8px',
+                          background: wishlist.includes(item.id) ? '#462814' : 'none',
+                          border: wishlist.includes(item.id) ? 'none' : '1px solid #E0E0E0',
                           cursor: 'pointer',
+                          flexShrink: 0,
                         }}
                       >
-                        <Heart size={9} fill={wishlist.includes(item.id) ? 'white' : 'none'} />
-                        + Wishlist
+                        <Heart size={13} color={wishlist.includes(item.id) ? '#FFFFFF' : '#1A1A1A'} fill={wishlist.includes(item.id) ? '#FFFFFF' : 'none'} />
                       </button>
                     </div>
                   </div>

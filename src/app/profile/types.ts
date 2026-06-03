@@ -10,9 +10,24 @@ export type ActiveSection =
   | 'orders'
   | 'order-detail'
   | 'order-item-detail'
-  | 'return-order';
+  | 'return-order'
+  | 'track-order'
+  | 'track-return'
+  | 'measurements'
+  | 'measurement-detail'
+  | 'add-measurement'
+  | 'measurement-form'
+  | 'account-security'
+  | 'change-password';
 
 export type OrderStatus = 'Shipped' | 'Refused' | 'Delivered' | 'Pending';
+
+export interface MeasurementProfile {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  values: Record<string, number>;
+}
 
 export type ProductType = 'custom' | 'ready-to-wear' | 'fabric' | 'accessories' | 'bespoke';
 

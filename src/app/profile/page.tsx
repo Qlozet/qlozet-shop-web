@@ -21,6 +21,9 @@ import WelcomeBanner from './sections/WelcomeBanner';
 import WalletSection from './sections/Wallet';
 import OrdersSection from './sections/Orders';
 import ReturnOrder from './sections/ReturnOrder';
+import TrackOrder from './sections/TrackOrder';
+import MeasurementsSection from './sections/Measurements';
+import AccountSecurity from './sections/AccountSecurity';
 
 // ─── Section Title Map ──────────────────────────────────────
 const sectionTitles: Record<ActiveSection, string> = {
@@ -35,6 +38,14 @@ const sectionTitles: Record<ActiveSection, string> = {
   'order-detail': 'Order Details',
   'order-item-detail': 'Item Details',
   'return-order': 'Return Order',
+  'track-order': 'Track Order',
+  'track-return': 'Track Return',
+  'measurements': 'My Measurement',
+  'measurement-detail': 'Measurement Details',
+  'add-measurement': 'Add Measurement',
+  'measurement-form': 'Measurement Form',
+  'account-security': 'Account Security',
+  'change-password': 'Change Password',
 };
 
 export default function ProfilePage() {
@@ -66,8 +77,13 @@ export default function ProfilePage() {
       if (returnStep > 1) setReturnStep(returnStep - 1);
       else setActiveSection('order-item-detail');
     }
+    else if (activeSection === 'track-order' || activeSection === 'track-return') setActiveSection('order-item-detail');
     else if (activeSection === 'order-item-detail') setActiveSection('order-detail');
     else if (activeSection === 'order-detail') setActiveSection('orders');
+    else if (activeSection === 'measurement-form') setActiveSection('add-measurement');
+    else if (activeSection === 'add-measurement') setActiveSection('measurements');
+    else if (activeSection === 'measurement-detail') setActiveSection('measurements');
+    else if (activeSection === 'change-password') setActiveSection('account-security');
     else setActiveSection('welcome');
   };
 
@@ -105,6 +121,33 @@ export default function ProfilePage() {
             selectedItemIdx={selectedItemIdx}
             returnStep={returnStep}
             setReturnStep={setReturnStep}
+          />
+        );
+      case 'track-order':
+      case 'track-return':
+        return (
+          <TrackOrder
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            selectedOrder={selectedOrder}
+          />
+        );
+      case 'measurements':
+      case 'measurement-detail':
+      case 'add-measurement':
+      case 'measurement-form':
+        return (
+          <MeasurementsSection
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+          />
+        );
+      case 'account-security':
+      case 'change-password':
+        return (
+          <AccountSecurity
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
           />
         );
       default:
@@ -208,9 +251,10 @@ export default function ProfilePage() {
               <MenuRow icon={Package} label="My Orders" iconBg="rgba(212,175,55,0.1)" iconColor="#B8941F"
                 onClick={() => setActiveSection('orders')} isActive={activeSection === 'orders' || activeSection === 'order-detail'} />
               <MenuRow icon={Ruler} label="My Measurement" iconBg="rgba(99,102,241,0.08)" iconColor="#6366F1"
-                onClick={() => router.push('/bespoke')} />
+                onClick={() => setActiveSection('measurements')} isActive={activeSection === 'measurements' || activeSection === 'measurement-detail' || activeSection === 'add-measurement' || activeSection === 'measurement-form'} />
               <MenuRow icon={CreditCard} label="Payment Information" iconBg="rgba(239,68,68,0.06)" iconColor="#EF4444" />
-              <MenuRow icon={ShieldCheck} label="Account Security" iconBg="rgba(16,185,129,0.08)" iconColor="#10B981" />
+              <MenuRow icon={ShieldCheck} label="Account Security" iconBg="rgba(16,185,129,0.08)" iconColor="#10B981"
+                onClick={() => setActiveSection('account-security')} isActive={activeSection === 'account-security' || activeSection === 'change-password'} />
               <MenuRow icon={Bell} label="Push Notification" iconBg="rgba(245,158,11,0.08)" iconColor="#F59E0B"
                 trailing={<Toggle value={pushNotif} onChange={setPushNotif} />} />
               <MenuRow icon={Moon} label="Dark Mode" iconBg="rgba(107,114,128,0.08)" iconColor="#6B7280"

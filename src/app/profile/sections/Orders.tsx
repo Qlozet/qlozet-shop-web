@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Package, ChevronRight, ChevronDown, ArrowLeft, Scissors, User, MessageCircle, Ruler } from 'lucide-react';
+import { Package, ChevronRight, ChevronDown, ArrowLeft, Scissors, User, MessageCircle, Ruler, Truck, RotateCcw } from 'lucide-react';
 import { cardStyle, statusColors } from '../styles';
 import { demoOrders } from '../data';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
@@ -202,6 +202,26 @@ export default function OrdersSection({
             </div>
           </div>
         )}
+
+        {/* Track Order / Track Return Buttons */}
+        <div className="flex flex-col lg:flex-row" style={{ gap: '10px' }}>
+          <button
+            onClick={() => setActiveSection('track-order')}
+            className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ gap: '8px', padding: '14px 20px', borderRadius: '12px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+          >
+            <Truck size={16} /> Track Order
+          </button>
+          {!hasTailoring && (
+            <button
+              onClick={() => setActiveSection('track-return')}
+              className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{ gap: '8px', padding: '14px 20px', borderRadius: '12px', background: 'none', color: '#1A1A1A', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer' }}
+            >
+              <RotateCcw size={16} /> Track Return
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-col lg:flex-row" style={{ gap: '16px' }}>
           <div className="flex-1 flex flex-col" style={{ gap: '16px' }}>
