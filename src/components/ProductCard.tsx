@@ -118,7 +118,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <span 
           className="uppercase truncate text-left" 
           style={{ 
-            fontFamily: "'Poppins', sans-serif", 
+            fontFamily: "var(--font-outfit), 'Outfit', sans-serif", 
             fontWeight: 800, 
             fontSize: '10px', 
             color: '#363636', 
@@ -132,7 +132,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <h3 
           className="truncate whitespace-nowrap"
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
             fontSize: '13px',
             color: '#2D2D2D',
             lineHeight: '20px',

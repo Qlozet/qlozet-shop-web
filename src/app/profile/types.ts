@@ -18,7 +18,10 @@ export type ActiveSection =
   | 'add-measurement'
   | 'measurement-form'
   | 'account-security'
-  | 'change-password';
+  | 'change-password'
+  | 'notifications'
+  | 'payment-information'
+  | 'add-card';
 
 export type OrderStatus = 'Shipped' | 'Refused' | 'Delivered' | 'Pending';
 
