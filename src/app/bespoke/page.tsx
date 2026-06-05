@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Plus,
@@ -132,6 +133,7 @@ const QUOTE_STATUS_MAP = {
 type ModalStep = null | 'start' | 'name' | 'category';
 
 function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: ModalStep) => void }) {
+  const router = useRouter();
   const [designMethod, setDesignMethod] = useState<'reference' | 'scratch'>('reference');
   const [styleName, setStyleName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Dresses');
@@ -315,7 +317,11 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
               </div>
 
               <button
-                onClick={() => setStep(null)}
+                onClick={() => {
+                  setStep(null);
+                  const name = encodeURIComponent(styleName || 'Untitled Design');
+                  router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}`);
+                }}
                 className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
               >

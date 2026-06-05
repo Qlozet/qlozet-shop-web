@@ -77,6 +77,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
     { href: user ? '/profile' : '/auth/login', label: 'PROFILE', icon: User, match: pathname === '/profile' },
   ];
 
+  const isStudio = pathname.startsWith('/bespoke/studio');
+
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════════
@@ -85,6 +87,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       <div className="lg:hidden flex flex-col min-h-screen bg-white text-[#1a1a1a] font-body hide-scrollbar">
         
         {/* ── Mobile Top Bar ── */}
+        {!isStudio && (
         <header
           className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 bg-white/95 backdrop-blur-md"
           style={{ padding: '20px 16px 12px 16px', borderBottom: '1px solid #F2F2F2' }}
@@ -111,13 +114,14 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             </Link>
           </div>
         </header>
+        )}
 
         {/* ── Mobile Content ── */}
-        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: '72px' }}>
-          <div style={{ padding: '24px 20px 20px 20px' }}>
+        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio ? '0' : '72px' }}>
+          <div style={{ padding: isStudio ? '0' : '24px 20px 20px 20px' }}>
             {children}
           </div>
-          {!isSearchPage && (
+          {!isSearchPage && !isStudio && (
             <div style={{ padding: '20px' }}>
               <Footer />
             </div>
@@ -125,6 +129,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         </main>
 
         {/* ── Floating Search Button — above bottom bar, right side ── */}
+        {!isStudio && (
         <button
           onClick={() => setMobileSearchOpen(true)}
           className="fixed z-50 flex items-center justify-center transition-all active:scale-90"
@@ -145,6 +150,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             : <Search size={20} strokeWidth={2} color="#1A1A1A" />
           }
         </button>
+        )}
 
         {/* ── Mobile Search Overlay ── */}
         {mobileSearchOpen && (
@@ -212,6 +218,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         )}
 
         {/* ── Mobile Bottom Tab Bar ── */}
+        {!isStudio && (
         <nav
           className="fixed bottom-0 left-0 right-0 z-50 bg-white flex items-center justify-around"
           style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: '0 -2px 20px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -253,6 +260,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             );
           })}
         </nav>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -323,12 +331,12 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         </aside>
 
         {/* Main Structural Container - Big White Card */}
-        <div className="flex-1 bg-white rounded-[40px] shadow-xl flex flex-col overflow-y-auto relative border border-gray-200 hide-scrollbar">
-          <main className="flex-1 flex flex-col w-full h-full min-h-min" style={{ padding: '40px' }}>
+        <div className={`flex-1 bg-white rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative border border-gray-200 hide-scrollbar`}>
+          <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio ? '0' : '40px' }}>
             <div className="flex-1 flex flex-col">
               {children}
             </div>
-            {!isSearchPage && (
+            {!isSearchPage && !isStudio && (
               <div className="w-full" style={{ marginTop: 'auto', paddingTop: '80px' }}>
                 <Footer />
               </div>
@@ -336,6 +344,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           </main>
 
           {/* ── Sticky Search Bar — fixed at bottom center of this container ── */}
+          {!isStudio && (
           <div
             className="sticky z-40 flex justify-center"
             style={{
@@ -401,6 +410,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               </form>
             </div>
           </div>
+          )}
         </div>
 
       </div>

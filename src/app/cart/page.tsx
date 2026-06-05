@@ -86,10 +86,10 @@ export default function CartPage() {
       </h1>
 
       {/* ─── Two-Column Layout ───────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 items-start max-w-[900px] mx-auto w-full">
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 lg:items-start max-w-[900px] mx-auto w-full px-4 lg:px-0">
 
         {/* ══════ LEFT COLUMN — cart items + sections ══════ */}
-        <div className="flex-1 min-w-0 flex flex-col gap-5">
+        <div className="flex-1 min-w-0 flex flex-col gap-5 w-full">
 
           {/* ── Cart Items Card ────────────────────────────────── */}
           <div style={cardStyle}>
