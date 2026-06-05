@@ -2,10 +2,17 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Wallet as WalletIcon, Coins, Award, ArrowLeft, Send, Scissors, PlusCircle, LockKeyhole } from 'lucide-react';
+import { Wallet as WalletIcon, Coins, Award, ArrowLeft, Send, Scissors, PlusCircle, LockKeyhole, Sparkles, Zap, Crown, Gem, Check, CircleCheck, CreditCard } from 'lucide-react';
 import { cardStyle } from '../styles';
 import { walletMonths } from '../data';
 import type { ActiveSection, Transaction } from '../types';
+
+const TOKEN_PACKAGES = [
+  { id: 'starter', name: 'Starter', tokens: 5, price: 2500, originalPrice: 3000, icon: Sparkles, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.08)', tag: null },
+  { id: 'popular', name: 'Popular', tokens: 15, price: 6000, originalPrice: 9000, icon: Zap, color: '#D4AF37', bgColor: 'rgba(212,175,55,0.08)', tag: 'BEST VALUE' },
+  { id: 'pro', name: 'Pro', tokens: 30, price: 10000, originalPrice: 18000, icon: Gem, color: '#3B82F6', bgColor: 'rgba(59,130,246,0.08)', tag: 'SAVE 44%' },
+  { id: 'ultimate', name: 'Ultimate', tokens: 60, price: 18000, originalPrice: 36000, icon: Crown, color: '#462814', bgColor: 'rgba(70,40,20,0.06)', tag: 'SAVE 50%' },
+];
 
 interface WalletSectionProps {
   activeSection: ActiveSection;
@@ -14,6 +21,267 @@ interface WalletSectionProps {
 
 export default function WalletSection({ activeSection, setActiveSection }: WalletSectionProps) {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState('popular');
+
+  // ─── Buy Tokens ───
+  if (activeSection === 'buy-tokens') {
+    const selected = TOKEN_PACKAGES.find(p => p.id === selectedPackage) || TOKEN_PACKAGES[1];
+    const discount = Math.round((1 - selected.price / selected.originalPrice) * 100);
+    const SelectedIcon = selected.icon;
+
+    return (
+      <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
+        {/* Header */}
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Choose a Token Package</h2>
+          <p style={{ fontSize: '12px', color: '#999', lineHeight: 1.6 }}>
+            Tokens power AI design generation in Bespoke Studio. More tokens, better value.
+          </p>
+        </div>
+
+        {/* Token Packages */}
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          {TOKEN_PACKAGES.map((pkg) => {
+            const isSelected = selectedPackage === pkg.id;
+            return (
+              <button
+                key={pkg.id}
+                onClick={() => setSelectedPackage(pkg.id)}
+                className="flex items-center justify-between transition-all active:scale-[0.99]"
+                style={{
+                  padding: '18px 20px',
+                  borderRadius: '14px',
+                  border: isSelected ? `2px solid ${pkg.color}` : '2px solid #F0F0F0',
+                  background: isSelected ? pkg.bgColor : '#FAFAFA',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                {/* Left — Token count */}
+                <span style={{ fontSize: '15px', color: '#1A1A1A' }}>
+                  <strong style={{ fontWeight: 800 }}>{pkg.tokens.toLocaleString()}</strong>{' '}
+                  <span style={{ fontWeight: 500, color: '#666' }}>tokens</span>
+                </span>
+
+                {/* Right — Price pill */}
+                <span style={{
+                  padding: '6px 16px',
+                  borderRadius: '100px',
+                  background: isSelected ? pkg.color : '#462814',
+                  color: '#FFF',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                }}>
+                  ₦{pkg.price.toLocaleString()}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Summary Card */}
+        <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
+          <div className="flex items-center justify-between" style={{ padding: '18px 20px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+            <div className="flex items-center" style={{ gap: '12px' }}>
+              <div className="flex items-center justify-center" style={{ width: '36px', height: '36px', borderRadius: '10px', background: selected.bgColor }}>
+                <SelectedIcon size={18} color={selected.color} strokeWidth={1.8} />
+              </div>
+              <div className="flex flex-col">
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A' }}>{selected.name} Package</span>
+                <span style={{ fontSize: '11px', color: '#BBB' }}>{selected.tokens} tokens</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <span style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A' }}>₦{selected.price.toLocaleString()}</span>
+              {discount > 0 && <span style={{ fontSize: '10px', fontWeight: 700, color: '#22C55E' }}>-{discount}% off</span>}
+            </div>
+          </div>
+          <div className="flex flex-col" style={{ padding: '14px 20px', gap: '8px' }}>
+            {[
+              { icon: <Sparkles size={13} color="#8B5CF6" strokeWidth={1.8} />, text: 'Generate AI design concepts' },
+              { icon: <Zap size={13} color="#D4AF37" strokeWidth={1.8} />, text: 'Iterate and refine designs' },
+              { icon: <Crown size={13} color="#462814" strokeWidth={1.8} />, text: 'Access premium templates' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center" style={{ gap: '10px' }}>
+                {item.icon}
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#888' }}>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Purchase Button */}
+        <button
+          onClick={() => setActiveSection('confirm-token-purchase')}
+          className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+          style={{
+            padding: '16px',
+            borderRadius: '12px',
+            background: '#462814',
+            color: '#FFF',
+            fontSize: '13px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Buy {selected.tokens} Tokens — ₦{selected.price.toLocaleString()}
+        </button>
+
+        <div className="flex items-center justify-center" style={{ gap: '6px' }}>
+          <LockKeyhole size={11} color="#CCC" strokeWidth={2} />
+          <span style={{ fontSize: '10px', fontWeight: 600, color: '#CCC' }}>Secured by <strong style={{ color: '#999' }}>paystack</strong></span>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Confirm Token Purchase ───
+  if (activeSection === 'confirm-token-purchase') {
+    const selected = TOKEN_PACKAGES.find(p => p.id === selectedPackage) || TOKEN_PACKAGES[1];
+    const SelectedIcon = selected.icon;
+    
+    return (
+      <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
+        <div className="flex items-center" style={{ gap: '16px' }}>
+          <button onClick={() => setActiveSection('buy-tokens')} className="flex items-center justify-center transition-all active:scale-90" style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <ArrowLeft size={20} color="#1A1A1A" />
+          </button>
+          <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Confirm Purchase</h2>
+        </div>
+
+        {/* Order Summary */}
+        <div style={{ ...cardStyle, padding: '24px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Order Summary</span>
+          <div className="flex items-center justify-between" style={{ marginTop: '16px' }}>
+            <div className="flex items-center" style={{ gap: '12px' }}>
+              <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '12px', background: selected.bgColor }}>
+                <SelectedIcon size={20} color={selected.color} strokeWidth={1.8} />
+              </div>
+              <div className="flex flex-col">
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{selected.name} Token Package</span>
+                <span style={{ fontSize: '12px', color: '#888' }}>{selected.tokens} tokens</span>
+              </div>
+            </div>
+            <span style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A' }}>₦{selected.price.toLocaleString()}</span>
+          </div>
+          
+          <div className="flex flex-col" style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px dashed rgba(0,0,0,0.1)', gap: '12px' }}>
+            <div className="flex justify-between items-center text-[13px]">
+              <span style={{ color: '#666' }}>Subtotal</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>₦{selected.price.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-[13px]">
+              <span style={{ color: '#666' }}>Fees</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>₦0</span>
+            </div>
+            <div className="flex justify-between items-center" style={{ marginTop: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>Total</span>
+              <span style={{ fontSize: '18px', fontWeight: 800, color: '#462814' }}>₦{selected.price.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Methods */}
+        <div className="flex flex-col" style={{ gap: '12px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pay With</span>
+          
+          {/* Wallet Option */}
+          <button
+            className="flex items-center justify-between transition-all active:scale-[0.99]"
+            style={{ ...cardStyle, padding: '16px 20px', border: '2px solid #462814', cursor: 'pointer' }}
+          >
+            <div className="flex items-center" style={{ gap: '16px' }}>
+              <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(70,40,20,0.06)' }}>
+                <WalletIcon size={20} color="#462814" strokeWidth={1.8} />
+              </div>
+              <div className="flex flex-col items-start" style={{ gap: '2px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Qlozet Wallet</span>
+                <span style={{ fontSize: '11px', color: '#666' }}>Balance: ₦10,000</span>
+              </div>
+            </div>
+            <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '6px solid #462814', background: '#FFF' }} />
+          </button>
+
+          {/* Card Option */}
+          <button
+            className="flex items-center justify-between transition-all active:scale-[0.99] opacity-70"
+            style={{ ...cardStyle, padding: '16px 20px', cursor: 'pointer' }}
+          >
+            <div className="flex items-center" style={{ gap: '16px' }}>
+              <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#FAFAFA' }}>
+                <CreditCard size={20} color="#888" strokeWidth={1.8} />
+              </div>
+              <div className="flex flex-col items-start" style={{ gap: '2px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Debit / Credit Card</span>
+                <span style={{ fontSize: '11px', color: '#666' }}>Paystack</span>
+              </div>
+            </div>
+            <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #DDD', background: '#FFF' }} />
+          </button>
+        </div>
+
+        {/* Action */}
+        <button
+          onClick={() => setActiveSection('token-purchase-success')}
+          className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+          style={{ padding: '16px', borderRadius: '12px', background: '#462814', color: '#FFF', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer', marginTop: '12px' }}
+        >
+          Pay ₦{selected.price.toLocaleString()}
+        </button>
+      </div>
+    );
+  }
+
+  // ─── Token Purchase Success ───
+  if (activeSection === 'token-purchase-success') {
+    const selected = TOKEN_PACKAGES.find(p => p.id === selectedPackage) || TOKEN_PACKAGES[1];
+    
+    return (
+      <div className="animate-fade-in flex flex-col items-center justify-center text-center" style={{ gap: '24px', padding: '40px 20px' }}>
+        <div className="flex items-center justify-center" style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'rgba(34,197,94,0.1)' }}>
+          <CircleCheck size={40} color="#22C55E" strokeWidth={1.5} />
+        </div>
+        
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1A1A' }}>Payment Successful!</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.5, maxWidth: '280px' }}>
+            You've successfully purchased the <strong>{selected.name} Package</strong>.
+          </p>
+        </div>
+
+        <div style={{ ...cardStyle, width: '100%', maxWidth: '320px', padding: '24px', marginTop: '8px', background: '#FAFAFA' }}>
+          <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Tokens Added</span>
+            <span style={{ fontSize: '36px', fontWeight: 800, color: '#1A1A1A', lineHeight: 1 }}>+{selected.tokens}</span>
+          </div>
+          <div className="flex justify-between items-center" style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '12px', color: '#888' }}>New Balance</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{900 + selected.tokens} tokens</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col w-full" style={{ gap: '12px', maxWidth: '320px', marginTop: '16px' }}>
+          <button
+            onClick={() => {}} // In a real app this would route to Bespoke Studio
+            className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ padding: '16px', borderRadius: '12px', background: '#462814', color: '#FFF', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+          >
+            Go to Bespoke Studio
+          </button>
+          <button
+            onClick={() => setActiveSection('wallet')}
+            className="w-full flex items-center justify-center transition-all active:scale-[0.98]"
+            style={{ padding: '16px', borderRadius: '12px', background: 'transparent', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+          >
+            Back to Wallet
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Fund Wallet ───
   if (activeSection === 'fund-wallet') {
@@ -50,7 +318,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             </div>
           </div>
 
-          <button onClick={() => setActiveSection('wallet')} className="w-full transition-all hover:opacity-90 active:scale-[0.98]" style={{ marginTop: '32px', padding: '16px', borderRadius: '12px', background: '#22C55E', color: '#FFF', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+          <button onClick={() => setActiveSection('fund-wallet-success')} className="w-full transition-all hover:opacity-90 active:scale-[0.98]" style={{ marginTop: '32px', padding: '16px', borderRadius: '12px', background: '#22C55E', color: '#FFF', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
             Pay NGN 10,000
           </button>
 
@@ -58,6 +326,45 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             <LockKeyhole size={12} color="#999" />
             <span style={{ fontSize: '11px', color: '#999' }}>Secured by <strong style={{ color: '#1A1A1A' }}>paystack</strong></span>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Fund Wallet Success ───
+  if (activeSection === 'fund-wallet-success') {
+    return (
+      <div className="animate-fade-in flex flex-col items-center justify-center text-center" style={{ gap: '24px', padding: '40px 20px' }}>
+        <div className="flex items-center justify-center" style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'rgba(34,197,94,0.1)' }}>
+          <CircleCheck size={40} color="#22C55E" strokeWidth={1.5} />
+        </div>
+        
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1A1A' }}>Wallet Funded!</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.5, maxWidth: '280px' }}>
+            You've successfully added <strong>₦10,000</strong> to your Qlozet wallet.
+          </p>
+        </div>
+
+        <div style={{ ...cardStyle, width: '100%', maxWidth: '320px', padding: '24px', marginTop: '8px', background: '#FAFAFA' }}>
+          <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Amount Added</span>
+            <span style={{ fontSize: '36px', fontWeight: 800, color: '#1A1A1A', lineHeight: 1 }}>+₦10,000</span>
+          </div>
+          <div className="flex justify-between items-center" style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '12px', color: '#888' }}>New Balance</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>₦80,000</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col w-full" style={{ gap: '12px', maxWidth: '320px', marginTop: '16px' }}>
+          <button
+            onClick={() => setActiveSection('wallet')}
+            className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ padding: '16px', borderRadius: '12px', background: '#462814', color: '#FFF', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+          >
+            Go to Wallet
+          </button>
         </div>
       </div>
     );
@@ -162,9 +469,14 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
           <div className="flex-1 flex flex-col" style={{ padding: '24px 28px', gap: '16px' }}>
             <WalletIcon size={28} color="#462814" strokeWidth={1.5} />
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>My Wallet</h3>
-            <button onClick={() => setActiveSection('fund-wallet')} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '8px', background: '#462814', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer', alignSelf: 'flex-start' }}>
-              Fund Wallet
-            </button>
+            <div className="flex items-center" style={{ gap: '10px' }}>
+              <button onClick={() => setActiveSection('fund-wallet')} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '8px', background: '#462814', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
+                Fund Wallet
+              </button>
+              <button onClick={() => setActiveSection('buy-tokens')} className="flex items-center transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '8px', background: 'transparent', color: '#462814', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: '1.5px solid #462814', cursor: 'pointer', gap: '6px' }}>
+                <Sparkles size={13} strokeWidth={2} /> Buy Tokens
+              </button>
+            </div>
           </div>
           <div className="flex flex-col justify-center" style={{ padding: '24px 28px', gap: '14px', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
             <div className="flex items-center" style={{ gap: '10px' }}>

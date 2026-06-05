@@ -36,6 +36,10 @@ const sectionTitles: Record<ActiveSection, string> = {
   'wallet': 'My Wallet',
   'wallet-detail': 'Transaction Details',
   'fund-wallet': 'Fund Wallet',
+  'fund-wallet-success': 'Funding Successful',
+  'buy-tokens': 'Buy Tokens',
+  'confirm-token-purchase': 'Confirm Purchase',
+  'token-purchase-success': 'Purchase Complete',
   'orders': 'My Orders',
   'order-detail': 'Order Details',
   'order-item-detail': 'Item Details',
@@ -76,7 +80,10 @@ export default function ProfilePage() {
 
   // ─── Mobile Back Navigation ─────────────────────────────────
   const handleMobileBack = () => {
-    if (activeSection === 'wallet-detail' || activeSection === 'fund-wallet') setActiveSection('wallet');
+    if (activeSection === 'wallet-detail' || activeSection === 'fund-wallet' || activeSection === 'fund-wallet-success') setActiveSection('wallet');
+    else if (activeSection === 'buy-tokens') setActiveSection('wallet');
+    else if (activeSection === 'confirm-token-purchase') setActiveSection('buy-tokens');
+    else if (activeSection === 'token-purchase-success') setActiveSection('wallet');
     else if (activeSection === 'add-address') setActiveSection('address-book');
     else if (activeSection === 'return-order') {
       if (returnStep > 1) setReturnStep(returnStep - 1);
@@ -104,6 +111,10 @@ export default function ProfilePage() {
       case 'wallet':
       case 'wallet-detail':
       case 'fund-wallet':
+      case 'fund-wallet-success':
+      case 'buy-tokens':
+      case 'confirm-token-purchase':
+      case 'token-purchase-success':
         return <WalletSection activeSection={activeSection} setActiveSection={setActiveSection} />;
       case 'orders':
       case 'order-detail':
@@ -263,7 +274,7 @@ export default function ProfilePage() {
               <MenuRow icon={User} label="Personal Information" iconBg="rgba(70,40,20,0.06)" iconColor="#8B5A2B"
                 onClick={() => setActiveSection('personal-info')} isActive={activeSection === 'personal-info'} />
               <MenuRow icon={Wallet} label="Wallet" iconBg="rgba(45,106,79,0.08)" iconColor="#2D6A4F"
-                onClick={() => setActiveSection('wallet')} isActive={activeSection === 'wallet' || activeSection === 'wallet-detail' || activeSection === 'fund-wallet'} />
+                onClick={() => setActiveSection('wallet')} isActive={activeSection === 'wallet' || activeSection === 'wallet-detail' || activeSection === 'fund-wallet' || activeSection === 'fund-wallet-success' || activeSection === 'buy-tokens' || activeSection === 'confirm-token-purchase' || activeSection === 'token-purchase-success'} />
               <MenuRow icon={Package} label="My Orders" iconBg="rgba(212,175,55,0.1)" iconColor="#B8941F"
                 onClick={() => setActiveSection('orders')} isActive={activeSection === 'orders' || activeSection === 'order-detail'} />
               <MenuRow icon={Ruler} label="My Measurement" iconBg="rgba(99,102,241,0.08)" iconColor="#6366F1"
