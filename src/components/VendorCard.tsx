@@ -210,7 +210,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             textTransform: 'uppercase',
             letterSpacing: '1px',
             cursor: 'pointer',
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: 'var(--font-display)',
             backdropFilter: 'blur(8px)',
           }}
         >
@@ -322,7 +322,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                 color: '#FFFFFF',
                 fontSize: '13px',
                 fontWeight: 600,
-                fontFamily: "'Poppins', 'Inter', sans-serif",
+                fontFamily: 'var(--font-body)',
                 padding: '1px 4px',
                 borderRadius: '4px',
                 lineHeight: '15px',
@@ -335,7 +335,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               style={{
                 fontSize: '13px',
                 fontWeight: 600,
-                fontFamily: "'Poppins', 'Inter', sans-serif",
+                fontFamily: 'var(--font-body)',
                 color: '#FFFFFF',
                 lineHeight: '15px',
                 marginLeft: '4px',
@@ -351,7 +351,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             style={{
               fontSize: '10px',
               fontWeight: 500,
-              fontFamily: "'Poppins', 'Inter', sans-serif",
+              fontFamily: 'var(--font-body)',
               color: '#CDCDCD',
               textAlign: 'center',
               lineHeight: 1.119,
