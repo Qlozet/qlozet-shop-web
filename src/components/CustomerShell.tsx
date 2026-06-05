@@ -90,7 +90,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {!isStudio && (
         <header
           className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 bg-white/95 backdrop-blur-md"
-          style={{ padding: '20px 16px 12px 16px', borderBottom: '1px solid #F2F2F2' }}
+          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid #F2F2F2' }}
         >
           {/* Left — Gender Toggle */}
           <button
