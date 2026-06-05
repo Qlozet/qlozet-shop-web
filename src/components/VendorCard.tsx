@@ -294,7 +294,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   if (hasPromo) {
     return (
       <div
-        className="flex-shrink-0 w-[calc(100vw-56px)] h-[420px] lg:w-[360px] lg:h-[500px]"
+        className="flex-shrink-0 w-[calc(100vw-56px)] max-w-[380px] h-[420px] lg:w-[360px] lg:max-w-none lg:h-[500px]"
         style={{
           borderRadius: '24px',
           background: '#514f4f',
@@ -369,7 +369,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
 
   // ─── Variant 1: Without Discount ────────────────────────────────
   return (
-    <div className="flex-shrink-0 w-[calc(100vw-56px)] h-[420px] lg:w-[360px] lg:h-[500px]">
+    <div className="flex-shrink-0 w-[calc(100vw-56px)] max-w-[380px] h-[420px] lg:w-[360px] lg:max-w-none lg:h-[500px]">
       {imageCard}
     </div>
   );
