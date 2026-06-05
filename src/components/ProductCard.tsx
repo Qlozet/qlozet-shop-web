@@ -10,6 +10,7 @@ export interface ProductCardProps {
   title: string;
   brand: string;
   price: string | number;
+  originalPrice?: string | number;
   tag?: string;
   isFavorite?: boolean;
   onFavoriteToggle?: (id: string | number) => void;
@@ -21,6 +22,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   title,
   brand,
   price,
+  originalPrice,
   tag,
   isFavorite = false,
   onFavoriteToggle,
@@ -33,7 +35,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const formattedPrice = typeof price === 'number' ? `$${price.toFixed(2)}` : price;
+  const formattedPrice = typeof price === 'number' ? `₦${price.toLocaleString()}` : price;
+  const formattedOriginalPrice = originalPrice 
+    ? (typeof originalPrice === 'number' ? `₦${originalPrice.toLocaleString()}` : originalPrice)
+    : null;
 
   return (
     <Link 
@@ -145,18 +150,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </h3>
 
         {/* Price */}
-        <span 
-          style={{
-            fontFamily: "var(--font-inter), 'Inter', sans-serif",
-            fontWeight: 'bold',
-            fontSize: '14px',
-            color: '#464646',
-            lineHeight: '20px',
-            letterSpacing: '0.8px',
-          }}
-        >
-          {formattedPrice}
-        </span>
+        <div className="flex items-center gap-2">
+          <span 
+            style={{
+              fontFamily: "var(--font-inter), 'Inter', sans-serif",
+              fontWeight: 'bold',
+              fontSize: '14px',
+              color: '#464646',
+              lineHeight: '20px',
+              letterSpacing: '0.8px',
+            }}
+          >
+            {formattedPrice}
+          </span>
+          {formattedOriginalPrice && (
+            <span
+              style={{
+                fontFamily: "var(--font-inter), 'Inter', sans-serif",
+                fontWeight: 'normal',
+                fontSize: '12px',
+                color: '#999',
+                textDecoration: 'line-through',
+              }}
+            >
+              {formattedOriginalPrice}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );

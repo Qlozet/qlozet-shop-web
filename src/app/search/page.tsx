@@ -126,6 +126,7 @@ function SearchContent() {
               title={product.title}
               brand={product.brand}
               price={product.price}
+              originalPrice={product.originalPrice}
               tag={product.tag}
               isFavorite={wishlist.includes(product.id)}
               onFavoriteToggle={(id) => toggleWishlist(id as string)}
@@ -194,6 +195,7 @@ function SearchContent() {
                     title={product.title}
                     brand={product.brand}
                     price={product.price}
+                    originalPrice={product.originalPrice}
                     tag={product.tag}
                     isFavorite={wishlist.includes(product.id)}
                     onFavoriteToggle={(id) => toggleWishlist(id as string)}

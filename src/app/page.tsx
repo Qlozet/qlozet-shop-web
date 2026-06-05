@@ -99,6 +99,7 @@ export default function HomePage() {
     setGenderSelected,
     followedVendors,
     toggleFollowVendor,
+    isInitialized,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,6 +130,9 @@ export default function HomePage() {
 
   // ─── Determine which view to show ──────────────────────────────
   const showFeed = genderSelected || !!user;
+
+  // Wait for client hydration to prevent flashing the wrong view
+  if (!isInitialized) return null;
 
   // ─── STATE A: Gender Selector ──────────────────────────────────
   if (!showFeed) {

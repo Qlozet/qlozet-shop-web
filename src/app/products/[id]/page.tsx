@@ -595,7 +595,8 @@ export default function ProductDetailsPage() {
                   imageUrl={p.image}
                   title={p.title}
                   brand={p.brand}
-                  price={`₦${p.price.toLocaleString()}`}
+                  price={p.price}
+                  originalPrice={p.originalPrice}
                   tag={p.tag}
                 />
               </div>

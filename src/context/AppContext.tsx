@@ -40,6 +40,7 @@ interface AppContextType {
   setGender: (g: 'male' | 'female') => void;
   genderSelected: boolean;
   setGenderSelected: (v: boolean) => void;
+  isInitialized: boolean;
   followedVendors: string[];
   toggleFollowVendor: (id: string) => void;
   login: (email: string, name?: string) => void;
@@ -66,6 +67,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [gender, setGenderState] = useState<'male' | 'female'>('female');
   const [genderSelected, setGenderSelectedState] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [followedVendors, setFollowedVendors] = useState<string[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -91,6 +93,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedGender) setGenderState(savedGender as 'male' | 'female');
     if (savedGenderSelected === 'true') setGenderSelectedState(true);
     if (savedFollowed) setFollowedVendors(JSON.parse(savedFollowed));
+    
+    setIsInitialized(true);
   }, []);
 
   // Wrapped setters that also persist
@@ -261,6 +265,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setGender,
         genderSelected,
         setGenderSelected,
+        isInitialized,
         followedVendors,
         toggleFollowVendor,
         login,

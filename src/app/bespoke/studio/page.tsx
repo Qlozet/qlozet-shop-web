@@ -397,10 +397,14 @@ function StudioContent() {
           <div className="absolute top-[90px] bottom-6 z-20 hidden lg:flex items-start" style={{ right: '420px' }}>
             
             {/* ─── Floating Toolbar (Section Navigation & Selected Overview) ─── */}
-            <div className="flex flex-col gap-4 mt-4 px-4 lg:px-6 overflow-y-auto hide-scrollbar items-center" style={{ paddingBottom: '20px', maxHeight: '100%' }}>
+            <div className="flex flex-col gap-4 mt-4 px-4 lg:px-6 overflow-visible items-center" style={{ paddingBottom: '20px' }}>
               
               {/* 1. Styles Capsule */}
-              <div className="flex flex-col items-center bg-white rounded-[24px] shadow-sm border border-gray-100" style={{ gap: '8px', padding: '12px' }}>
+              <div className="group relative flex flex-col items-center bg-white rounded-[24px] shadow-sm border border-gray-100" style={{ gap: '8px', padding: '12px' }}>
+                <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#1A1A1A] text-white text-[11px] font-bold uppercase tracking-wider rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-md flex items-center" style={{ padding: '10px 16px' }}>
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#1A1A1A] rotate-45"></div>
+                  Style
+                </div>
                 {[selectedSilhouette, selectedNeckline, selectedSleeve].filter(Boolean).map((styleId, idx) => (
                   <button
                     key={`style-${idx}`}
@@ -430,7 +434,11 @@ function StudioContent() {
               </div>
 
               {/* 2. Accessories Capsule */}
-              <div className="flex flex-col items-center bg-white rounded-[24px] shadow-sm border border-gray-100" style={{ gap: '8px', padding: '12px' }}>
+              <div className="group relative flex flex-col items-center bg-white rounded-[24px] shadow-sm border border-gray-100" style={{ gap: '8px', padding: '12px' }}>
+                <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#1A1A1A] text-white text-[11px] font-bold uppercase tracking-wider rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-md flex items-center" style={{ padding: '10px 16px' }}>
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#1A1A1A] rotate-45"></div>
+                  Accessories
+                </div>
                 {selectedAccessories.map((accId, idx) => (
                   <button
                     key={`acc-${idx}`}
@@ -460,7 +468,7 @@ function StudioContent() {
               {/* 3. Standalone Color/Fabric Swatch */}
               <button
                 onClick={() => setExpandedSection('fabric')}
-                className="flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border border-gray-100"
+                className="group relative flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border border-gray-100"
                 style={{
                   width: '64px', height: '64px', borderRadius: '50%',
                   cursor: 'pointer', alignSelf: 'center'
@@ -472,12 +480,16 @@ function StudioContent() {
                 ) : (
                   <Palette size={26} color="#555" strokeWidth={1.5} />
                 )}
+                <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#1A1A1A] text-white text-[11px] font-bold uppercase tracking-wider rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-md flex items-center" style={{ padding: '10px 16px' }}>
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#1A1A1A] rotate-45"></div>
+                  Fabric & Color
+                </div>
               </button>
 
               {/* 4. Standalone Reference Image */}
               <button
                 onClick={() => setExpandedSection('reference')}
-                className={`flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border ${expandedSection === 'reference' ? 'border-[#2C1810]' : 'border-gray-100'} hover:bg-gray-50 overflow-hidden relative`}
+                className={`group flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border ${expandedSection === 'reference' ? 'border-[#2C1810]' : 'border-gray-100'} hover:bg-gray-50 overflow-visible relative`}
                 style={{
                   width: '64px', height: '64px', borderRadius: '50%',
                   cursor: 'pointer', alignSelf: 'center'
@@ -489,12 +501,16 @@ function StudioContent() {
                 ) : (
                   <ImageIcon size={26} color="#555" strokeWidth={1.5} />
                 )}
+                <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#1A1A1A] text-white text-[11px] font-bold uppercase tracking-wider rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-md flex items-center" style={{ padding: '10px 16px' }}>
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#1A1A1A] rotate-45"></div>
+                  Reference
+                </div>
               </button>
 
               {/* 5. Standalone Fit/Ruler */}
               <button
                 onClick={() => setExpandedSection('fit')}
-                className={`flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border ${expandedSection === 'fit' ? 'border-[#2C1810]' : 'border-gray-100'} hover:bg-gray-50 overflow-hidden relative`}
+                className={`group flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border ${expandedSection === 'fit' ? 'border-[#2C1810]' : 'border-gray-100'} hover:bg-gray-50 overflow-visible relative`}
                 style={{
                   width: '64px', height: '64px', borderRadius: '50%',
                   cursor: 'pointer', alignSelf: 'center'
@@ -502,6 +518,10 @@ function StudioContent() {
                 title="Fit & Measurements"
               >
                 <Ruler size={26} color="#555" strokeWidth={1.5} />
+                <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#1A1A1A] text-white text-[11px] font-bold uppercase tracking-wider rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-md flex items-center" style={{ padding: '10px 16px' }}>
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#1A1A1A] rotate-45"></div>
+                  Fit
+                </div>
               </button>
             </div>
 

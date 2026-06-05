@@ -123,6 +123,7 @@ export default function WishlistPage() {
               title={product.title}
               brand={product.brand}
               price={product.price}
+              originalPrice={product.originalPrice}
               tag={product.tag}
               isFavorite={true}
               onFavoriteToggle={(id) => toggleWishlist(id as string)}

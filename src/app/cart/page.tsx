@@ -252,6 +252,7 @@ export default function CartPage() {
                     title={lookingProduct.title}
                     brand={lookingProduct.brand}
                     price={lookingProduct.price}
+                    originalPrice={lookingProduct.originalPrice}
                     tag={lookingProduct.tag}
                     isFavorite={wishlist.includes(lookingProduct.id)}
                     onFavoriteToggle={(id) => toggleWishlist(id as string)}
@@ -284,6 +285,7 @@ export default function CartPage() {
                       title={p.title}
                       brand={p.brand}
                       price={p.price}
+                      originalPrice={p.originalPrice}
                       tag={p.tag}
                       isFavorite={wishlist.includes(p.id)}
                       onFavoriteToggle={(id) => toggleWishlist(id as string)}

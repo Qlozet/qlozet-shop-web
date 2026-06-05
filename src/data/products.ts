@@ -7,6 +7,7 @@ export interface Product {
   id: string;
   title: string;
   price: number;
+  originalPrice?: number;
   image: string;
   kind: ProductKind;
   rating: number;
@@ -25,7 +26,8 @@ export const productCatalog: Product[] = [
   {
     id: 'prod_1',
     title: 'Agbada bespoke orange',
-    price: 180000,
+    price: 150000,
+    originalPrice: 180000,
     image: '/image/bespoke-agbada-orange.webp',
     kind: 'clothing',
     rating: 4.9,
@@ -115,7 +117,8 @@ export const productCatalog: Product[] = [
   {
     id: 'prod_5',
     title: 'Ankara Premium Textile',
-    price: 45000,
+    price: 35000,
+    originalPrice: 45000,
     image: '/image/ankara.png',
     kind: 'fabric',
     rating: 4.5,
@@ -178,7 +181,8 @@ export const productCatalog: Product[] = [
   {
     id: 'prod_8',
     title: 'Suede Shoulder Clutch',
-    price: 65000,
+    price: 52000,
+    originalPrice: 65000,
     image: '/image/bag.webp',
     kind: 'accessory',
     rating: 4.4,
