@@ -393,8 +393,8 @@ function StudioContent() {
         </div>
       </div>
 
-      {/* ─── RIGHT PANEL & TOOLBAR (Floating) ─── */}
-          <div className="absolute right-6 top-[90px] bottom-6 z-20 hidden lg:flex items-start gap-4">
+      {/* ─── FLOATING TOOLBAR (Desktop only) ─── */}
+          <div className="absolute top-[90px] bottom-6 z-20 hidden lg:flex items-start" style={{ right: '420px' }}>
             
             {/* ─── Floating Toolbar (Section Navigation & Selected Overview) ─── */}
             <div className="flex flex-col gap-4 mt-4 px-4 lg:px-6 overflow-y-auto hide-scrollbar items-center" style={{ paddingBottom: '20px', maxHeight: '100%' }}>
@@ -505,9 +505,9 @@ function StudioContent() {
               </button>
             </div>
 
-          </div> {/* <--- Closes RIGHT PANEL & TOOLBAR (Desktop only) */}
+          </div>
 
-          {/* ─── MOBILE BOTTOM SHEET (outside desktop wrapper) ─── */}
+          {/* ─── MOBILE BOTTOM SHEET ─── */}
           {/* Outer wrapper: positions handle + sheet together */}
           <div 
             ref={sheetRef}
@@ -771,8 +771,8 @@ function StudioContent() {
           </div>
           </div>
 
-          {/* Desktop Config Panel & CTAs (inside its own wrapper) */}
-          <div className="absolute right-6 top-[90px] bottom-6 z-20 hidden lg:flex flex-col" style={{ width: '380px', gap: '16px' }}>
+          {/* Desktop Config Panel & CTAs (sibling of toolbar wrapper) */}
+          <div className="absolute z-20 hidden lg:flex flex-col" style={{ right: '24px', top: '90px', bottom: '24px', width: '380px', gap: '16px' }}>
             <div 
               className="flex-1 flex flex-col bg-white shadow-lg overflow-hidden border border-gray-100 rounded-[24px]"
             >
