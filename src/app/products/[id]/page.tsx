@@ -9,6 +9,8 @@ import { ProductCard } from '@/components/ProductCard';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { productCatalog } from '@/data/products';
+import { useCustomization } from '@/hooks/useCustomization';
+import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
 import {
   Heart,
   ShoppingCart,
@@ -37,6 +39,10 @@ export default function ProductDetailsPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
+
+  const isCustomizable = product.tag === 'CUSTOMIZABLE';
+  const customization = useCustomization({ mode: 'product', defaultSection: 'styles' });
 
   const isWish = wishlist.includes(product.id);
   const gallery = product.gallery;
@@ -134,6 +140,117 @@ export default function ProductDetailsPage() {
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
 
+              {/* ── Customization Hotspots ── */}
+              {isCustomizable && (
+                <>
+                  {/* Neckline hotspot — upper center */}
+                  <div
+                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
+                    style={{ top: '22%', left: '50%', transform: 'translateX(-50%)' }}
+                  >
+                    <div className="relative flex items-center">
+                      <div
+                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
+                      />
+                      <div
+                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                      >
+                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                          <div>
+                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Neckline</p>
+                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>+ ₦5,000</p>
+                          </div>
+                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                            <span style={{ fontSize: '18px' }}>👗</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sleeves hotspot — left center */}
+                  <div
+                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
+                    style={{ top: '38%', left: '18%' }}
+                  >
+                    <div className="relative flex items-center">
+                      <div
+                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.3s' }}
+                      />
+                      <div
+                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                        style={{ transitionDelay: '0.1s' }}
+                      >
+                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                          <div>
+                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Sleeves</p>
+                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>Included</p>
+                          </div>
+                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                            <span style={{ fontSize: '18px' }}>💪</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fabric hotspot — center body */}
+                  <div
+                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
+                    style={{ top: '55%', left: '50%', transform: 'translateX(-50%)' }}
+                  >
+                    <div className="relative flex items-center">
+                      <div
+                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.6s' }}
+                      />
+                      <div
+                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                        style={{ transitionDelay: '0.2s' }}
+                      >
+                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                          <div>
+                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Fabric</p>
+                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>+ ₦8,000</p>
+                          </div>
+                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                            <span style={{ fontSize: '18px' }}>🧵</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Accessories hotspot — waist area */}
+                  <div
+                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
+                    style={{ top: '72%', left: '45%' }}
+                  >
+                    <div className="relative flex items-center">
+                      <div
+                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.9s' }}
+                      />
+                      <div
+                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                        style={{ transitionDelay: '0.3s' }}
+                      >
+                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                          <div>
+                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Accessories</p>
+                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>+ ₦3,500</p>
+                          </div>
+                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                            <span style={{ fontSize: '18px' }}>🪢</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
               {/* Carousel Arrows */}
               <button
                 onClick={prevImage}
@@ -440,14 +557,14 @@ export default function ProductDetailsPage() {
             {/* CTA Buttons */}
             <div className="flex flex-col" style={{ gap: '10px', marginTop: '8px' }}>
               {/* Customize Outfit — only for customizable products */}
-              {product.tag === 'CUSTOMIZABLE' && (
+              {isCustomizable && (
                 <button
-                  onClick={handleCustomize}
+                  onClick={() => setShowCustomize(!showCustomize)}
                   className="w-full flex items-center justify-center transition-all hover:opacity-90"
                   style={{
                     padding: '15px',
                     borderRadius: '14px',
-                    background: '#7C3AED',
+                    background: showCustomize ? '#5B21B6' : '#7C3AED',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '13px',
@@ -459,7 +576,7 @@ export default function ProductDetailsPage() {
                   }}
                 >
                   <Pen size={15} />
-                  Customize Outfit
+                  {showCustomize ? 'Hide Customization' : 'Customize Outfit'}
                 </button>
               )}
 
@@ -485,6 +602,15 @@ export default function ProductDetailsPage() {
                 Add to Cart
               </button>
             </div>
+
+            {/* Customization Panel (side panel / bottom sheet, for CUSTOMIZABLE products) */}
+            {isCustomizable && (
+              <ProductCustomizePanel
+                isOpen={showCustomize}
+                customization={customization}
+                onClose={() => setShowCustomize(false)}
+              />
+            )}
 
             {/* Free Delivery Note */}
             <div className="flex flex-col items-center" style={{ gap: '6px', padding: '14px 0', borderTop: '1px solid #F0F0F0' }}>

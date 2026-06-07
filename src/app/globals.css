@@ -199,6 +199,36 @@
    animation: fadeIn var(--transition-normal) forwards;
  }
 
+ /* Ripple / Ping effect for customization hotspot dots */
+ @keyframes hotspot-ripple {
+   0% {
+     transform: scale(1);
+     opacity: 0.6;
+   }
+   100% {
+     transform: scale(3.5);
+     opacity: 0;
+   }
+ }
+
+ .hotspot-dot {
+   position: relative;
+ }
+
+ .hotspot-dot::before,
+ .hotspot-dot::after {
+   content: '';
+   position: absolute;
+   inset: 0;
+   border-radius: 50%;
+   border: 2px solid rgba(255, 255, 255, 0.7);
+   animation: hotspot-ripple 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+ }
+
+ .hotspot-dot::after {
+   animation-delay: 1.2s;
+ }
+
  /* Layout Utilities & Shell Elements */
  .glass-panel {
    background: var(--glass-bg);

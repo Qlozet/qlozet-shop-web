@@ -158,16 +158,18 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 flex items-center gap-4" style={{ padding: '16px 24px 24px 24px' }}>
+          <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px' }}>
             <button
               onClick={onReset}
-              className="flex-1 py-3.5 bg-[#F4F4F4] hover:bg-gray-200 text-black text-[14px] font-bold rounded-full transition-colors"
+              className="flex-1 hover:bg-gray-200 transition-colors"
+              style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Reset
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-3.5 bg-black hover:bg-gray-800 text-white text-[14px] font-bold rounded-full transition-colors"
+              className="flex-1 hover:bg-gray-800 transition-colors"
+              style={{ padding: '14px', borderRadius: '14px', background: '#1A1A1A', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Done
             </button>
@@ -201,16 +203,18 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 flex items-center gap-4" style={{ padding: '16px 24px 24px 24px' }}>
+            <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px' }}>
               <button
                 onClick={onReset}
-                className="flex-1 py-3 bg-[#F4F4F4] hover:bg-gray-200 text-black text-[13px] font-bold rounded-full transition-colors"
+                className="flex-1 hover:bg-gray-200 transition-colors"
+                style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Reset
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 py-3 bg-black hover:bg-gray-800 text-white text-[13px] font-bold rounded-full transition-colors"
+                className="flex-1 hover:bg-gray-800 transition-colors"
+                style={{ padding: '14px', borderRadius: '14px', background: '#1A1A1A', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Done
               </button>
