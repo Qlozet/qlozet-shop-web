@@ -144,27 +144,30 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
 
   return (
     <>
-      {/* ══════ MOBILE: Bottom Sheet ══════ */}
-      <div className="lg:hidden">
-        {/* Backdrop */}
-        <div
-          className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          onClick={onClose}
-        />
+      {/* ══════ MOBILE: Bottom Sheet — portalled to body ══════ */}
+      {typeof document !== 'undefined' && createPortal(
+        <div className="lg:hidden">
+          {/* Backdrop */}
+          <div
+            className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            onClick={onClose}
+          />
 
-        {/* Bottom Sheet */}
-        <div
-          className={`fixed left-3 right-3 bottom-3 z-[100] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-          style={{ maxHeight: '60vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
-        >
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-3 pb-1">
-            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+          {/* Bottom Sheet */}
+          <div
+            className={`fixed left-3 right-3 bottom-3 z-[100] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+            style={{ maxHeight: '60vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+          >
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+            </div>
+
+            {panelContent}
           </div>
-
-          {panelContent}
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* ══════ DESKTOP: Floating card on the right — mirrors SizeGuideModal ══════ */}
       {typeof document !== 'undefined' && createPortal(
