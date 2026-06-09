@@ -11,6 +11,8 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { productCatalog } from '@/data/products';
 import { useCustomization } from '@/hooks/useCustomization';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
+import { UseFabricModal } from '@/components/studio/UseFabricModal';
+import { ReserveFabricModal } from '@/components/studio/ReserveFabricModal';
 import {
   Heart,
   ShoppingCart,
@@ -23,6 +25,8 @@ import {
   Pen,
   Ruler,
   ArrowLeft,
+  Scissors,
+  CalendarDays,
 } from 'lucide-react';
 
 export default function ProductDetailsPage() {
@@ -40,8 +44,11 @@ export default function ProductDetailsPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
+  const [showUseFabric, setShowUseFabric] = useState(false);
+  const [showReserve, setShowReserve] = useState(false);
 
   const isCustomizable = product.tag === 'CUSTOMIZABLE';
+  const isFabric = product.kind === 'fabric';
   const customization = useCustomization({ mode: 'product', defaultSection: 'styles' });
 
   const isWish = wishlist.includes(product.id);
@@ -601,6 +608,54 @@ export default function ProductDetailsPage() {
                 <ShoppingCart size={15} />
                 Add to Cart
               </button>
+
+              {/* Use Fabric — only for fabric products */}
+              {isFabric && (
+                <button
+                  onClick={() => setShowUseFabric(true)}
+                  className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                  style={{
+                    padding: '15px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, #7C3AED 0%, #9B51E0 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    cursor: 'pointer',
+                    gap: '8px',
+                  }}
+                >
+                  <Scissors size={15} />
+                  Use Fabric
+                </button>
+              )}
+
+              {/* Reserve for Event — only for fabric products */}
+              {isFabric && (
+                <button
+                  onClick={() => setShowReserve(true)}
+                  className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                  style={{
+                    padding: '15px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, #065F46 0%, #059669 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    cursor: 'pointer',
+                    gap: '8px',
+                  }}
+                >
+                  <CalendarDays size={15} />
+                  Reserve for Event
+                </button>
+              )}
             </div>
 
             {/* Customization Panel (side panel / bottom sheet, for CUSTOMIZABLE products) */}
@@ -609,6 +664,29 @@ export default function ProductDetailsPage() {
                 isOpen={showCustomize}
                 customization={customization}
                 onClose={() => setShowCustomize(false)}
+              />
+            )}
+
+            {/* Use Fabric Modal (for fabric products) */}
+            {isFabric && (
+              <UseFabricModal
+                isOpen={showUseFabric}
+                onClose={() => setShowUseFabric(false)}
+                fabricImage={product.image}
+                fabricName={product.title}
+                fabricId={product.id}
+              />
+            )}
+
+            {/* Reserve Fabric Modal (for fabric products) */}
+            {isFabric && (
+              <ReserveFabricModal
+                isOpen={showReserve}
+                onClose={() => setShowReserve(false)}
+                fabricId={product.id}
+                fabricName={product.title}
+                fabricImage={product.image}
+                fabricPrice={product.price}
               />
             )}
 

@@ -34,6 +34,21 @@ export interface TryOnJob {
   result?: string; // Generated image or measurement data
 }
 
+export interface FabricReservation {
+  id: string;
+  fabricId: string;
+  fabricName: string;
+  fabricImage: string;
+  fabricPrice: number;
+  eventName: string;
+  totalYards: number;
+  claimedYards: number;
+  deadline: string;
+  createdAt: string;
+  organizerName: string;
+  status: 'active' | 'completed' | 'expired';
+}
+
 interface AppContextType {
   user: User | null;
   gender: 'male' | 'female';
@@ -58,6 +73,9 @@ interface AppContextType {
   updateJobStatus: (id: string, status: TryOnJob['status'], result?: string) => void;
   deductTokens: (amount: number) => boolean;
   addTokens: (amount: number) => void;
+  reservations: FabricReservation[];
+  createReservation: (reservation: Omit<FabricReservation, 'id' | 'createdAt' | 'claimedYards' | 'status'>) => string;
+  claimReservation: (id: string, yards: number) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -72,6 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [jobs, setJobs] = useState<TryOnJob[]>([]);
+  const [reservations, setReservations] = useState<FabricReservation[]>([]);
 
   // Seed demo details on initial load
   useEffect(() => {
@@ -93,6 +112,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedGender) setGenderState(savedGender as 'male' | 'female');
     if (savedGenderSelected === 'true') setGenderSelectedState(true);
     if (savedFollowed) setFollowedVendors(JSON.parse(savedFollowed));
+
+    // Load or seed reservations
+    const savedReservations = localStorage.getItem('qlozet_reservations');
+    if (savedReservations) {
+      setReservations(JSON.parse(savedReservations));
+    } else {
+      // Seed demo reservations
+      const demoReservations: FabricReservation[] = [
+        {
+          id: 'res_demo_1',
+          fabricId: 'prod_5',
+          fabricName: 'Ankara Wax Print — Rust Orange',
+          fabricImage: '/image/ankara.png',
+          fabricPrice: 35000,
+          eventName: 'Adebayo Wedding',
+          totalYards: 60,
+          claimedYards: 38,
+          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          organizerName: 'Kemi Ayomi',
+          status: 'active',
+        },
+        {
+          id: 'res_demo_2',
+          fabricId: 'prod_6',
+          fabricName: 'Golden Brocade Lace',
+          fabricImage: '/image/fabric-1.jpg',
+          fabricPrice: 75000,
+          eventName: 'Okonkwo Family Reunion',
+          totalYards: 30,
+          claimedYards: 30,
+          deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          organizerName: 'Chidi Okonkwo',
+          status: 'completed',
+        },
+      ];
+      setReservations(demoReservations);
+      saveState('qlozet_reservations', demoReservations);
+    }
     
     setIsInitialized(true);
   }, []);
@@ -257,6 +316,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // ── Fabric Reservations ──────────────────────────────────────────
+  const createReservation = (reservation: Omit<FabricReservation, 'id' | 'createdAt' | 'claimedYards' | 'status'>): string => {
+    const id = 'res_' + Math.random().toString(36).substr(2, 9);
+    const newReservation: FabricReservation = {
+      ...reservation,
+      id,
+      claimedYards: 0,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+    setReservations((prev) => {
+      const updated = [newReservation, ...prev];
+      saveState('qlozet_reservations', updated);
+      return updated;
+    });
+    return id;
+  };
+
+  const claimReservation = (id: string, yards: number): boolean => {
+    let success = false;
+    setReservations((prev) => {
+      const updated = prev.map((r) => {
+        if (r.id === id && r.status === 'active' && r.claimedYards + yards <= r.totalYards) {
+          success = true;
+          const newClaimed = r.claimedYards + yards;
+          return {
+            ...r,
+            claimedYards: newClaimed,
+            status: newClaimed >= r.totalYards ? 'completed' as const : 'active' as const,
+          };
+        }
+        return r;
+      });
+      saveState('qlozet_reservations', updated);
+      return updated;
+    });
+    return success;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -283,6 +381,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateJobStatus,
         deductTokens,
         addTokens,
+        reservations,
+        createReservation,
+        claimReservation,
       }}
     >
       {children}

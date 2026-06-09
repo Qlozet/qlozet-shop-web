@@ -112,10 +112,29 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           <SectionContent customization={customization} />
         </div>
 
-        {/* Sticky Generate Button */}
+        {/* Sticky Generate + Order Buttons */}
         <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
           <div style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 30%, rgba(255,255,255,1) 60%)', padding: '40px 20px 20px' }}>
-            <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} className="pointer-events-auto" />
+            <div className="flex items-center gap-3 pointer-events-auto">
+              <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} className="flex-[3]" />
+              <button
+                className="flex-[2] flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-lg"
+                style={{
+                  padding: '16px',
+                  borderRadius: '16px',
+                  background: '#065F46',
+                  color: '#FFF',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Order Now
+              </button>
+            </div>
           </div>
         </div>
       </div>
