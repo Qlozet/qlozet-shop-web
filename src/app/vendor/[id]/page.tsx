@@ -80,7 +80,11 @@ export default function VendorPage() {
   });
 
   return (
-    <div className="min-h-screen font-sans pb-32 lg:rounded-[40px]" style={{ backgroundColor: darkBg, padding: '24px' }}>
+    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, padding: '24px' }}>
+      <style>{`
+        @media (min-width: 1024px) { .vendor-page-root { padding: 40px !important; } }
+        .vendor-page-bottom::after { content: ''; display: block; height: 100px; }
+      `}</style>
 
       {/* ══════ EDGE-TO-EDGE HERO ══════ */}
       <div className="relative w-full" style={{ height: '55vh', minHeight: '420px' }}>

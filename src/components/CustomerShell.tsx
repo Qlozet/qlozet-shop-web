@@ -48,6 +48,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const isSearchPage = pathname.startsWith('/search');
   const isStudio = pathname.startsWith('/bespoke/studio');
   const isVendorPage = pathname.startsWith('/vendor');
+  const isProductDetailPage = /^\/products\/[^/]+$/.test(pathname);
 
   if (isAuthPage) {
     return <div className="min-h-screen bg-[#F5F5F5] relative overflow-hidden">{children}</div>;
