@@ -65,8 +65,24 @@ export default function VendorPage() {
 
   const isFollowing = followedVendors.includes(vendor.id);
   const themeColor = vendor.themeColor || '#8D7F72';
-  const darkBg = darkenHex(themeColor, 0.70);    // deep, rich version for page background
-  const midBg = darkenHex(themeColor, 0.50);      // slightly lighter for cards/accents
+  // Detect if theme color is light
+  const tcClean = themeColor.replace('#', '');
+  const tcR = parseInt(tcClean.substring(0, 2), 16);
+  const tcG = parseInt(tcClean.substring(2, 4), 16);
+  const tcB = parseInt(tcClean.substring(4, 6), 16);
+  const brightness = (tcR * 299 + tcG * 587 + tcB * 114) / 1000;
+  const isLightTheme = brightness > 180;
+
+  const darkBg = isLightTheme ? darkenHex(themeColor, 0.05) : darkenHex(themeColor, 0.70);
+  const midBg = isLightTheme ? darkenHex(themeColor, 0.12) : darkenHex(themeColor, 0.50);
+
+  // Modal/sheet color helpers (portalled outside .vendor-page-root so CSS overrides don't apply)
+  const sheetBg = isLightTheme ? '#FFFFFF' : darkBg;
+  const sheetText = isLightTheme ? '#1a1a1a' : '#ffffff';
+  const sheetSubtle = isLightTheme ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+  const sheetBorder = isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+  const sheetMuted = isLightTheme ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
+  const handleColor = isLightTheme ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.3)';
 
   const vendorProducts = productCatalog.filter((p) =>
     vendor.productIds.includes(p.id) || p.brand?.toLowerCase() === vendor.name.toLowerCase()
@@ -80,10 +96,25 @@ export default function VendorPage() {
   });
 
   return (
-    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, padding: '24px' }}>
+    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, padding: '24px', color: isLightTheme ? '#1a1a1a' : '#ffffff' }}>
       <style>{`
         @media (min-width: 1024px) { .vendor-page-root { padding: 40px !important; } }
         .vendor-page-bottom::after { content: ''; display: block; height: 100px; }
+        ${isLightTheme ? `
+          .vendor-page-root .text-white { color: #1a1a1a !important; }
+          .vendor-page-root .text-white\\/90 { color: rgba(26,26,26,0.9) !important; }
+          .vendor-page-root .text-white\\/80 { color: rgba(26,26,26,0.8) !important; }
+          .vendor-page-root .text-white\\/70 { color: rgba(26,26,26,0.7) !important; }
+          .vendor-page-root .text-white\\/60 { color: rgba(26,26,26,0.6) !important; }
+          .vendor-page-root .text-white\\/50 { color: rgba(26,26,26,0.5) !important; }
+          .vendor-page-root .text-white\\/40 { color: rgba(26,26,26,0.4) !important; }
+          .vendor-page-root .text-white\\/35 { color: rgba(26,26,26,0.35) !important; }
+          .vendor-page-root .text-white\\/25 { color: rgba(26,26,26,0.25) !important; }
+          .vendor-page-root .border-white\\/15 { border-color: rgba(26,26,26,0.12) !important; }
+          .vendor-page-root .border-white\\/10 { border-color: rgba(26,26,26,0.1) !important; }
+          .vendor-page-root .border-white\\/8 { border-color: rgba(26,26,26,0.08) !important; }
+          .vendor-page-root .placeholder-white\\/40::placeholder { color: rgba(26,26,26,0.4) !important; }
+        ` : ''}
       `}</style>
 
       {/* ══════ EDGE-TO-EDGE HERO ══════ */}
@@ -283,6 +314,31 @@ export default function VendorPage() {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     />
+                    {/* Customizable Tag Badge */}
+                    {product.tag === 'CUSTOMIZABLE' && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '10px',
+                          left: '10px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          color: '#2D2D2D',
+                          fontSize: '9px',
+                          fontWeight: 800,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          lineHeight: 1,
+                          pointerEvents: 'none',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        }}
+                      >
+                        CUSTOMIZABLE
+                      </div>
+                    )}
                     {/* Wishlist Heart */}
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id); }}
@@ -325,6 +381,7 @@ export default function VendorPage() {
         onClose={() => setShowSidebar(false)}
         vendor={vendor}
         onShowReviews={() => { setShowSidebar(false); setTimeout(() => setShowReviews(true), 300); }}
+        isLightTheme={isLightTheme}
       />
 
       <VendorPromotionsModal
@@ -345,20 +402,20 @@ export default function VendorPage() {
           {/* Sheet */}
           <div
             className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showFilter ? 'translate-y-0 lg:translate-x-0 opacity-100' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'}`}
-            style={{ maxHeight: '70vh', backgroundColor: darkBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ maxHeight: '70vh', backgroundColor: sheetBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: `1px solid ${sheetBorder}` }}
           >
             {/* Drag Handle (mobile) */}
             <div className="flex justify-center pt-3 pb-1 lg:hidden">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'rgba(255,255,255,0.3)' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: handleColor }} />
             </div>
 
             {/* Header */}
             <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 24px 16px' }}>
-              <h3 className="text-white text-lg font-bold">Filter & Sort</h3>
+              <h3 style={{ color: sheetText, fontSize: '18px', fontWeight: 700 }}>Filter & Sort</h3>
               <button
                 onClick={() => setShowFilter(false)}
-                className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                style={{ borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.08)' }}
+                className="w-9 h-9 flex items-center justify-center transition-colors"
+                style={{ borderRadius: '9999px', backgroundColor: sheetSubtle, color: sheetText }}
               >
                 <X size={18} />
               </button>
@@ -368,18 +425,21 @@ export default function VendorPage() {
             <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '0 24px 24px' }}>
               {/* Category Filters */}
               <div style={{ marginBottom: '28px' }}>
-                <p className="text-white/50 text-[11px] font-bold uppercase tracking-wider" style={{ marginBottom: '12px' }}>Category</p>
+                <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Category</p>
                 <div className="flex flex-wrap gap-2">
                   {filterTabs.map((tab) => (
                     <button
                       key={tab}
                       onClick={() => { setActiveFilter(tab); setShowFilter(false); }}
-                      className="text-white text-xs font-bold transition-colors"
                       style={{
+                        color: sheetText,
+                        fontSize: '12px',
+                        fontWeight: 700,
                         padding: '10px 20px',
                         borderRadius: '9999px',
-                        backgroundColor: activeFilter === tab ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.06)',
-                        border: activeFilter === tab ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: activeFilter === tab ? (isLightTheme ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.25)') : sheetSubtle,
+                        border: activeFilter === tab ? `1px solid ${isLightTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}` : `1px solid ${sheetBorder}`,
+                        transition: 'all 0.2s',
                       }}
                     >
                       {tab}
@@ -390,13 +450,13 @@ export default function VendorPage() {
 
               {/* Sort Options */}
               <div style={{ marginBottom: '28px' }}>
-                <p className="text-white/50 text-[11px] font-bold uppercase tracking-wider" style={{ marginBottom: '12px' }}>Sort by</p>
+                <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Sort by</p>
                 <div className="flex flex-col gap-1">
                   {['Newest', 'Price: Low to High', 'Price: High to Low', 'Most Popular'].map((opt) => (
                     <button
                       key={opt}
-                      className="w-full text-left text-white text-sm font-medium hover:bg-white/8 transition-colors"
-                      style={{ padding: '12px 16px', borderRadius: '12px' }}
+                      className="w-full text-left transition-colors"
+                      style={{ color: sheetText, fontSize: '14px', fontWeight: 500, padding: '12px 16px', borderRadius: '12px' }}
                     >
                       {opt}
                     </button>
@@ -406,17 +466,20 @@ export default function VendorPage() {
 
               {/* Availability */}
               <div>
-                <p className="text-white/50 text-[11px] font-bold uppercase tracking-wider" style={{ marginBottom: '12px' }}>Availability</p>
+                <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Availability</p>
                 <div className="flex flex-wrap gap-2">
                   {['In-stock', 'On sale', 'New arrivals'].map((opt) => (
                     <button
                       key={opt}
-                      className="text-white text-xs font-bold transition-colors"
                       style={{
+                        color: sheetText,
+                        fontSize: '12px',
+                        fontWeight: 700,
                         padding: '10px 20px',
                         borderRadius: '9999px',
-                        backgroundColor: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: sheetSubtle,
+                        border: `1px solid ${sheetBorder}`,
+                        transition: 'all 0.2s',
                       }}
                     >
                       {opt}
@@ -430,8 +493,8 @@ export default function VendorPage() {
             <div className="shrink-0" style={{ padding: '0 24px 24px' }}>
               <button
                 onClick={() => setShowFilter(false)}
-                className="w-full text-white text-sm font-bold transition-colors hover:opacity-90"
-                style={{ padding: '14px', borderRadius: '16px', backgroundColor: vendor.themeColor || '#8D7F72' }}
+                className="w-full text-sm font-bold transition-colors hover:opacity-90"
+                style={{ padding: '14px', borderRadius: '16px', backgroundColor: isLightTheme ? '#1a1a1a' : (vendor.themeColor || '#8D7F72'), color: isLightTheme ? '#ffffff' : '#ffffff' }}
               >
                 Apply Filters
               </button>
@@ -450,40 +513,40 @@ export default function VendorPage() {
           />
           <div
             className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[420px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showReviews ? 'translate-y-0 lg:translate-x-0 opacity-100' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'}`}
-            style={{ maxHeight: '80vh', backgroundColor: darkBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ maxHeight: '80vh', backgroundColor: sheetBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: `1px solid ${sheetBorder}` }}
           >
             {/* Drag Handle (mobile) */}
             <div className="flex justify-center pt-3 pb-1 lg:hidden">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'rgba(255,255,255,0.3)' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: handleColor }} />
             </div>
 
             {/* Header */}
             <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 24px 16px' }}>
-              <h3 className="text-white text-lg font-bold">Reviews</h3>
+              <h3 style={{ color: sheetText, fontSize: '18px', fontWeight: 700 }}>Reviews</h3>
               <button
                 onClick={() => setShowReviews(false)}
-                className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                style={{ borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.08)' }}
+                className="w-9 h-9 flex items-center justify-center transition-colors"
+                style={{ borderRadius: '9999px', backgroundColor: sheetSubtle, color: sheetText }}
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Rating Summary */}
-            <div className="shrink-0" style={{ padding: '0 24px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="shrink-0" style={{ padding: '0 24px 20px', borderBottom: `1px solid ${sheetBorder}` }}>
               <div className="flex items-center gap-6">
                 <div>
-                  <div className="text-white font-bold" style={{ fontSize: '48px', lineHeight: 1 }}>{vendor.rating}</div>
-                  <p className="text-white/50 text-xs" style={{ marginTop: '4px' }}>{vendor.reviewCount} ratings</p>
+                  <div style={{ color: sheetText, fontSize: '48px', lineHeight: 1, fontWeight: 700 }}>{vendor.rating}</div>
+                  <p style={{ color: sheetMuted, fontSize: '12px', marginTop: '4px' }}>{vendor.reviewCount} ratings</p>
                 </div>
                 <div className="flex-1 flex flex-col gap-1.5">
                   {[5, 4, 3, 2, 1].map((star) => {
                     const pct = star === 5 ? 68 : star === 4 ? 22 : star === 3 ? 7 : star === 2 ? 2 : 1;
                     return (
                       <div key={star} className="flex items-center gap-2">
-                        <span className="text-white/50 text-[10px] font-bold w-3">{star}</span>
-                        <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: 'rgba(255,255,255,0.5)' }} />
+                        <span style={{ color: sheetMuted, fontSize: '10px', fontWeight: 700, width: '12px' }}>{star}</span>
+                        <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: sheetSubtle }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: sheetMuted }} />
                         </div>
                       </div>
                     );
@@ -504,35 +567,35 @@ export default function VendorPage() {
                 ].map((review, idx) => {
                   const reviewProduct = vendorProducts[review.productIdx % vendorProducts.length];
                   return (
-                  <div key={idx} style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', padding: '16px' }}>
+                  <div key={idx} style={{ backgroundColor: sheetSubtle, borderRadius: '16px', padding: '16px' }}>
                     {/* Product being reviewed */}
                     {reviewProduct && (
-                      <div className="flex items-center gap-3" style={{ marginBottom: '12px', padding: '8px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <div className="flex items-center gap-3" style={{ marginBottom: '12px', padding: '8px', borderRadius: '12px', backgroundColor: sheetSubtle }}>
                         <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '40px', height: '40px', borderRadius: '10px' }}>
                           <Image src={reviewProduct.image} alt={reviewProduct.title} fill className="object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-xs font-bold truncate">{reviewProduct.title}</p>
-                          <p className="text-white/40 text-[10px]">₦{reviewProduct.price.toLocaleString()}</p>
+                          <p style={{ color: sheetText, fontSize: '12px', fontWeight: 700 }} className="truncate">{reviewProduct.title}</p>
+                          <p style={{ color: sheetMuted, fontSize: '10px' }}>₦{reviewProduct.price.toLocaleString()}</p>
                         </div>
                       </div>
                     )}
                     <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center justify-center text-white text-[11px] font-bold" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                        <div className="flex items-center justify-center text-[11px] font-bold" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: sheetSubtle, color: sheetText }}>
                           {review.initial}
                         </div>
-                        <span className="text-white text-sm font-bold">{review.name}</span>
+                        <span style={{ color: sheetText, fontSize: '14px', fontWeight: 700 }}>{review.name}</span>
                       </div>
                       <div className="flex text-[10px] text-amber-400">
                         {Array.from({ length: review.rating }).map((_, i) => <span key={i}>★</span>)}
-                        {Array.from({ length: 5 - review.rating }).map((_, i) => <span key={i} className="text-white/20">★</span>)}
+                        {Array.from({ length: 5 - review.rating }).map((_, i) => <span key={i} style={{ color: sheetBorder }}>★</span>)}
                       </div>
                     </div>
-                    <p className="text-white/80 text-xs leading-relaxed" style={{ marginBottom: '10px' }}>{review.text}</p>
-                    <div className="flex items-center justify-between text-white/40 text-[10px]">
+                    <p style={{ color: isLightTheme ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', fontSize: '12px', lineHeight: 1.6, marginBottom: '10px' }}>{review.text}</p>
+                    <div className="flex items-center justify-between text-[10px]" style={{ color: sheetMuted }}>
                       <span>{review.date}</span>
-                      <button className="hover:text-white transition-colors">Helpful</button>
+                      <button className="transition-colors" style={{ color: sheetMuted }}>Helpful</button>
                     </div>
                   </div>
                   );

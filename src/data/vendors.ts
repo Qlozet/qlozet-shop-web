@@ -149,6 +149,7 @@ export const vendorCatalog: Vendor[] = [
     totalItemsSold: 95,
     collections: ['Adire', 'Indigo Collection', 'Modern Cuts'],
     promotions: [],
+    themeColor: '#FFFFFF', // White/Light theme
   },
   {
     id: 'vendor_11',
