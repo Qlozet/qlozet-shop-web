@@ -9,6 +9,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { productCatalog } from '@/data/products';
+import { vendorCatalog } from '@/data/vendors';
 import { useCustomization } from '@/hooks/useCustomization';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
@@ -49,6 +50,7 @@ export default function ProductDetailsPage() {
 
   const isCustomizable = product.tag === 'CUSTOMIZABLE';
   const isFabric = product.kind === 'fabric';
+  const matchedVendor = vendorCatalog.find((v) => v.productIds.includes(product.id));
   const customization = useCustomization({ mode: 'product', defaultSection: 'styles' });
 
   const isWish = wishlist.includes(product.id);
@@ -373,19 +375,42 @@ export default function ProductDetailsPage() {
             </div>
 
             {/* Brand */}
-            <h2
-              style={{
-                fontSize: '16px',
-                fontWeight: 800,
-                color: '#1A1A1A',
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                margin: 0,
-                lineHeight: 1.2,
-              }}
-            >
-              {product.brand}
-            </h2>
+            {matchedVendor ? (
+              <Link
+                href={`/vendor/${matchedVendor.id}`}
+                style={{ textDecoration: 'none' }}
+              >
+                <h2
+                  className="hover:opacity-70 transition-opacity"
+                  style={{
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    color: '#1A1A1A',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                    margin: 0,
+                    lineHeight: 1.2,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {product.brand}
+                </h2>
+              </Link>
+            ) : (
+              <h2
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  color: '#1A1A1A',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+                {product.brand}
+              </h2>
+            )}
 
             {/* Title */}
             <p style={{ fontSize: '14px', color: '#666', margin: 0, lineHeight: 1.4 }}>

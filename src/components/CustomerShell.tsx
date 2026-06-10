@@ -46,6 +46,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
 
   const isAuthPage = pathname.startsWith('/auth');
   const isSearchPage = pathname.startsWith('/search');
+  const isStudio = pathname.startsWith('/bespoke/studio');
+  const isVendorPage = pathname.startsWith('/vendor');
 
   if (isAuthPage) {
     return <div className="min-h-screen bg-[#F5F5F5] relative overflow-hidden">{children}</div>;
@@ -77,17 +79,16 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
     { href: user ? '/profile' : '/auth/login', label: 'PROFILE', icon: User, match: pathname === '/profile' },
   ];
 
-  const isStudio = pathname.startsWith('/bespoke/studio');
 
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════════
           MOBILE LAYOUT (< lg)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="lg:hidden flex flex-col min-h-screen bg-white text-[#1a1a1a] font-body hide-scrollbar">
+      <div className={`lg:hidden flex flex-col min-h-screen ${isVendorPage ? 'bg-[#1a1206]' : 'bg-white'} text-[#1a1a1a] font-body hide-scrollbar`}>
         
         {/* ── Mobile Top Bar ── */}
-        {!isStudio && (
+        {!isStudio && !isVendorPage && (
         <header
           className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 bg-white/95 backdrop-blur-md"
           style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid #F2F2F2' }}
@@ -118,10 +119,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
 
         {/* ── Mobile Content ── */}
         <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio ? '0' : '72px' }}>
-          <div style={{ padding: isStudio ? '0' : '24px 20px 20px 20px' }}>
+          <div style={{ padding: isStudio || isVendorPage ? '0' : '24px 20px 20px 20px' }}>
             {children}
           </div>
-          {!isSearchPage && !isStudio && (
+          {!isSearchPage && !isStudio && !isVendorPage && (
             <div style={{ padding: '20px' }}>
               <Footer />
             </div>
@@ -331,12 +332,12 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         </aside>
 
         {/* Main Structural Container - Big White Card */}
-        <div className={`flex-1 bg-white rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative border border-gray-200 hide-scrollbar`}>
-          <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio ? '0' : '40px' }}>
+        <div className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'bg-white border border-gray-200'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}>
+          <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio || isVendorPage ? '0' : '40px' }}>
             <div className="flex-1 flex flex-col">
               {children}
             </div>
-            {!isSearchPage && !isStudio && (
+            {!isSearchPage && !isStudio && !isVendorPage && (
               <div className="w-full" style={{ marginTop: 'auto', paddingTop: '80px' }}>
                 <Footer />
               </div>

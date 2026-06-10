@@ -121,7 +121,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
       >
         {/* Vendor Logo — left */}
         <Link
-          href={`/products?search=${encodeURIComponent(vendor.name)}`}
+          href={`/vendor/${vendor.id}`}
           className="transition-transform hover:scale-110"
           onClick={(e) => e.stopPropagation()}
         >

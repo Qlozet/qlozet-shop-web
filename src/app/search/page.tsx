@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { productCatalog } from '@/data/products';
+import { vendorCatalog } from '@/data/vendors';
 import {
   Search,
   List,
@@ -14,16 +15,17 @@ import {
   Star,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
-// ─── Vendor data ──────────────────────────────────────────────
-const DEMO_VENDORS = [
-  { id: 'v1', name: 'POPWAVE', rating: 4.4, reviews: 500, image: '/image/ankara.png', logo: '' },
-  { id: 'v2', name: 'EBELEWE BROWN', rating: 4.4, reviews: 500, image: '/image/bespoke-agbada-lime.webp', logo: 'EB' },
-  { id: 'v3', name: 'AFRICANA COUTURE', rating: 4.4, reviews: 500, image: '/image/bespoke-agbada-orange.webp', logo: '' },
-  { id: 'v4', name: 'GARM ISLAND', rating: 4.4, reviews: 500, image: '/image/bespoke-kaftan-brown-1.png', logo: 'GI' },
-  { id: 'v5', name: 'QLOZET', rating: 4.4, reviews: 500, image: '/image/qlozet-bag.png', logo: '' },
-  { id: 'v6', name: 'ROCK HOUSE', rating: 4.4, reviews: 500, image: '/image/bag.webp', logo: '' },
-];
+// ─── Vendor data — use real vendors ───────────────────────────
+const DEMO_VENDORS = vendorCatalog.slice(0, 6).map((v) => ({
+  id: v.id,
+  name: v.name,
+  rating: v.rating,
+  reviews: v.reviewCount,
+  image: v.heroImage,
+  logo: v.logoStyle === 'initials' ? v.logoInitials : '',
+}));
 
 // ─── LLM Demo Response ───────────────────────────────────────
 interface LLMSection {
@@ -86,7 +88,7 @@ function SearchContent() {
         </h2>
         <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px', paddingBottom: '4px' }}>
           {DEMO_VENDORS.map((vendor) => (
-            <div key={vendor.id} className="flex flex-col items-center flex-shrink-0" style={{ width: '130px', gap: '10px' }}>
+            <Link key={vendor.id} href={`/vendor/${vendor.id}`} className="flex flex-col items-center flex-shrink-0 transition-transform hover:-translate-y-1" style={{ width: '130px', gap: '10px', textDecoration: 'none' }}>
               {/* Vendor image */}
               <div className="relative w-full overflow-hidden bg-[#F5F5F5]" style={{ height: '140px', borderRadius: '14px' }}>
                 <Image src={vendor.image} alt={vendor.name} fill style={{ objectFit: 'cover' }} />
@@ -107,7 +109,7 @@ function SearchContent() {
                   <span style={{ fontSize: '10px', color: '#999' }}>({vendor.reviews})</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
