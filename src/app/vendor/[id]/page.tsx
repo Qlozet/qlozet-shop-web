@@ -9,6 +9,7 @@ import { useApp } from '@/context/AppContext';
 import { vendorCatalog } from '@/data/vendors';
 import { productCatalog } from '@/data/products';
 import { VendorSidebarModal } from '@/components/VendorSidebarModal';
+import { VendorPromotionsModal } from '@/components/VendorPromotionsModal';
 import {
   Search,
   SlidersHorizontal,
@@ -16,7 +17,8 @@ import {
   Menu,
   Star,
   Heart,
-  X
+  X,
+  Tag
 } from 'lucide-react';
 
 /**
@@ -46,6 +48,7 @@ export default function VendorPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [showPromo, setShowPromo] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,6 +129,29 @@ export default function VendorPage() {
             {isFollowing ? 'Following' : 'Follow'}
           </button>
         </div>
+
+        {/* Promo Banner — top center */}
+        {vendor.promotions && vendor.promotions.length > 0 && (
+          <div className="absolute z-20 left-0 right-0 flex justify-center" style={{ top: '80px' }}>
+            <button
+              onClick={() => setShowPromo(true)}
+              className="flex items-center gap-2 backdrop-blur-md hover:scale-105 active:scale-95 transition-all"
+              style={{
+                padding: '8px 20px',
+                borderRadius: '9999px',
+                backgroundColor: vendor.promotions[0].color || 'rgba(220,38,38,0.85)',
+                color: '#FFF',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.2)',
+              }}
+            >
+              <Tag size={14} strokeWidth={2.5} />
+              <span className="text-xs font-bold" style={{ maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {vendor.promo?.label || vendor.promotions[0].title}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Center Title & Floating Pills */}
         <div className="absolute inset-0 flex flex-col items-center justify-end pointer-events-none" style={{ paddingBottom: '48px' }}>
@@ -295,6 +321,12 @@ export default function VendorPage() {
         onClose={() => setShowSidebar(false)}
         vendor={vendor}
         onShowReviews={() => { setShowSidebar(false); setTimeout(() => setShowReviews(true), 300); }}
+      />
+
+      <VendorPromotionsModal
+        isOpen={showPromo}
+        onClose={() => setShowPromo(false)}
+        promotions={vendor.promotions || []}
       />
 
       {/* ══════ FILTER BOTTOM SHEET ══════ */}
