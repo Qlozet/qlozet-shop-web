@@ -53,7 +53,6 @@ export function BrowseCategoriesGrid({ categories }: BrowseCategoriesGridProps) 
                     width: i === 0 ? '55px' : '45px',
                     height: i === 0 ? '70px' : '60px',
                     borderRadius: '8px',
-                    border: '1.5px solid rgba(255,255,255,0.2)',
                     background: '#F5F3F0',
                   }}
                 >
