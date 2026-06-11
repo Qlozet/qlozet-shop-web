@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -125,10 +125,34 @@ export default function ProductDetailsPage() {
       if (longPressTimer.current) clearTimeout(longPressTimer.current);
       return;
     }
-    e.preventDefault();
     const touch = e.touches[0];
     setZoomPos(getRelativePos(touch.clientX, touch.clientY));
   }, [isZoomed, getRelativePos]);
+
+  // Lock page scroll while zoomed & attach non-passive touchmove to prevent scroll
+  useEffect(() => {
+    if (!isZoomed) return;
+
+    // Lock body scroll
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // Attach non-passive native listener so preventDefault actually works on mobile
+    const container = imageContainerRef.current;
+    const nativeTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    if (container) {
+      container.addEventListener('touchmove', nativeTouchMove, { passive: false });
+    }
+
+    return () => {
+      document.body.style.overflow = prev;
+      if (container) {
+        container.removeEventListener('touchmove', nativeTouchMove);
+      }
+    };
+  }, [isZoomed]);
 
   const isCustomizable = product.tag === 'CUSTOMIZABLE';
   const isFabric = product.kind === 'fabric';
