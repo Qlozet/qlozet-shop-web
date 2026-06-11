@@ -8,11 +8,18 @@ import { HERO_BANNERS, BROWSE_CATEGORIES, getTrending, getWhatsNew, getTopRated 
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid';
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
+import { vendorCatalog } from '@/data/vendors';
+import { VendorCarousel } from '@/components/discover/VendorCarousel';
 
 export default function DiscoverPage() {
   const { gender, setGender } = useApp();
 
   const allProducts = productCatalog;
+
+  // Top 5 vendors sorted by rating, then followers
+  const worthTheHypeVendors = [...vendorCatalog]
+    .sort((a, b) => b.rating - a.rating || b.followers - a.followers)
+    .slice(0, 5);
 
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '32px' }}>
@@ -35,6 +42,9 @@ export default function DiscoverPage() {
 
       {/* Browse Categories Grid */}
       <BrowseCategoriesGrid categories={BROWSE_CATEGORIES} />
+
+      {/* Worth the Hype */}
+      <VendorCarousel title="Worth the Hype" vendors={worthTheHypeVendors} allProducts={allProducts} />
 
       {/* Trending */}
       <ProductCarousel title="Trending" products={getTrending(allProducts)} />

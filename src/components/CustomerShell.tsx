@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
@@ -43,6 +43,50 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  // Track top search visibility on Home page gender selection screen
+  const [isTopSearchVisible, setIsTopSearchVisible] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (pathname !== '/') {
+      setIsTopSearchVisible(false);
+      return;
+    }
+
+    let observer: IntersectionObserver | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const setupObserver = () => {
+      const el = document.getElementById('homepage-top-search');
+      const container = scrollContainerRef.current;
+      if (el && container) {
+        observer = new IntersectionObserver(
+          ([entry]) => {
+            setIsTopSearchVisible(entry.isIntersecting);
+          },
+          { 
+            root: container,
+            threshold: 0 
+          }
+        );
+        observer.observe(el);
+      } else {
+        timeoutId = setTimeout(setupObserver, 100);
+      }
+    };
+
+    setupObserver();
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [pathname]);
 
   const isAuthPage = pathname.startsWith('/auth');
   const isSearchPage = pathname.startsWith('/search');
@@ -333,7 +377,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         </aside>
 
         {/* Main Structural Container - Big White Card */}
-        <div className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'bg-white border border-gray-200'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}>
+        <div 
+          ref={scrollContainerRef}
+          className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'bg-white border border-gray-200'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
+        >
           <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio || isVendorPage ? '0' : '40px' }}>
             <div className="flex-1 flex flex-col">
               {children}
@@ -353,9 +400,12 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               bottom: '24px',
               padding: '0 40px',
               pointerEvents: 'none',
+              opacity: isTopSearchVisible ? 0 : 1,
+              transform: isTopSearchVisible ? 'translateY(100px)' : 'translateY(0)',
+              transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
-            <div className="w-full max-w-[600px] relative" style={{ pointerEvents: 'auto' }}>
+            <div className="w-full max-w-[600px] relative" style={{ pointerEvents: isTopSearchVisible ? 'none' : 'auto' }}>
               
               {/* Drop-Up Suggestions — appears ABOVE the search bar */}
               <div

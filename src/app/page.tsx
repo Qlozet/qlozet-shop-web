@@ -145,7 +145,7 @@ export default function HomePage() {
         </div>
 
         {/* 2. SEARCH BAR & DROPDOWN — hidden on mobile (shell header has search) */}
-        <div className="hidden lg:block w-full max-w-[600px] relative -mt-4 z-30">
+        <div id="homepage-top-search" className="hidden lg:block w-full max-w-[600px] relative -mt-4 z-30">
           <form
             onSubmit={handleSearchSubmit}
             className={`w-full bg-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center transition-all duration-300 relative z-40 ${isSearchFocused ? 'shadow-[0_14px_45px_rgba(0,0,0,0.12)]' : ''}`}
