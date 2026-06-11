@@ -40,7 +40,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
       </>
     ) : (
       <>
-        <span>GENERATE STYLE</span>
+        <span>GENERATE</span>
         <div className="flex items-center gap-1" style={{ opacity: 0.8 }}>
           <span style={{ fontSize: '14px' }}>🪙</span>
           <span>{GENERATION_COST}</span>

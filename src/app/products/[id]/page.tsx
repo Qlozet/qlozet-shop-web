@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { productCatalog } from '@/data/products';
 import { vendorCatalog } from '@/data/vendors';
 import { useCustomization } from '@/hooks/useCustomization';
+import { SILHOUETTES, NECKLINES, SLEEVES, FABRICS, ACCESSORIES } from '@/data/studio-options';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
 import { ReserveFabricModal } from '@/components/studio/ReserveFabricModal';
@@ -47,6 +48,87 @@ export default function ProductDetailsPage() {
   const [showCustomize, setShowCustomize] = useState(false);
   const [showUseFabric, setShowUseFabric] = useState(false);
   const [showReserve, setShowReserve] = useState(false);
+  const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
+
+  // Zoom state
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const lastTapTime = useRef(0);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  const getRelativePos = useCallback((clientX: number, clientY: number) => {
+    if (!imageContainerRef.current) return { x: 50, y: 50 };
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+    return { x, y };
+  }, []);
+
+  // Desktop: double-click to toggle zoom
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isZoomed) {
+      setZoomPos(getRelativePos(e.clientX, e.clientY));
+    }
+    setIsZoomed(prev => !prev);
+  }, [isZoomed, getRelativePos]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isZoomed) return;
+    setZoomPos(getRelativePos(e.clientX, e.clientY));
+  }, [isZoomed, getRelativePos]);
+
+  // Mobile: double-tap to toggle zoom, OR long-press to zoom (release exits)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressActive = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const pos = getRelativePos(touch.clientX, touch.clientY);
+    longPressActive.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressActive.current = true;
+      setZoomPos(pos);
+      setIsZoomed(true);
+    }, 400);
+  }, [getRelativePos]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+
+    // If it was a long-press zoom, just exit on release
+    if (longPressActive.current) {
+      longPressActive.current = false;
+      setIsZoomed(false);
+      return;
+    }
+
+    // Otherwise check for double-tap
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+
+    if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      if (!isZoomed) {
+        setZoomPos(getRelativePos(touch.clientX, touch.clientY));
+      }
+      setIsZoomed(prev => !prev);
+      lastTapTime.current = 0;
+    } else {
+      lastTapTime.current = now;
+    }
+  }, [isZoomed, getRelativePos]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isZoomed) {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      return;
+    }
+    e.preventDefault();
+    const touch = e.touches[0];
+    setZoomPos(getRelativePos(touch.clientX, touch.clientY));
+  }, [isZoomed, getRelativePos]);
 
   const isCustomizable = product.tag === 'CUSTOMIZABLE';
   const isFabric = product.kind === 'fabric';
@@ -133,133 +215,209 @@ export default function ProductDetailsPage() {
           <div className="flex flex-col" style={{ gap: '16px' }}>
             {/* Main Image */}
             <div
-              className="relative overflow-hidden"
+              ref={imageContainerRef}
+              className="relative overflow-hidden select-none"
               style={{
                 aspectRatio: '3 / 4',
                 borderRadius: '20px',
                 background: '#F5F5F5',
+                cursor: isZoomed ? 'zoom-out' : 'zoom-in',
+                touchAction: isZoomed ? 'none' : 'auto',
               }}
+              onDoubleClick={handleDoubleClick}
+              onMouseMove={handleMouseMove}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
+              {/* Normal Image */}
               <Image
                 src={gallery[activeImageIdx]}
                 alt={product.title}
                 fill
-                style={{ objectFit: 'cover' }}
+                style={{
+                  objectFit: 'cover',
+                  opacity: isZoomed ? 0 : 1,
+                  transition: 'opacity 0.2s',
+                }}
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"
+                draggable={false}
               />
 
-              {/* ── Customization Hotspots ── */}
-              {isCustomizable && (
-                <>
-                  {/* Neckline hotspot — upper center */}
-                  <div
-                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
-                    style={{ top: '22%', left: '50%', transform: 'translateX(-50%)' }}
-                  >
-                    <div className="relative flex items-center">
-                      <div
-                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
-                      />
-                      <div
-                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                      >
-                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                          <div>
-                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Neckline</p>
-                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>+ ₦5,000</p>
-                          </div>
-                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                            <span style={{ fontSize: '18px' }}>👗</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              {/* Zoomed Image Layer */}
+              <div
+                className="absolute inset-0 transition-opacity duration-200"
+                style={{
+                  opacity: isZoomed ? 1 : 0,
+                  pointerEvents: isZoomed ? 'auto' : 'none',
+                  backgroundImage: `url(${gallery[activeImageIdx]})`,
+                  backgroundSize: '250%',
+                  backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                  backgroundRepeat: 'no-repeat',
+                }}
+              />
 
-                  {/* Sleeves hotspot — left center */}
-                  <div
-                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
-                    style={{ top: '38%', left: '18%' }}
-                  >
-                    <div className="relative flex items-center">
-                      <div
-                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.3s' }}
-                      />
-                      <div
-                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                        style={{ transitionDelay: '0.1s' }}
-                      >
-                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                          <div>
-                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Sleeves</p>
-                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>Included</p>
-                          </div>
-                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                            <span style={{ fontSize: '18px' }}>💪</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              {/* Zoom indicator badge */}
+              <div
+                className="absolute flex items-center justify-center transition-all duration-300"
+                style={{
+                  bottom: '14px',
+                  left: '14px',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  background: isZoomed ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)',
+                  backdropFilter: 'blur(6px)',
+                  gap: '6px',
+                  opacity: isZoomed ? 1 : 0.7,
+                  zIndex: 20,
+                  pointerEvents: 'none',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  {isZoomed ? (
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  ) : (
+                    <>
+                      <line x1="11" y1="8" x2="11" y2="14" />
+                      <line x1="8" y1="11" x2="14" y2="11" />
+                    </>
+                  )}
+                </svg>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: '#FFFFFF', letterSpacing: '0.04em' }}>
+                  {isZoomed ? 'ZOOMED' : 'DOUBLE TAP TO ZOOM'}
+                </span>
+              </div>
 
-                  {/* Fabric hotspot — center body */}
-                  <div
-                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
-                    style={{ top: '55%', left: '50%', transform: 'translateX(-50%)' }}
-                  >
-                    <div className="relative flex items-center">
-                      <div
-                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.6s' }}
-                      />
-                      <div
-                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                        style={{ transitionDelay: '0.2s' }}
-                      >
-                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                          <div>
-                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Fabric</p>
-                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>+ ₦8,000</p>
-                          </div>
-                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                            <span style={{ fontSize: '18px' }}>🧵</span>
+              {/* ── Customization Hotspots (dynamic from selected options) ── */}
+              {isCustomizable && !isZoomed && (() => {
+                const selNeck = NECKLINES.find((n) => n.id === customization.selectedNeckline);
+                const selSleeve = SLEEVES.find((s) => s.id === customization.selectedSleeve);
+                const selFabric = FABRICS.find((f) => f.id === customization.selectedFabric);
+                const selAccs = customization.selectedAccessories.map((id) => ACCESSORIES.find((a) => a.id === id)).filter(Boolean);
+                return (
+                  <>
+                    {/* Neckline hotspot — upper center */}
+                    <div
+                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
+                      style={{ top: '22%', left: '50%', transform: 'translateX(-50%)' }}
+                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'neckline' ? null : 'neckline'); }}
+                    >
+                      <div className="relative flex items-center">
+                        <div
+                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
+                        />
+                        <div
+                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'neckline' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                        >
+                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                            <div>
+                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selNeck?.label || 'Neckline'}</p>
+                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selNeck?.extraCost ? `+ ₦${selNeck.extraCost.toLocaleString()}` : 'Included'}</p>
+                            </div>
+                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                              <span style={{ fontSize: '18px' }}>{selNeck?.emoji || '👗'}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Accessories hotspot — waist area */}
-                  <div
-                    className="absolute z-10 flex items-center transition-all duration-500 ease-out"
-                    style={{ top: '72%', left: '45%' }}
-                  >
-                    <div className="relative flex items-center">
-                      <div
-                        className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.9s' }}
-                      />
-                      <div
-                        className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                        style={{ transitionDelay: '0.3s' }}
-                      >
-                        <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                          <div>
-                            <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>Accessories</p>
-                            <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>+ ₦3,500</p>
-                          </div>
-                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                            <span style={{ fontSize: '18px' }}>🪢</span>
+                    {/* Sleeves hotspot — left center */}
+                    <div
+                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
+                      style={{ top: '38%', left: '18%' }}
+                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'sleeves' ? null : 'sleeves'); }}
+                    >
+                      <div className="relative flex items-center">
+                        <div
+                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.3s' }}
+                        />
+                        <div
+                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'sleeves' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                          style={{ transitionDelay: '0.1s' }}
+                        >
+                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                            <div>
+                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selSleeve?.label || 'Sleeves'}</p>
+                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selSleeve?.extraCost ? `+ ₦${selSleeve.extraCost.toLocaleString()}` : 'Included'}</p>
+                            </div>
+                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                              <span style={{ fontSize: '18px' }}>{selSleeve?.emoji || '💪'}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
+
+                    {/* Fabric hotspot — center body */}
+                    <div
+                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
+                      style={{ top: '55%', left: '50%', transform: 'translateX(-50%)' }}
+                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'fabric' ? null : 'fabric'); }}
+                    >
+                      <div className="relative flex items-center">
+                        <div
+                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.6s' }}
+                        />
+                        <div
+                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'fabric' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                          style={{ transitionDelay: '0.2s' }}
+                        >
+                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                            <div>
+                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selFabric?.name || 'Fabric'}</p>
+                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selFabric?.extraCost ? `+ ₦${selFabric.extraCost.toLocaleString()}` : 'Included'}</p>
+                            </div>
+                            {selFabric ? (
+                              <div className="relative overflow-hidden rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                                <Image src={selFabric.image} alt={selFabric.name} fill className="object-cover" sizes="32px" />
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                                <span style={{ fontSize: '18px' }}>🧵</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Accessories hotspot — waist area */}
+                    <div
+                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
+                      style={{ top: '72%', left: '45%' }}
+                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'accessories' ? null : 'accessories'); }}
+                    >
+                      <div className="relative flex items-center">
+                        <div
+                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
+                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.9s' }}
+                        />
+                        <div
+                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'accessories' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                          style={{ transitionDelay: '0.3s' }}
+                        >
+                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                            <div>
+                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selAccs.length > 0 ? selAccs.map((a) => a!.name).join(', ') : 'Accessories'}</p>
+                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selAccs.length > 0 ? `+ ₦${selAccs.reduce((sum, a) => sum + (a!.extraCost || 0), 0).toLocaleString()}` : 'None selected'}</p>
+                            </div>
+                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                              <span style={{ fontSize: '18px' }}>{selAccs.length > 0 ? selAccs[0]!.emoji : '🪢'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
               {/* Carousel Arrows */}
               <button
                 onClick={prevImage}
@@ -482,36 +640,110 @@ export default function ProductDetailsPage() {
               </div>
             </div>
 
-            {/* Product Variant Thumbnails */}
-            <div className="flex" style={{ gap: '8px' }}>
-              {gallery.slice(0, 5).map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImageIdx(idx)}
-                  className="relative overflow-hidden transition-all"
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '10px',
-                    border:
-                      idx === activeImageIdx
-                        ? '2px solid #1A1A1A'
-                        : '1px solid #E5E5E5',
-                    background: '#F5F5F5',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Image
-                    src={img}
-                    alt={`Variant ${idx + 1}`}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    sizes="52px"
-                  />
-                </button>
-              ))}
-            </div>
+            {/* Selected Customizations Summary — only for customizable clothing */}
+            {isCustomizable && (
+              <div className="flex flex-col" style={{ gap: '10px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Selected Customizations
+                </span>
+                <div className="flex" style={{ gap: '8px' }}>
+                  {/* Silhouette */}
+                  {(() => {
+                    const sil = SILHOUETTES.find((s) => s.id === customization.selectedSilhouette);
+                    return sil ? (
+                      <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            borderRadius: '12px',
+                            background: '#F5F5F5',
+                            border: '2px solid #1A1A1A',
+                          }}
+                        >
+                          <span style={{ fontSize: '22px' }}>{sil.emoji}</span>
+                        </div>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{sil.label}</span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Neckline */}
+                  {(() => {
+                    const neck = NECKLINES.find((n) => n.id === customization.selectedNeckline);
+                    return neck ? (
+                      <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            borderRadius: '12px',
+                            background: '#F5F5F5',
+                            border: '2px solid #1A1A1A',
+                          }}
+                        >
+                          <span style={{ fontSize: '22px' }}>{neck.emoji}</span>
+                        </div>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{neck.label}</span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Sleeve */}
+                  {(() => {
+                    const slv = SLEEVES.find((s) => s.id === customization.selectedSleeve);
+                    return slv ? (
+                      <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            borderRadius: '12px',
+                            background: '#F5F5F5',
+                            border: '2px solid #1A1A1A',
+                          }}
+                        >
+                          <span style={{ fontSize: '22px' }}>{slv.emoji}</span>
+                        </div>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{slv.label}</span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Selected Accessories */}
+                  {customization.selectedAccessories.map((accId) => {
+                    const acc = ACCESSORIES.find((a) => a.id === accId);
+                    return acc ? (
+                      <div key={accId} className="flex flex-col items-center" style={{ gap: '4px' }}>
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            borderRadius: '12px',
+                            background: '#F0EDFF',
+                            border: '2px solid #7C3AED',
+                          }}
+                        >
+                          <span style={{ fontSize: '22px' }}>{acc.emoji}</span>
+                        </div>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#5B21B6', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{acc.name}</span>
+                      </div>
+                    ) : null;
+                  })}
+
+                  {/* Empty state */}
+                  {!customization.selectedSilhouette && !customization.selectedNeckline && !customization.selectedSleeve && customization.selectedAccessories.length === 0 && (
+                    <span style={{ fontSize: '12px', color: '#AAA', fontStyle: 'italic' }}>
+                      Tap &quot;Customize Outfit&quot; to select styles
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Size Guide Link */}
             {product.kind === 'clothing' && (

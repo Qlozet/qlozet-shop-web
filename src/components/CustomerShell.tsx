@@ -74,7 +74,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   // Bottom tab items for mobile
   const mobileTabItems = [
     { href: '/', label: 'HOME', icon: Home, match: pathname === '/' },
-    { href: '/products', label: 'DISCOVER', icon: Compass, match: pathname.startsWith('/products') },
+    { href: '/discover', label: 'DISCOVER', icon: Compass, match: pathname.startsWith('/discover') },
     { href: '/bespoke', label: 'BESPOKE', icon: Scissors, match: pathname.startsWith('/bespoke') },
     { href: '/cart', label: 'CART', icon: ShoppingCart, match: pathname === '/cart' },
     { href: user ? '/profile' : '/auth/login', label: 'PROFILE', icon: User, match: pathname === '/profile' },
@@ -288,10 +288,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             </Link>
             
             <Link 
-              href="/products" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/products') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              href="/discover" 
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/discover') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
-              <Compass size={22} fill={pathname.startsWith('/products') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/products') ? 0 : 2} />
+              <Compass size={22} fill={pathname.startsWith('/discover') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/discover') ? 0 : 2} />
             </Link>
 
             <Link 

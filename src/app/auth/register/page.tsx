@@ -58,10 +58,10 @@ export default function RegisterPage() {
   }, [slides.length]);
 
   useEffect(() => {
-    if (user) {
+    if (user && step !== 'otp') {
       router.push('/');
     }
-  }, [user, router]);
+  }, [user, router, step]);
 
   // Step progress
   const stepLabels: RegisterStep[] = ['email', 'personal', 'password', 'otp'];

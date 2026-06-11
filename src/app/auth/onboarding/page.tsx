@@ -5,186 +5,294 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
-import { 
-  Percent, 
-  Bell, 
-  ShoppingBag, 
-  Check, 
-  X,
-  Sparkles
-} from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 type OnboardStep = 1 | 2 | 3;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useApp();
+  const { user, setGender, setGenderSelected } = useApp();
   const [currentStep, setCurrentStep] = useState<OnboardStep>(1);
 
-  // STEP 1 States (Notifications)
-  const [notifPreferences, setNotifPreferences] = useState({
-    discounts: true,
-    features: false,
-    collections: true,
-  });
+  // STEP 2: Gender
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
 
-  // STEP 2 States (Target Gender)
-  const [selectedGender, setSelectedGender] = useState<'man' | 'woman' | null>(null);
-
-  // STEP 3 States (Aesthetics Grid)
+  // STEP 3: Aesthetics
   const [selectedAesthetics, setSelectedAesthetics] = useState<string[]>([]);
 
   const aestheticsList = [
-    { id: 'traditional', label: 'Traditional Agbada', image: '/image/agbada-outfit.png' },
+    { id: 'traditional', label: 'Traditional', image: '/image/agbada-outfit.png' },
     { id: 'ankara', label: 'Ankara Prints', image: '/image/ankara.png' },
-    { id: 'kaftan', label: 'Turkish Kaftans', image: '/image/bespoke-kaftan-brown-1.png' },
-    { id: 'evening', label: 'Bespoke Evening Gowns', image: '/image/bespoke-dress-1.png' },
-    { id: 'corporate', label: 'Corporate Minimalist', image: '/image/bespoke-kaftan-milk-1.png' },
-    { id: 'fabrics', label: 'Lace & Cotton Fabrics', image: '/image/fabric-1.jpg' },
+    { id: 'kaftan', label: 'Kaftans', image: '/image/bespoke-kaftan-brown-1.png' },
+    { id: 'evening', label: 'Evening Wear', image: '/image/bespoke-dress-1.png' },
+    { id: 'corporate', label: 'Corporate', image: '/image/bespoke-kaftan-milk-1.png' },
+    { id: 'streetwear', label: 'Streetwear', image: '/image/bespoke-ankara-2.png' },
+    { id: 'fabrics', label: 'Fabrics', image: '/image/fabric-1.jpg' },
+    { id: 'accessories', label: 'Accessories', image: '/image/qlozet-bag.png' },
   ];
 
   const handleToggleAesthetic = (id: string) => {
-    setSelectedAesthetics(prev => 
+    setSelectedAesthetics(prev =>
       prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
     );
   };
 
-  const handleStep1Continue = () => {
+  const handleWelcomeContinue = () => {
     setCurrentStep(2);
   };
 
-  const handleStep2Continue = () => {
+  const handleGenderContinue = () => {
     if (selectedGender) {
+      setGender(selectedGender);
+      setGenderSelected(true);
       setCurrentStep(3);
     }
   };
 
   const handleFinishOnboarding = () => {
-    // Save selections if needed, and route home
     router.push('/');
   };
 
-  return (
-    <div className="flex min-h-screen bg-[#0B0A0F] text-white">
-      
-      {/* LEFT SCREEN - Custom Tribal Geometric Motif & Brand Identity */}
-      <div className="hidden lg:block w-[40%] bg-[#261103] relative overflow-hidden">
-        {/* Render geometric CSS background */}
-        <div className="tribal-pattern-bg" style={{ opacity: 0.35 }}></div>
+  const handleSkipAesthetics = () => {
+    router.push('/');
+  };
 
-        {/* QLOZET Logo */}
+  const firstName = user?.name?.split(' ')[0] || 'there';
+
+  return (
+    <div className="flex min-h-screen" style={{ background: '#F7F7F7' }}>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          DESKTOP: LEFT PANEL — Hero image
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="hidden lg:block w-[45%] relative overflow-hidden" style={{ background: '#0B0A0F' }}>
+        {/* Background images — rotate per step */}
+        {[
+          '/image/seun.png',
+          '/image/slim-girl-1.jpg',
+          '/image/bespoke-dress-1.png',
+        ].map((img, idx) => (
+          <div
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-1000 ${idx + 1 === currentStep ? 'opacity-40' : 'opacity-0'}`}
+          >
+            <Image
+              src={img}
+              alt="Onboarding backdrop"
+              fill
+              style={{ objectFit: 'cover', objectPosition: 'center 20%' }}
+              priority={idx === 0}
+            />
+          </div>
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0A0F] via-transparent to-[#0B0A0F]/60" />
+
+        {/* Logo */}
         <div className="absolute left-16 top-16 z-20">
           <QlozetLogo width={90} color="#FFFFFF" />
         </div>
 
-        {/* Floating background details */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#121118] via-transparent to-transparent"></div>
+        {/* Step caption */}
+        <div className="absolute left-16 bottom-24 right-16 z-20 flex flex-col gap-4">
+          <h2
+            className="font-extrabold max-w-[400px] tracking-tight leading-tight uppercase"
+            style={{ fontSize: 'clamp(24px, 3vw, 36px)', color: '#FFFFFF', fontFamily: 'var(--font-display)' }}
+          >
+            {currentStep === 1 && 'YOUR STYLE, YOUR WAY'}
+            {currentStep === 2 && 'TAILORED TO YOUR TASTE'}
+            {currentStep === 3 && 'CURATE YOUR FEED'}
+          </h2>
+          {/* Dots */}
+          <div className="flex gap-2">
+            {[1, 2, 3].map((s) => (
+              <span
+                key={s}
+                className="rounded-full transition-all duration-500"
+                style={{
+                  height: '10px',
+                  width: s === currentStep ? '32px' : '10px',
+                  background: s === currentStep ? '#462814' : 'rgba(255,255,255,0.2)',
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* RIGHT SCREEN - Clean White Theme Selection Wizard */}
-      <div className="w-full lg:w-[60%] bg-white text-[#121118] flex flex-col lg:items-center lg:justify-center relative" style={{ padding: '0' }}>
-        
+      {/* ═══════════════════════════════════════════════════════════════
+          RIGHT PANEL — Form Content
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="w-full lg:w-[55%] bg-white text-[#121118] flex flex-col relative">
+
         {/* ── MOBILE VIEW ── */}
         <div className="lg:hidden flex flex-col min-h-screen">
-          {/* Mobile Content */}
           <div className="flex-1 flex flex-col" style={{ padding: '24px' }}>
 
             {/* Progress Bars */}
             <div className="flex" style={{ gap: '8px', marginBottom: '28px' }}>
-              <span style={{ height: '3px', flex: 1, borderRadius: '3px', background: currentStep >= 1 ? '#D4800D' : '#E5E5E5', transition: 'background 0.3s' }} />
-              <span style={{ height: '3px', flex: 1, borderRadius: '3px', background: currentStep >= 2 ? '#D4800D' : '#E5E5E5', transition: 'background 0.3s' }} />
-              <span style={{ height: '3px', flex: 1, borderRadius: '3px', background: currentStep >= 3 ? '#D4800D' : '#E5E5E5', transition: 'background 0.3s' }} />
+              {[1, 2, 3].map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    height: '3px',
+                    flex: 1,
+                    borderRadius: '3px',
+                    background: currentStep >= s ? '#D4800D' : '#E5E5E5',
+                    transition: 'background 0.3s',
+                  }}
+                />
+              ))}
             </div>
 
-            {/* ── MOBILE STEP 1 ── */}
+            {/* ── MOBILE STEP 1: WELCOME ── */}
             {currentStep === 1 && (
               <div className="animate-fade-in flex flex-col flex-1">
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#462814', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '12px' }}>
-                  HI THERE WELCOME TO QLOZET
+                {/* Greeting */}
+                <div style={{ marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#D4800D', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Welcome to Qlozet
+                  </span>
+                </div>
+                <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', lineHeight: 1.15, marginBottom: '12px' }}>
+                  Hi {firstName},<br />
+                  <span style={{ color: '#462814' }}>glad to have you!</span>
                 </h1>
-                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '20px' }}>
-                  Let&apos;s take a few minutes to make altire personalized to you
+                <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.7, marginBottom: '24px' }}>
+                  Let&apos;s personalise your experience so you see the styles, fabrics, and brands that match your taste.
                 </p>
 
-                {/* Ankara Pattern Image */}
-                <div className="relative flex-1 rounded-[20px] overflow-hidden" style={{ minHeight: '280px' }}>
+                {/* Hero Image */}
+                <div className="relative flex-1 rounded-[24px] overflow-hidden" style={{ minHeight: '300px' }}>
                   <Image
                     src="/image/ankara.png"
                     alt="Ankara pattern"
                     fill
                     style={{ objectFit: 'cover' }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-                  {/* CONTINUE button overlaying bottom of image */}
+                  {/* Continue CTA */}
                   <div className="absolute bottom-0 left-0 right-0" style={{ padding: '20px' }}>
                     <button
-                      onClick={handleStep1Continue}
-                      className="w-full flex items-center justify-center transition-all"
-                      style={{ padding: '15px', borderRadius: '12px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer' }}
+                      onClick={handleWelcomeContinue}
+                      className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                      style={{ padding: '16px', borderRadius: '14px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
                     >
-                      CONTINUE
+                      LET&apos;S GO
+                      <ArrowRight size={15} />
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ── MOBILE STEP 2 ── */}
+            {/* ── MOBILE STEP 2: GENDER ── */}
             {currentStep === 2 && (
               <div className="animate-fade-in flex flex-col flex-1">
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#462814', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '12px' }}>
-                  What products do you use?
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
+                  Who are you shopping for?
                 </h1>
-                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '24px' }}>
-                  To tailor your catalog feed, tell us what gender line you browse.
+                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '28px' }}>
+                  This helps us show you the most relevant products and collections.
                 </p>
 
-                <div className="flex flex-col" style={{ gap: '12px' }}>
-                  <div onClick={() => setSelectedGender('man')} className="flex items-center justify-between cursor-pointer" style={{ padding: '18px 20px', borderRadius: '16px', border: selectedGender === 'man' ? '2px solid #462814' : '1px solid #E5E5E5', background: selectedGender === 'man' ? '#462814/5' : 'transparent' }}>
-                    <div className="flex items-center" style={{ gap: '14px' }}>
-                      <span style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F2F2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>♂</span>
-                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>Man</span>
+                <div className="flex flex-col" style={{ gap: '14px' }}>
+                  {/* Man */}
+                  <div
+                    onClick={() => setSelectedGender('male')}
+                    className="flex items-center justify-between cursor-pointer transition-all"
+                    style={{
+                      padding: '20px 22px',
+                      borderRadius: '18px',
+                      border: selectedGender === 'male' ? '2px solid #462814' : '1px solid #E5E5E5',
+                      background: selectedGender === 'male' ? '#FBF6F2' : 'transparent',
+                    }}
+                  >
+                    <div className="flex items-center" style={{ gap: '16px' }}>
+                      <span style={{ width: '50px', height: '50px', borderRadius: '50%', background: selectedGender === 'male' ? '#462814' : '#F2F2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: selectedGender === 'male' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♂</span>
+                      <div>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Men</span>
+                        <span style={{ fontSize: '11px', color: '#AAA', fontWeight: 500 }}>Agbada, kaftans, suits & more</span>
+                      </div>
                     </div>
-                    <span style={{ width: '20px', height: '20px', borderRadius: '50%', border: selectedGender === 'man' ? '6px solid #462814' : '2px solid #DDD' }} />
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', border: selectedGender === 'male' ? '6px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
                   </div>
-                  <div onClick={() => setSelectedGender('woman')} className="flex items-center justify-between cursor-pointer" style={{ padding: '18px 20px', borderRadius: '16px', border: selectedGender === 'woman' ? '2px solid #462814' : '1px solid #E5E5E5', background: selectedGender === 'woman' ? '#462814/5' : 'transparent' }}>
-                    <div className="flex items-center" style={{ gap: '14px' }}>
-                      <span style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F2F2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>♀</span>
-                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>Woman</span>
+
+                  {/* Woman */}
+                  <div
+                    onClick={() => setSelectedGender('female')}
+                    className="flex items-center justify-between cursor-pointer transition-all"
+                    style={{
+                      padding: '20px 22px',
+                      borderRadius: '18px',
+                      border: selectedGender === 'female' ? '2px solid #462814' : '1px solid #E5E5E5',
+                      background: selectedGender === 'female' ? '#FBF6F2' : 'transparent',
+                    }}
+                  >
+                    <div className="flex items-center" style={{ gap: '16px' }}>
+                      <span style={{ width: '50px', height: '50px', borderRadius: '50%', background: selectedGender === 'female' ? '#462814' : '#F2F2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: selectedGender === 'female' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♀</span>
+                      <div>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Women</span>
+                        <span style={{ fontSize: '11px', color: '#AAA', fontWeight: 500 }}>Dresses, ankara, iro & buba & more</span>
+                      </div>
                     </div>
-                    <span style={{ width: '20px', height: '20px', borderRadius: '50%', border: selectedGender === 'woman' ? '6px solid #462814' : '2px solid #DDD' }} />
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', border: selectedGender === 'female' ? '6px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
                   </div>
                 </div>
 
-                <button onClick={handleStep2Continue} disabled={!selectedGender} className="w-full flex items-center justify-center transition-all" style={{ padding: '15px', borderRadius: '12px', background: selectedGender ? '#462814' : '#D4C9C0', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: selectedGender ? 'pointer' : 'not-allowed', marginTop: '28px' }}>
+                <button
+                  onClick={handleGenderContinue}
+                  disabled={!selectedGender}
+                  className="w-full flex items-center justify-center transition-all"
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: selectedGender ? '#462814' : '#D4C9C0',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    cursor: selectedGender ? 'pointer' : 'not-allowed',
+                    marginTop: '32px',
+                  }}
+                >
                   CONTINUE
                 </button>
               </div>
             )}
 
-            {/* ── MOBILE STEP 3 ── */}
+            {/* ── MOBILE STEP 3: AESTHETICS ── */}
             {currentStep === 3 && (
               <div className="animate-fade-in flex flex-col flex-1">
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#462814', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '12px' }}>
-                  What is your aesthetic?
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
+                  What&apos;s your aesthetic?
                 </h1>
                 <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6, marginBottom: '20px' }}>
-                  Select your favorite visual styles to curate your main feed.
+                  Select styles you love. This curates your recommendations and home feed.
                 </p>
 
-                <div className="grid grid-cols-2 gap-3 overflow-y-auto hide-scrollbar" style={{ maxHeight: '400px' }}>
+                <div className="grid grid-cols-2 gap-3 overflow-y-auto hide-scrollbar" style={{ maxHeight: '380px' }}>
                   {aestheticsList.map((aes) => {
                     const isActive = selectedAesthetics.includes(aes.id);
                     return (
-                      <div key={aes.id} onClick={() => handleToggleAesthetic(aes.id)} className="relative overflow-hidden cursor-pointer" style={{ aspectRatio: '3/4', borderRadius: '14px', border: isActive ? '2px solid #462814' : '1px solid #E5E5E5' }}>
+                      <div
+                        key={aes.id}
+                        onClick={() => handleToggleAesthetic(aes.id)}
+                        className="relative overflow-hidden cursor-pointer transition-all"
+                        style={{
+                          aspectRatio: '3/4',
+                          borderRadius: '16px',
+                          border: isActive ? '2px solid #462814' : '1px solid #E5E5E5',
+                        }}
+                      >
                         <Image src={aes.image} alt={aes.label} fill style={{ objectFit: 'cover' }} />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent" style={{ padding: '10px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{aes.label}</span>
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent" style={{ padding: '12px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{aes.label}</span>
                         </div>
                         {isActive && (
                           <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
-                            <span style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#462814', fontWeight: 800, fontSize: '14px' }}>✓</span>
+                            <span style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#462814', fontWeight: 800, fontSize: '16px' }}>✓</span>
                           </div>
                         )}
                       </div>
@@ -192,10 +300,23 @@ export default function OnboardingPage() {
                   })}
                 </div>
 
-                <button onClick={handleFinishOnboarding} className="w-full flex items-center justify-center transition-all" style={{ padding: '15px', borderRadius: '12px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', marginTop: '20px', gap: '8px' }}>
-                  <Sparkles size={14} />
-                  FINISH PERSONALIZATION
-                </button>
+                <div className="flex flex-col" style={{ gap: '10px', marginTop: '20px' }}>
+                  <button
+                    onClick={handleFinishOnboarding}
+                    className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                    style={{ padding: '16px', borderRadius: '14px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
+                  >
+                    <Sparkles size={14} />
+                    FINISH
+                  </button>
+                  <button
+                    onClick={handleSkipAesthetics}
+                    className="w-full flex items-center justify-center transition-all hover:bg-gray-50"
+                    style={{ padding: '14px', borderRadius: '14px', background: 'transparent', color: '#999', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                  >
+                    Skip for now
+                  </button>
+                </div>
               </div>
             )}
 
@@ -203,243 +324,264 @@ export default function OnboardingPage() {
         </div>
 
         {/* ── DESKTOP VIEW ── */}
-        <div className="hidden lg:flex items-center justify-center w-full" style={{ padding: '32px' }}>
-        
-        {/* Mobile Header — only on desktop now since mobile has its own */}
-        <div className="absolute top-8 left-8 flex justify-between w-full pr-16 items-center">
-          <QlozetLogo width={48} color="#121118" />
-          <span className="text-xs font-extrabold text-[#9A95B6]">{currentStep}/3</span>
-        </div>
+        <div className="hidden lg:flex items-center justify-center w-full min-h-screen" style={{ padding: '32px' }}>
 
-        <div className="w-full max-w-[500px] flex flex-col relative z-10 animate-fade-in">
-          
-          {/* Header Progress indicator */}
-          <div className="hidden lg:flex items-center justify-between mb-12">
-            {/* Back button */}
-            {currentStep > 1 ? (
-              <button 
-                onClick={() => setCurrentStep((prev) => (prev - 1) as OnboardStep)}
-                className="text-xs text-[#8B5A2B] hover:underline font-bold flex items-center gap-1.5"
-              >
-                ➔ Back
-              </button>
-            ) : (
-              <div></div>
+          {/* Step counter */}
+          <div className="absolute top-8 left-8 flex justify-between w-full pr-16 items-center">
+            <QlozetLogo width={48} color="#121118" />
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{currentStep}/3</span>
+          </div>
+
+          <div className="w-full max-w-[500px] flex flex-col relative z-10 animate-fade-in">
+
+            {/* Back + Progress */}
+            <div className="flex items-center justify-between" style={{ marginBottom: '48px' }}>
+              {currentStep > 1 ? (
+                <button
+                  onClick={() => setCurrentStep((prev) => (prev - 1) as OnboardStep)}
+                  className="hover:underline flex items-center"
+                  style={{ fontSize: '13px', color: '#462814', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: '6px' }}
+                >
+                  ← Back
+                </button>
+              ) : (
+                <div />
+              )}
+              <div className="flex" style={{ gap: '8px' }}>
+                {[1, 2, 3].map((s) => (
+                  <span
+                    key={s}
+                    className="transition-all duration-500"
+                    style={{
+                      height: '4px',
+                      width: s === currentStep ? '32px' : '16px',
+                      borderRadius: '4px',
+                      background: currentStep >= s ? '#462814' : '#EBEBEB',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* ════════ DESKTOP STEP 1: WELCOME ════════ */}
+            {currentStep === 1 && (
+              <div className="flex flex-col animate-fade-in" style={{ gap: '24px' }}>
+                <div>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#D4800D', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: '12px' }}>
+                    Welcome to Qlozet
+                  </span>
+                  <h1
+                    style={{
+                      fontSize: '36px',
+                      fontWeight: 800,
+                      color: '#1A1A1A',
+                      fontFamily: 'var(--font-display)',
+                      lineHeight: 1.15,
+                      marginBottom: '12px',
+                    }}
+                  >
+                    Hi {firstName},<br />
+                    <span style={{ color: '#462814' }}>glad to have you!</span>
+                  </h1>
+                  <p style={{ fontSize: '15px', color: '#888', lineHeight: 1.7, maxWidth: '380px' }}>
+                    Let&apos;s personalise your experience so you see the styles, fabrics, and brands that match your taste.
+                  </p>
+                </div>
+
+                {/* Decorative image */}
+                <div className="relative overflow-hidden" style={{ height: '220px', borderRadius: '24px' }}>
+                  <Image
+                    src="/image/ankara.png"
+                    alt="Ankara fabric"
+                    fill
+                    style={{ objectFit: 'cover' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                </div>
+
+                <button
+                  onClick={handleWelcomeContinue}
+                  className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: '#462814',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                    gap: '8px',
+                  }}
+                >
+                  LET&apos;S GO
+                  <ArrowRight size={16} />
+                </button>
+              </div>
             )}
-            <span className="text-xs font-extrabold text-[#9A95B6] uppercase tracking-widest">{currentStep}/3</span>
-          </div>
 
-          {/* Progress Bars */}
-          <div className="flex gap-2.5 mb-10">
-            <span className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-[#4A2306]' : 'bg-[#121118]/10'}`} />
-            <span className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'bg-[#4A2306]' : 'bg-[#121118]/10'}`} />
-            <span className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'bg-[#4A2306]' : 'bg-[#121118]/10'}`} />
-          </div>
-
-          {/* ================= STEP 1: NOTIFICATIONS ================= */}
-          {currentStep === 1 && (
-            <div className="flex flex-col gap-6 animate-fade-in">
-              <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-extrabold text-[#4A2306] uppercase tracking-wide font-display">
-                  We would like to keep you updated
-                </h1>
-                <p className="text-sm text-[#5D5975] leading-relaxed">
-                  We would like to send you notifications about the app. You can always disable it later in settings.
-                </p>
-              </div>
-
-              {/* Notification Toggles List */}
-              <div className="flex flex-col gap-4 mt-4">
-                
-                {/* 1. Discounts Toggle */}
-                <div 
-                  onClick={() => setNotifPreferences(prev => ({ ...prev, discounts: !prev.discounts }))}
-                  className={`p-5 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${notifPreferences.discounts ? 'bg-[#4A2306]/5 border-[#4A2306]/20' : 'bg-transparent border-[#121118]/10 hover:bg-[#121118]/5'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-10 h-10 rounded-full bg-[#FF2E63]/10 text-[#FF2E63] flex items-center justify-center">
-                      <Percent size={18} />
-                    </span>
-                    <span className="text-sm font-semibold text-[#121118]">
-                      You&apos;ll be notified on our best discounts
-                    </span>
-                  </div>
-                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] transition-all ${notifPreferences.discounts ? 'bg-[#4A2306] border-[#4A2306] text-white' : 'border-[#121118]/25 text-transparent'}`}>
-                    <Check size={10} strokeWidth={3} />
-                  </span>
+            {/* ════════ DESKTOP STEP 2: GENDER ════════ */}
+            {currentStep === 2 && (
+              <div className="flex flex-col animate-fade-in" style={{ gap: '24px' }}>
+                <div>
+                  <h1
+                    style={{
+                      fontSize: '32px',
+                      fontWeight: 800,
+                      color: '#1A1A1A',
+                      fontFamily: 'var(--font-display)',
+                      letterSpacing: '-0.01em',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    Who are you shopping for?
+                  </h1>
+                  <p style={{ fontSize: '15px', color: '#888', lineHeight: 1.7 }}>
+                    This helps us show you the most relevant products, collections, and recommendations.
+                  </p>
                 </div>
 
-                {/* 2. Releases Toggle */}
-                <div 
-                  onClick={() => setNotifPreferences(prev => ({ ...prev, features: !prev.features }))}
-                  className={`p-5 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${notifPreferences.features ? 'bg-[#4A2306]/5 border-[#4A2306]/20' : 'bg-transparent border-[#121118]/10 hover:bg-[#121118]/5'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-10 h-10 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center">
-                      <Bell size={18} />
-                    </span>
-                    <span className="text-sm font-semibold text-[#121118]">
-                      You&apos;ll be notified on the latest feature releases
-                    </span>
-                  </div>
-                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] transition-all ${notifPreferences.features ? 'bg-[#4A2306] border-[#4A2306] text-white' : 'border-[#121118]/25 text-transparent'}`}>
-                    <Check size={10} strokeWidth={3} />
-                  </span>
-                </div>
-
-                {/* 3. Collections Toggle */}
-                <div 
-                  onClick={() => setNotifPreferences(prev => ({ ...prev, collections: !prev.collections }))}
-                  className={`p-5 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${notifPreferences.collections ? 'bg-[#4A2306]/5 border-[#4A2306]/20' : 'bg-transparent border-[#121118]/10 hover:bg-[#121118]/5'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-10 h-10 rounded-full bg-[#8B5A2B]/10 text-[#8B5A2B] flex items-center justify-center">
-                      <ShoppingBag size={18} />
-                    </span>
-                    <span className="text-sm font-semibold text-[#121118]">
-                      You&apos;ll be notified on the best collections available
-                    </span>
-                  </div>
-                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] transition-all ${notifPreferences.collections ? 'bg-[#4A2306] border-[#4A2306] text-white' : 'border-[#121118]/25 text-transparent'}`}>
-                    <Check size={10} strokeWidth={3} />
-                  </span>
-                </div>
-
-              </div>
-
-              <button 
-                onClick={handleStep1Continue}
-                className="w-full bg-[#4A2306] hover:bg-[#612F08] text-white font-bold py-4 rounded-xl shadow-lg mt-6 transition-all duration-300 uppercase tracking-widest text-xs"
-              >
-                CONTINUE
-              </button>
-            </div>
-          )}
-
-          {/* ================= STEP 2: PRODUCT TARGET ================= */}
-          {currentStep === 2 && (
-            <div className="flex flex-col gap-6 animate-fade-in">
-              <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-extrabold text-[#4A2306] uppercase tracking-wide font-display">
-                  What products do you use?
-                </h1>
-                <p className="text-sm text-[#5D5975] leading-relaxed">
-                  To get the most out of this app and tailor your catalog feed, tell us what gender line you browse.
-                </p>
-              </div>
-
-              {/* Man vs Woman Pills */}
-              <div className="flex flex-col gap-4 mt-6">
-                
-                {/* Man pill */}
-                <div 
-                  onClick={() => setSelectedGender('man')}
-                  className={`p-6 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${selectedGender === 'man' ? 'bg-[#4A2306]/5 border-[#4A2306] shadow-sm' : 'bg-transparent border-[#121118]/10 hover:bg-[#121118]/5'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-12 h-12 rounded-full bg-[#121118]/5 text-[#4A2306] flex items-center justify-center font-bold text-xl">
-                      ♂
-                    </span>
-                    <span className="text-base font-bold text-[#121118]">
-                      Man
-                    </span>
-                  </div>
-                  <span className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${selectedGender === 'man' ? 'border-[#4A2306] bg-[#4A2306]' : 'border-[#121118]/25'}`}>
-                    {selectedGender === 'man' && <span className="w-2.5 h-2.5 rounded-full bg-white"></span>}
-                  </span>
-                </div>
-
-                {/* Woman pill */}
-                <div 
-                  onClick={() => setSelectedGender('woman')}
-                  className={`p-6 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${selectedGender === 'woman' ? 'bg-[#4A2306]/5 border-[#4A2306] shadow-sm' : 'bg-transparent border-[#121118]/10 hover:bg-[#121118]/5'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-12 h-12 rounded-full bg-[#121118]/5 text-[#4A2306] flex items-center justify-center font-bold text-xl">
-                      ♀
-                    </span>
-                    <span className="text-base font-bold text-[#121118]">
-                      Woman
-                    </span>
-                  </div>
-                  <span className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${selectedGender === 'woman' ? 'border-[#4A2306] bg-[#4A2306]' : 'border-[#121118]/25'}`}>
-                    {selectedGender === 'woman' && <span className="w-2.5 h-2.5 rounded-full bg-white"></span>}
-                  </span>
-                </div>
-
-              </div>
-
-              <button 
-                onClick={handleStep2Continue}
-                className={`w-full font-bold py-4 rounded-xl shadow-lg mt-8 transition-all duration-300 uppercase tracking-widest text-xs ${selectedGender ? 'bg-[#4A2306] text-white hover:bg-[#612F08]' : 'bg-[#121118]/10 text-[#9A95B6] cursor-not-allowed'}`}
-                disabled={!selectedGender}
-              >
-                CONTINUE
-              </button>
-            </div>
-          )}
-
-          {/* ================= STEP 3: AESTHETIC QUIZ ================= */}
-          {currentStep === 3 && (
-            <div className="flex flex-col gap-6 animate-fade-in">
-              <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-extrabold text-[#4A2306] uppercase tracking-wide font-display">
-                  What is your aesthetic?
-                </h1>
-                <p className="text-xs text-[#5D5975] leading-relaxed">
-                  Select your favorite visual styles. This curates the recommendations shown in your main feed shelf.
-                </p>
-              </div>
-
-              {/* Aesthetics Visual Cards Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 mt-2 overflow-y-auto max-h-[350px] pr-2">
-                {aestheticsList.map((aes) => {
-                  const isActive = selectedAesthetics.includes(aes.id);
-                  return (
-                    <div 
-                      key={aes.id}
-                      onClick={() => handleToggleAesthetic(aes.id)}
-                      className={`relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-102 ${isActive ? 'border-[#4A2306]' : 'border-[#121118]/10'}`}
-                    >
-                      {/* Image */}
-                      <Image 
-                        src={aes.image} 
-                        alt={aes.label} 
-                        fill
-                        style={{ objectFit: 'cover' }}
-                      />
-                      {/* Card Overlay text */}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent p-2.5 text-[10px] font-bold text-white uppercase tracking-wider text-center">
-                        {aes.label}
+                <div className="flex flex-col" style={{ gap: '14px', marginTop: '8px' }}>
+                  {/* Man */}
+                  <div
+                    onClick={() => setSelectedGender('male')}
+                    className={`flex items-center justify-between cursor-pointer transition-all duration-300`}
+                    style={{
+                      padding: '22px 24px',
+                      borderRadius: '20px',
+                      border: selectedGender === 'male' ? '2px solid #462814' : '1px solid #EBEBEB',
+                      background: selectedGender === 'male' ? '#FBF6F2' : 'transparent',
+                    }}
+                  >
+                    <div className="flex items-center" style={{ gap: '18px' }}>
+                      <span style={{ width: '54px', height: '54px', borderRadius: '50%', background: selectedGender === 'male' ? '#462814' : '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', color: selectedGender === 'male' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♂</span>
+                      <div>
+                        <span style={{ fontSize: '17px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Men</span>
+                        <span style={{ fontSize: '12px', color: '#AAA', fontWeight: 500 }}>Agbada, kaftans, suits & more</span>
                       </div>
-
-                      {/* White Active Check Overlay */}
-                      {isActive && (
-                        <div className="absolute inset-0 bg-black/35 flex items-center justify-center animate-fade-in">
-                          <span className="w-9 h-9 rounded-full bg-white text-[#4A2306] flex items-center justify-center shadow-lg font-extrabold">
-                            ✓
-                          </span>
-                        </div>
-                      )}
                     </div>
-                  );
-                })}
+                    <span className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', border: selectedGender === 'male' ? '7px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
+                  </div>
+
+                  {/* Woman */}
+                  <div
+                    onClick={() => setSelectedGender('female')}
+                    className={`flex items-center justify-between cursor-pointer transition-all duration-300`}
+                    style={{
+                      padding: '22px 24px',
+                      borderRadius: '20px',
+                      border: selectedGender === 'female' ? '2px solid #462814' : '1px solid #EBEBEB',
+                      background: selectedGender === 'female' ? '#FBF6F2' : 'transparent',
+                    }}
+                  >
+                    <div className="flex items-center" style={{ gap: '18px' }}>
+                      <span style={{ width: '54px', height: '54px', borderRadius: '50%', background: selectedGender === 'female' ? '#462814' : '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', color: selectedGender === 'female' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♀</span>
+                      <div>
+                        <span style={{ fontSize: '17px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Women</span>
+                        <span style={{ fontSize: '12px', color: '#AAA', fontWeight: 500 }}>Dresses, ankara, iro & buba & more</span>
+                      </div>
+                    </div>
+                    <span className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', border: selectedGender === 'female' ? '7px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGenderContinue}
+                  disabled={!selectedGender}
+                  className="w-full flex items-center justify-center transition-all"
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: selectedGender ? '#462814' : '#EBEBEB',
+                    color: selectedGender ? '#FFFFFF' : '#BBB',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    cursor: selectedGender ? 'pointer' : 'not-allowed',
+                    marginTop: '8px',
+                  }}
+                >
+                  CONTINUE
+                </button>
               </div>
+            )}
 
-              <button 
-                onClick={handleFinishOnboarding}
-                className="w-full bg-[#4A2306] hover:bg-[#612F08] text-white font-bold py-4 rounded-xl shadow-lg mt-4 transition-all duration-300 uppercase tracking-widest text-xs flex items-center justify-center gap-2"
-              >
-                <Sparkles size={14} />
-                <span>FINISH PERSONALIZATION</span>
-              </button>
-            </div>
-          )}
+            {/* ════════ DESKTOP STEP 3: AESTHETICS ════════ */}
+            {currentStep === 3 && (
+              <div className="flex flex-col animate-fade-in" style={{ gap: '20px' }}>
+                <div>
+                  <h1
+                    style={{
+                      fontSize: '32px',
+                      fontWeight: 800,
+                      color: '#1A1A1A',
+                      fontFamily: 'var(--font-display)',
+                      letterSpacing: '-0.01em',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    What&apos;s your aesthetic?
+                  </h1>
+                  <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.7 }}>
+                    Select the styles you love. This curates the recommendations shown in your feed.
+                  </p>
+                </div>
 
+                {/* Aesthetics Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-y-auto max-h-[380px] pr-1">
+                  {aestheticsList.map((aes) => {
+                    const isActive = selectedAesthetics.includes(aes.id);
+                    return (
+                      <div
+                        key={aes.id}
+                        onClick={() => handleToggleAesthetic(aes.id)}
+                        className="relative overflow-hidden cursor-pointer transition-all hover:scale-[1.02]"
+                        style={{
+                          aspectRatio: '3/4',
+                          borderRadius: '16px',
+                          border: isActive ? '2px solid #462814' : '1px solid #EBEBEB',
+                        }}
+                      >
+                        <Image src={aes.image} alt={aes.label} fill style={{ objectFit: 'cover' }} />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent" style={{ padding: '10px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{aes.label}</span>
+                        </div>
+                        {isActive && (
+                          <div className="absolute inset-0 bg-black/35 flex items-center justify-center animate-fade-in">
+                            <span style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#462814', fontWeight: 800, fontSize: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>✓</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-col" style={{ gap: '10px', marginTop: '4px' }}>
+                  <button
+                    onClick={handleFinishOnboarding}
+                    className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                    style={{ padding: '16px', borderRadius: '14px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer', gap: '8px' }}
+                  >
+                    <Sparkles size={14} />
+                    FINISH PERSONALIZATION
+                  </button>
+                  <button
+                    onClick={handleSkipAesthetics}
+                    className="w-full flex items-center justify-center transition-all hover:bg-gray-50"
+                    style={{ padding: '12px', borderRadius: '14px', background: 'transparent', color: '#999', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
-        </div>
+
       </div>
-
     </div>
   );
 }

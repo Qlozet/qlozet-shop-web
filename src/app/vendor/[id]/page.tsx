@@ -158,10 +158,18 @@ export default function VendorPage() {
           {/* Right Follow Button */}
           <button
             onClick={() => toggleFollowVendor(vendor.id)}
-            className="backdrop-blur-md text-white rounded-full text-sm font-bold hover:bg-white/20 transition-all border border-white/15 shadow-lg"
-            style={{ backgroundColor: isFollowing ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)', padding: '10px 24px' }}
+            className="backdrop-blur-md rounded-full font-bold transition-all active:scale-95 border shadow-lg"
+            style={{
+              backgroundColor: isFollowing ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.5)',
+              color: isFollowing ? '#1A1A1A' : '#FFFFFF',
+              borderColor: isFollowing ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.15)',
+              padding: '10px 24px',
+              fontSize: '11px',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase' as const,
+            }}
           >
-            {isFollowing ? 'Following' : 'Follow'}
+            {isFollowing ? 'FOLLOWING' : 'FOLLOW'}
           </button>
         </div>
 

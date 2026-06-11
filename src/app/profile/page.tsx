@@ -7,6 +7,7 @@ import {
   User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
   HelpCircle, BookOpen, FileText, Lock, Star, LogOut, Coins, Award,
+  Heart, Scissors,
 } from 'lucide-react';
 
 import type { ActiveSection, Order } from './types';
@@ -26,6 +27,8 @@ import MeasurementsSection from './sections/Measurements';
 import AccountSecurity from './sections/AccountSecurity';
 import Notifications from './sections/Notifications';
 import PaymentInformation from './sections/PaymentInformation';
+import Following from './sections/Following';
+import ReservedFabric from './sections/ReservedFabric';
 
 // ─── Section Title Map ──────────────────────────────────────
 const sectionTitles: Record<ActiveSection, string> = {
@@ -55,6 +58,8 @@ const sectionTitles: Record<ActiveSection, string> = {
   'notifications': 'Notifications',
   'payment-information': 'Payment Information',
   'add-card': 'Add Card',
+  'following': 'Following',
+  'reserved-fabric': 'Reserved Fabric',
 };
 
 export default function ProfilePage() {
@@ -177,6 +182,10 @@ export default function ProfilePage() {
             setActiveSection={setActiveSection}
           />
         );
+      case 'following':
+        return <Following />;
+      case 'reserved-fabric':
+        return <ReservedFabric />;
       default:
         return <WelcomeBanner />;
     }
@@ -285,6 +294,10 @@ export default function ProfilePage() {
                 onClick={() => setActiveSection('account-security')} isActive={activeSection === 'account-security' || activeSection === 'change-password'} />
               <MenuRow icon={Bell} label="Push Notification" iconBg="rgba(245,158,11,0.08)" iconColor="#F59E0B"
                 onClick={() => setActiveSection('notifications')} isActive={activeSection === 'notifications'} />
+              <MenuRow icon={Heart} label="Following" iconBg="rgba(239,68,68,0.06)" iconColor="#E11D48"
+                onClick={() => setActiveSection('following')} isActive={activeSection === 'following'} />
+              <MenuRow icon={Scissors} label="Reserved Fabric" iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED"
+                onClick={() => setActiveSection('reserved-fabric')} isActive={activeSection === 'reserved-fabric'} />
               <MenuRow icon={Moon} label="Dark Mode" iconBg="rgba(107,114,128,0.08)" iconColor="#6B7280"
                 trailing={<Toggle value={darkMode} onChange={setDarkMode} />} />
             </div>

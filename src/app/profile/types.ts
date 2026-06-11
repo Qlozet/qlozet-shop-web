@@ -25,7 +25,9 @@ export type ActiveSection =
   | 'change-password'
   | 'notifications'
   | 'payment-information'
-  | 'add-card';
+  | 'add-card'
+  | 'following'
+  | 'reserved-fabric';
 
 export type OrderStatus = 'Shipped' | 'Refused' | 'Delivered' | 'Pending';
 
