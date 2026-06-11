@@ -453,7 +453,7 @@ function BespokeContent() {
             {filteredDesigns.map((design) => {
               const statusStyle = STATUS_COLORS[design.status];
               return (
-                <div key={design.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px' }}>
+                <Link href={`/bespoke/studio?name=${encodeURIComponent(design.name)}&type=${encodeURIComponent(design.category)}`} key={design.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
                   <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                     <Image src={design.image} alt={design.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                     {/* Status badge */}
@@ -472,7 +472,7 @@ function BespokeContent() {
                         <Eye size={16} color="#FFF" />
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); toggleWishlist(design.id); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(design.id); }}
                         className="flex items-center justify-center transition-all hover:scale-110"
                         style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
                       >
@@ -484,7 +484,7 @@ function BespokeContent() {
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', marginBottom: '2px' }}>{design.name}</p>
                     <p style={{ fontSize: '11px', color: '#999' }}>{design.date}</p>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -512,16 +512,16 @@ function BespokeContent() {
           {/* Template grid */}
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
             {TEMPLATES.map((t) => (
-              <div key={t.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px' }}>
+              <Link href={`/bespoke/studio?name=${encodeURIComponent(t.name)}&type=${encodeURIComponent(t.category)}`} key={t.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
                 <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                   <Image src={t.image} alt={t.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end" style={{ padding: '10px' }}>
-                    <button
-                      className="w-full transition-all active:scale-[0.98]"
-                      style={{ padding: '10px', borderRadius: '10px', background: '#FFFFFF', color: '#1A1A1A', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+                    <span
+                      className="w-full flex items-center justify-center transition-all"
+                      style={{ padding: '10px', borderRadius: '10px', background: '#FFFFFF', color: '#1A1A1A', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}
                     >
                       Use Template
-                    </button>
+                    </span>
                   </div>
                 </div>
                 <div>
@@ -531,7 +531,7 @@ function BespokeContent() {
                     <span style={{ fontSize: '11px', color: '#888' }}>{t.uses.toLocaleString()} uses</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -558,7 +558,7 @@ function BespokeContent() {
           {/* Pinterest-style grid */}
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
             {COMMUNITY.map((item) => (
-              <div key={item.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px' }}>
+              <Link href={`/bespoke/studio?name=${encodeURIComponent(item.name)}`} key={item.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
                 <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                   <Image src={item.image} alt={item.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                   {/* Like overlay */}
@@ -574,7 +574,7 @@ function BespokeContent() {
                     <p style={{ fontSize: '11px', color: '#888' }}>by {item.designer}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -23,7 +23,7 @@ export const TrendingBanner: React.FC = () => {
 
   return (
     <div
-      className="relative overflow-hidden w-full rounded-[24px] lg:rounded-[20px]"
+      className="relative overflow-hidden w-full rounded-[30px]"
       style={{
         height: '440px',
         background: '#E8DDD0',

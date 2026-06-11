@@ -120,8 +120,8 @@ export function useCustomization({
 
   const handleGenerate = useCallback(async () => {
     if (isGenerating || mode !== 'studio') return;
-    const success = deductTokens(GENERATION_COST);
-    if (!success) return;
+    // Try to deduct tokens, but don't block if user isn't logged in
+    deductTokens(GENERATION_COST);
 
     setIsGenerating(true);
     await new Promise((resolve) => setTimeout(resolve, 2500));
