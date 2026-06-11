@@ -395,7 +395,7 @@ function BespokeContent() {
         {/* New Design button */}
         <button
           onClick={() => setModalStep('start')}
-          className="flex items-center transition-all hover:opacity-90 active:scale-[0.98] w-full sm:w-auto justify-center sm:justify-start"
+          className="hidden sm:flex items-center transition-all hover:opacity-90 active:scale-[0.98] sm:w-auto justify-center sm:justify-start"
           style={{ padding: '10px 20px', borderRadius: '10px', background: '#2C1810', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer', gap: '6px' }}
         >
           <Plus size={14} />
@@ -408,16 +408,36 @@ function BespokeContent() {
         <div className="flex flex-col animate-fade-in" style={{ gap: '24px' }}>
           {/* Search + filter */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
-            <div className="flex items-center w-full lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: '#F5F5F5', gap: '8px', maxWidth: '300px' }}>
-              <Search size={14} color="#999" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search bespoke"
-                className="flex-1 bg-transparent border-none outline-none"
-                style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A', background: 'transparent', border: 'none', outline: 'none' }}
-              />
+            <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
+              <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: '#F5F5F5', gap: '8px', maxWidth: '300px' }}>
+                <Search size={14} color="#999" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search bespoke"
+                  className="flex-1 bg-transparent border-none outline-none"
+                  style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A', background: 'transparent', border: 'none', outline: 'none' }}
+                />
+              </div>
+
+              {/* Mobile New Design button */}
+              <button
+                onClick={() => setModalStep('start')}
+                className="flex sm:hidden items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  background: '#2C1810',
+                  color: '#FFF',
+                  border: 'none',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                <Plus size={22} />
+              </button>
             </div>
 
             {/* Category chips */}
