@@ -54,6 +54,7 @@ export function BrowseCategoriesGrid({ categories }: BrowseCategoriesGridProps) 
                     height: i === 0 ? '70px' : '60px',
                     borderRadius: '8px',
                     border: '1.5px solid rgba(255,255,255,0.2)',
+                    background: '#F5F3F0',
                   }}
                 >
                   <Image src={img} alt="" fill className="object-cover" />
