@@ -10,7 +10,7 @@ import { Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, demoLogin, user } = useApp();
+  const { authenticateUser, demoLogin, user } = useApp();
 
   // Form States
   const [email, setEmail] = useState('');
@@ -58,7 +58,7 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all credentials.');
@@ -66,18 +66,31 @@ export default function LoginPage() {
     }
     setError('');
     setIsLoading(true);
-    
-    // Simulate API Login
-    setTimeout(() => {
+
+    try {
+      await authenticateUser(email, password);
       setIsLoading(false);
-      login(email, 'Kemi Ayomi');
       router.push('/');
-    }, 1200);
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+    }
   };
 
-  const handleDemoClick = () => {
-    demoLogin();
-    router.push('/');
+  const handleDemoClick = async () => {
+    setError('');
+    setIsLoading(true);
+
+    try {
+      await authenticateUser('customer@example.com', 'SecurePassword123');
+      setIsLoading(false);
+      router.push('/');
+    } catch {
+      // Fallback to local session login if backend is not seeded/reachable
+      demoLogin();
+      setIsLoading(false);
+      router.push('/');
+    }
   };
 
   return (

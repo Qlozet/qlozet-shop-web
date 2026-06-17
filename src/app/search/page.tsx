@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { productCatalog } from '@/data/products';
 import { vendorCatalog } from '@/data/vendors';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 import {
   Search,
   List,
@@ -60,10 +61,22 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const { wishlist, toggleWishlist } = useApp();
+  const trackEvent = useTrackEvent();
 
   // Toggle: 'search' for product results, 'ai' for LLM response
   const [viewMode, setViewMode] = useState<'search' | 'ai'>('search');
   const [showSteps, setShowSteps] = useState(false);
+
+  // Track search event when query changes
+  useEffect(() => {
+    if (query) {
+      trackEvent({
+        eventType: 'search',
+        metadata: { query },
+        context: { surface: 'search_page' },
+      });
+    }
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter products by query
   const filteredProducts = query

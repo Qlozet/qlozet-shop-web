@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { QlozetLogo } from '@/components/QlozetLogo';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
@@ -12,6 +14,7 @@ type OnboardStep = 1 | 2 | 3;
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, setGender, setGenderSelected } = useApp();
+  const trackEvent = useTrackEvent();
   const [currentStep, setCurrentStep] = useState<OnboardStep>(1);
 
   // STEP 2: Gender
@@ -45,15 +48,27 @@ export default function OnboardingPage() {
     if (selectedGender) {
       setGender(selectedGender);
       setGenderSelected(true);
+      // Persist gender to backend (fire-and-forget)
+      api.patch('/users/me/profile', { gender: selectedGender }).catch(() => {});
       setCurrentStep(3);
     }
   };
 
   const handleFinishOnboarding = () => {
+    // Save aesthetic preferences to user profile
+    if (selectedAesthetics.length > 0) {
+      api.patch('/users/me/profile', { aesthetic_preferences: selectedAesthetics }).catch(() => {});
+      // Fire recommendation event via tracking hook
+      trackEvent({
+        eventType: 'preferred_aesthetic',
+        properties: { aesthetics: selectedAesthetics },
+      });
+    }
     router.push('/');
   };
 
   const handleSkipAesthetics = () => {
+    // Gender was already saved in handleGenderContinue
     router.push('/');
   };
 

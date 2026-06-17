@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2, Search, X, Navigation, MapPin } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
+import { useGooglePlaces } from '@/hooks/useGooglePlaces';
 import Toggle from '../components/Toggle';
 import { cardStyle, fieldInput } from '../styles';
-import { defaultAddresses, suggestedAddresses } from '../data';
+import { suggestedAddresses } from '../data';
 import type { ActiveSection, AddressEntry } from '../types';
+import { AddressBookSkeleton } from '../components/Skeleton';
 
 interface AddressBookProps {
   activeSection: ActiveSection;
@@ -13,51 +17,274 @@ interface AddressBookProps {
 }
 
 export default function AddressBook({ activeSection, setActiveSection }: AddressBookProps) {
-  const [addresses, setAddresses] = useState<AddressEntry[]>(defaultAddresses);
+  const { user } = useApp();
+  const [addresses, setAddresses] = useState<AddressEntry[]>([]);
   const [addressSearch, setAddressSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [feedback, setFeedback] = useState({ text: '', type: 'success' });
 
-  const toggleDefaultAddress = (id: string) => {
+  // Load shipping address from backend
+  const fetchAddresses = () => {
+    setIsLoading(true);
+    api.get('/users/customer/addresses')
+      .then((res) => {
+        setIsLoading(false);
+        // Backend interceptor wraps as { statusCode, data: [...] }
+        const data = res.data?.data ?? res.data;
+        if (data) {
+          const list = Array.isArray(data) ? data : [data];
+          const parsed: AddressEntry[] = list
+            .filter((item: any) => item._id || item.id)
+            .map((item: any) => ({
+            id: item._id || item.id,
+            name: item.label || item.full_name || 'Shipping Address',
+            lines: [
+              item.address,
+              `${item.city || ''}, ${item.state || ''} ${item.country || ''}`,
+              item.phone_number || ''
+            ].filter(Boolean),
+            isDefault: item.is_default || false,
+          }));
+          setAddresses(parsed);
+        }
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        console.warn('[AddressBook] GET /addresses failed:', err.response?.status, err.response?.data || err.message);
+      });
+  };
+
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+
+  const handleAddAddress = (selectedAddr: { main: string, sub: string }) => {
+    setIsLoading(true);
+    setFeedback({ text: '', type: 'success' });
+
+    const sanitizedName = (user?.name || 'Guest').replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ').trim() || 'Guest';
+
+    // Mock geolocation coordinates for selected Nigerian addresses
+    const payload = {
+      full_name: sanitizedName,
+      phone_number: user?.phone || '',
+      address: selectedAddr.main,
+      city: selectedAddr.sub.split(',')[0]?.trim() || 'Abuja',
+      state: selectedAddr.sub.split(',')[1]?.trim() || 'FCT',
+      country: 'Nigeria',
+      postal_code: '900108',
+      latitude: 9.0765,
+      longitude: 7.3986
+    };
+
+    api.post('/users/customer/addresses', { ...payload, label: selectedAddr.main })
+      .then(() => {
+        setIsLoading(false);
+        setFeedback({ text: 'Address added successfully!', type: 'success' });
+        fetchAddresses();
+        setActiveSection('address-book');
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        setFeedback({ text: err.response?.data?.message || 'Failed to save address.', type: 'error' });
+      });
+  };
+
+  const toggleDefaultAddress = async (id: string) => {
+    // Optimistic update
     setAddresses(prev => prev.map(a => ({ ...a, isDefault: a.id === id })));
+    try {
+      await api.patch(`/users/customer/addresses/${id}/default`);
+    } catch (err: any) {
+      console.error('Failed to set default:', err);
+      setFeedback({ text: err.response?.data?.message || 'Failed to set default address.', type: 'error' });
+      fetchAddresses(); // revert to server state
+    }
   };
-  const deleteAddress = (id: string) => {
-    setAddresses(prev => prev.filter(a => a.id !== id));
+
+  const deleteAddress = async (id: string) => {
+    // Optimistic update
+    const prev = addresses;
+    setAddresses(p => p.filter(a => a.id !== id));
+    try {
+      await api.delete(`/users/customer/addresses/${id}`);
+    } catch (err: any) {
+      console.error('Failed to delete:', err);
+      setFeedback({ text: err.response?.data?.message || 'Failed to delete address.', type: 'error' });
+      setAddresses(prev); // revert on failure
+    }
   };
+
+  // Google Places integration
+  const { isLoaded, predictions, search, getPlaceDetails, clearPredictions } = useGooglePlaces();
 
   if (activeSection === 'add-address') {
+    const query = addressSearch.toLowerCase().trim();
+    
+    // Local fallback addresses
+    const filteredAddresses = query
+      ? suggestedAddresses.filter(
+          (addr) =>
+            addr.main.toLowerCase().includes(query) ||
+            addr.sub.toLowerCase().includes(query)
+        )
+      : suggestedAddresses;
+
+    // Highlight matching text within a string
+    const highlightMatch = (text: string) => {
+      if (!query) return <>{text}</>;
+      const idx = text.toLowerCase().indexOf(query);
+      if (idx === -1) return <>{text}</>;
+      return (
+        <>
+          {text.slice(0, idx)}
+          <strong style={{ color: '#462814', fontWeight: 700 }}>{text.slice(idx, idx + query.length)}</strong>
+          {text.slice(idx + query.length)}
+        </>
+      );
+    };
+
+    const isUsingGoogle = isLoaded && query.length > 0;
+    const showEmptyState = isUsingGoogle ? predictions.length === 0 : filteredAddresses.length === 0;
+
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
         <div className="flex items-center justify-between">
           <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Add Address</h3>
-          <button className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '100px', background: '#1A1A1A', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
-            Add Address
-          </button>
         </div>
+
+        {feedback.text && (
+          <div 
+            style={{ 
+              padding: '12px 16px', 
+              borderRadius: '10px', 
+              fontSize: '13px', 
+              fontWeight: 600,
+              background: feedback.type === 'error' ? '#FEF2F2' : '#F0FDF4',
+              border: feedback.type === 'error' ? '1px solid #FECACA' : '1px solid #BBF7D0',
+              color: feedback.type === 'error' ? '#DC2626' : '#16A34A'
+            }}
+          >
+            {feedback.text}
+          </div>
+        )}
+
+        {!isLoaded && !process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY && (
+          <div style={{ fontSize: '11px', color: '#B45309', background: '#FEF3C7', padding: '8px 12px', borderRadius: '8px', fontWeight: 600 }}>
+            Note: Google Places API key not found. Using local address suggestions.
+          </div>
+        )}
 
         <div style={cardStyle}>
           <div className="flex items-center" style={{ padding: '14px 20px', gap: '10px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <Search size={16} color="#999" />
-            <input type="text" value={addressSearch} onChange={(e) => setAddressSearch(e.target.value)} placeholder="Search for items and brands" className="flex-1" style={{ ...fieldInput, borderBottom: 'none', padding: '0', fontSize: '13px' }} />
+            <input
+              type="text"
+              value={addressSearch}
+              onChange={(e) => {
+                setAddressSearch(e.target.value);
+                search(e.target.value);
+              }}
+              placeholder={isLoaded ? "Search Google Maps..." : "Type an area, city, or state..."}
+              className="flex-1"
+              style={{ ...fieldInput, borderBottom: 'none', padding: '0', fontSize: '13px' }}
+              autoFocus
+            />
             {addressSearch && (
-              <button onClick={() => setAddressSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+              <button 
+                onClick={() => {
+                  setAddressSearch('');
+                  clearPredictions();
+                }} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+              >
                 <X size={16} color="#999" />
               </button>
             )}
           </div>
 
-          <button className="w-full flex items-center hover:bg-gray-50 transition-colors" style={{ padding: '14px 20px', gap: '10px', background: 'none', border: 'none', borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer' }}>
-            <Navigation size={16} color="#462814" />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>Use your current location</span>
-          </button>
-
-          {suggestedAddresses.map((addr, i) => (
-            <button key={i} className="w-full flex items-start hover:bg-gray-50 transition-colors" style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < suggestedAddresses.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
-              <MapPin size={16} color="#999" className="flex-shrink-0" style={{ marginTop: '2px' }} />
-              <div className="flex flex-col" style={{ gap: '2px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{addr.main}</span>
-                <span style={{ fontSize: '12px', color: '#999' }}>{addr.sub}</span>
-              </div>
+          {!addressSearch && (
+            <button className="w-full flex items-center hover:bg-gray-50 transition-colors" style={{ padding: '14px 20px', gap: '10px', background: 'none', border: 'none', borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer' }}>
+              <Navigation size={16} color="#462814" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>Use your current location</span>
             </button>
-          ))}
+          )}
+
+          {addressSearch && showEmptyState && (
+            <div className="flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '8px' }}>
+              <MapPin size={24} color="#CCC" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#999' }}>No places match &ldquo;{addressSearch}&rdquo;</span>
+            </div>
+          )}
+
+          <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+            {isUsingGoogle ? (
+              // GOOGLE PLACES PREDICTIONS
+              predictions.map((addr, i) => (
+                <button 
+                  key={addr.placeId}
+                  onClick={async () => {
+                    setIsLoading(true);
+                    setAddressSearch(addr.fullDescription);
+                    clearPredictions();
+                    try {
+                      const details = await getPlaceDetails(addr.placeId);
+                      
+                      const sanitizedName = (user?.name || 'Guest').replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ').trim() || 'Guest';
+                      
+                      const payload = {
+                        full_name: sanitizedName,
+                        phone_number: user?.phone || '',
+                        address: details.address,
+                        city: details.city || addr.main,
+                        state: details.state,
+                        country: details.country || 'Nigeria',
+                        postal_code: details.postalCode || '000000',
+                        latitude: details.lat,
+                        longitude: details.lng
+                      };
+
+                      await api.post('/users/customer/addresses', { ...payload, label: addr.main });
+                      
+                      setFeedback({ text: 'Address added successfully!', type: 'success' });
+                      fetchAddresses();
+                      setActiveSection('address-book');
+                    } catch (err: any) {
+                      setFeedback({ text: err.response?.data?.message || 'Failed to retrieve or save place.', type: 'error' });
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  disabled={isLoading}
+                  className="w-full flex items-start hover:bg-gray-50 transition-colors" 
+                  style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < predictions.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
+                >
+                  <MapPin size={16} color="#999" className="flex-shrink-0" style={{ marginTop: '2px' }} />
+                  <div className="flex flex-col" style={{ gap: '2px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{highlightMatch(addr.main)}</span>
+                    <span style={{ fontSize: '12px', color: '#999' }}>{highlightMatch(addr.sub)}</span>
+                  </div>
+                </button>
+              ))
+            ) : (
+              // LOCAL FALLBACK ADDRESSES
+              filteredAddresses.map((addr, i) => (
+                <button 
+                  key={`${addr.main}-${addr.sub}-${i}`}
+                  onClick={() => handleAddAddress(addr)}
+                  disabled={isLoading}
+                  className="w-full flex items-start hover:bg-gray-50 transition-colors" 
+                  style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < filteredAddresses.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
+                >
+                  <MapPin size={16} color="#999" className="flex-shrink-0" style={{ marginTop: '2px' }} />
+                  <div className="flex flex-col" style={{ gap: '2px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{highlightMatch(addr.main)}</span>
+                    <span style={{ fontSize: '12px', color: '#999' }}>{highlightMatch(addr.sub)}</span>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
         </div>
       </div>
     );
@@ -71,6 +298,16 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
           Add Address
         </button>
       </div>
+
+      {isLoading && addresses.length === 0 && (
+        <AddressBookSkeleton />
+      )}
+
+      {addresses.length === 0 && !isLoading && (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#999', fontSize: '14px', background: '#FFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+          No shipping addresses found. Add a new address to get started.
+        </div>
+      )}
 
       {addresses.map((addr) => (
         <div key={addr.id} style={{ ...cardStyle, padding: '20px' }}>
@@ -95,7 +332,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
           </div>
           <div className="flex items-center" style={{ gap: '10px', marginTop: '14px' }}>
             <span style={{ fontSize: '9px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.06em', background: '#1A1A1A', borderRadius: '4px', padding: '4px 10px' }}>
-              {addr.isDefault ? 'Your Default Measurement' : 'Toggle to make default'}
+              {addr.isDefault ? 'Your Default Address' : 'Toggle to make default'}
             </span>
             <Toggle value={addr.isDefault} onChange={() => toggleDefaultAddress(addr.id)} />
           </div>

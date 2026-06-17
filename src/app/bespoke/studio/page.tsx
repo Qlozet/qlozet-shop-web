@@ -9,6 +9,8 @@ import { FloatingToolbar } from '@/components/studio/FloatingToolbar';
 import { MobileBottomSheet } from '@/components/studio/MobileBottomSheet';
 import { DesktopConfigPanel } from '@/components/studio/DesktopConfigPanel';
 
+import { type ClothingType, type DesignGender } from '@/data/studio-options';
+
 // ═══════════════════════════════════════════════════════════════
 //  STUDIO CONTENT
 // ═══════════════════════════════════════════════════════════════
@@ -17,8 +19,27 @@ function StudioContent() {
   const searchParams = useSearchParams();
 
   const designName = searchParams.get('name') || 'Untitled Design';
+  const rawType = searchParams.get('type');
+  const rawGender = searchParams.get('gender');
 
-  const customization = useCustomization({ mode: 'studio' });
+  // Map garment categories from the modal to clothing types
+  const typeMap: Record<string, ClothingType> = {
+    tops: 'top', shirts: 'top', blouses: 'top',
+    dresses: 'full_body', jumpsuits: 'full_body', kaftan: 'full_body', agbada: 'full_body', sets: 'full_body', suits: 'full_body',
+    skirts: 'bottom', pants: 'bottom', trousers: 'bottom',
+  };
+  const clothingType = rawType ? (typeMap[rawType.toLowerCase()] || undefined) : undefined;
+
+  // Map gender from modal (men/women) to API gender
+  const genderMap: Record<string, DesignGender> = { men: 'male', women: 'female', male: 'male', female: 'female', unisex: 'unisex' };
+  const designGender = rawGender ? (genderMap[rawGender.toLowerCase()] || undefined) : undefined;
+
+  const customization = useCustomization({
+    mode: 'studio',
+    initialDesignName: designName,
+    initialClothingType: clothingType,
+    initialGender: designGender,
+  });
 
   return (
     <div

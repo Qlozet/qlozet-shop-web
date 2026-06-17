@@ -21,6 +21,7 @@ export type ActiveSection =
   | 'measurement-detail'
   | 'add-measurement'
   | 'measurement-form'
+  | 'measurement-results'
   | 'account-security'
   | 'change-password'
   | 'notifications'
@@ -31,11 +32,54 @@ export type ActiveSection =
 
 export type OrderStatus = 'Shipped' | 'Refused' | 'Delivered' | 'Pending';
 
+// ─── Measurement Types (aligned with backend MeasurementInputDto) ──
+export interface MeasurementValues {
+  chest: number;
+  waist: number;
+  hip: number;
+  shoulder_breadth: number;
+  arm_length: number;
+  leg_length: number;
+  bicep: number;
+  forearm: number;
+  thigh: number;
+  calf: number;
+  wrist: number;
+  ankle: number;
+  height: number;
+  shoulder_to_crotch: number;
+}
+
+export const MEASUREMENT_LABELS: Record<keyof MeasurementValues, string> = {
+  chest: 'Chest',
+  waist: 'Waist',
+  hip: 'Hips',
+  shoulder_breadth: 'Shoulder Width',
+  arm_length: 'Arm Length',
+  leg_length: 'Leg Length',
+  bicep: 'Bicep',
+  forearm: 'Forearm',
+  thigh: 'Thigh',
+  calf: 'Calf',
+  wrist: 'Wrist',
+  ankle: 'Ankle',
+  height: 'Height',
+  shoulder_to_crotch: 'Torso Length',
+};
+
+export const EMPTY_MEASUREMENTS: MeasurementValues = {
+  chest: 0, waist: 0, hip: 0, shoulder_breadth: 0,
+  arm_length: 0, leg_length: 0, bicep: 0, forearm: 0,
+  thigh: 0, calf: 0, wrist: 0, ankle: 0,
+  height: 0, shoulder_to_crotch: 0,
+};
+
 export interface MeasurementProfile {
   id: string;
   name: string;
   isDefault: boolean;
-  values: Record<string, number>;
+  unit: 'cm' | 'inch';
+  values: MeasurementValues;
 }
 
 export type ProductType = 'custom' | 'ready-to-wear' | 'fabric' | 'accessories' | 'bespoke';

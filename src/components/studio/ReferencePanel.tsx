@@ -9,6 +9,11 @@ interface ReferencePanelProps {
   onUploadClick: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isUploading?: boolean;
+  uploadStatus?: string | null;
+  uploadError?: string | null;
+  userPrompt?: string;
+  onPromptChange?: (value: string) => void;
 }
 
 export const ReferencePanel: React.FC<ReferencePanelProps> = (props) => (

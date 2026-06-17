@@ -47,6 +47,11 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
       {/* Bottom CTAs */}
       <div className="flex-shrink-0 flex flex-col w-full" style={{ gap: '10px' }}>
         <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} />
+        {customization.generationError && (
+          <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', padding: '0 8px' }}>
+            ⚠ {customization.generationError}
+          </p>
+        )}
 
         {/* Order Now */}
         <button

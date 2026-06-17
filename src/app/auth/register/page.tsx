@@ -7,12 +7,13 @@ import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
 import { Mail, Check, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { api } from '@/lib/api';
 
 type RegisterStep = 'email' | 'personal' | 'password' | 'otp';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login, user } = useApp();
+  const { authenticateUser, user } = useApp();
 
   // Signup Steps Wizard
   const [step, setStep] = useState<RegisterStep>('email');
@@ -26,8 +27,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  // OTP Inputs (4 cells)
-  const [otp, setOtp] = useState(['', '', '', '']);
+  // OTP Inputs (6 cells)
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
 
   // UI helpers
   const [showPass, setShowPass] = useState(false);
@@ -119,10 +120,21 @@ export default function RegisterPage() {
     }
     setError('');
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep('otp');
-    }, 1000);
+    api.post('/auth/register/customer', {
+      full_name: fullName,
+      email,
+      phone_number: phone,
+      password,
+      dob,
+    })
+      .then(() => {
+        setIsLoading(false);
+        setStep('otp');
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      });
   };
 
   // Form Handler Step 4 (OTP Verification)
@@ -133,22 +145,26 @@ export default function RegisterPage() {
     setOtp(newOtp);
 
     // Focus next cell automatically
-    if (val && index < 3) {
+    if (val && index < 5) {
       const nextEl = document.getElementById(`otp-${index + 1}`) || document.getElementById(`otp-m-${index + 1}`);
       if (nextEl) nextEl.focus();
     }
 
-    // Auto-submit when all 4 digits are filled
+    // Auto-submit when all 6 digits are filled
     if (newOtp.every(cell => cell !== '')) {
-      setTimeout(() => {
-        setError('');
-        setIsLoading(true);
-        setTimeout(() => {
+      const code = newOtp.join('');
+      setError('');
+      setIsLoading(true);
+      api.post('/auth/verify-email', { token: code })
+        .then(async () => {
+          await authenticateUser(email, password);
           setIsLoading(false);
-          login(email, fullName);
           router.push('/auth/onboarding');
-        }, 1200);
-      }, 300);
+        })
+        .catch((err: any) => {
+          setIsLoading(false);
+          setError(err.response?.data?.message || 'Verification failed. Please check the code.');
+        });
     }
   };
 
@@ -164,17 +180,23 @@ export default function RegisterPage() {
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.some(cell => !cell)) {
-      setError('Please enter the full 4-digit code.');
+      setError('Please enter the full 6-digit code.');
       return;
     }
     setError('');
     setIsLoading(true);
     
-    setTimeout(() => {
-      setIsLoading(false);
-      login(email, fullName);
-      router.push('/auth/onboarding');
-    }, 1200);
+    const code = otp.join('');
+    api.post('/auth/verify-email', { token: code })
+      .then(async () => {
+        await authenticateUser(email, password);
+        setIsLoading(false);
+        router.push('/auth/onboarding');
+      })
+      .catch((err: any) => {
+        setIsLoading(false);
+        setError(err.response?.data?.message || 'Verification failed. Please check the code.');
+      });
   };
 
   return (
@@ -393,7 +415,7 @@ export default function RegisterPage() {
                       onChange={(e) => {
                         handleOtpChange(e.target.value, idx);
                         // Auto-focus next on mobile
-                        if (e.target.value && idx < 3) {
+                        if (e.target.value && idx < 5) {
                           const nextEl = document.getElementById(`otp-m-${idx + 1}`);
                           if (nextEl) nextEl.focus();
                         }

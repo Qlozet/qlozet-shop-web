@@ -11,7 +11,9 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { productCatalog } from '@/data/products';
 import { vendorCatalog } from '@/data/vendors';
 import { useCustomization } from '@/hooks/useCustomization';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { SILHOUETTES, NECKLINES, SLEEVES, FABRICS, ACCESSORIES } from '@/data/studio-options';
+import { useStyleLibrary } from '@/hooks/useStyleLibrary';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
 import { ReserveFabricModal } from '@/components/studio/ReserveFabricModal';
@@ -35,9 +37,26 @@ export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { wishlist, toggleWishlist, addToCart } = useApp();
+  const trackEvent = useTrackEvent();
 
   const productId = params.id as string;
   const product = productCatalog.find((p) => p.id === productId) || productCatalog[0];
+
+  // Track product view on mount
+  useEffect(() => {
+    if (product) {
+      trackEvent({
+        eventType: 'view_item',
+        properties: {
+          itemId: product.id,
+          price: product.price,
+          brand: product.brand,
+          kind: product.kind,
+        },
+        context: { surface: 'product_page' },
+      });
+    }
+  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // UI States
   const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
@@ -158,6 +177,19 @@ export default function ProductDetailsPage() {
   const isFabric = product.kind === 'fabric';
   const matchedVendor = vendorCatalog.find((v) => v.productIds.includes(product.id));
   const customization = useCustomization({ mode: 'product', defaultSection: 'styles' });
+
+  // Look up selected styles from API cache or hardcoded fallback
+  const { all: apiStyles } = useStyleLibrary();
+  const findApiStyle = (id: string | null) => {
+    if (!id) return null;
+    // Try API first
+    const api = apiStyles.find((s) => s._id === id);
+    if (api) return { label: api.name, emoji: '✂️', imageUrl: api.image_url, extraCost: api.price_suggestion };
+    // Fallback to hardcoded
+    const hardcoded = [...SILHOUETTES, ...NECKLINES, ...SLEEVES].find((s) => s.id === id);
+    if (hardcoded) return { label: hardcoded.label, emoji: hardcoded.emoji, imageUrl: undefined, extraCost: hardcoded.extraCost };
+    return null;
+  };
 
   const isWish = wishlist.includes(product.id);
   const gallery = product.gallery;
@@ -317,128 +349,113 @@ export default function ProductDetailsPage() {
 
               {/* ── Customization Hotspots (dynamic from selected options) ── */}
               {isCustomizable && !isZoomed && (() => {
-                const selNeck = NECKLINES.find((n) => n.id === customization.selectedNeckline);
-                const selSleeve = SLEEVES.find((s) => s.id === customization.selectedSleeve);
+                const selNeck = findApiStyle(customization.selectedNeckline);
+                const selSleeve = findApiStyle(customization.selectedSleeve);
                 const selFabric = FABRICS.find((f) => f.id === customization.selectedFabric);
                 const selAccs = customization.selectedAccessories.map((id) => ACCESSORIES.find((a) => a.id === id)).filter(Boolean);
+
+                // Open customize panel and jump to a specific section
+                const openSection = (section: string) => {
+                  setShowCustomize(true);
+                  customization.setExpandedSection(section);
+                };
+
+                // Hotspot wrapper with hover (desktop) + tap (mobile)
+                const Hotspot = ({ name, top, left, transform, delay, section, children }: {
+                  name: string; top: string; left: string; transform?: string; delay?: string; section: string;
+                  children: React.ReactNode;
+                }) => (
+                  <div
+                    className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
+                    style={{ top, left, transform }}
+                    onMouseEnter={() => setActiveHotspot(name)}
+                    onMouseLeave={() => setActiveHotspot(null)}
+                    onClick={(e) => { e.stopPropagation(); openSection(section); }}
+                  >
+                    <div className="relative flex items-center">
+                      <div
+                        className="hotspot-dot rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0 w-[24px] h-[24px] lg:w-[14px] lg:h-[14px]"
+                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: delay }}
+                      />
+                      <div
+                        className={`absolute left-full top-1/2 -translate-y-1/2 items-center overflow-hidden transition-all duration-500 ease-out hidden lg:flex ${activeHotspot === name || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
+                        style={{ transitionDelay: delay }}
+                      >
+                        {children}
+                      </div>
+                    </div>
+                  </div>
+                );
+
                 return (
                   <>
-                    {/* Neckline hotspot — upper center */}
-                    <div
-                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
-                      style={{ top: '22%', left: '50%', transform: 'translateX(-50%)' }}
-                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'neckline' ? null : 'neckline'); }}
-                    >
-                      <div className="relative flex items-center">
-                        <div
-                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
-                        />
-                        <div
-                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'neckline' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                        >
-                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                            <div>
-                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selNeck?.label || 'Neckline'}</p>
-                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selNeck?.extraCost ? `+ ₦${selNeck.extraCost.toLocaleString()}` : 'Included'}</p>
-                            </div>
-                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                              <span style={{ fontSize: '18px' }}>{selNeck?.emoji || '👗'}</span>
-                            </div>
-                          </div>
+                    {/* Neckline hotspot */}
+                    <Hotspot name="neckline" top="22%" left="50%" transform="translateX(-50%)" section="styles">
+                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                        <div>
+                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selNeck?.label || 'Neckline'}</p>
+                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selNeck?.extraCost ? `+ ₦${selNeck.extraCost.toLocaleString()}` : 'Included'}</p>
+                        </div>
+                        <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0 overflow-hidden" style={{ width: '32px', height: '32px' }}>
+                          {selNeck?.imageUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={selNeck.imageUrl} alt={selNeck.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '18px' }}>{selNeck?.emoji || '👗'}</span>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    </Hotspot>
 
-                    {/* Sleeves hotspot — left center */}
-                    <div
-                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
-                      style={{ top: '38%', left: '18%' }}
-                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'sleeves' ? null : 'sleeves'); }}
-                    >
-                      <div className="relative flex items-center">
-                        <div
-                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.3s' }}
-                        />
-                        <div
-                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'sleeves' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                          style={{ transitionDelay: '0.1s' }}
-                        >
-                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                            <div>
-                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selSleeve?.label || 'Sleeves'}</p>
-                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selSleeve?.extraCost ? `+ ₦${selSleeve.extraCost.toLocaleString()}` : 'Included'}</p>
-                            </div>
-                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                              <span style={{ fontSize: '18px' }}>{selSleeve?.emoji || '💪'}</span>
-                            </div>
-                          </div>
+                    {/* Sleeves hotspot */}
+                    <Hotspot name="sleeves" top="38%" left="18%" delay="0.3s" section="styles">
+                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                        <div>
+                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selSleeve?.label || 'Sleeves'}</p>
+                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selSleeve?.extraCost ? `+ ₦${selSleeve.extraCost.toLocaleString()}` : 'Included'}</p>
+                        </div>
+                        <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0 overflow-hidden" style={{ width: '32px', height: '32px' }}>
+                          {selSleeve?.imageUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={selSleeve.imageUrl} alt={selSleeve.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '18px' }}>{selSleeve?.emoji || '💪'}</span>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    </Hotspot>
 
-                    {/* Fabric hotspot — center body */}
-                    <div
-                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
-                      style={{ top: '55%', left: '50%', transform: 'translateX(-50%)' }}
-                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'fabric' ? null : 'fabric'); }}
-                    >
-                      <div className="relative flex items-center">
-                        <div
-                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.6s' }}
-                        />
-                        <div
-                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'fabric' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                          style={{ transitionDelay: '0.2s' }}
-                        >
-                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                            <div>
-                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selFabric?.name || 'Fabric'}</p>
-                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selFabric?.extraCost ? `+ ₦${selFabric.extraCost.toLocaleString()}` : 'Included'}</p>
-                            </div>
-                            {selFabric ? (
-                              <div className="relative overflow-hidden rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                                <Image src={selFabric.image} alt={selFabric.name} fill className="object-cover" sizes="32px" />
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                                <span style={{ fontSize: '18px' }}>🧵</span>
-                              </div>
-                            )}
-                          </div>
+                    {/* Fabric hotspot */}
+                    <Hotspot name="fabric" top="55%" left="50%" transform="translateX(-50%)" delay="0.6s" section="fabric">
+                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                        <div>
+                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selFabric?.name || 'Fabric'}</p>
+                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selFabric?.extraCost ? `+ ₦${selFabric.extraCost.toLocaleString()}` : 'Included'}</p>
                         </div>
+                        {selFabric ? (
+                          <div className="relative overflow-hidden rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                            <Image src={selFabric.image} alt={selFabric.name} fill className="object-cover" sizes="32px" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                            <span style={{ fontSize: '18px' }}>🧵</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    </Hotspot>
 
-                    {/* Accessories hotspot — waist area */}
-                    <div
-                      className="absolute z-10 flex items-center transition-all duration-500 ease-out cursor-pointer"
-                      style={{ top: '72%', left: '45%' }}
-                      onClick={(e) => { e.stopPropagation(); setActiveHotspot(activeHotspot === 'accessories' ? null : 'accessories'); }}
-                    >
-                      <div className="relative flex items-center">
-                        <div
-                          className="hotspot-dot w-[14px] h-[14px] rounded-full bg-white border-[3px] border-white shadow-md flex-shrink-0"
-                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.25)', animationDelay: '0.9s' }}
-                        />
-                        <div
-                          className={`absolute left-full top-1/2 -translate-y-1/2 flex items-center overflow-hidden transition-all duration-500 ease-out ${activeHotspot === 'accessories' || showCustomize ? 'max-w-[220px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0'}`}
-                          style={{ transitionDelay: '0.3s' }}
-                        >
-                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                            <div>
-                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selAccs.length > 0 ? selAccs.map((a) => a!.name).join(', ') : 'Accessories'}</p>
-                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selAccs.length > 0 ? `+ ₦${selAccs.reduce((sum, a) => sum + (a!.extraCost || 0), 0).toLocaleString()}` : 'None selected'}</p>
-                            </div>
-                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                              <span style={{ fontSize: '18px' }}>{selAccs.length > 0 ? selAccs[0]!.emoji : '🪢'}</span>
-                            </div>
-                          </div>
+                    {/* Accessories hotspot */}
+                    <Hotspot name="accessories" top="72%" left="45%" delay="0.9s" section="accessories">
+                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
+                        <div>
+                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selAccs.length > 0 ? selAccs.map((a) => a!.name).join(', ') : 'Accessories'}</p>
+                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selAccs.length > 0 ? `+ ₦${selAccs.reduce((sum, a) => sum + (a!.extraCost || 0), 0).toLocaleString()}` : 'None selected'}</p>
+                        </div>
+                        <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
+                          <span style={{ fontSize: '18px' }}>{selAccs.length > 0 ? selAccs[0]!.emoji : '🪢'}</span>
                         </div>
                       </div>
-                    </div>
+                    </Hotspot>
                   </>
                 );
               })()}
@@ -512,6 +529,103 @@ export default function ProductDetailsPage() {
                 </button>
               ))}
             </div>
+
+            {/* ── Mobile Category Pills (visible on mobile only) ── */}
+            {isCustomizable && (
+              <div className="flex lg:hidden overflow-x-auto" style={{ gap: '8px', paddingBottom: '4px' }}>
+                {[
+                  { id: customization.selectedNeckline, cat: 'Neckline', section: 'styles', fallbackEmoji: '👗' },
+                  { id: customization.selectedSleeve, cat: 'Sleeves', section: 'styles', fallbackEmoji: '💪' },
+                  { id: customization.selectedCollar, cat: 'Collar', section: 'styles', fallbackEmoji: '👔' },
+                  { id: customization.selectedSkirt, cat: 'Skirt', section: 'styles', fallbackEmoji: '👗' },
+                  { id: customization.selectedTrouser, cat: 'Trouser', section: 'styles', fallbackEmoji: '👖' },
+                  { id: customization.selectedFullBody, cat: 'Style', section: 'styles', fallbackEmoji: '👘' },
+                ].map(({ id, cat, section, fallbackEmoji }) => {
+                  const style = findApiStyle(id);
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => { setShowCustomize(true); customization.setExpandedSection(section); }}
+                      className="flex items-center flex-shrink-0 transition-all active:scale-95"
+                      style={{
+                        padding: '6px 12px 6px 6px',
+                        borderRadius: '24px',
+                        border: style ? '1.5px solid #2C1810' : '1.5px dashed #CCC',
+                        background: style ? '#FAF6F1' : '#FAFAFA',
+                        cursor: 'pointer',
+                        gap: '8px',
+                      }}
+                    >
+                      <div className="flex items-center justify-center overflow-hidden" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
+                        {style?.imageUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '14px' }}>{fallbackEmoji}</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: style ? '#2C1810' : '#999', whiteSpace: 'nowrap' }}>
+                        {style?.label || cat}
+                      </span>
+                    </button>
+                  );
+                })}
+                {/* Fabric pill */}
+                {(() => {
+                  const selFab = FABRICS.find((f) => f.id === customization.selectedFabric);
+                  return (
+                    <button
+                      onClick={() => { setShowCustomize(true); customization.setExpandedSection('fabric'); }}
+                      className="flex items-center flex-shrink-0 transition-all active:scale-95"
+                      style={{
+                        padding: '6px 12px 6px 6px',
+                        borderRadius: '24px',
+                        border: selFab ? '1.5px solid #2C1810' : '1.5px dashed #CCC',
+                        background: selFab ? '#FAF6F1' : '#FAFAFA',
+                        cursor: 'pointer',
+                        gap: '8px',
+                      }}
+                    >
+                      <div className="relative overflow-hidden flex-shrink-0" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F5F5F5' }}>
+                        {selFab ? (
+                          <Image src={selFab.image} alt={selFab.name} fill style={{ objectFit: 'cover' }} sizes="28px" />
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full" style={{ fontSize: '14px' }}>🧵</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: selFab ? '#2C1810' : '#999', whiteSpace: 'nowrap' }}>
+                        {selFab?.name || 'Fabric'}
+                      </span>
+                    </button>
+                  );
+                })()}
+                {/* Accessories pill */}
+                {(() => {
+                  const selAccCount = customization.selectedAccessories.length;
+                  return (
+                    <button
+                      onClick={() => { setShowCustomize(true); customization.setExpandedSection('accessories'); }}
+                      className="flex items-center flex-shrink-0 transition-all active:scale-95"
+                      style={{
+                        padding: '6px 12px 6px 6px',
+                        borderRadius: '24px',
+                        border: selAccCount > 0 ? '1.5px solid #7C3AED' : '1.5px dashed #CCC',
+                        background: selAccCount > 0 ? '#F0EDFF' : '#FAFAFA',
+                        cursor: 'pointer',
+                        gap: '8px',
+                      }}
+                    >
+                      <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
+                        <span style={{ fontSize: '14px' }}>🪢</span>
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: selAccCount > 0 ? '#5B21B6' : '#999', whiteSpace: 'nowrap' }}>
+                        {selAccCount > 0 ? `${selAccCount} selected` : 'Accessories'}
+                      </span>
+                    </button>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* ── RIGHT: Product Info Panel ─────────────────────────── */}
@@ -670,72 +784,39 @@ export default function ProductDetailsPage() {
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Selected Customizations
                 </span>
-                <div className="flex" style={{ gap: '8px' }}>
-                  {/* Silhouette */}
-                  {(() => {
-                    const sil = SILHOUETTES.find((s) => s.id === customization.selectedSilhouette);
-                    return sil ? (
-                      <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+                <div className="flex flex-wrap" style={{ gap: '8px' }}>
+                  {/* Style selections (neckline, sleeve, collar, skirt, trouser, fullBody) */}
+                  {[
+                    { id: customization.selectedNeckline, cat: 'Neckline' },
+                    { id: customization.selectedSleeve, cat: 'Sleeve' },
+                    { id: customization.selectedCollar, cat: 'Collar' },
+                    { id: customization.selectedSkirt, cat: 'Skirt' },
+                    { id: customization.selectedTrouser, cat: 'Trouser' },
+                    { id: customization.selectedFullBody, cat: 'Style' },
+                    { id: customization.selectedSilhouette, cat: 'Silhouette' },
+                  ].map(({ id, cat }) => {
+                    const style = findApiStyle(id);
+                    if (!style) return null;
+                    return (
+                      <div key={`${cat}-${id}`} className="flex flex-col items-center" style={{ gap: '4px' }}>
                         <div
-                          className="flex items-center justify-center"
+                          className="flex items-center justify-center overflow-hidden"
                           style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '12px',
-                            background: '#F5F5F5',
-                            border: '2px solid #1A1A1A',
+                            width: '52px', height: '52px', borderRadius: '12px',
+                            background: '#F5F5F5', border: '2px solid #1A1A1A',
                           }}
                         >
-                          <span style={{ fontSize: '22px' }}>{sil.emoji}</span>
+                          {style.imageUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '22px' }}>{style.emoji}</span>
+                          )}
                         </div>
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{sil.label}</span>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{style.label}</span>
                       </div>
-                    ) : null;
-                  })()}
-
-                  {/* Neckline */}
-                  {(() => {
-                    const neck = NECKLINES.find((n) => n.id === customization.selectedNeckline);
-                    return neck ? (
-                      <div className="flex flex-col items-center" style={{ gap: '4px' }}>
-                        <div
-                          className="flex items-center justify-center"
-                          style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '12px',
-                            background: '#F5F5F5',
-                            border: '2px solid #1A1A1A',
-                          }}
-                        >
-                          <span style={{ fontSize: '22px' }}>{neck.emoji}</span>
-                        </div>
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{neck.label}</span>
-                      </div>
-                    ) : null;
-                  })()}
-
-                  {/* Sleeve */}
-                  {(() => {
-                    const slv = SLEEVES.find((s) => s.id === customization.selectedSleeve);
-                    return slv ? (
-                      <div className="flex flex-col items-center" style={{ gap: '4px' }}>
-                        <div
-                          className="flex items-center justify-center"
-                          style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '12px',
-                            background: '#F5F5F5',
-                            border: '2px solid #1A1A1A',
-                          }}
-                        >
-                          <span style={{ fontSize: '22px' }}>{slv.emoji}</span>
-                        </div>
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{slv.label}</span>
-                      </div>
-                    ) : null;
-                  })()}
+                    );
+                  })}
 
                   {/* Selected Accessories */}
                   {customization.selectedAccessories.map((accId) => {
@@ -745,11 +826,8 @@ export default function ProductDetailsPage() {
                         <div
                           className="flex items-center justify-center"
                           style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '12px',
-                            background: '#F0EDFF',
-                            border: '2px solid #7C3AED',
+                            width: '52px', height: '52px', borderRadius: '12px',
+                            background: '#F0EDFF', border: '2px solid #7C3AED',
                           }}
                         >
                           <span style={{ fontSize: '22px' }}>{acc.emoji}</span>
@@ -760,7 +838,7 @@ export default function ProductDetailsPage() {
                   })}
 
                   {/* Empty state */}
-                  {!customization.selectedSilhouette && !customization.selectedNeckline && !customization.selectedSleeve && customization.selectedAccessories.length === 0 && (
+                  {!customization.selectedSilhouette && !customization.selectedNeckline && !customization.selectedSleeve && !customization.selectedCollar && !customization.selectedSkirt && !customization.selectedTrouser && !customization.selectedFullBody && customization.selectedAccessories.length === 0 && (
                     <span style={{ fontSize: '12px', color: '#AAA', fontStyle: 'italic' }}>
                       Tap &quot;Customize Outfit&quot; to select styles
                     </span>
