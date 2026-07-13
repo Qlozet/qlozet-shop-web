@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
@@ -40,9 +40,17 @@ function darkenHex(hex: string, amount: number = 0.65): string {
 export default function VendorPage() {
   const params = useParams();
   const vendorId = params.id as string;
-  const { wishlist, toggleWishlist, followedVendors, toggleFollowVendor } = useApp();
+  const { wishlist, toggleWishlist, followedVendors, toggleFollowVendor, addRecentlyViewed } = useApp();
 
   const vendor = vendorCatalog.find((v) => v.id === vendorId);
+
+  // Track recently viewed — record vendor with their logo
+  useEffect(() => {
+    if (vendor) {
+      const logo = vendor.logoImage || '/image/icon1.jpg';
+      addRecentlyViewed({ id: vendor.id, image: logo, href: `/vendor/${vendor.id}` });
+    }
+  }, [vendorId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Modals
   const [showSidebar, setShowSidebar] = useState(false);

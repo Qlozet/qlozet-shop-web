@@ -31,8 +31,8 @@ export default function DiscoverSlugPage() {
   const slugParts: string[] = Array.isArray(rawSlug)
     ? rawSlug
     : rawSlug
-    ? [rawSlug]
-    : [];
+      ? [rawSlug]
+      : [];
 
   // Resolve taxonomy
   const { nodes, current } = resolveSlug(slugParts);

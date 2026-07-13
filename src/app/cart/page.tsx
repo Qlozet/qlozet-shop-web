@@ -17,7 +17,53 @@ import {
 } from 'lucide-react';
 
 export default function CartPage() {
-  const { cart, removeFromCart, toggleWishlist, wishlist } = useApp();
+  const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
+
+  if (!user) {
+    return (
+      <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in">
+        <h1
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          style={{ fontSize: '22px' }}
+        >
+          My Cart
+        </h1>
+        <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '20px' }}>
+          <div className="flex items-center justify-center" style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}>
+            <ShoppingBag size={32} color="#8B5A2B" strokeWidth={1.5} />
+          </div>
+          <div className="flex flex-col" style={{ gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Sign In Required
+            </h3>
+            <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+              You must sign in first before being able to view or manage your shopping cart.
+            </p>
+          </div>
+          <Link
+            href="/auth/login"
+            className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              padding: '14px 32px',
+              borderRadius: '100px',
+              background: '#2C1810',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
+            }}
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Collapsible sections
   const [showPremiere, setShowPremiere] = useState(false);
@@ -108,6 +154,22 @@ export default function CartPage() {
                       fill
                       style={{ objectFit: 'cover' }}
                     />
+                    {/* Item number badge */}
+                    <span
+                      className="absolute flex items-center justify-center"
+                      style={{
+                        top: '6px', left: '6px',
+                        width: '20px', height: '20px',
+                        borderRadius: '50%',
+                        background: '#2C1810',
+                        color: '#FFFFFF',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
                   </Link>
 
                   {/* Product Info */}
@@ -345,7 +407,7 @@ export default function CartPage() {
               style={{
                 padding: '13px',
                 borderRadius: '10px',
-                background: '#2D6A4F',
+                background: '#064E3B',
                 color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: 800,

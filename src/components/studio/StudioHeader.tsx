@@ -13,6 +13,9 @@ import {
   Trash2,
   MoreVertical,
 } from 'lucide-react';
+import { TokenIcon } from '../icons/TokenIcon';
+
+import { useApp } from '@/context/AppContext';
 
 interface StudioHeaderProps {
   designName: string;
@@ -32,15 +35,15 @@ interface StudioAction {
   showWhen?: DesignStatus[];
 }
 
-const getActions = (status: DesignStatus): StudioAction[] => {
+const getActions = (status: DesignStatus, hasUser: boolean): StudioAction[] => {
   const all: StudioAction[] = [
-    { id: 'save', label: 'Save', icon: Bookmark },
-    { id: 'publish', label: 'Publish', icon: Globe, showWhen: ['unpublished', 'draft'] },
-    { id: 'unpublish', label: 'Unpublish', icon: GlobeLock, showWhen: ['published'] },
-    { id: 'duplicate', label: 'Duplicate', icon: Copy },
-    { id: 'chat_vendor', label: 'Chat Vendor', icon: MessageCircle, disabled: status === 'draft' },
-    { id: 'share', label: 'Share', icon: Share2 },
-    { id: 'delete', label: 'Delete', icon: Trash2, color: '#EF4444' },
+    { id: 'save', label: 'Save', icon: Bookmark, disabled: !hasUser },
+    { id: 'publish', label: 'Publish', icon: Globe, showWhen: ['unpublished', 'draft'], disabled: !hasUser },
+    { id: 'unpublish', label: 'Unpublish', icon: GlobeLock, showWhen: ['published'], disabled: !hasUser },
+    { id: 'duplicate', label: 'Duplicate', icon: Copy, disabled: !hasUser },
+    { id: 'chat_vendor', label: 'Chat Vendor', icon: MessageCircle, disabled: status === 'draft' || !hasUser },
+    { id: 'share', label: 'Share', icon: Share2, disabled: !hasUser },
+    { id: 'delete', label: 'Delete', icon: Trash2, color: '#EF4444', disabled: !hasUser },
   ];
   return all.filter(
     (a) => !a.showWhen || a.showWhen.includes(status)
@@ -51,6 +54,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   designName,
   tokenBalance,
 }) => {
+  const { user } = useApp();
   const [designStatus] = useState<DesignStatus>('published');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -66,7 +70,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileMenu]);
 
-  const actions = getActions(designStatus);
+  const actions = getActions(designStatus, !!user);
 
   const handleAction = (id: string) => {
     setShowMobileMenu(false);
@@ -147,7 +151,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         {/* Right: Token pill + 3-dot menu */}
         <div className="flex items-center" style={{ gap: '12px' }}>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '6px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
-            <span style={{ fontSize: '13px' }}>🪙</span>
+            <TokenIcon size={14} color="#D4AF37" />
             <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A' }}>{tokenBalance}</span>
           </div>
 

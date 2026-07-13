@@ -129,7 +129,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               style={{
                 padding: '20px',
                 borderRadius: '20px',
-                background: 'linear-gradient(135deg, #7C3AED 0%, #9B51E0 100%)',
+                background: 'linear-gradient(135deg, #3B0764 0%, #4C1D95 100%)',
                 border: 'none',
                 cursor: 'pointer',
                 gap: '16px',
@@ -149,10 +149,10 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               onClick={() => setStep('custom')}
               className="w-full flex items-center transition-all hover:scale-[1.01] active:scale-[0.99]"
               style={{
-                padding: '20px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #065F46 0%, #059669 100%)',
-                border: 'none',
+                padding: '16px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #064E3B 0%, #065F46 100%)',
+                color: '#FFF',
                 cursor: 'pointer',
                 gap: '16px',
               }}
@@ -179,7 +179,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                 <button
                   onClick={() => { handleClose(); router.push('/bespoke/studio'); }}
                   className="transition-all hover:opacity-90"
-                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#7C3AED', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#4C1D95', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
                 >
                   Go to Studio
                 </button>
@@ -214,7 +214,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                 <button
                   onClick={() => { handleClose(); router.push('/products'); }}
                   className="transition-all hover:opacity-90"
-                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#065F46', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#064E3B', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
                 >
                   Browse Products
                 </button>

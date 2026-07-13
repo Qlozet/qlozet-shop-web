@@ -52,6 +52,12 @@ export interface FabricReservation {
   status: 'active' | 'completed' | 'expired';
 }
 
+export interface RecentItem {
+  id: string;
+  image: string;
+  href: string;
+}
+
 interface AppContextType {
   user: User | null;
   gender: 'male' | 'female';
@@ -80,6 +86,8 @@ interface AppContextType {
   reservations: FabricReservation[];
   createReservation: (reservation: Omit<FabricReservation, 'id' | 'createdAt' | 'claimedYards' | 'status'>) => string;
   claimReservation: (id: string, yards: number) => boolean;
+  recentlyViewed: RecentItem[];
+  addRecentlyViewed: (item: RecentItem) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -95,6 +103,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [jobs, setJobs] = useState<TryOnJob[]>([]);
   const [reservations, setReservations] = useState<FabricReservation[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentItem[]>([]);
 
   // Seed demo details on initial load
   useEffect(() => {
@@ -116,6 +125,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedGender) setGenderState(savedGender as 'male' | 'female');
     if (savedGenderSelected === 'true') setGenderSelectedState(true);
     if (savedFollowed) setFollowedVendors(JSON.parse(savedFollowed));
+    const savedRecent = localStorage.getItem('qlozet_recently_viewed');
+    if (savedRecent) setRecentlyViewed(JSON.parse(savedRecent));
 
     // Validate active backend session on load
     const token = localStorage.getItem('qlozet_access_token');
@@ -131,10 +142,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             phone: userProfile.phone_number || userProfile.phone || '',
             address: userProfile.address || '',
             dob: userProfile.dob || '',
-            tokenBalance: userProfile.tokenBalance ?? 250,
+            tokenBalance: userProfile.tokenBalance ?? 0,
           };
           setUser(mappedUser);
           localStorage.setItem('qlozet_user', JSON.stringify(mappedUser));
+
+          // Fetch real token balance from dedicated endpoint
+          api.get('/token/balance').then((tokenRes) => {
+            const realBalance = tokenRes.data?.data?.tokens ?? tokenRes.data?.tokens ?? 0;
+            const userWithBalance = { ...mappedUser, tokenBalance: realBalance };
+            setUser(userWithBalance);
+            localStorage.setItem('qlozet_user', JSON.stringify(userWithBalance));
+          }).catch(() => { /* token fetch failed, keep default */ });
         })
         .catch(() => {
           // Clean logout on token expiration / error
@@ -297,13 +316,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       phone: userProfile.phone_number || userProfile.phone || '',
       address: userProfile.address || '',
       dob: userProfile.dob || '',
-      tokenBalance: userProfile.tokenBalance ?? 250,
+      tokenBalance: userProfile.tokenBalance ?? 0,
     };
 
     setUser(mappedUser);
     localStorage.setItem('qlozet_user', JSON.stringify(mappedUser));
 
-    return mappedUser;
+    // Fetch real token balance from dedicated endpoint
+    try {
+      const tokenRes = await api.get('/token/balance');
+      const realBalance = tokenRes.data?.data?.tokens ?? tokenRes.data?.tokens ?? 0;
+      const userWithBalance = { ...mappedUser, tokenBalance: realBalance };
+      setUser(userWithBalance);
+      localStorage.setItem('qlozet_user', JSON.stringify(userWithBalance));
+      return userWithBalance;
+    } catch {
+      return mappedUser;
+    }
   };
 
   const logout = () => {
@@ -487,6 +516,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return success;
   };
 
+  // ── Recently Viewed ─────────────────────────────────────────────
+  const addRecentlyViewed = (item: RecentItem) => {
+    setRecentlyViewed((prev) => {
+      const filtered = prev.filter((i) => i.id !== item.id);
+      const updated = [item, ...filtered].slice(0, 12);
+      saveState('qlozet_recently_viewed', updated);
+      return updated;
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -517,6 +556,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         reservations,
         createReservation,
         claimReservation,
+        recentlyViewed,
+        addRecentlyViewed,
       }}
     >
       {children}

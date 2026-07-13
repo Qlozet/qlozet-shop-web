@@ -11,15 +11,18 @@ import { productCatalog } from '@/data/products';
 import { vendorCatalog } from '@/data/vendors';
 import { GenderToggle } from '@/components/GenderToggle';
 import { TrendingBanner } from '@/components/TrendingBanner';
-import { VendorCard } from '@/components/VendorCard';
+import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
 import { PromoBanner } from '@/components/PromoBanner';
+import { ShopByCategory } from '@/components/ShopByCategory';
+import { FollowingBar } from '@/components/FollowingBar';
+import { ForYouSection } from '@/components/ForYouSection';
 
 // ─── Category Section Config ──────────────────────────────────────
 const FEED_SECTIONS = [
-  { key: 'accessories', label: 'ACCESSORIES', filter: 'accessories' },
-  { key: 'custom_made', label: 'CUSTOM MADE', filter: 'custom_made' },
-  { key: 'clothing', label: 'READY TO WEAR', filter: 'clothing' },
-  { key: 'fabric', label: 'FABRIC', filter: 'fabric' },
+  { key: 'accessories', label: 'ACCESSORIES', filter: 'accessories', href: '/discover/accessories' },
+  { key: 'custom_made', label: 'CUSTOM MADE', filter: 'custom_made', href: '/discover/custom' },
+  { key: 'clothing', label: 'READY TO WEAR', filter: 'clothing', href: '/discover/ready-to-wear' },
+  { key: 'fabric', label: 'FABRIC', filter: 'fabric', href: '/discover/fabric' },
 ] as const;
 
 // ─── Scrollable Vendor Row ────────────────────────────────────────
@@ -52,7 +55,7 @@ function VendorRow({
             vendor.productIds.includes(p.id)
           );
           return (
-            <VendorCard
+            <VendorShowcaseCard
               key={vendor.id}
               vendor={vendor}
               products={vendorProducts}
@@ -100,6 +103,7 @@ export default function HomePage() {
     followedVendors,
     toggleFollowVendor,
     isInitialized,
+    recentlyViewed,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -272,8 +276,16 @@ export default function HomePage() {
         <GenderToggle gender={gender} onToggle={setGender} />
       </div>
 
+      {/* Following Bar — only for signed-in users with followed vendors */}
+      {user && followedVendors.length > 0 && (
+        <FollowingBar followedVendorIds={followedVendors} />
+      )}
+
       {/* Trending Banner */}
       <TrendingBanner />
+
+      {/* Shop by Category — Amazon-style grid */}
+      <ShopByCategory />
 
       {/* Category Sections */}
       {FEED_SECTIONS.map((section) => {
@@ -289,7 +301,7 @@ export default function HomePage() {
         return (
           <div key={section.key} className="flex flex-col" style={{ gap: '16px' }}>
             {/* Section Header */}
-            <div className="flex items-center justify-between">
+            <Link href={section.href} className="flex items-center group/sec" style={{ gap: '8px', textDecoration: 'none' }}>
               <h3
                 style={{
                   fontSize: '13px',
@@ -302,8 +314,9 @@ export default function HomePage() {
               >
                 {section.label}
               </h3>
-              <div style={{ height: '1px', flex: 1, background: '#EBEBEB', marginLeft: '16px' }} />
-            </div>
+              <ChevronRight size={14} color="#1A1A1A" className="transition-transform group-hover/sec:translate-x-1" />
+              <div style={{ height: '1px', flex: 1, background: '#EBEBEB' }} />
+            </Link>
 
             {/* Vendor Cards Row */}
             <VendorRow
@@ -314,6 +327,11 @@ export default function HomePage() {
           </div>
         );
       })}
+
+      {/* For You + Recently Seen — signed-in users only */}
+      {user && (
+        <ForYouSection recentlyViewed={recentlyViewed} />
+      )}
 
       {/* Promo Banner */}
       <PromoBanner />

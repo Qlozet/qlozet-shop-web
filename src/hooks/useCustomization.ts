@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useUpload } from '@/hooks/useUpload';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
@@ -64,6 +64,7 @@ export interface CustomizationState {
   selectedFit: string | null;
   setSelectedFit: (id: string | null) => void;
   referenceImages: string[];  // Cloudinary URLs (or blob URLs as preview fallback)
+  setReferenceImages: (images: string[]) => void;
   removeReference: (index: number) => void;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -72,6 +73,8 @@ export interface CustomizationState {
   uploadError: string | null;
   userPrompt: string;
   setUserPrompt: (value: string) => void;
+  suggestedPrompt: string | null;
+  isAnalyzing: boolean;
 
   // Panel navigation
   expandedSection: string;
@@ -80,6 +83,7 @@ export interface CustomizationState {
 
   // Generation (studio mode)
   generatedImages: string[];
+  setGeneratedImages: (images: string[]) => void;
   activeImageIndex: number;
   setActiveImageIndex: (index: number) => void;
   isGenerating: boolean;
@@ -87,6 +91,12 @@ export interface CustomizationState {
   currentImage: string | null;
   tokenBalance: number;
   generationError: string | null;
+  insufficientTokensInfo: { show: boolean; balance: number; cost: number };
+  dismissInsufficientTokens: () => void;
+
+  // Save modal
+  showSaveModal: boolean;
+  setShowSaveModal: (show: boolean) => void;
 
   // Mode
   mode: CustomizationMode;
@@ -122,6 +132,8 @@ export function useCustomization({
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [userPrompt, setUserPrompt] = useState('');
+  const [suggestedPrompt, setSuggestedPrompt] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // ── Panel navigation ────────────────────────────────────────
   const [expandedSection, setExpandedSection] = useState<string>(defaultSection);
@@ -131,10 +143,20 @@ export function useCustomization({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [insufficientTokensInfo, setInsufficientTokensInfo] = useState<{ show: boolean; balance: number; cost: number }>({ show: false, balance: 0, cost: 0 });
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const tokenBalance = user?.tokenBalance ?? 1000;
+  // ── Live token balance from API ──────────────────────────────
+  const [tokenBalance, setTokenBalance] = useState(user?.tokenBalance ?? 0);
+
+  useEffect(() => {
+    api.get('/token/balance').then((res) => {
+      const bal = res.data?.data?.tokens ?? res.data?.tokens ?? 0;
+      setTokenBalance(bal);
+    }).catch(() => {});
+  }, []);
 
   // ── Handlers ────────────────────────────────────────────────
 
@@ -164,10 +186,31 @@ export function useCustomization({
     if (results.length > 0) {
       const urls = results.map((r) => r.imageUrl);
       setReferenceImages((prev) => [...prev, ...urls]);
+
+      // Auto-analyze first uploaded reference to get AI suggested prompt
+      const firstUrl = urls[0];
+      if (firstUrl && !suggestedPrompt) {
+        setIsAnalyzing(true);
+        try {
+          const analyzeRes = await api.post('/measurements/analyze-reference', { image_url: firstUrl });
+          const jobId = analyzeRes.data?.data?.jobId ?? analyzeRes.data?.jobId;
+          if (jobId) {
+            const result = await pollJobStatus(jobId);
+            if (result?.suggested_prompt) {
+              setSuggestedPrompt(result.suggested_prompt);
+              console.log('[Analyze] AI suggested prompt:', result.suggested_prompt);
+            }
+          }
+        } catch (err) {
+          console.warn('[Analyze] Reference analysis failed (non-blocking):', err);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      }
     }
 
     e.target.value = '';
-  }, [referenceImages.length, uploadOutfitImages]);
+  }, [referenceImages.length, uploadOutfitImages, suggestedPrompt]);
 
   const removeReference = useCallback((index: number) => {
     setReferenceImages((prev) => prev.filter((_, i) => i !== index));
@@ -190,8 +233,10 @@ export function useCustomization({
         settingsRes.data?.data?.outfit_generation_token_price ??
         GENERATION_COST;
 
+      console.log('[Generate] Token check — balance:', balance, 'cost:', cost, 'raw balance:', balanceRes.data, 'raw settings:', settingsRes.data);
+
       if (balance < cost) {
-        setGenerationError(`Insufficient tokens. You have ${balance} but need ${cost}. Please top up your wallet.`);
+        setInsufficientTokensInfo({ show: true, balance, cost });
         return;
       }
     } catch {
@@ -340,9 +385,17 @@ export function useCustomization({
         });
       }
 
-      // Deduct tokens from local state for UI update
-      deductTokens(GENERATION_COST);
+      // Refresh token balance from API after generation
+      api.get('/token/balance').then((res) => {
+        const bal = res.data?.data?.tokens ?? res.data?.tokens ?? 0;
+        setTokenBalance(bal);
+      }).catch(() => {});
+      deductTokens(GENERATION_COST); // Also update context for profile display
     } catch (err: any) {
+      console.error('[Generate] Error:', err?.message);
+      if (err?.response) {
+        console.error('[Generate] HTTP Error:', err.response.status, JSON.stringify(err.response.data, null, 2));
+      }
       const message =
         err?.response?.data?.message ||
         err?.message ||
@@ -376,14 +429,17 @@ export function useCustomization({
     selectedColor, setSelectedColor,
     selectedAccessories, toggleAccessory,
     selectedFit, setSelectedFit,
-    referenceImages, removeReference,
+    referenceImages, setReferenceImages, removeReference,
     handleFileUpload, fileInputRef,
     isUploading, uploadStatus, uploadError,
-    userPrompt, setUserPrompt,
+    userPrompt, setUserPrompt, suggestedPrompt, isAnalyzing,
     expandedSection, setExpandedSection, toggleSection,
-    generatedImages, activeImageIndex, setActiveImageIndex,
+    generatedImages, setGeneratedImages, activeImageIndex, setActiveImageIndex,
     isGenerating, handleGenerate, currentImage, tokenBalance,
     generationError,
+    insufficientTokensInfo,
+    dismissInsufficientTokens: useCallback(() => setInsufficientTokensInfo({ show: false, balance: 0, cost: 0 }), []),
+    showSaveModal, setShowSaveModal,
     mode,
   };
 }

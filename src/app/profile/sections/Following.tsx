@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserMinus, Check } from 'lucide-react';
+import { UserMinus, Check, Heart } from 'lucide-react';
 import { vendorCatalog } from '@/data/vendors';
 import { cardStyle, sectionTitle } from '../styles';
 
@@ -83,7 +83,12 @@ export default function Following() {
         <div className="flex flex-col min-w-0">
           <span
             className="truncate"
-            style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}
+            style={{
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#1A1A1A',
+              fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+            }}
           >
             {vendor.name}
           </span>
@@ -139,10 +144,25 @@ export default function Following() {
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
+      {/* ── Section Header Card ───────────────────────────────── */}
+      <div style={{ ...cardStyle, padding: '28px' }}>
+        <Heart size={28} color="#462814" strokeWidth={1.5} />
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: 800,
+          color: '#1A1A1A',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginTop: '12px',
+          fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+        }}>
+          Following
+        </h3>
+      </div>
+
       {/* ── Following List ─────────────────────────────────────── */}
       <div style={cardStyle}>
-        <h3 style={sectionTitle}>Following</h3>
-        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '0 20px 12px' }}>
+        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '20px 20px 12px' }}>
           Vendors and brands you follow.
         </p>
 

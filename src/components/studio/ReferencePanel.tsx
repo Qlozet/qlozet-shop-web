@@ -14,6 +14,8 @@ interface ReferencePanelProps {
   uploadError?: string | null;
   userPrompt?: string;
   onPromptChange?: (value: string) => void;
+  suggestedPrompt?: string | null;
+  isAnalyzing?: boolean;
 }
 
 export const ReferencePanel: React.FC<ReferencePanelProps> = (props) => (

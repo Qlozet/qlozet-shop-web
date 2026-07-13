@@ -91,10 +91,29 @@ export const TAXONOMY: TaxonomyNode[] = [
     ],
   },
   {
-    slug: 'clothing',
-    label: 'Clothing',
+    slug: 'ready-to-wear',
+    label: 'Ready to Wear',
     image: '/image/bespoke-dress-1.png',
     productFilter: { kind: ['clothing'] },
+    children: [
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { kind: ['clothing'], subcategory: 'agbada' } },
+      { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { kind: ['clothing'], subcategory: 'kaftan' } },
+      { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { kind: ['clothing'], subcategory: 'ankara' } },
+      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], subcategory: 'dresses' } },
+      { slug: 'corporate', label: 'Corporate', image: '/image/bespoke-kaftan-milk-1.png', productFilter: { collection: 'corporate' } },
+    ],
+  },
+  {
+    slug: 'custom',
+    label: 'Custom',
+    image: '/image/custom-outfit-1.webp',
+    productFilter: { tags: ['CUSTOMIZABLE'] },
+    children: [
+      { slug: 'bespoke-agbada', label: 'Bespoke Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { subcategory: 'agbada', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'bespoke-kaftan', label: 'Bespoke Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { subcategory: 'kaftan', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'bespoke-ankara', label: 'Bespoke Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { subcategory: 'ankara', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'bespoke-dress', label: 'Custom Dress', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], tags: ['CUSTOMIZABLE'] } },
+    ],
   },
   {
     slug: 'accessories',
@@ -128,14 +147,15 @@ export const TAXONOMY: TaxonomyNode[] = [
 
 export interface HeroBanner {
   label: string;
+  description: string;
   image: string;
   href: string;
 }
 
 export const HERO_BANNERS: HeroBanner[] = [
-  { label: 'FOR YOU', image: '/image/bespoke-dress-1.png', href: '/discover/traditional' },
-  { label: 'CORPORATE', image: '/image/bespoke-kaftan-milk-1.png', href: '/discover/corporate' },
-  { label: 'TRADITIONAL', image: '/image/bespoke-agbada-orange.webp', href: '/discover/traditional' },
+  { label: 'FOR YOU', description: 'Curated picks based on your style preferences', image: '/image/bespoke-dress-1.png', href: '/discover/traditional' },
+  { label: 'CORPORATE', description: 'Tailored suits, blouses & office-ready elegance', image: '/image/bespoke-kaftan-milk-1.png', href: '/discover/corporate' },
+  { label: 'TRADITIONAL', description: 'Agbada, Kaftan, Ankara & heritage styles', image: '/image/bespoke-agbada-orange.webp', href: '/discover/traditional' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -146,17 +166,18 @@ export interface BrowseCategory {
   label: string;
   href: string;
   images: string[]; // 2-3 thumbnail images
+  productIds?: string[]; // matching product IDs for each image
   color?: string;   // Optional accent
 }
 
 export const BROWSE_CATEGORIES: BrowseCategory[] = [
-  { label: 'CLOTHING', href: '/discover/clothing', images: ['/image/bespoke-dress-1.png', '/image/bespoke-outfit-1.webp', '/image/bespoke-kaftan-brown-1.png'], color: '#3B3026' },
-  { label: 'ACCESSORIES', href: '/discover/accessories', images: ['/image/qlozet-bag.png', '/image/bag.webp'], color: '#4A6741' },
-  { label: 'FABRIC', href: '/discover/fabric', images: ['/image/fabric-1.jpg', '/image/ankara.png', '/image/fabric-swatch-1.jpg'], color: '#5B4A6B' },
-  { label: 'DESIGNS', href: '/bespoke', images: ['/image/bespoke-dress-2.png', '/image/bespoke-ankara-1.png', '/image/bespoke-outfit-3.webp'], color: '#2E4A62' },
-  { label: "WHAT'S NEW", href: '/discover/clothing', images: ['/image/bespoke-outfit-4.webp', '/image/pattern-bespoke-1.png'], color: '#B04A4A' },
-  { label: 'DISCOUNTS', href: '/discover/clothing', images: ['/image/bespoke-agbada-lime.webp', '/image/bag.webp'], color: '#C48B3F' },
-  { label: 'TOP RATED', href: '/discover/clothing', images: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-milk-1.png'], color: '#3A7A6A' },
+  { label: 'CLOTHING', href: '/discover/ready-to-wear', images: ['/image/bespoke-dress-1.png', '/image/bespoke-outfit-1.webp', '/image/bespoke-kaftan-brown-1.png'], productIds: ['prod_9', 'prod_11', 'prod_3'], color: '#3B3026' },
+  { label: 'ACCESSORIES', href: '/discover/accessories', images: ['/image/qlozet-bag.png', '/image/bag.webp', '/image/bespoke-outfit-4.webp'], productIds: ['prod_7', 'prod_8', 'prod_27'], color: '#4A6741' },
+  { label: 'FABRIC', href: '/discover/fabric', images: ['/image/fabric-1.jpg', '/image/ankara.png', '/image/fabric-swatch-1.jpg'], productIds: ['prod_6', 'prod_5', 'prod_21'], color: '#5B4A6B' },
+  { label: 'DESIGNS', href: '/bespoke', images: ['/image/bespoke-dress-2.png', '/image/bespoke-ankara-1.png', '/image/bespoke-outfit-3.webp'], productIds: ['prod_16', 'prod_10', 'prod_12'], color: '#2E4A62' },
+  { label: "WHAT'S NEW", href: '/discover/clothing', images: ['/image/bespoke-outfit-4.webp', '/image/pattern-bespoke-1.png', '/image/bespoke-ankara-2.png'], productIds: ['prod_27', 'prod_20', 'prod_19'], color: '#B04A4A' },
+  { label: 'DISCOUNTS', href: '/discover/clothing', images: ['/image/bespoke-agbada-lime.webp', '/image/bag.webp', '/image/bespoke-kaftan-milk-1.png'], productIds: ['prod_2', 'prod_8', 'prod_4'], color: '#C48B3F' },
+  { label: 'TOP RATED', href: '/discover/clothing', images: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-milk-1.png', '/image/bespoke-dress-1.png'], productIds: ['prod_1', 'prod_4', 'prod_9'], color: '#3A7A6A' },
   { label: 'VENDORS', href: '/vendor/vendor_1', images: ['/image/icon1.jpg', '/image/icon2.jpg', '/image/icon3.jpg'], color: '#6B5B4A' },
 ];
 

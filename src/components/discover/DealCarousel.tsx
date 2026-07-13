@@ -2,31 +2,30 @@
 
 import React, { useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
-import { ProductCard } from '@/components/ProductCard';
+import { VendorDealCard } from '@/components/VendorDealCard';
+import { type Vendor } from '@/data/vendors';
 import { type Product } from '@/data/products';
 
-interface ProductCarouselProps {
+interface DealCarouselProps {
   title: string;
-  products: Product[];
-  href?: string; // Optional "see all" link
+  vendors: Vendor[];
+  allProducts: Product[];
 }
 
-export function ProductCarousel({ title, products, href }: ProductCarouselProps) {
-  const { wishlist, toggleWishlist } = useApp();
+export function DealCarousel({ title, vendors, allProducts }: DealCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  if (products.length === 0) return null;
+  if (vendors.length === 0) return null;
 
   const scrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
     }
   };
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
-      {/* Section header */}
+      {/* Section Header */}
       <div className="flex items-center" style={{ gap: '8px' }}>
         <h3
           style={{
@@ -42,41 +41,38 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
         <ChevronRight size={14} color="#1A1A1A" />
       </div>
 
-      {/* Scrollable product row */}
+      {/* Scrollable Row */}
       <div className="relative group/row">
         <div
           ref={scrollRef}
           className="flex overflow-x-auto hide-scrollbar snap-x"
-          style={{ gap: '16px', paddingBottom: '4px' }}
+          style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {products.map((product) => (
-            <div key={product.id} className="flex-shrink-0 snap-start" style={{ width: '214px' }}>
-              <ProductCard
-                id={product.id}
-                imageUrl={product.image}
-                title={product.title}
-                brand={product.brand}
-                price={`₦${product.price.toLocaleString()}`}
-                originalPrice={product.originalPrice ? `₦${product.originalPrice.toLocaleString()}` : undefined}
-                tag={product.tag}
-                isFavorite={wishlist.includes(product.id)}
-                onFavoriteToggle={() => toggleWishlist(product.id)}
+          {vendors.map((vendor) => {
+            const vendorProducts = allProducts.filter((p) =>
+              vendor.productIds.includes(p.id)
+            );
+            return (
+              <VendorDealCard
+                key={vendor.id}
+                vendor={vendor}
+                products={vendorProducts}
               />
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Scroll button */}
-        {products.length > 4 && (
+        {/* Scroll right button */}
+        {vendors.length > 4 && (
           <button
             onClick={scrollRight}
             className="absolute z-10 hidden lg:flex items-center justify-center transition-opacity opacity-0 group-hover/row:opacity-100"
             style={{
               right: '-8px',
-              top: '40%',
+              top: '50%',
               transform: 'translateY(-50%)',
-              width: '36px',
-              height: '36px',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
               background: '#FFFFFF',
               border: '1px solid #E5E5E5',
@@ -84,7 +80,7 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             }}
           >
-            <ChevronRight size={16} color="#1A1A1A" />
+            <ChevronRight size={18} color="#1A1A1A" />
           </button>
         )}
       </div>

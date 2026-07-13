@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Upload, X, Loader2, MessageSquare } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { Upload, X, Loader2, MessageSquare, Sparkles } from 'lucide-react';
 
 interface ReferenceUploaderProps {
   referenceImages: string[];
@@ -14,7 +14,18 @@ interface ReferenceUploaderProps {
   uploadError?: string | null;
   userPrompt?: string;
   onPromptChange?: (value: string) => void;
+  suggestedPrompt?: string | null;
+  isAnalyzing?: boolean;
 }
+
+const PROMPT_SUGGESTIONS = [
+  'Make it elegant with a modern twist and rich African motifs',
+  'Use bold colours with gold embroidery accents',
+  'Keep it minimal and tailored with clean lines',
+  'Add intricate lace detailing around the neckline',
+  'Incorporate traditional ankara patterns in a contemporary way',
+  'Design a flowing silhouette with subtle pleats',
+];
 
 export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
   referenceImages,
@@ -27,8 +38,25 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
   uploadError = null,
   userPrompt = '',
   onPromptChange,
+  suggestedPrompt = null,
+  isAnalyzing = false,
 }) => {
   const atLimit = referenceImages.length >= 3;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Pick a ghost suggestion: use AI-generated one if available, otherwise rotate through static ones
+  const [suggestionIdx] = useState(() => Math.floor(Math.random() * PROMPT_SUGGESTIONS.length));
+  const ghostSuggestion = suggestedPrompt || PROMPT_SUGGESTIONS[suggestionIdx];
+
+  // Show ghost text only when prompt is empty (trim to handle whitespace after erasing)
+  const showGhost = !userPrompt?.trim() && !!ghostSuggestion;
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab' && showGhost) {
+      e.preventDefault();
+      onPromptChange?.(ghostSuggestion!);
+    }
+  }, [showGhost, ghostSuggestion, onPromptChange]);
 
   return (
     <div>
@@ -131,42 +159,83 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
       )}
 
       {/* Prompt input */}
-      <div style={{ marginTop: referenceImages.length > 0 ? '0' : '0' }}>
-        <div className="flex items-center" style={{ gap: '6px', marginBottom: '8px' }}>
-          <MessageSquare size={14} color="#666" />
-          <label
-            htmlFor="user-prompt"
-            style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}
-          >
-            Additional Instructions
-          </label>
+      <div>
+        <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+          <div className="flex items-center" style={{ gap: '6px' }}>
+            <MessageSquare size={14} color="#666" />
+            <label
+              htmlFor="user-prompt"
+              style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}
+            >
+              Additional Instructions
+            </label>
+          </div>
+          {isAnalyzing && (
+            <div className="flex items-center" style={{ gap: '5px' }}>
+              <Loader2 size={12} color="#D4AF37" className="animate-spin" />
+              <span style={{ fontSize: '10px', color: '#D4AF37', fontWeight: 500 }}>Analyzing...</span>
+            </div>
+          )}
         </div>
-        <textarea
-          id="user-prompt"
-          value={userPrompt}
-          onChange={(e) => onPromptChange?.(e.target.value)}
-          placeholder="E.g. &quot;Make it elegant with a modern twist&quot; or &quot;Use bold African prints with gold accents&quot;"
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '12px 14px',
-            borderRadius: '12px',
-            border: '1.5px solid rgba(0,0,0,0.1)',
-            background: '#FAFAFA',
-            fontSize: '12px',
-            color: '#333',
-            lineHeight: '1.5',
-            resize: 'vertical',
-            outline: 'none',
-            fontFamily: 'inherit',
-            transition: 'border-color 0.2s ease',
-          }}
-          onFocus={(e) => { e.target.style.borderColor = '#2C1810'; }}
-          onBlur={(e) => { e.target.style.borderColor = 'rgba(0,0,0,0.1)'; }}
-        />
-        <p style={{ fontSize: '10px', color: '#AAA', marginTop: '4px' }}>
-          Optional — describe any specific details the AI should focus on
-        </p>
+        <div className="relative" style={{ borderRadius: '12px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#FAFAFA', overflow: 'hidden' }}>
+          {/* Ghost suggestion text (underneath) */}
+          {showGhost && (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                padding: '12px 14px',
+                fontSize: '12px',
+                lineHeight: '1.5',
+                color: 'rgba(0,0,0,0.18)',
+                fontFamily: 'inherit',
+                pointerEvents: 'none',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {ghostSuggestion}
+            </div>
+          )}
+          <textarea
+            ref={textareaRef}
+            id="user-prompt"
+            value={userPrompt}
+            onChange={(e) => onPromptChange?.(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder=""
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              fontSize: '12px',
+              color: '#333',
+              lineHeight: '1.5',
+              resize: 'vertical',
+              outline: 'none',
+              fontFamily: 'inherit',
+              background: 'transparent',
+              border: 'none',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          />
+        </div>
+        {showGhost ? (
+          <div className="flex items-center" style={{ gap: '4px', marginTop: '6px' }}>
+            <Sparkles size={10} color="#D4AF37" />
+            <p style={{ fontSize: '10px', color: '#999' }}>
+              Press <kbd style={{ padding: '1px 5px', borderRadius: '3px', border: '1px solid #DDD', background: '#F5F5F5', fontSize: '9px', fontWeight: 600, color: '#666' }}>Tab</kbd> to accept suggestion
+            </p>
+          </div>
+        ) : (
+          <p style={{ fontSize: '10px', color: '#AAA', marginTop: '4px' }}>
+            Optional — describe any specific details the AI should focus on
+          </p>
+        )}
       </div>
     </div>
   );

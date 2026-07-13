@@ -10,6 +10,11 @@ export interface JobResult {
   /** Normalized image URL — could come from result.fileUrl or result.image_url */
   image_url: string;
   filePublicId?: string;
+  /** Reference analysis fields (from analyze-reference jobs) */
+  suggested_prompt?: string;
+  matched_styles?: Record<string, { style_id?: string; style_name?: string }>;
+  metadata?: Record<string, any>;
+  [key: string]: any;
 }
 
 export interface JobStatus {
@@ -54,10 +59,14 @@ export async function pollJobStatus(
 
     if (jobStatus.status === 'completed' && jobStatus.result) {
       // Normalize: backend returns { fileUrl, filePublicId } from Cloudinary
+      // or { suggested_prompt, matched_styles, metadata } from analysis
       const raw = jobStatus.result;
       return {
         image_url: raw.fileUrl || raw.image_url || raw.imageUrl || '',
         filePublicId: raw.filePublicId || raw.publicId,
+        suggested_prompt: raw.suggested_prompt,
+        matched_styles: raw.matched_styles,
+        metadata: raw.metadata,
       };
     }
 

@@ -10,6 +10,8 @@ import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 import { vendorCatalog } from '@/data/vendors';
 import { VendorCarousel } from '@/components/discover/VendorCarousel';
+import { VendorShowcaseCarousel } from '@/components/discover/VendorShowcaseCarousel';
+import { DealCarousel } from '@/components/discover/DealCarousel';
 
 export default function DiscoverPage() {
   const { gender, setGender } = useApp();
@@ -20,6 +22,14 @@ export default function DiscoverPage() {
   const worthTheHypeVendors = [...vendorCatalog]
     .sort((a, b) => b.rating - a.rating || b.followers - a.followers)
     .slice(0, 5);
+
+  // Vendors with promos for showcase section
+  const topShops = [...vendorCatalog]
+    .sort((a, b) => b.followers - a.followers)
+    .slice(0, 8);
+
+  // Vendors with active deals/promos
+  const dealVendors = vendorCatalog.filter((v) => !!v.promo);
 
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '32px' }}>
@@ -43,8 +53,11 @@ export default function DiscoverPage() {
       {/* Browse Categories Grid */}
       <BrowseCategoriesGrid categories={BROWSE_CATEGORIES} />
 
+      {/* Top Shops — showcase cards */}
+      <VendorShowcaseCarousel title="Top Shops" vendors={topShops} allProducts={allProducts} />
+
       {/* Worth the Hype */}
-      <VendorCarousel title="Worth the Hype" vendors={worthTheHypeVendors} allProducts={allProducts} />
+      <VendorShowcaseCarousel title="Worth the Hype" vendors={worthTheHypeVendors} allProducts={allProducts} />
 
       {/* Trending */}
       <ProductCarousel title="Trending" products={getTrending(allProducts)} />
@@ -54,6 +67,9 @@ export default function DiscoverPage() {
 
       {/* Top Rated */}
       <ProductCarousel title="Top Rated" products={getTopRated(allProducts)} />
+
+      {/* Sweet Deals */}
+      <DealCarousel title="Sweet Deals" vendors={dealVendors} allProducts={allProducts} />
 
     </div>
   );

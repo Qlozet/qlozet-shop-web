@@ -36,7 +36,7 @@ import {
 export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { wishlist, toggleWishlist, addToCart } = useApp();
+  const { wishlist, toggleWishlist, addToCart, addRecentlyViewed } = useApp();
   const trackEvent = useTrackEvent();
 
   const productId = params.id as string;
@@ -45,6 +45,7 @@ export default function ProductDetailsPage() {
   // Track product view on mount
   useEffect(() => {
     if (product) {
+      addRecentlyViewed({ id: product.id, image: product.image, href: `/products/${product.id}` });
       trackEvent({
         eventType: 'view_item',
         properties: {
@@ -246,20 +247,20 @@ export default function ProductDetailsPage() {
         className="flex flex-col animate-fade-in relative lg:overflow-x-clip"
         style={{ padding: '8px 0 48px', gap: '32px' }}
       >
-        {/* ─── Back Button ────────────────────────────────────────── */}
+        {/* ─── Back Button (sticky, matches studio style) ─────────── */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 hover:text-gray-600 transition-colors self-start"
+          className="sticky top-4 z-40 flex items-center justify-center transition-all hover:bg-white/80 backdrop-blur-md shadow-sm"
           style={{
-            background: 'none',
-            border: 'none',
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: 'rgba(255,255,255,0.9)',
+            border: '1px solid #F0F0F0',
             cursor: 'pointer',
-            fontSize: '14px',
-            color: '#999',
-            padding: 0,
           }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={20} color="#1A1A1A" />
         </button>
 
         {/* ─── Product Hero: Image + Info ──────────────────────────── */}
@@ -930,7 +931,7 @@ export default function ProductDetailsPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '14px',
-                    background: showCustomize ? '#5B21B6' : '#7C3AED',
+                    background: showCustomize ? '#3B0764' : '#4C1D95',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '13px',
@@ -953,7 +954,7 @@ export default function ProductDetailsPage() {
                 style={{
                   padding: '15px',
                   borderRadius: '14px',
-                  background: '#2D8A4E',
+                  background: '#064E3B',
                   color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13px',
@@ -976,7 +977,7 @@ export default function ProductDetailsPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '14px',
-                    background: 'linear-gradient(135deg, #7C3AED 0%, #9B51E0 100%)',
+                    background: 'linear-gradient(135deg, #3B0764 0%, #4C1D95 100%)',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '13px',
@@ -1000,7 +1001,7 @@ export default function ProductDetailsPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '14px',
-                    background: 'linear-gradient(135deg, #065F46 0%, #059669 100%)',
+                    background: '#2C1810',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '13px',

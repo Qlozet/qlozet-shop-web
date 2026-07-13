@@ -30,43 +30,22 @@ export function BrowseCategoriesGrid({ categories }: BrowseCategoriesGridProps) 
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {categories.map((cat, idx) => (
           <Link
             key={idx}
             href={cat.href}
-            className="relative overflow-hidden group"
+            className="overflow-hidden group flex flex-col"
             style={{
-              borderRadius: '16px',
-              height: '130px',
+              borderRadius: '24px',
               textDecoration: 'none',
               background: cat.color || '#2C1810',
             }}
           >
-            {/* Thumbnail images */}
-            <div className="absolute right-0 bottom-0 flex items-end" style={{ gap: '3px', padding: '8px' }}>
-              {cat.images.slice(0, 3).map((img, i) => (
-                <div
-                  key={i}
-                  className="relative overflow-hidden flex-shrink-0"
-                  style={{
-                    width: i === 0 ? '55px' : '45px',
-                    height: i === 0 ? '70px' : '60px',
-                    borderRadius: '8px',
-                    background: '#F5F3F0',
-                  }}
-                >
-                  <Image src={img} alt="" fill className="object-cover" />
-                </div>
-              ))}
-            </div>
-
             {/* Label */}
             <span
-              className="absolute"
               style={{
-                top: '14px',
-                left: '14px',
+                padding: '16px 16px 10px',
                 fontSize: '11px',
                 fontWeight: 900,
                 color: '#FFFFFF',
@@ -76,6 +55,56 @@ export function BrowseCategoriesGrid({ categories }: BrowseCategoriesGridProps) 
             >
               {cat.label}
             </span>
+
+            {/* Product images — fill width, always 3 */}
+            <div className="flex" style={{ gap: '12px', padding: '0 16px 16px' }}>
+              {cat.images.slice(0, 3).map((img, i) => {
+                const productId = cat.productIds?.[i];
+                const imageContent = (
+                  <div
+                    className={`relative overflow-hidden${i === 2 ? ' hidden lg:block' : ''}`}
+                    style={{
+                      flex: 1,
+                      aspectRatio: '3 / 4',
+                      borderRadius: '16px',
+                      background: '#F5F3F0',
+                    }}
+                  >
+                    <Image src={img} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                );
+
+                return productId ? (
+                  <Link
+                    key={i}
+                    href={`/products/${productId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className={`relative overflow-hidden${i === 2 ? ' hidden lg:block' : ''}`}
+                    style={{
+                      flex: 1,
+                      aspectRatio: '3 / 4',
+                      borderRadius: '16px',
+                      background: '#F5F3F0',
+                    }}
+                  >
+                    <Image src={img} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                  </Link>
+                ) : (
+                  <div
+                    key={i}
+                    className={`relative overflow-hidden${i === 2 ? ' hidden lg:block' : ''}`}
+                    style={{
+                      flex: 1,
+                      aspectRatio: '3 / 4',
+                      borderRadius: '16px',
+                      background: '#F5F3F0',
+                    }}
+                  >
+                    <Image src={img} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                );
+              })}
+            </div>
           </Link>
         ))}
       </div>

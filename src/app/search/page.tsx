@@ -17,6 +17,17 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+// ─── Helpers ──────────────────────────────────────────────────
+function darkenHex(hex: string, amount: number = 0.65): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  const dr = Math.round(r * (1 - amount));
+  const dg = Math.round(g * (1 - amount));
+  const db = Math.round(b * (1 - amount));
+  return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+}
 
 // ─── Vendor data — use real vendors ───────────────────────────
 const DEMO_VENDORS = vendorCatalog.slice(0, 6).map((v) => ({
@@ -25,7 +36,10 @@ const DEMO_VENDORS = vendorCatalog.slice(0, 6).map((v) => ({
   rating: v.rating,
   reviews: v.reviewCount,
   image: v.heroImage,
-  logo: v.logoStyle === 'initials' ? v.logoInitials : '',
+  logoStyle: v.logoStyle,
+  logoImage: v.logoImage,
+  logoInitials: v.logoInitials,
+  themeColor: v.themeColor || '#2C1810',
 }));
 
 // ─── LLM Demo Response ───────────────────────────────────────
@@ -100,30 +114,132 @@ function SearchContent() {
           Vendors Results
         </h2>
         <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px', paddingBottom: '4px' }}>
-          {DEMO_VENDORS.map((vendor) => (
-            <Link key={vendor.id} href={`/vendor/${vendor.id}`} className="flex flex-col items-center flex-shrink-0 transition-transform hover:-translate-y-1" style={{ width: '130px', gap: '10px', textDecoration: 'none' }}>
-              {/* Vendor image */}
-              <div className="relative w-full overflow-hidden bg-[#F5F5F5]" style={{ height: '140px', borderRadius: '14px' }}>
-                <Image src={vendor.image} alt={vendor.name} fill style={{ objectFit: 'cover' }} />
-                {/* Logo overlay */}
-                {vendor.logo && (
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center justify-center"
-                    style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#FFF', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', fontSize: '8px', fontWeight: 800, color: '#1A1A1A' }}>
-                    {vendor.logo}
+          {DEMO_VENDORS.map((vendor) => {
+            const tcClean = vendor.themeColor.replace('#', '');
+            const tcR = parseInt(tcClean.substring(0, 2), 16);
+            const tcG = parseInt(tcClean.substring(2, 4), 16);
+            const tcB = parseInt(tcClean.substring(4, 6), 16);
+            const brightness = (tcR * 299 + tcG * 587 + tcB * 114) / 1000;
+            const isLightTheme = brightness > 180;
+
+            const bgThemeColor = isLightTheme ? darkenHex(vendor.themeColor, 0.05) : darkenHex(vendor.themeColor, 0.70);
+            const textColor = isLightTheme ? '#1a1a1a' : '#ffffff';
+            const secondaryColor = isLightTheme ? 'rgba(26,26,26,0.85)' : 'rgba(255,255,255,0.85)';
+            const tertiaryColor = isLightTheme ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.6)';
+
+            return (
+              <Link
+                key={vendor.id}
+                href={`/vendor/${vendor.id}`}
+                className="flex flex-col flex-shrink-0 transition-transform hover:-translate-y-1"
+                style={{
+                  width: '170px',
+                  textDecoration: 'none',
+                  borderRadius: '20px',
+                  boxShadow: '0 4px 18px rgba(0,0,0,0.06)',
+                  overflow: 'hidden',
+                  background: 'transparent',
+                }}
+              >
+                {/* Vendor image wrapper */}
+                <div className="relative w-full overflow-visible bg-[#F5F5F5]" style={{ height: '110px' }}>
+                  <Image
+                    src={vendor.image}
+                    alt={vendor.name}
+                    fill
+                    style={{
+                      objectFit: 'cover',
+                      borderTopLeftRadius: '20px',
+                      borderTopRightRadius: '20px',
+                    }}
+                    sizes="170px"
+                  />
+                  
+                  {/* Logo overlay */}
+                  <div
+                    className="absolute flex items-center justify-center overflow-hidden"
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: '#FFFFFF',
+                      border: '3px solid #FFFFFF',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                      bottom: '-22px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      zIndex: 10,
+                    }}
+                  >
+                    {vendor.logoStyle === 'image' && vendor.logoImage ? (
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={vendor.logoImage}
+                          alt={vendor.name}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                          sizes="44px"
+                        />
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '11px', fontWeight: 900, color: vendor.themeColor, fontFamily: 'Outfit, sans-serif' }}>
+                        {vendor.logoInitials}
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-              {/* Vendor info */}
-              <div className="text-center">
-                <p style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{vendor.name}</p>
-                <div className="flex items-center justify-center" style={{ gap: '4px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#666' }}>{vendor.rating}</span>
-                  <Star size={10} color="#D4AF37" fill="#D4AF37" />
-                  <span style={{ fontSize: '10px', color: '#999' }}>({vendor.reviews})</span>
                 </div>
-              </div>
-            </Link>
-          ))}
+
+                {/* Vendor info bottom container (with the theme color) */}
+                <div
+                  className="text-center flex flex-col items-center"
+                  style={{
+                    background: bgThemeColor,
+                    padding: '28px 12px 14px',
+                    borderBottomLeftRadius: '20px',
+                    borderBottomRightRadius: '20px',
+                    gap: '4px',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      color: textColor,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      fontFamily: 'Outfit, sans-serif',
+                      margin: 0,
+                    }}
+                  >
+                    {vendor.name}
+                  </p>
+                  <div className="flex items-center justify-center" style={{ gap: '4px' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: secondaryColor,
+                        fontFamily: 'Outfit, sans-serif',
+                      }}
+                    >
+                      {vendor.rating}
+                    </span>
+                    <Star size={10} color="#D4AF37" fill="#D4AF37" />
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 500,
+                        color: tertiaryColor,
+                        fontFamily: 'Outfit, sans-serif',
+                      }}
+                    >
+                      ({vendor.reviews})
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

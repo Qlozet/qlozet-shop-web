@@ -226,7 +226,7 @@ export default function ReservationPage() {
               style={{
                 padding: '16px',
                 borderRadius: '16px',
-                background: '#065F46',
+                background: '#064E3B',
                 color: '#FFFFFF',
                 fontSize: '14px',
                 fontWeight: 800,

@@ -85,6 +85,8 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization })
         uploadError={customization.uploadError}
         userPrompt={customization.userPrompt}
         onPromptChange={customization.setUserPrompt}
+        suggestedPrompt={customization.suggestedPrompt}
+        isAnalyzing={customization.isAnalyzing}
       />
     );
   }

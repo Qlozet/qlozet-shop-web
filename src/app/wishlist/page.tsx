@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { productCatalog } from '@/data/products';
@@ -9,9 +10,58 @@ import { Heart, ChevronDown } from 'lucide-react';
 type SortOption = 'recent' | 'priceAsc' | 'priceDesc' | 'name';
 
 export default function WishlistPage() {
-  const { wishlist, toggleWishlist } = useApp();
+  const { wishlist, toggleWishlist, user } = useApp();
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
+
+  if (!user) {
+    return (
+      <div className="flex flex-col gap-6 lg:gap-8 py-4 lg:py-8 animate-fade-in">
+        <h1
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          style={{ fontSize: '22px' }}
+        >
+          Wishlist
+        </h1>
+        <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '20px' }}>
+          <div
+            className="flex items-center justify-center"
+            style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
+          >
+            <Heart size={32} color="#8B5A2B" strokeWidth={1.5} />
+          </div>
+          <div className="flex flex-col" style={{ gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Sign In Required
+            </h3>
+            <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+              You must sign in first before being able to view or manage your wishlist.
+            </p>
+          </div>
+          <Link
+            href="/auth/login"
+            className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              padding: '14px 32px',
+              borderRadius: '100px',
+              background: '#2C1810',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
+            }}
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Get full product data for wishlisted items
   const wishlistedProducts = productCatalog.filter((p) =>

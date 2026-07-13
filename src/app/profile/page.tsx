@@ -7,9 +7,10 @@ import { useWallet } from '@/hooks/useWallet';
 import {
   User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
-  HelpCircle, BookOpen, FileText, Lock, Star, LogOut, Coins, Award,
+  HelpCircle, BookOpen, FileText, Lock, Star, LogOut, Award,
   Heart, Scissors, MapPin,
 } from 'lucide-react';
+import { TokenIcon } from '@/components/icons/TokenIcon';
 
 import type { ActiveSection, Order } from './types';
 import { cardStyle, sectionTitle } from './styles';
@@ -353,11 +354,11 @@ export default function ProfilePage() {
               {user && (
                 <div className="flex flex-col items-end" style={{ gap: '4px' }}>
                   <div className="flex items-center" style={{ gap: '5px', padding: '4px 10px', borderRadius: '100px', background: 'rgba(45,106,79,0.08)' }}>
-                    <Coins size={12} color="#2D6A4F" />
+                    <Wallet size={12} color="#2D6A4F" strokeWidth={2} />
                     <span style={{ fontSize: '11px', fontWeight: 800, color: '#2D6A4F' }}>₦{walletBalance.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center" style={{ gap: '5px', padding: '4px 10px', borderRadius: '100px', background: 'rgba(212,175,55,0.1)' }}>
-                    <Award size={12} color="#D4AF37" />
+                    <TokenIcon size={13} color="#D4AF37" />
                     <span style={{ fontSize: '11px', fontWeight: 800, color: '#B8941F' }}>{tokenBalance} tokens</span>
                   </div>
                 </div>

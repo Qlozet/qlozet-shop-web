@@ -5,6 +5,7 @@ import {
   Wallet as WalletIcon, Coins, Award, ArrowLeft, Send, Scissors, PlusCircle,
   LockKeyhole, Sparkles, Zap, Crown, Gem, CircleCheck, CreditCard, Loader2, AlertCircle,
 } from 'lucide-react';
+import { TokenIcon } from '@/components/icons/TokenIcon';
 import { cardStyle } from '../styles';
 import type { ActiveSection } from '../types';
 import { useWallet, type TokenPrice } from '@/hooks/useWallet';
@@ -420,7 +421,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
             style={{
               marginTop: '16px', padding: '16px', borderRadius: '12px',
-              background: isFunding ? '#D4C9C0' : '#22C55E',
+              background: isFunding ? '#D4C9C0' : '#064E3B',
               color: '#FFF', fontSize: '14px', fontWeight: 700,
               border: 'none', cursor: isFunding ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -511,7 +512,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
           <div className="flex flex-col justify-center" style={{ padding: '24px 28px', gap: '14px', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
             <div className="flex items-center" style={{ gap: '10px' }}>
               <div className="flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(45,106,79,0.1)' }}>
-                <Coins size={16} color="#2D6A4F" />
+                <WalletIcon size={16} color="#2D6A4F" strokeWidth={1.8} />
               </div>
               <div className="flex flex-col">
                 <span style={{ fontSize: '10px', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Wallet Balance (NGN)</span>
@@ -522,7 +523,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             </div>
             <div className="flex items-center" style={{ gap: '10px' }}>
               <div className="flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)' }}>
-                <Award size={16} color="#D4AF37" />
+                <TokenIcon size={18} color="#D4AF37" />
               </div>
               <div className="flex flex-col">
                 <span style={{ fontSize: '10px', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tokens (TCN)</span>
@@ -536,54 +537,99 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
       </div>
 
       {/* Transaction History */}
-      {transactions.length > 0 ? (
-        <div className="flex flex-col" style={{ gap: '8px' }}>
-          <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Recent Transactions</h4>
-          <div style={{ ...cardStyle, ...(isMobile ? {} : { maxHeight: '55vh', overflowY: 'auto' as const }) }}>
-            {(isMobile ? transactions.slice(0, mobileVisibleCount) : transactions).map((tx, i, arr) => {
-              const isCredit = tx.type === 'fund' || tx.type === 'credit';
-              const date = new Date(tx.createdAt);
-              const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-              return (
-                <div
-                  key={tx._id || i}
-                  className="flex items-center justify-between"
-                  style={{ padding: '14px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}
-                >
-                  <div className="flex items-center" style={{ gap: '12px' }}>
-                    <div className="flex items-center justify-center flex-shrink-0" style={{ width: '34px', height: '34px', borderRadius: '50%', background: isCredit ? 'rgba(45,106,79,0.08)' : 'rgba(239,68,68,0.08)' }}>
-                      <Coins size={15} color={isCredit ? '#2D6A4F' : '#EF4444'} />
-                    </div>
-                    <div className="flex flex-col" style={{ gap: '2px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{tx.description || tx.type}</span>
-                      <span style={{ fontSize: '11px', color: '#AAA' }}>{dateStr}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center flex-shrink-0" style={{ gap: '6px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: isCredit ? '#2D6A4F' : '#EF4444' }}>
-                      {isCredit ? '+' : '-'}₦{tx.amount.toLocaleString()}
-                    </span>
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: tx.status === 'success' ? '#22C55E' : '#888', textTransform: 'uppercase' }}>
-                      {tx.status}
-                    </span>
-                  </div>
+      {transactions.length > 0 ? (() => {
+        // Group transactions by month
+        const txList = isMobile ? transactions.slice(0, mobileVisibleCount) : transactions;
+        const grouped: Record<string, typeof transactions> = {};
+        txList.forEach((tx) => {
+          const d = new Date(tx.createdAt);
+          const key = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(tx);
+        });
+
+        return (
+          <div className="flex flex-col" style={{ gap: '20px' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Transactions</h4>
+
+            {Object.entries(grouped).map(([month, txs]) => (
+              <div key={month} className="flex flex-col" style={{ gap: '0' }}>
+                {/* Month header */}
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+                  {month}
+                </span>
+
+                <div style={{ ...cardStyle, ...(isMobile ? {} : { maxHeight: '55vh', overflowY: 'auto' as const }) }}>
+                  {txs.map((tx, i) => {
+                    const isCredit = tx.type === 'fund' || tx.type === 'credit' || tx.type === 'refund';
+                    const date = new Date(tx.createdAt);
+                    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                    // Status icon (only for non-success)
+                    const statusIcon = tx.status === 'pending' ? (
+                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(245,158,11,0.12)' }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      </div>
+                    ) : (tx.status === 'failed' || tx.status === 'reversed') ? (
+                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(239,68,68,0.12)' }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      </div>
+                    ) : null;
+
+                    return (
+                      <div
+                        key={tx._id || i}
+                        className="flex items-center justify-between"
+                        style={{ padding: '16px 20px', borderBottom: i < txs.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}
+                      >
+                        <div className="flex items-center" style={{ gap: '14px' }}>
+                          <div className="flex items-center justify-center flex-shrink-0" style={{ width: '38px', height: '38px', borderRadius: '12px', background: isCredit ? 'rgba(45,106,79,0.08)' : 'rgba(70,40,20,0.06)' }}>
+                            {isCredit ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#462814" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 5 5 12"/></svg>
+                            )}
+                          </div>
+                          <div className="flex flex-col" style={{ gap: '2px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{tx.description || tx.type}</span>
+                            <span style={{ fontSize: '11px', color: '#BBBBBB' }}>{dateStr} · {timeStr}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
+                          <div className="flex items-center" style={{ gap: '5px' }}>
+                            {tx.description?.toLowerCase().includes('token') ? (
+                              <Sparkles size={13} color={isCredit ? '#2D6A4F' : '#1A1A1A'} strokeWidth={2} />
+                            ) : (
+                              <WalletIcon size={13} color={isCredit ? '#2D6A4F' : '#1A1A1A'} strokeWidth={2} />
+                            )}
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: isCredit ? '#2D6A4F' : '#1A1A1A' }}>
+                              {isCredit ? '+' : '-'}₦{tx.amount.toLocaleString()}
+                            </span>
+                          </div>
+                          {statusIcon}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
+
+            {isMobile && mobileVisibleCount < transactions.length && (
+              <button
+                onClick={() => setMobileVisibleCount((c) => c + 5)}
+                className="w-full transition-all hover:opacity-80 active:scale-[0.98]"
+                style={{ padding: '12px', borderRadius: '12px', background: 'rgba(70,40,20,0.06)', color: '#462814', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              >
+                Load More
+              </button>
+            )}
           </div>
-          {isMobile && mobileVisibleCount < transactions.length && (
-            <button
-              onClick={() => setMobileVisibleCount((c) => c + 5)}
-              className="w-full transition-all hover:opacity-80 active:scale-[0.98]"
-              style={{ padding: '12px', borderRadius: '12px', background: 'rgba(70,40,20,0.06)', color: '#462814', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em' }}
-            >
-              Load More Transactions
-            </button>
-          )}
-        </div>
-      ) : !isLoading ? (
+        );
+      })() : !isLoading ? (
         <div className="flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '12px' }}>
-          <Coins size={32} color="#DDD" strokeWidth={1.5} />
+          <TokenIcon size={32} color="#DDD" />
           <span style={{ fontSize: '13px', color: '#999' }}>No transactions yet</span>
         </div>
       ) : null}
