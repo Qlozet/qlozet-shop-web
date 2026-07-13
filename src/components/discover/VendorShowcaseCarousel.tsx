@@ -1,21 +1,32 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
-import { type Vendor } from '@/data/vendors';
-import { type Product } from '@/data/products';
+import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
 
 interface VendorShowcaseCarouselProps {
   title: string;
-  vendors: Vendor[];
-  allProducts: Product[];
+  vendors: ApiBusinessPublic[];
+  allProducts: ApiProduct[];
 }
 
 export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorShowcaseCarouselProps) {
   const { followedVendors, toggleFollowVendor } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Build a vendor → products lookup from all products
+  const vendorProductMap = useMemo(() => {
+    const map = new Map<string, ApiProduct[]>();
+    for (const p of allProducts) {
+      const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
+      if (!bizId) continue;
+      if (!map.has(bizId)) map.set(bizId, []);
+      map.get(bizId)!.push(p);
+    }
+    return map;
+  }, [allProducts]);
 
   if (vendors.length === 0) return null;
 
@@ -51,16 +62,14 @@ export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorSh
           style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {vendors.map((vendor) => {
-            const vendorProducts = allProducts.filter((p) =>
-              vendor.productIds.includes(p.id)
-            );
+            const vendorProducts = vendorProductMap.get(vendor._id) ?? [];
             return (
               <VendorShowcaseCard
-                key={vendor.id}
+                key={vendor._id}
                 vendor={vendor}
                 products={vendorProducts}
-                isFollowing={followedVendors.includes(vendor.id)}
-                onToggleFollow={() => toggleFollowVendor(vendor.id)}
+                isFollowing={followedVendors.includes(vendor._id)}
+                onToggleFollow={() => toggleFollowVendor(vendor._id)}
               />
             );
           })}

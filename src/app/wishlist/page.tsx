@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { productCatalog } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
+import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
 import { Heart, ChevronDown } from 'lucide-react';
 
 type SortOption = 'recent' | 'priceAsc' | 'priceDesc' | 'name';
@@ -63,18 +64,20 @@ export default function WishlistPage() {
     );
   }
 
+  const { products: allProducts } = useProducts({ size: 100 });
+
   // Get full product data for wishlisted items
-  const wishlistedProducts = productCatalog.filter((p) =>
-    wishlist.includes(p.id)
+  const wishlistedProducts = allProducts.filter((p) =>
+    wishlist.includes(p._id)
   );
 
   // Sort products
   const sortedProducts = [...wishlistedProducts].sort((a, b) => {
-    if (sortBy === 'priceAsc') return a.price - b.price;
-    if (sortBy === 'priceDesc') return b.price - a.price;
-    if (sortBy === 'name') return a.title.localeCompare(b.title);
+    if (sortBy === 'priceAsc') return a.base_price - b.base_price;
+    if (sortBy === 'priceDesc') return b.base_price - a.base_price;
+    if (sortBy === 'name') return getProductName(a).localeCompare(getProductName(b));
     // 'recent' — reverse order (last added first)
-    return wishlist.indexOf(b.id) - wishlist.indexOf(a.id);
+    return wishlist.indexOf(b._id) - wishlist.indexOf(a._id);
   });
 
   const sortLabels: Record<SortOption, string> = {
@@ -167,14 +170,14 @@ export default function WishlistPage() {
         <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-slide-up justify-items-center">
           {sortedProducts.map((product) => (
             <ProductCard
-              key={product.id}
-              id={product.id}
-              imageUrl={product.image}
-              title={product.title}
-              brand={product.brand}
-              price={product.price}
-              originalPrice={product.originalPrice}
-              tag={product.tag}
+              key={product._id}
+              id={product._id}
+              imageUrl={getProductImage(product)}
+              title={getProductName(product)}
+              brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+              price={getProductPrice(product)}
+              originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+              tag={getProductTag(product)}
               isFavorite={true}
               onFavoriteToggle={(id) => toggleWishlist(id as string)}
             />

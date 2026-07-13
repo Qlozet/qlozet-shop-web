@@ -4,8 +4,10 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { productCatalog } from '@/data/products';
-import { vendorCatalog } from '@/data/vendors';
+import { useProducts } from '@/hooks/useProducts';
+import { useVendors } from '@/hooks/useVendors';
+import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
+import type { ApiProduct } from '@/lib/api-types';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import {
   Search,
@@ -29,18 +31,7 @@ function darkenHex(hex: string, amount: number = 0.65): string {
   return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
 }
 
-// ─── Vendor data — use real vendors ───────────────────────────
-const DEMO_VENDORS = vendorCatalog.slice(0, 6).map((v) => ({
-  id: v.id,
-  name: v.name,
-  rating: v.rating,
-  reviews: v.reviewCount,
-  image: v.heroImage,
-  logoStyle: v.logoStyle,
-  logoImage: v.logoImage,
-  logoInitials: v.logoInitials,
-  themeColor: v.themeColor || '#2C1810',
-}));
+// ─── Vendor data — use live vendors ───────────────────────────
 
 // ─── LLM Demo Response ───────────────────────────────────────
 interface LLMSection {
@@ -92,16 +83,22 @@ function SearchContent() {
     }
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filter products by query
-  const filteredProducts = query
-    ? productCatalog.filter(
-        (p) =>
-          p.title.toLowerCase().includes(query.toLowerCase()) ||
-          p.brand.toLowerCase().includes(query.toLowerCase()) ||
-          p.kind.toLowerCase().includes(query.toLowerCase()) ||
-          p.tag.toLowerCase().includes(query.toLowerCase())
-      )
-    : productCatalog;
+  const { products: allProducts, loading: productsLoading } = useProducts({ search: query || undefined, size: 50 });
+  const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 6 });
+
+  // Map vendors for display
+  const DEMO_VENDORS = allVendors.slice(0, 6).map((v) => ({
+    id: v._id,
+    name: v.business_name,
+    rating: v.average_rating ?? 0,
+    reviews: v.total_ratings ?? 0,
+    image: v.cover_image_url || '/image/bespoke-agbada-orange.webp',
+    logoImage: v.business_logo_url,
+    logoInitials: v.business_name.slice(0, 2).toUpperCase(),
+    themeColor: v.theme_color || '#2C1810',
+  }));
+
+  const filteredProducts = allProducts;
 
   // ═══════════════════════════════════════════════════════════
   //  SEARCH RESULTS VIEW
@@ -115,17 +112,17 @@ function SearchContent() {
         </h2>
         <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px', paddingBottom: '4px' }}>
           {DEMO_VENDORS.map((vendor) => {
-            const tcClean = vendor.themeColor.replace('#', '');
-            const tcR = parseInt(tcClean.substring(0, 2), 16);
-            const tcG = parseInt(tcClean.substring(2, 4), 16);
-            const tcB = parseInt(tcClean.substring(4, 6), 16);
-            const brightness = (tcR * 299 + tcG * 587 + tcB * 114) / 1000;
-            const isLightTheme = brightness > 180;
+            const tcClean2 = vendor.themeColor.replace('#', '');
+            const tcR2 = parseInt(tcClean2.substring(0, 2), 16);
+            const tcG2 = parseInt(tcClean2.substring(2, 4), 16);
+            const tcB2 = parseInt(tcClean2.substring(4, 6), 16);
+            const brightness2 = (tcR2 * 299 + tcG2 * 587 + tcB2 * 114) / 1000;
+            const isLightTheme2 = brightness2 > 180;
 
-            const bgThemeColor = isLightTheme ? darkenHex(vendor.themeColor, 0.05) : darkenHex(vendor.themeColor, 0.70);
-            const textColor = isLightTheme ? '#1a1a1a' : '#ffffff';
-            const secondaryColor = isLightTheme ? 'rgba(26,26,26,0.85)' : 'rgba(255,255,255,0.85)';
-            const tertiaryColor = isLightTheme ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.6)';
+            const bgThemeColor = isLightTheme2 ? darkenHex(vendor.themeColor, 0.05) : darkenHex(vendor.themeColor, 0.70);
+            const textColor = isLightTheme2 ? '#1a1a1a' : '#ffffff';
+            const secondaryColor = isLightTheme2 ? 'rgba(26,26,26,0.85)' : 'rgba(255,255,255,0.85)';
+            const tertiaryColor = isLightTheme2 ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.6)';
 
             return (
               <Link
@@ -158,28 +155,11 @@ function SearchContent() {
                   {/* Logo overlay */}
                   <div
                     className="absolute flex items-center justify-center overflow-hidden"
-                    style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
-                      background: '#FFFFFF',
-                      border: '3px solid #FFFFFF',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                      bottom: '-22px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      zIndex: 10,
-                    }}
+                    style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#FFFFFF', border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', bottom: '-22px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}
                   >
-                    {vendor.logoStyle === 'image' && vendor.logoImage ? (
+                    {vendor.logoImage ? (
                       <div className="relative w-full h-full">
-                        <Image
-                          src={vendor.logoImage}
-                          alt={vendor.name}
-                          fill
-                          style={{ objectFit: 'cover' }}
-                          sizes="44px"
-                        />
+                        <Image src={vendor.logoImage} alt={vendor.name} fill style={{ objectFit: 'cover' }} sizes="44px" />
                       </div>
                     ) : (
                       <span style={{ fontSize: '11px', fontWeight: 900, color: vendor.themeColor, fontFamily: 'Outfit, sans-serif' }}>
@@ -251,15 +231,15 @@ function SearchContent() {
         <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 lg:gap-5">
           {filteredProducts.map((product) => (
             <ProductCard
-              key={product.id}
-              id={product.id}
-              imageUrl={product.image}
-              title={product.title}
-              brand={product.brand}
-              price={product.price}
-              originalPrice={product.originalPrice}
-              tag={product.tag}
-              isFavorite={wishlist.includes(product.id)}
+              key={product._id}
+              id={product._id}
+              imageUrl={getProductImage(product)}
+              title={getProductName(product)}
+              brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+              price={getProductPrice(product)}
+              originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+              tag={getProductTag(product)}
+              isFavorite={wishlist.includes(product._id)}
               onFavoriteToggle={(id) => toggleWishlist(id as string)}
             />
           ))}
@@ -306,8 +286,8 @@ function SearchContent() {
       {/* Product sections */}
       {LLM_RESPONSE.sections.map((section, sIdx) => {
         const sectionProducts = section.productIds
-          .map((id) => productCatalog.find((p) => p.id === id))
-          .filter(Boolean) as typeof productCatalog;
+          .map((id) => allProducts.find((p) => p._id === id))
+          .filter(Boolean) as ApiProduct[];
 
         return (
           <div key={sIdx}>
@@ -319,16 +299,16 @@ function SearchContent() {
             </p>
             <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '14px', paddingBottom: '4px' }}>
               {sectionProducts.map((product) => (
-                <div key={product.id} style={{ minWidth: '160px', maxWidth: '180px', flexShrink: 0 }}>
+                <div key={product._id} style={{ minWidth: '160px', maxWidth: '180px', flexShrink: 0 }}>
                   <ProductCard
-                    id={product.id}
-                    imageUrl={product.image}
-                    title={product.title}
-                    brand={product.brand}
-                    price={product.price}
-                    originalPrice={product.originalPrice}
-                    tag={product.tag}
-                    isFavorite={wishlist.includes(product.id)}
+                    id={product._id}
+                    imageUrl={getProductImage(product)}
+                    title={getProductName(product)}
+                    brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+                    price={getProductPrice(product)}
+                    originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+                    tag={getProductTag(product)}
+                    isFavorite={wishlist.includes(product._id)}
                     onFavoriteToggle={(id) => toggleWishlist(id as string)}
                   />
                 </div>

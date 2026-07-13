@@ -4,12 +4,14 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
-import { type Vendor } from '@/data/vendors';
-import { type Product } from '@/data/products';
+import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
+import { getProductImage } from '@/lib/api-types';
 
 interface VendorDealCardProps {
-  vendor: Vendor;
-  products: Product[];
+  vendor: ApiBusinessPublic;
+  products: ApiProduct[];
+  dealLabel?: string;
+  dealColor?: string;
 }
 
 function darkenHex(hex: string, amount: number = 0.65): string {
@@ -26,14 +28,16 @@ function darkenHex(hex: string, amount: number = 0.65): string {
 export const VendorDealCard: React.FC<VendorDealCardProps> = ({
   vendor,
   products,
+  dealLabel,
+  dealColor,
 }) => {
+  const vendorName = vendor.business_name;
   const coverImage =
-    vendor.heroImage ||
-    products[0]?.gallery?.[0] ||
-    products[0]?.image ||
+    vendor.cover_image_url ||
+    (products[0] ? getProductImage(products[0]) : '') ||
     '/image/bespoke-agbada-orange.webp';
 
-  const themeColor = vendor.themeColor || '#8D7F72';
+  const themeColor = vendor.theme_color || '#8D7F72';
   const tcClean = themeColor.replace('#', '');
   const brightness =
     (parseInt(tcClean.substring(0, 2), 16) * 299 +
@@ -42,6 +46,9 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
     1000;
   const isLight = brightness > 180;
   const darkBg = isLight ? darkenHex(themeColor, 0.05) : darkenHex(themeColor, 0.70);
+
+  const vendorRating = vendor.average_rating ?? 0;
+  const vendorReviewCount = vendor.total_ratings ?? 0;
 
   const formatCount = (n: number): string => {
     if (n >= 1000) {
@@ -53,121 +60,52 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
 
   return (
     <Link
-      href={`/vendor/${vendor.id}`}
+      href={`/vendor/${vendor._id}`}
       className="flex-shrink-0 flex flex-col overflow-hidden group snap-start"
-      style={{
-        width: '340px',
-        borderRadius: '20px',
-        textDecoration: 'none',
-      }}
+      style={{ width: '340px', borderRadius: '20px', textDecoration: 'none' }}
     >
       {/* ─── Top: Cover Image + Brand Name ─── */}
-      <div
-        className="relative overflow-hidden"
-        style={{ width: '100%', aspectRatio: '5 / 3' }}
-      >
+      <div className="relative overflow-hidden" style={{ width: '100%', aspectRatio: '5 / 3' }}>
         <Image
           src={coverImage}
-          alt={vendor.name}
+          alt={vendorName}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           sizes="280px"
         />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'rgba(0,0,0,0.25)' }}
-        />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.25)' }} />
 
         {/* Centered Brand Name */}
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ padding: '0 16px' }}
-        >
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none" style={{ padding: '0 16px' }}>
           <div className="transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-1">
-            <span
-              style={{
-                fontSize: '24px',
-                fontWeight: 900,
-                color: '#FFFFFF',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                textShadow: '0 2px 10px rgba(0,0,0,0.35)',
-                fontFamily: 'var(--font-display)',
-                textAlign: 'center',
-                lineHeight: 1.1,
-                maxWidth: '100%',
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-              }}
-            >
-              {vendor.name}
+            <span style={{ fontSize: '24px', fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 2px 10px rgba(0,0,0,0.35)', fontFamily: 'var(--font-display)', textAlign: 'center', lineHeight: 1.1, maxWidth: '100%', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              {vendorName}
             </span>
           </div>
         </div>
       </div>
 
       {/* ─── Bottom: Solid info bar ─── */}
-      <div
-        className="flex flex-col"
-        style={{
-          padding: '12px 16px 14px',
-          gap: '3px',
-          backgroundColor: darkBg,
-        }}
-      >
-        {/* Discount Badge */}
-        {vendor.promo && (
+      <div className="flex flex-col" style={{ padding: '12px 16px 14px', gap: '3px', backgroundColor: darkBg }}>
+        {/* Deal Badge */}
+        {dealLabel && (
           <div>
-            <span
-              style={{
-                display: 'inline-block',
-                background: vendor.promotions?.[0]?.color || themeColor,
-                color: '#FFFFFF',
-                fontSize: '10px',
-                fontWeight: 700,
-                padding: '3px 8px',
-                borderRadius: '6px',
-                lineHeight: '14px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {vendor.promo.label}
+            <span style={{ display: 'inline-block', background: dealColor || themeColor, color: '#FFFFFF', fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', lineHeight: '14px', whiteSpace: 'nowrap' }}>
+              {dealLabel}
             </span>
           </div>
         )}
 
         {/* Vendor Name */}
-        <span
-          className="transition-transform duration-500 ease-out group-hover:translate-x-1"
-          style={{
-            fontSize: '13px',
-            fontWeight: 700,
-            fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
-            color: isLight ? '#1A1A1A' : '#FFFFFF',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            lineHeight: 1.3,
-            display: 'block',
-          }}
-        >
-          {vendor.name}
+        <span className="transition-transform duration-500 ease-out group-hover:translate-x-1" style={{ fontSize: '13px', fontWeight: 700, fontFamily: "var(--font-outfit), 'Outfit', sans-serif", color: isLight ? '#1A1A1A' : '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3, display: 'block' }}>
+          {vendorName}
         </span>
 
         {/* Rating */}
         <div className="flex items-center" style={{ gap: '3px' }}>
           <Star size={10} color={isLight ? '#1A1A1A' : '#FFFFFF'} fill={isLight ? '#1A1A1A' : '#FFFFFF'} />
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 600,
-              color: isLight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.85)',
-              lineHeight: 1,
-            }}
-          >
-            {vendor.rating} ({formatCount(vendor.reviewCount)})
+          <span style={{ fontSize: '10px', fontWeight: 600, color: isLight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.85)', lineHeight: 1 }}>
+            {vendorRating.toFixed(1)} ({formatCount(vendorReviewCount)})
           </span>
         </div>
       </div>

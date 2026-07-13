@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
-import { productCatalog } from '@/data/products';
-import { vendorCatalog } from '@/data/vendors';
 import { GenderToggle } from '@/components/GenderToggle';
 import { TrendingBanner } from '@/components/TrendingBanner';
 import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
@@ -16,22 +14,28 @@ import { PromoBanner } from '@/components/PromoBanner';
 import { ShopByCategory } from '@/components/ShopByCategory';
 import { FollowingBar } from '@/components/FollowingBar';
 import { ForYouSection } from '@/components/ForYouSection';
+import { useProducts } from '@/hooks/useProducts';
+import { useVendors } from '@/hooks/useVendors';
+import { getProductImage } from '@/lib/api-types';
+import type { ApiProduct, ApiBusinessPublic } from '@/lib/api-types';
 
 // ─── Category Section Config ──────────────────────────────────────
 const FEED_SECTIONS = [
-  { key: 'accessories', label: 'ACCESSORIES', filter: 'accessories', href: '/discover/accessories' },
-  { key: 'custom_made', label: 'CUSTOM MADE', filter: 'custom_made', href: '/discover/custom' },
-  { key: 'clothing', label: 'READY TO WEAR', filter: 'clothing', href: '/discover/ready-to-wear' },
-  { key: 'fabric', label: 'FABRIC', filter: 'fabric', href: '/discover/fabric' },
+  { key: 'accessories', label: 'ACCESSORIES', kind: 'accessory' as const, href: '/discover/accessories' },
+  { key: 'custom_made', label: 'CUSTOM MADE', kind: 'clothing' as const, clothingType: 'customize', href: '/discover/custom' },
+  { key: 'clothing', label: 'READY TO WEAR', kind: 'clothing' as const, clothingType: 'non_customize', href: '/discover/ready-to-wear' },
+  { key: 'fabric', label: 'FABRIC', kind: 'fabric' as const, href: '/discover/fabric' },
 ] as const;
 
 // ─── Scrollable Vendor Row ────────────────────────────────────────
 function VendorRow({
   vendors,
+  vendorProductMap,
   followedVendors,
   onToggleFollow,
 }: {
-  vendors: typeof vendorCatalog;
+  vendors: ApiBusinessPublic[];
+  vendorProductMap: Map<string, ApiProduct[]>;
   followedVendors: string[];
   onToggleFollow: (id: string) => void;
 }) {
@@ -51,16 +55,14 @@ function VendorRow({
         style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {vendors.map((vendor) => {
-          const vendorProducts = productCatalog.filter((p) =>
-            vendor.productIds.includes(p.id)
-          );
+          const vendorProducts = vendorProductMap.get(vendor._id) ?? [];
           return (
             <VendorShowcaseCard
-              key={vendor.id}
+              key={vendor._id}
               vendor={vendor}
               products={vendorProducts}
-              isFollowing={followedVendors.includes(vendor.id)}
-              onToggleFollow={() => onToggleFollow(vendor.id)}
+              isFollowing={followedVendors.includes(vendor._id)}
+              onToggleFollow={() => onToggleFollow(vendor._id)}
             />
           );
         })}
@@ -91,6 +93,33 @@ function VendorRow({
   );
 }
 
+// ─── Loading Skeleton ─────────────────────────────────────────────
+function FeedSkeleton() {
+  return (
+    <div className="flex flex-col w-full animate-pulse" style={{ gap: '36px' }}>
+      {/* Trending banner skeleton */}
+      <div className="rounded-[30px] bg-[#E8DDD0]" style={{ height: '280px' }} />
+      {/* Category skeleton */}
+      <div className="flex" style={{ gap: '20px' }}>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '360px' }} />
+        ))}
+      </div>
+      {/* Vendor row skeletons */}
+      {[1, 2].map((i) => (
+        <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
+          <div className="h-3 w-32 bg-[#E5E5E5] rounded" />
+          <div className="flex" style={{ gap: '16px' }}>
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main Home Page ───────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
@@ -108,6 +137,10 @@ export default function HomePage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // ── Fetch live data ─────────────────────────────────────────────
+  const { products: allProducts, loading: productsLoading } = useProducts({ size: 50 });
+  const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 50 });
 
   const suggestions = [
     "A comfortable wedding attire hot weather",
@@ -131,6 +164,38 @@ export default function HomePage() {
     setGender(g);
     setGenderSelected(true);
   };
+
+  // ── Build vendor → products lookup ──────────────────────────────
+  const vendorProductMap = useMemo(() => {
+    const map = new Map<string, ApiProduct[]>();
+    for (const p of allProducts) {
+      const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
+      if (!bizId) continue;
+      if (!map.has(bizId)) map.set(bizId, []);
+      map.get(bizId)!.push(p);
+    }
+    return map;
+  }, [allProducts]);
+
+  // ── Derive vendor "category" from their products (Option B) ────
+  const sectionVendors = useMemo(() => {
+    const result: Record<string, ApiBusinessPublic[]> = {};
+    for (const section of FEED_SECTIONS) {
+      const vendorIds = new Set<string>();
+      for (const p of allProducts) {
+        const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
+        if (!bizId) continue;
+        if (p.kind !== section.kind) continue;
+        // For clothing sections, also check clothing type
+        if (section.kind === 'clothing' && 'clothingType' in section) {
+          if (p.clothing?.type !== section.clothingType) continue;
+        }
+        vendorIds.add(bizId);
+      }
+      result[section.key] = allVendors.filter((v) => vendorIds.has(v._id));
+    }
+    return result;
+  }, [allProducts, allVendors]);
 
   // ─── Determine which view to show ──────────────────────────────
   const showFeed = genderSelected || !!user;
@@ -268,6 +333,15 @@ export default function HomePage() {
   }
 
   // ─── STATE B: Main Home Feed ────────────────────────────────────
+  const isLoading = productsLoading || vendorsLoading;
+
+  if (isLoading) {
+    return <FeedSkeleton />;
+  }
+
+  // First product image for "For You" hero
+  const forYouHeroImage = allProducts[0] ? getProductImage(allProducts[0]) : undefined;
+
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '36px' }}>
 
@@ -278,25 +352,25 @@ export default function HomePage() {
 
       {/* Following Bar — only for signed-in users with followed vendors */}
       {user && followedVendors.length > 0 && (
-        <FollowingBar followedVendorIds={followedVendors} />
+        <FollowingBar followedVendorIds={followedVendors} vendors={allVendors} />
       )}
 
       {/* Trending Banner */}
       <TrendingBanner />
 
       {/* Shop by Category — Amazon-style grid */}
-      <ShopByCategory />
+      <ShopByCategory products={allProducts} />
 
       {/* Category Sections */}
       {FEED_SECTIONS.map((section) => {
-        const sectionVendors = vendorCatalog.filter(
-          (v) => v.category === section.filter
-        );
+        const vendors = sectionVendors[section.key] ?? [];
 
-        // If no vendors in this category, show all vendors as fallback
-        const displayVendors = sectionVendors.length > 0
-          ? sectionVendors
-          : vendorCatalog.slice(0, 4);
+        // If no vendors in this category, show first 4 vendors as fallback
+        const displayVendors = vendors.length > 0
+          ? vendors.slice(0, 8)
+          : allVendors.slice(0, 4);
+
+        if (displayVendors.length === 0) return null;
 
         return (
           <div key={section.key} className="flex flex-col" style={{ gap: '16px' }}>
@@ -321,6 +395,7 @@ export default function HomePage() {
             {/* Vendor Cards Row */}
             <VendorRow
               vendors={displayVendors}
+              vendorProductMap={vendorProductMap}
               followedVendors={followedVendors}
               onToggleFollow={toggleFollowVendor}
             />
@@ -330,7 +405,7 @@ export default function HomePage() {
 
       {/* For You + Recently Seen — signed-in users only */}
       {user && (
-        <ForYouSection recentlyViewed={recentlyViewed} />
+        <ForYouSection recentlyViewed={recentlyViewed} heroImage={forYouHeroImage} />
       )}
 
       {/* Promo Banner */}

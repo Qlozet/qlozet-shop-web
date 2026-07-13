@@ -9,12 +9,10 @@ import { GenderToggle } from '@/components/GenderToggle';
 import {
   resolveSlug,
   buildBreadcrumbs,
-  getProductsForNode,
-  getTrending,
-  getTopRated,
-  getWhatsNew,
   HERO_BANNERS,
 } from '@/data/taxonomy';
+import { useProducts } from '@/hooks/useProducts';
+import type { ApiProduct } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { CollectionChips } from '@/components/discover/CollectionChips';
@@ -39,13 +37,21 @@ export default function DiscoverSlugPage() {
   const breadcrumbs = buildBreadcrumbs(slugParts);
   const depth = slugParts.length;
 
-  // Get products for this level
-  let products = getProductsForNode(current);
+  // Fetch products from API — use the node's search hint for filtering
+  const searchHint = current?.productFilter?.subcategory || current?.productFilter?.collection || current?.label?.toLowerCase() || '';
+  const { products: apiProducts } = useProducts({ search: searchHint, size: 50 });
+
+  // Simple sort/filter helpers for ApiProduct
+  let products = [...apiProducts];
 
   // Apply product type filter if set
   if (activeProductType) {
-    products = products.filter((p) => p.productType === activeProductType);
+    products = products.filter((p) => p.kind?.toLowerCase().includes(activeProductType.toLowerCase()));
   }
+
+  const getTrending = (ps: ApiProduct[], limit = 8) => ps.slice(0, limit);
+  const getTopRated = (ps: ApiProduct[], limit = 8) => [...ps].reverse().slice(0, limit);
+  const getWhatsNew = (ps: ApiProduct[], limit = 8) => ps.slice(Math.max(0, ps.length - limit));
 
   // Determine what to show
   const hasChildren = current?.children && current.children.length > 0;

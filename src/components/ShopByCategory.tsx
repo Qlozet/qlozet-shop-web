@@ -4,7 +4,8 @@ import React, { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { productCatalog } from '@/data/products';
+import type { ApiProduct } from '@/lib/api-types';
+import { getProductImage } from '@/lib/api-types';
 
 // ─── Category tile definitions ──────────────────────────────────────
 interface CategoryTile {
@@ -20,65 +21,81 @@ interface CategoryColumn {
   tiles: CategoryTile[];
 }
 
-const CATEGORIES: CategoryColumn[] = [
-  {
-    title: 'Ready to Wear',
-    href: '/discover/ready-to-wear',
-    tiles: (() => {
-      const pool = productCatalog.filter(
-        (p) => p.kind === 'clothing'
-      );
-      return [
-        { label: 'Agbada', image: pool[0]?.image || '/image/bespoke-agbada-orange.webp', bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
-        { label: 'Kaftan', image: pool[2]?.image || '/image/bespoke-kaftan-brown-1.png', bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
-        { label: 'Ankara', image: pool[5]?.image || '/image/bespoke-ankara-1.png', bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
-        { label: 'Corporate', image: pool[4]?.image || '/image/bespoke-kaftan-milk-1.png', bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
-      ];
-    })(),
-  },
-  {
-    title: 'Custom',
-    href: '/discover/custom',
-    tiles: (() => {
-      const custom = productCatalog.filter((p) => p.tag === 'CUSTOMIZABLE');
-      return [
-        { label: 'Bespoke Agbada', image: custom[0]?.image || '/image/bespoke-agbada-orange.webp', bgColor: '#E8DDD3', href: '/discover/custom/bespoke-agbada' },
-        { label: 'Bespoke Kaftan', image: custom[2]?.image || '/image/bespoke-kaftan-brown-1.png', bgColor: '#F2EAE2', href: '/discover/custom/bespoke-kaftan' },
-        { label: 'Bespoke Ankara', image: custom[4]?.image || '/image/bespoke-dress-1.png', bgColor: '#E5DCD4', href: '/discover/custom/bespoke-ankara' },
-        { label: 'Design Studio', image: custom[5]?.image || '/image/custom-outfit-1.webp', bgColor: '#EDE3DA', href: '/bespoke' },
-      ];
-    })(),
-  },
-  {
-    title: 'Accessories',
-    href: '/discover/accessories',
-    tiles: (() => {
-      const accessories = productCatalog.filter((p) => p.kind === 'accessory');
-      return [
-        { label: 'Bags', image: accessories[0]?.image || '/image/qlozet-bag.png', bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
-        { label: 'Jewelry', image: accessories[1]?.image || '/image/bag.webp', bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
-        { label: 'Headwraps', image: accessories[2]?.image || '/image/totebag.png', bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
-        { label: 'Shoes', image: accessories[3]?.image || '/image/qlozet-bag.png', bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
-      ];
-    })(),
-  },
-  {
-    title: 'Fabrics',
-    href: '/discover/fabric',
-    tiles: (() => {
-      const fabrics = productCatalog.filter((p) => p.kind === 'fabric');
-      return [
-        { label: 'Ankara', image: fabrics[0]?.image || '/image/ankara.png', bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
-        { label: 'Lace', image: fabrics[1]?.image || '/image/fabric-1.jpg', bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
-        { label: 'Aso-Oke', image: fabrics[2]?.image || '/image/fabric-swatch-1.jpg', bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
-        { label: 'Adire', image: fabrics[3]?.image || '/image/fabric-swatch-2.jpg', bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
-      ];
-    })(),
-  },
-];
+// ─── Static fallback images per category ────────────────────────────
+const FALLBACK_IMAGES = {
+  rtw: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-brown-1.png', '/image/bespoke-ankara-1.png', '/image/bespoke-kaftan-milk-1.png'],
+  custom: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-brown-1.png', '/image/bespoke-dress-1.png', '/image/custom-outfit-1.webp'],
+  accessories: ['/image/qlozet-bag.png', '/image/bag.webp', '/image/totebag.png', '/image/qlozet-bag.png'],
+  fabrics: ['/image/ankara.png', '/image/fabric-1.jpg', '/image/fabric-swatch-1.jpg', '/image/fabric-swatch-2.jpg'],
+};
 
-export function ShopByCategory() {
+interface ShopByCategoryProps {
+  products?: ApiProduct[];
+}
+
+function buildCategories(products: ApiProduct[]): CategoryColumn[] {
+  // Helper: pick image from filtered products, with fallback
+  const pickImage = (pool: ApiProduct[], idx: number, fallback: string): string => {
+    const p = pool[idx];
+    if (p) {
+      const img = getProductImage(p);
+      if (img) return img;
+    }
+    return fallback;
+  };
+
+  const clothing = products.filter((p) => p.kind === 'clothing');
+  const customizable = clothing.filter((p) => p.clothing?.type === 'customize');
+  const accessories = products.filter((p) => p.kind === 'accessory');
+  const fabrics = products.filter((p) => p.kind === 'fabric');
+
+  return [
+    {
+      title: 'Ready to Wear',
+      href: '/discover/ready-to-wear',
+      tiles: [
+        { label: 'Agbada', image: pickImage(clothing, 0, FALLBACK_IMAGES.rtw[0]), bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
+        { label: 'Kaftan', image: pickImage(clothing, 1, FALLBACK_IMAGES.rtw[1]), bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
+        { label: 'Ankara', image: pickImage(clothing, 2, FALLBACK_IMAGES.rtw[2]), bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
+        { label: 'Corporate', image: pickImage(clothing, 3, FALLBACK_IMAGES.rtw[3]), bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
+      ],
+    },
+    {
+      title: 'Custom',
+      href: '/discover/custom',
+      tiles: [
+        { label: 'Bespoke Agbada', image: pickImage(customizable, 0, FALLBACK_IMAGES.custom[0]), bgColor: '#E8DDD3', href: '/discover/custom/bespoke-agbada' },
+        { label: 'Bespoke Kaftan', image: pickImage(customizable, 1, FALLBACK_IMAGES.custom[1]), bgColor: '#F2EAE2', href: '/discover/custom/bespoke-kaftan' },
+        { label: 'Bespoke Ankara', image: pickImage(customizable, 2, FALLBACK_IMAGES.custom[2]), bgColor: '#E5DCD4', href: '/discover/custom/bespoke-ankara' },
+        { label: 'Design Studio', image: pickImage(customizable, 3, FALLBACK_IMAGES.custom[3]), bgColor: '#EDE3DA', href: '/bespoke' },
+      ],
+    },
+    {
+      title: 'Accessories',
+      href: '/discover/accessories',
+      tiles: [
+        { label: 'Bags', image: pickImage(accessories, 0, FALLBACK_IMAGES.accessories[0]), bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
+        { label: 'Jewelry', image: pickImage(accessories, 1, FALLBACK_IMAGES.accessories[1]), bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
+        { label: 'Headwraps', image: pickImage(accessories, 2, FALLBACK_IMAGES.accessories[2]), bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
+        { label: 'Shoes', image: pickImage(accessories, 3, FALLBACK_IMAGES.accessories[3]), bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
+      ],
+    },
+    {
+      title: 'Fabrics',
+      href: '/discover/fabric',
+      tiles: [
+        { label: 'Ankara', image: pickImage(fabrics, 0, FALLBACK_IMAGES.fabrics[0]), bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
+        { label: 'Lace', image: pickImage(fabrics, 1, FALLBACK_IMAGES.fabrics[1]), bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
+        { label: 'Aso-Oke', image: pickImage(fabrics, 2, FALLBACK_IMAGES.fabrics[2]), bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
+        { label: 'Adire', image: pickImage(fabrics, 3, FALLBACK_IMAGES.fabrics[3]), bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
+      ],
+    },
+  ];
+}
+
+export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const categories = buildCategories(products);
 
   const scrollRight = () => {
     if (scrollRef.current) {
@@ -111,7 +128,7 @@ export function ShopByCategory() {
           className="flex overflow-x-auto hide-scrollbar"
           style={{ gap: '20px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <div
               key={category.title}
               className="flex flex-col flex-shrink-0"

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { productCatalog } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
+import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
 import {
   Trash2,
   ChevronDown,
@@ -74,14 +75,16 @@ export default function CartPage() {
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const shipping = subtotal > 100000 || subtotal === 0 ? 0 : 5000;
 
+  const { products: allProducts } = useProducts({ size: 20 });
+
   // Suggested products (not in cart)
   const cartIds = cart.map((c) => c.id);
-  const suggestedProducts = productCatalog
-    .filter((p) => !cartIds.includes(p.id))
+  const suggestedProducts = allProducts
+    .filter((p) => !cartIds.includes(p._id))
     .slice(0, 4);
 
-  // "Looking for this?" — random product not in cart
-  const lookingProduct = productCatalog.find((p) => !cartIds.includes(p.id) && p.tag === 'CUSTOMIZABLE');
+  // "Looking for this?" — product tagged CUSTOMIZABLE
+  const lookingProduct = allProducts.find((p) => !cartIds.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE');
 
   // ─── Card style ─────────────────────────────────────────────
   const cardStyle: React.CSSProperties = {
@@ -309,14 +312,14 @@ export default function CartPage() {
               {showLooking && (
                 <div className="animate-fade-in" style={{ marginTop: '16px', maxWidth: '180px' }}>
                   <ProductCard
-                    id={lookingProduct.id}
-                    imageUrl={lookingProduct.image}
-                    title={lookingProduct.title}
-                    brand={lookingProduct.brand}
-                    price={lookingProduct.price}
-                    originalPrice={lookingProduct.originalPrice}
-                    tag={lookingProduct.tag}
-                    isFavorite={wishlist.includes(lookingProduct.id)}
+                    id={lookingProduct._id}
+                    imageUrl={getProductImage(lookingProduct)}
+                    title={getProductName(lookingProduct)}
+                    brand={typeof lookingProduct.business === 'object' ? lookingProduct.business?.business_name ?? '' : ''}
+                    price={getProductPrice(lookingProduct)}
+                    originalPrice={undefined}
+                    tag={getProductTag(lookingProduct)}
+                    isFavorite={wishlist.includes(lookingProduct._id)}
                     onFavoriteToggle={(id) => toggleWishlist(id as string)}
                   />
                 </div>
@@ -340,16 +343,16 @@ export default function CartPage() {
             {showSuggested && (
               <div className="animate-fade-in hide-scrollbar flex overflow-x-auto gap-3 mt-4" style={{ paddingBottom: '4px' }}>
                 {suggestedProducts.map((p) => (
-                  <div key={p.id} style={{ minWidth: '150px', maxWidth: '170px', flexShrink: 0 }}>
+                  <div key={p._id} style={{ minWidth: '150px', maxWidth: '170px', flexShrink: 0 }}>
                     <ProductCard
-                      id={p.id}
-                      imageUrl={p.image}
-                      title={p.title}
-                      brand={p.brand}
-                      price={p.price}
-                      originalPrice={p.originalPrice}
-                      tag={p.tag}
-                      isFavorite={wishlist.includes(p.id)}
+                      id={p._id}
+                      imageUrl={getProductImage(p)}
+                      title={getProductName(p)}
+                      brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
+                      price={getProductPrice(p)}
+                      originalPrice={undefined}
+                      tag={getProductTag(p)}
+                      isFavorite={wishlist.includes(p._id)}
                       onFavoriteToggle={(id) => toggleWishlist(id as string)}
                     />
                   </div>

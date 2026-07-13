@@ -4,16 +4,17 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { productCatalog } from '@/data/products';
 import type { RecentItem } from '@/context/AppContext';
 
 interface ForYouSectionProps {
   recentlyViewed: RecentItem[];
+  heroImage?: string;
 }
 
-export function ForYouSection({ recentlyViewed }: ForYouSectionProps) {
-  // "For You" hero — pick a recommended product
-  const forYouHero = productCatalog[0];
+const DEFAULT_HERO = '/image/bespoke-agbada-orange.webp';
+
+export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps) {
+  const forYouImage = heroImage || DEFAULT_HERO;
 
   // Filter out stale string entries from old format
   const validItems = recentlyViewed.filter(
@@ -42,7 +43,7 @@ export function ForYouSection({ recentlyViewed }: ForYouSectionProps) {
         }}
       >
         <Image
-          src={forYouHero.image}
+          src={forYouImage}
           alt="For You"
           fill
           className="object-cover object-top group-hover:scale-105 transition-transform duration-700"

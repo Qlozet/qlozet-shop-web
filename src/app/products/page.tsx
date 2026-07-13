@@ -6,13 +6,40 @@ import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryBar, type CategoryKind } from '@/components/CategoryBar';
 import { FilterSidebar } from '@/components/FilterSidebar';
-import { productCatalog } from '@/data/products';
-import { SlidersHorizontal } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
+import {
+  getProductName,
+  getProductPrice,
+  getProductOriginalPrice,
+  getProductImage,
+  getProductTag,
+  hasDiscount,
+} from '@/lib/api-types';
+import type { ProductQueryParams } from '@/lib/api-types';
+import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+
+// ─── Map CategoryKind UI filters → backend query params ───────────
+function mapKindToParams(kind: CategoryKind): Partial<ProductQueryParams> {
+  switch (kind) {
+    case 'all':
+      return {};
+    case 'bespoke':
+    case 'custom':
+      // Backend doesn't have a direct "customizable" filter,
+      // so we filter clothing and post-filter by type
+      return { kind: 'clothing' };
+    case 'read-to-wear':
+      return { kind: 'clothing' };
+    case 'fabric':
+      return { kind: 'fabric' };
+    case 'accessory':
+      return { kind: 'accessory' };
+    default:
+      return {};
+  }
+}
 
 // ─── CatalogContent ───────────────────────────────────────────────
-// Main orchestrator: manages filter/sort state, applies them to the
-// catalog, and composes the CategoryBar + FilterSidebar + ProductGrid.
-
 function CatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -26,6 +53,7 @@ function CatalogContent() {
   const [sortBy, setSortBy] = useState<string>('rating');
   const [maxPrice, setMaxPrice] = useState<number>(200000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   // ── Sync from URL query params ────────────────────────────────
   useEffect(() => {
@@ -39,37 +67,47 @@ function CatalogContent() {
         setSelectedKind(qKind as CategoryKind);
       }
     }
+    // Reset to page 1 when filters change
+    setPage(1);
   }, [searchParams]);
 
-  // ── Filtering & Sorting ───────────────────────────────────────
-  const filteredProducts = productCatalog
-    .filter((prod) => {
-      const matchesSearch = prod.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            prod.brand.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesKind = (() => {
-        if (selectedKind === 'all') return true;
-        if (selectedKind === 'bespoke') {
-          return prod.kind === 'clothing' && (prod.title.toLowerCase().includes('bespoke') || prod.tag === 'CUSTOMIZABLE');
-        }
-        if (selectedKind === 'custom') {
-          return prod.tag === 'CUSTOMIZABLE';
-        }
-        if (selectedKind === 'read-to-wear') {
-          return prod.kind === 'clothing' && !prod.title.toLowerCase().includes('bespoke');
-        }
-        if (selectedKind === 'fabric') return prod.kind === 'fabric';
-        if (selectedKind === 'accessory') return prod.kind === 'accessory';
-        return true;
-      })();
-      const matchesPrice = prod.price <= maxPrice;
-      return matchesSearch && matchesKind && matchesPrice;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'rating') return b.rating - a.rating;
-      if (sortBy === 'priceAsc') return a.price - b.price;
-      if (sortBy === 'priceDesc') return b.price - a.price;
-      return 0;
-    });
+  // ── Build backend query params ────────────────────────────────
+  const backendSortBy = sortBy === 'priceAsc' || sortBy === 'priceDesc' ? undefined : sortBy as 'rating' | 'date' | 'relevance' | undefined;
+  const backendOrder = sortBy === 'priceAsc' ? 'asc' as const : sortBy === 'priceDesc' ? 'desc' as const : undefined;
+
+  const queryParams: ProductQueryParams = {
+    page,
+    size: 20,
+    search: searchQuery || undefined,
+    sortBy: backendSortBy,
+    order: backendOrder,
+    ...mapKindToParams(selectedKind),
+  };
+
+  const { products, loading, error, pagination, refetch } = useProducts(queryParams);
+
+  // ── Client-side post-filters (for things backend doesn't support) ──
+  const filteredProducts = products.filter((p) => {
+    // Price filter (client-side — backend doesn't have price range)
+    if (getProductPrice(p) > maxPrice) return false;
+
+    // Custom/bespoke post-filter (backend returns all clothing)
+    if (selectedKind === 'bespoke' || selectedKind === 'custom') {
+      return p.clothing?.type === 'customize';
+    }
+    if (selectedKind === 'read-to-wear') {
+      return p.clothing?.type !== 'customize';
+    }
+
+    return true;
+  });
+
+  // ── Client-side sort for price (backend doesn't support price sort) ──
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortBy === 'priceAsc') return getProductPrice(a) - getProductPrice(b);
+    if (sortBy === 'priceDesc') return getProductPrice(b) - getProductPrice(a);
+    return 0; // backend handles rating/date sort
+  });
 
   // ── Reset handler ─────────────────────────────────────────────
   const handleClearFilters = () => {
@@ -77,7 +115,14 @@ function CatalogContent() {
     setSelectedKind('all');
     setSortBy('rating');
     setMaxPrice(200000);
+    setPage(1);
     router.push('/products');
+  };
+
+  // ── Pagination handlers ───────────────────────────────────────
+  const goToPage = (p: number) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // ── Render ────────────────────────────────────────────────────
@@ -101,31 +146,98 @@ function CatalogContent() {
         {/* Category Bar */}
         <CategoryBar
           selectedKind={selectedKind}
-          onCategoryChange={setSelectedKind}
+          onCategoryChange={(kind) => { setSelectedKind(kind); setPage(1); }}
           isFilterOpen={isFilterOpen}
           onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
-          itemCount={filteredProducts.length}
+          itemCount={pagination.totalItems}
         />
 
-        {/* Product Grid */}
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-slide-up justify-items-center">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                imageUrl={product.image}
-                title={product.title}
-                brand={product.brand}
-                price={product.price}
-                originalPrice={product.originalPrice}
-                tag={product.tag}
-                isFavorite={wishlist.includes(product.id)}
-                onFavoriteToggle={(id) => toggleWishlist(id as string)}
-              />
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-pulse justify-items-center">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="rounded-[20px] bg-[#F0EBE4]" style={{ width: '100%', aspectRatio: '3/4' }} />
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="glass-panel border border-white/5 p-12 text-center flex flex-col items-center justify-center gap-4">
+            <SlidersHorizontal size={36} className="text-[#999]" />
+            <h3 className="text-base font-bold text-[#1A1A1A]">Something went wrong</h3>
+            <p className="text-xs text-[#888] max-w-[280px]">{error}</p>
+            <button onClick={refetch} className="btn-primary" style={{ padding: '10px 20px', fontSize: '11px' }}>
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* Product Grid */}
+        {!loading && !error && sortedProducts.length > 0 && (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-slide-up justify-items-center">
+              {sortedProducts.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  id={product._id}
+                  imageUrl={getProductImage(product)}
+                  title={getProductName(product)}
+                  brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+                  price={getProductPrice(product)}
+                  originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+                  tag={getProductTag(product)}
+                  isFavorite={wishlist.includes(product._id)}
+                  onFavoriteToggle={(id) => toggleWishlist(id as string)}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-center" style={{ gap: '12px', padding: '16px 0' }}>
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={!pagination.hasPrevious}
+                  className="flex items-center justify-center transition-all disabled:opacity-30"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: '#F5F5F5',
+                    border: '1px solid #E5E5E5',
+                    cursor: pagination.hasPrevious ? 'pointer' : 'default',
+                  }}
+                >
+                  <ChevronLeft size={16} color="#1A1A1A" />
+                </button>
+
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+
+                <button
+                  onClick={() => goToPage(page + 1)}
+                  disabled={!pagination.hasNext}
+                  className="flex items-center justify-center transition-all disabled:opacity-30"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: '#F5F5F5',
+                    border: '1px solid #E5E5E5',
+                    cursor: pagination.hasNext ? 'pointer' : 'default',
+                  }}
+                >
+                  <ChevronRight size={16} color="#1A1A1A" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && sortedProducts.length === 0 && (
           <div className="glass-panel border border-white/5 p-12 text-center flex flex-col items-center justify-center gap-4">
             <SlidersHorizontal size={36} className="text-[#999]" />
             <h3 className="text-base font-bold text-[#1A1A1A]">No products match your filters</h3>

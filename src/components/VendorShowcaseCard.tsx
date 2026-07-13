@@ -3,23 +3,23 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star } from 'lucide-react';
-import { type Vendor } from '@/data/vendors';
-import { type Product } from '@/data/products';
+import type { ApiBusinessPublic } from '@/lib/api-types';
+import type { ApiProduct } from '@/lib/api-types';
+import { getProductImage, getProductName } from '@/lib/api-types';
 
 interface VendorShowcaseCardProps {
-  vendor: Vendor;
-  products: Product[];
+  vendor: ApiBusinessPublic;
+  products: ApiProduct[];
   isFollowing: boolean;
   onToggleFollow: () => void;
 }
 
 /**
- * VendorShowcaseCard — Same shape as VendorCard but with:
- * - Cover photo (heroImage or first product image fallback)
+ * VendorShowcaseCard — Shows a vendor with:
+ * - Cover photo (cover_image_url or first product image fallback)
  * - Brand logo (SVG/PNG) centered on the cover
- * - 3 rectangular product thumbnails at the bottom
- * - Same discount badge position as VendorCard
+ * - 2 rectangular product thumbnails at the bottom
+ * - Follow/Following button
  */
 export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
   vendor,
@@ -27,21 +27,25 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
   isFollowing,
   onToggleFollow,
 }) => {
-  const hasPromo = !!vendor.promo;
   // Ensure we always show exactly 2 product thumbnails
-  // If vendor has fewer products, pad with different gallery images
   const rawProducts = products.slice(0, 2);
   const displayProducts = rawProducts.length >= 2
     ? rawProducts
     : rawProducts.length === 1
-      ? [rawProducts[0], rawProducts[0]] // duplicate with different gallery index
+      ? [rawProducts[0], rawProducts[0]]
       : [];
 
-  // Cover image: heroImage → first product image → fallback
+  // Derived vendor fields
+  const vendorName = vendor.business_name;
+  const vendorLogo = vendor.business_logo_url;
+  const vendorRating = vendor.average_rating ?? 0;
+  const vendorReviewCount = vendor.total_ratings ?? 0;
+  const logoInitials = vendorName.slice(0, 2).toUpperCase();
+
+  // Cover image: cover_image_url → first product image → fallback
   const coverImage =
-    vendor.heroImage ||
-    products[0]?.gallery?.[0] ||
-    products[0]?.image ||
+    vendor.cover_image_url ||
+    (products[0] ? getProductImage(products[0]) : '') ||
     '/image/bespoke-agbada-orange.webp';
 
   const handleFollowClick = (e: React.MouseEvent) => {
@@ -53,12 +57,11 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
   // ─── Inner card (cover fills card, products overlay at bottom) ──
   const innerCard = (
     <Link
-      href={`/vendor/${vendor.id}`}
+      href={`/vendor/${vendor._id}`}
       className="relative overflow-hidden flex-shrink-0 block group"
       style={{
         width: '100%',
-        flex: hasPromo ? 1 : undefined,
-        height: hasPromo ? undefined : '100%',
+        height: '100%',
         borderRadius: '24px',
         boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
         textDecoration: 'none',
@@ -67,7 +70,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
       {/* ── Full-bleed Cover Image ── */}
       <Image
         src={coverImage}
-        alt={vendor.name}
+        alt={vendorName}
         fill
         className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         style={{ objectFit: 'cover' }}
@@ -93,14 +96,14 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
       >
         {/* Vendor Logo — left */}
         <div className="transition-transform duration-500 ease-out group-hover:scale-105 group-hover:translate-x-1">
-          {vendor.logoStyle === 'image' && vendor.logoImage ? (
+          {vendorLogo ? (
             <div
               className="relative overflow-hidden"
               style={{ width: '48px', height: '52px', borderRadius: '8px' }}
             >
               <Image
-                src={vendor.logoImage}
-                alt={vendor.name}
+                src={vendorLogo}
+                alt={vendorName}
                 fill
                 style={{ objectFit: 'cover' }}
                 sizes="48px"
@@ -120,13 +123,13 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                 lineHeight: 1,
               }}
             >
-              {vendor.logoInitials}
+              {logoInitials}
             </div>
           )}
         </div>
 
         {/* Vendor name + rating */}
-        {vendor.rating >= 4.0 && (
+        {vendorRating >= 4.0 && (
           <div
             className="flex-1 flex flex-col justify-center transition-transform duration-500 ease-out group-hover:translate-x-1.5"
             style={{ padding: '0 8px', minWidth: 0 }}
@@ -144,7 +147,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                 textShadow: '0 1px 3px rgba(0,0,0,0.4)',
               }}
             >
-              {vendor.name}
+              {vendorName}
             </span>
             <span
               style={{
@@ -154,7 +157,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                 textShadow: '0 1px 3px rgba(0,0,0,0.4)',
               }}
             >
-              ★ {vendor.rating} ({vendor.reviewCount})
+              ★ {vendorRating.toFixed(1)} ({vendorReviewCount})
             </span>
           </div>
         )}
@@ -207,7 +210,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
               textOverflow: 'ellipsis',
             }}
           >
-            {vendor.name}
+            {vendorName}
           </span>
         </div>
       </div>
@@ -218,30 +221,38 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
         style={{ gap: '12px', padding: '15px' }}
       >
         {displayProducts.length > 0 ? (
-          displayProducts.map((product, i) => (
-            <Link
-              key={product.id + '-' + i}
-              href={`/products/${product.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="relative overflow-hidden group/thumb"
-              style={{
-                flex: 1,
-                aspectRatio: '3 / 4',
-                borderRadius: '16px',
-                background: '#F5F3F0',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                maxHeight: '160px',
-              }}
-            >
-              <Image
-                src={product.gallery?.[i] || product.gallery?.[0] || product.image}
-                alt={product.title}
-                fill
-                className="object-cover group-hover/thumb:scale-110 transition-transform duration-300"
-                sizes="100px"
-              />
-            </Link>
-          ))
+          displayProducts.map((product, i) => {
+            const thumbImage = getProductImage(product);
+            const thumbName = getProductName(product);
+            return (
+              <Link
+                key={product._id + '-' + i}
+                href={`/products/${product._id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="relative overflow-hidden group/thumb"
+                style={{
+                  flex: 1,
+                  aspectRatio: '3 / 4',
+                  borderRadius: '16px',
+                  background: '#F5F3F0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  maxHeight: '160px',
+                }}
+              >
+                {thumbImage ? (
+                  <Image
+                    src={thumbImage}
+                    alt={thumbName}
+                    fill
+                    className="object-cover group-hover/thumb:scale-110 transition-transform duration-300"
+                    sizes="100px"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#E8E0D8]" />
+                )}
+              </Link>
+            );
+          })
         ) : (
           Array.from({ length: 2 }).map((_, i) => (
             <div
@@ -259,78 +270,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
     </Link>
   );
 
-  // ─── Variant 2: With Discount wrapper ───────────────────────────
-  if (hasPromo) {
-    return (
-      <div
-        className="flex-shrink-0 w-[calc(100vw-56px)] max-w-[380px] h-[420px] lg:w-[360px] lg:max-w-none lg:h-[500px]"
-        style={{
-          borderRadius: '24px',
-          background: '#514f4f',
-          padding: '11px 0 0 0',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
-          minWidth: '300px',
-        }}
-      >
-        {/* Discount Banner */}
-        <div
-          className="flex flex-col items-center"
-          style={{ width: '100%', gap: '5px', padding: '0 4px' }}
-        >
-          <div className="flex items-center" style={{ gap: '1px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                background: '#C72C41',
-                color: '#FFFFFF',
-                fontSize: '13px',
-                fontWeight: 600,
-                fontFamily: 'var(--font-body)',
-                padding: '1px 4px',
-                borderRadius: '4px',
-                lineHeight: '15px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {vendor.promo!.label}
-            </span>
-            <span
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                fontFamily: 'var(--font-body)',
-                color: '#FFFFFF',
-                lineHeight: '15px',
-                marginLeft: '4px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {vendor.promo!.condition}
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 500,
-              fontFamily: 'var(--font-body)',
-              color: '#CDCDCD',
-              textAlign: 'center',
-              lineHeight: 1.119,
-            }}
-          >
-            and 1 Item more
-          </span>
-        </div>
-
-        {/* Main Card */}
-        {innerCard}
-      </div>
-    );
-  }
-
-  // ─── Variant 1: Without Discount ────────────────────────────────
+  // ─── Always render without promo wrapper (backend doesn't support vendor promos yet) ──
   return (
     <div 
       className="flex-shrink-0 w-[calc(100vw-56px)] max-w-[380px] h-[420px] lg:w-[360px] lg:max-w-none lg:h-[500px]"
