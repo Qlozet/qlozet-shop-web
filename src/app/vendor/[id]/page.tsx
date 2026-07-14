@@ -138,7 +138,7 @@ export default function VendorPage() {
       `}</style>
 
       {/* ══════ HERO IMAGE CARD ══════ */}
-      <div className="px-4 pt-4 lg:px-8 lg:pt-8 w-full">
+      <div className="w-full" style={{ padding: '24px' }}>
         <div className="relative w-full overflow-hidden rounded-[40px] lg:rounded-[60px]" style={{ height: '55vh', minHeight: '420px' }}>
           <div className="absolute inset-0">
           <Image src={heroImage} alt={vendorName} fill quality={90} style={{ objectFit: 'cover', objectPosition: 'center 20%' }} sizes="100vw" priority />
@@ -146,7 +146,7 @@ export default function VendorPage() {
         </div>
 
         {/* Floating Top Nav */}
-        <div className="relative z-20 w-full px-16 md:px-20 pt-16 md:pt-24 pb-8 flex items-start justify-between">
+        <div className="relative z-20 w-full flex items-start justify-between" style={{ padding: '40px 48px' }}>
           <button onClick={() => setShowSidebar(true)} className="flex items-center gap-3 backdrop-blur-md rounded-full hover:bg-white/20 transition-all border border-white/15 shadow-lg" style={{ padding: '6px 20px 6px 6px', backgroundColor: 'rgba(255,255,255,0.12)' }}>
             <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
               {vendorLogo ? (
