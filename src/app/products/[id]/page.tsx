@@ -1083,9 +1083,11 @@ export default function ProductDetailsPage() {
             {showDetails && (
               <div className="animate-fade-in" style={{ paddingBottom: '8px' }}>
                 {productDesc && (
-                  <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.7, marginBottom: '16px' }}>
-                    {productDesc}
-                  </p>
+                  <div 
+                    className="prose"
+                    style={{ fontSize: '13px', color: '#666', lineHeight: 1.7, marginBottom: '16px' }}
+                    dangerouslySetInnerHTML={{ __html: productDesc }}
+                  />
                 )}
               </div>
             )}

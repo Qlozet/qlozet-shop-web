@@ -91,7 +91,9 @@ export default function Following() {
               {vendorName}
             </span>
             <span style={{ fontSize: '12px', color: '#BBB', fontWeight: 500 }}>
-              {vendor.description?.slice(0, 40) || `${vendor.total_ratings ?? 0} ratings`}
+              {vendor.description 
+                ? vendor.description.replace(/<[^>]*>?/gm, '').slice(0, 40)
+                : `${vendor.total_ratings ?? 0} ratings`}
             </span>
           </div>
         </Link>
