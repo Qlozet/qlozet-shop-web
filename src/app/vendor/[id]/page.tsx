@@ -139,7 +139,7 @@ export default function VendorPage() {
 
       {/* ══════ EDGE-TO-EDGE HERO ══════ */}
       <div className="w-full">
-        <div className="relative w-full overflow-hidden rounded-[40px] lg:rounded-[60px]" style={{ height: '55vh', minHeight: '420px' }}>
+        <div className="relative w-full overflow-hidden rounded-[24px] lg:rounded-[30px]" style={{ height: '55vh', minHeight: '420px' }}>
           <div className="absolute inset-0">
           <Image src={heroImage} alt={vendorName} fill quality={90} style={{ objectFit: 'cover', objectPosition: 'center 20%' }} sizes="100vw" priority />
           <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%)` }} />
