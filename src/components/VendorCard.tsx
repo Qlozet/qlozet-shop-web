@@ -96,8 +96,9 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               src={img.image}
               alt={`${vendorName} product ${idx + 1}`}
               fill
+              quality={100}
               style={{ objectFit: 'cover' }}
-              sizes="280px"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
           </div>
         ))}

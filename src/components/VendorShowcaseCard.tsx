@@ -260,8 +260,9 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                     src={thumbImage}
                     alt={thumbName}
                     fill
+                    quality={100}
                     className="object-cover group-hover/thumb:scale-110 transition-transform duration-300"
-                    sizes="100px"
+                    sizes="200px"
                   />
                 ) : (
                   <div className="w-full h-full bg-[#E8E0D8]" />
