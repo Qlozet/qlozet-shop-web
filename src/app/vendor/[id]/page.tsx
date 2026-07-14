@@ -141,7 +141,7 @@ export default function VendorPage() {
       <div className="relative w-full overflow-hidden rounded-b-[40px] lg:rounded-b-[60px]" style={{ height: '55vh', minHeight: '420px' }}>
         <div className="absolute inset-0">
           <Image src={heroImage} alt={vendorName} fill quality={90} style={{ objectFit: 'cover', objectPosition: 'center 20%' }} sizes="100vw" priority />
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 20%, ${darkBg}cc 60%, ${darkBg} 85%)` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%)` }} />
         </div>
 
         {/* Floating Top Nav */}
@@ -214,7 +214,7 @@ export default function VendorPage() {
 
       {/* ══════ COLLECTION GALLERY ══════ */}
       {collections.length > 0 && (
-        <div className="relative z-20 -mt-12 px-8 md:px-12">
+        <div className="relative z-20 mt-8 px-8 md:px-12">
           <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pb-6 snap-x">
             {collections.map((col) => {
               const colImage = col.cover_image || (col.products?.[0] ? getProductImage(col.products[0]) : undefined);
@@ -243,8 +243,8 @@ export default function VendorPage() {
         </div>
       )}
 
-      {/* ══════ PRODUCT GRID SECTION ══════ */}
-      <div className="px-8 md:px-12 mb-8" style={{ marginTop: '48px' }}>
+      {/* ══════ PRODUCT GRID ══════ */}
+      <div className="relative z-10 w-full px-8 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '0' : '24px' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ marginBottom: '16px' }}>
           <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
             <h2 className="text-white text-lg font-bold mr-4 flex-shrink-0">Products</h2>
