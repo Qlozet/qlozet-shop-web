@@ -106,10 +106,9 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                 src={vendorLogo}
                 alt={vendorName}
                 fill
-                quality={100}
-                unoptimized={true}
+                quality={90}
                 style={{ objectFit: 'cover' }}
-                sizes="48px"
+                sizes="96px"
               />
             </div>
           ) : (
