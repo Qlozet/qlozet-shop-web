@@ -162,11 +162,23 @@ export default function VendorPage() {
           </button>
         </div>
 
-        {/* Center Title */}
+        {/* Center Title or Logo */}
         <div className="absolute inset-0 flex flex-col items-center justify-end pointer-events-none" style={{ paddingBottom: '48px' }}>
-          <h1 className="text-white text-center leading-none font-sans uppercase" style={{ fontSize: 'clamp(40px, 10vw, 100px)', fontWeight: 900, letterSpacing: '-0.02em' }}>
-            {vendorName}
-          </h1>
+          {(vendor.business_logo_svg_url || vendor.business_logo_url) ? (
+            <div className="relative w-full max-w-[400px]" style={{ height: 'clamp(60px, 15vw, 120px)', padding: '0 20px' }}>
+              <Image 
+                src={vendor.business_logo_svg_url || vendor.business_logo_url || ''} 
+                alt={vendorName} 
+                fill 
+                style={{ objectFit: 'contain' }}
+                priority
+              />
+            </div>
+          ) : (
+            <h1 className="text-white text-center leading-none font-sans uppercase" style={{ fontSize: 'clamp(40px, 10vw, 100px)', fontWeight: 900, letterSpacing: '-0.02em' }}>
+              {vendorName}
+            </h1>
+          )}
           <div className="text-white/90 text-sm font-semibold flex items-center gap-1.5" style={{ marginTop: '24px' }}>
             <span>{vendorRating.toFixed(1)}</span>
             <Star size={12} className="fill-white text-white" />

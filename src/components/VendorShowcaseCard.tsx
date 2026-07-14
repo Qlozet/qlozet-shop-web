@@ -185,7 +185,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
         </button>
       </div>
 
-      {/* ── Centered Brand Name on Cover ── */}
+      {/* ── Centered Brand Name or Logo on Cover ── */}
       <div
         className="absolute z-10 flex items-center justify-center pointer-events-none"
         style={{
@@ -195,23 +195,35 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
         }}
       >
         <div className="transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-1">
-          <span
-            style={{
-              fontSize: '20px',
-              fontWeight: 900,
-              color: '#FFFFFF',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              textShadow: '0 2px 12px rgba(0,0,0,0.5)',
-              fontFamily: 'var(--font-display)',
-              whiteSpace: 'nowrap',
-              maxWidth: '90%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {vendorName}
-          </span>
+          {(vendor.business_logo_svg_url || vendor.business_logo_url) ? (
+            <div className="relative" style={{ width: '120px', height: '40px' }}>
+              <Image 
+                src={vendor.business_logo_svg_url || vendor.business_logo_url || ''} 
+                alt={vendorName} 
+                fill 
+                style={{ objectFit: 'contain' }}
+                sizes="120px"
+              />
+            </div>
+          ) : (
+            <span
+              style={{
+                fontSize: '20px',
+                fontWeight: 900,
+                color: '#FFFFFF',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                textShadow: '0 2px 12px rgba(0,0,0,0.5)',
+                fontFamily: 'var(--font-display)',
+                whiteSpace: 'nowrap',
+                maxWidth: '90%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {vendorName}
+            </span>
+          )}
         </div>
       </div>
 

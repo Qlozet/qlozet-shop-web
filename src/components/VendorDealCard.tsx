@@ -75,12 +75,24 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
         />
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.25)' }} />
 
-        {/* Centered Brand Name */}
+        {/* Centered Brand Name or Logo */}
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none" style={{ padding: '0 16px' }}>
           <div className="transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-1">
-            <span style={{ fontSize: '24px', fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 2px 10px rgba(0,0,0,0.35)', fontFamily: 'var(--font-display)', textAlign: 'center', lineHeight: 1.1, maxWidth: '100%', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-              {vendorName}
-            </span>
+            {(vendor.business_logo_svg_url || vendor.business_logo_url) ? (
+              <div className="relative" style={{ width: '120px', height: '40px' }}>
+                <Image 
+                  src={vendor.business_logo_svg_url || vendor.business_logo_url || ''} 
+                  alt={vendorName} 
+                  fill 
+                  style={{ objectFit: 'contain' }}
+                  sizes="120px"
+                />
+              </div>
+            ) : (
+              <span style={{ fontSize: '24px', fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 2px 10px rgba(0,0,0,0.35)', fontFamily: 'var(--font-display)', textAlign: 'center', lineHeight: 1.1, maxWidth: '100%', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {vendorName}
+              </span>
+            )}
           </div>
         </div>
       </div>
