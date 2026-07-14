@@ -45,12 +45,24 @@ function buildCategories(products: ApiProduct[]): CategoryColumn[] {
       if (tiles.length >= max) break;
       
       let rawLabel = '';
+      
+      const getValidLabel = (pt?: string, cat?: string, name?: string, kindStr?: string) => {
+        if (pt && pt.toLowerCase() !== kindStr) return pt;
+        if (cat && cat.toLowerCase() !== kindStr) return cat;
+        if (name) {
+          const parts = name.trim().split(/\s+/);
+          if (parts.length <= 3) return name;
+          return parts.pop();
+        }
+        return '';
+      };
+
       if (p.kind === 'clothing') {
-        rawLabel = p.clothing?.taxonomy?.product_type || p.clothing?.taxonomy?.categories?.[0] || p.clothing?.name || 'Clothing';
+        rawLabel = getValidLabel(p.clothing?.taxonomy?.product_type, p.clothing?.taxonomy?.categories?.[0], p.clothing?.name, 'clothing') || 'Clothing';
       } else if (p.kind === 'accessory') {
-        rawLabel = p.accessory?.taxonomy?.product_type || p.accessory?.taxonomy?.categories?.[0] || p.accessory?.name || 'Accessory';
+        rawLabel = getValidLabel(p.accessory?.taxonomy?.product_type, p.accessory?.taxonomy?.categories?.[0], p.accessory?.name, 'accessory') || 'Accessory';
       } else if (p.kind === 'fabric') {
-        rawLabel = p.fabric?.taxonomy?.product_type || p.fabric?.taxonomy?.categories?.[0] || p.fabric?.name || 'Fabric';
+        rawLabel = getValidLabel(p.fabric?.taxonomy?.product_type, p.fabric?.taxonomy?.categories?.[0], p.fabric?.name, 'fabric') || 'Fabric';
       }
 
       let label = rawLabel.replace(/bespoke\s*/i, '').trim();
