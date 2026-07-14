@@ -56,7 +56,7 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0">
               {vendorLogo ? (
-                <Image src={vendorLogo} alt={vendorName} width={56} height={56} className="object-cover" />
+                <Image src={vendorLogo} alt={vendorName} width={56} height={56} quality={100} className="object-cover" />
               ) : (
                 <span className="text-xl font-bold text-black">{logoInitials}</span>
               )}

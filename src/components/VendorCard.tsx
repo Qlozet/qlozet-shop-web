@@ -113,7 +113,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
         <Link href={`/vendor/${vendor._id}`} className="transition-transform hover:scale-110" onClick={(e) => e.stopPropagation()}>
           {vendorLogo ? (
             <div className="relative overflow-hidden" style={{ width: '48px', height: '52px', borderRadius: '8px' }}>
-              <Image src={vendorLogo} alt={vendorName} fill style={{ objectFit: 'cover' }} sizes="48px" />
+              <Image src={vendorLogo} alt={vendorName} fill quality={100} style={{ objectFit: 'cover' }} sizes="48px" />
             </div>
           ) : (
             <div className="flex items-center justify-center" style={{ width: '48px', height: '52px', color: '#FFFFFF', fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '0.02em', lineHeight: 1 }}>

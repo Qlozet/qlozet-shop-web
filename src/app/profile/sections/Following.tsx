@@ -61,6 +61,7 @@ export default function Following() {
                 alt={vendorName}
                 width={48}
                 height={48}
+                quality={100}
                 style={{ borderRadius: '50%', objectFit: 'cover' }}
               />
             ) : (
