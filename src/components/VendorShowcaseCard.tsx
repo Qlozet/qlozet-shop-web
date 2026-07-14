@@ -197,13 +197,13 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
       >
         <div className="transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-1">
           {(vendor.business_logo_svg_url || vendor.business_logo_url) ? (
-            <div className="relative" style={{ width: '120px', height: '40px' }}>
+            <div className="relative" style={{ width: '180px', height: '60px' }}>
               <Image 
                 src={vendor.business_logo_svg_url || vendor.business_logo_url || ''} 
                 alt={vendorName} 
                 fill 
                 style={{ objectFit: 'contain' }}
-                sizes="120px"
+                sizes="180px"
               />
             </div>
           ) : (
