@@ -62,6 +62,7 @@ export default function Following() {
                 width={48}
                 height={48}
                 quality={100}
+                unoptimized={true}
                 style={{ borderRadius: '50%', objectFit: 'cover' }}
               />
             ) : (
