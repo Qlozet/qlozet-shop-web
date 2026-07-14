@@ -248,7 +248,7 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
                           src={tile.image}
                           alt={tile.label}
                           fill
-                          className="object-cover object-top group-hover/tile:scale-110 transition-transform duration-500"
+                          className="object-cover object-center group-hover/tile:scale-110 transition-transform duration-500"
                           sizes="136px"
                         />
                       </div>
