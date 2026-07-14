@@ -70,7 +70,7 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
           src={coverImage}
           alt={vendorName}
           fill
-          quality={100}
+          quality={90}
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           sizes="(max-width: 768px) 100vw, 340px"
         />

@@ -46,7 +46,7 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
           src={forYouImage}
           alt="For You"
           fill
-          quality={100}
+          quality={90}
           className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
           sizes="(max-width: 768px) 100vw, 60vw"
         />

@@ -72,7 +72,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
         src={coverImage}
         alt={vendorName}
         fill
-        quality={100}
+        quality={90}
         className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         style={{ objectFit: 'cover' }}
         sizes="(max-width: 768px) 100vw, 360px"
@@ -260,7 +260,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                     src={thumbImage}
                     alt={thumbName}
                     fill
-                    quality={100}
+                    quality={90}
                     className="object-cover group-hover/thumb:scale-110 transition-transform duration-300"
                     sizes="200px"
                   />
