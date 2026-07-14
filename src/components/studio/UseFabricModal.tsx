@@ -38,7 +38,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
   const { wishlist } = useApp();
   const [step, setStep] = useState<Step>('choose');
 
-  const { products: allProducts } = useProducts({ size: 100 });
+  const { products: allProducts } = useProducts({ size: 20 });
 
   // Get CUSTOMIZABLE items from the user's wishlist
   const customizableWishlistItems = allProducts.filter(

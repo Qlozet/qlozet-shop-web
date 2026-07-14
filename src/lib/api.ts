@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Get base URL from environment or fallback
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://qlozet-backend.fly.dev/api';
@@ -13,7 +13,57 @@ export const api = axios.create({
 // Helper to check window environment safely (avoids Next.js SSR crashes)
 const isClient = typeof window !== 'undefined';
 
-// Request interceptor to inject Bearer Token
+// ═══════════════════════════════════════════════════════════════
+//  REQUEST DEDUPLICATION
+//  Identical GET requests within a short window share the same
+//  in-flight promise instead of firing duplicate network calls.
+// ═══════════════════════════════════════════════════════════════
+
+interface CacheEntry {
+  promise: Promise<AxiosResponse>;
+  timestamp: number;
+}
+
+const inflightCache = new Map<string, CacheEntry>();
+const DEDUP_WINDOW_MS = 2000; // 2 seconds — deduplicate identical GETs
+
+/** Build a stable cache key from a GET request config */
+function getCacheKey(config: AxiosRequestConfig): string | null {
+  if (config.method && config.method.toLowerCase() !== 'get') return null;
+  const url = config.url || '';
+  const params = config.params ? JSON.stringify(config.params) : '';
+  return `GET:${url}:${params}`;
+}
+
+/** Wrap api.get with deduplication */
+const originalGet = api.get.bind(api);
+api.get = function dedupGet<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  const fullConfig = { ...config, url, method: 'get' };
+  const key = getCacheKey(fullConfig);
+
+  if (key) {
+    const cached = inflightCache.get(key);
+    if (cached && Date.now() - cached.timestamp < DEDUP_WINDOW_MS) {
+      // Return the same in-flight promise
+      return cached.promise as Promise<AxiosResponse<T>>;
+    }
+
+    const promise = originalGet<T>(url, config).finally(() => {
+      // Clean up after the dedup window expires
+      setTimeout(() => inflightCache.delete(key), DEDUP_WINDOW_MS);
+    });
+
+    inflightCache.set(key, { promise: promise as Promise<AxiosResponse>, timestamp: Date.now() });
+    return promise;
+  }
+
+  return originalGet<T>(url, config);
+} as typeof api.get;
+
+// ═══════════════════════════════════════════════════════════════
+//  REQUEST INTERCEPTOR — inject Bearer Token
+// ═══════════════════════════════════════════════════════════════
+
 api.interceptors.request.use(
   (config) => {
     if (isClient) {
@@ -29,6 +79,10 @@ api.interceptors.request.use(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════
+//  RESPONSE INTERCEPTOR — retry on 429, refresh on 401
+// ═══════════════════════════════════════════════════════════════
+
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -43,13 +97,37 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Response interceptor to handle token refresh on 401 errors
+/** Delay helper */
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Guard: only attempt refresh on 401, if it's not already a retry, and if we are on client side
+    // ── 429 Too Many Requests — retry with exponential backoff ──
+    if (error.response?.status === 429) {
+      const retryCount = originalRequest._retryCount || 0;
+      const MAX_RETRIES = 3;
+
+      if (retryCount < MAX_RETRIES) {
+        originalRequest._retryCount = retryCount + 1;
+
+        // Use Retry-After header if provided, otherwise exponential backoff
+        const retryAfter = error.response.headers['retry-after'];
+        const backoffMs = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : Math.min(1000 * Math.pow(2, retryCount) + Math.random() * 500, 8000);
+
+        await delay(backoffMs);
+        return api(originalRequest);
+      }
+
+      // Exhausted retries — let error propagate
+      return Promise.reject(error);
+    }
+
+    // ── 401 Unauthorized — token refresh ──
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&

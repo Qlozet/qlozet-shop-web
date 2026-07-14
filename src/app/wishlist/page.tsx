@@ -64,7 +64,7 @@ export default function WishlistPage() {
     );
   }
 
-  const { products: allProducts } = useProducts({ size: 100 });
+  const { products: allProducts } = useProducts({ size: 20 });
 
   // Get full product data for wishlisted items
   const wishlistedProducts = allProducts.filter((p) =>
