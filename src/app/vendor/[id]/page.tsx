@@ -146,7 +146,7 @@ export default function VendorPage() {
         </div>
 
         {/* Floating Top Nav */}
-        <div className="relative z-20 w-full flex items-start justify-between" style={{ padding: '40px 48px' }}>
+        <div className="relative z-20 w-full flex items-start justify-between" style={{ padding: '24px 32px' }}>
           <button onClick={() => setShowSidebar(true)} className="flex items-center gap-3 backdrop-blur-md rounded-full hover:bg-white/20 transition-all border border-white/15 shadow-lg" style={{ padding: '6px 20px 6px 6px', backgroundColor: 'rgba(255,255,255,0.12)' }}>
             <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
               {vendorLogo ? (
