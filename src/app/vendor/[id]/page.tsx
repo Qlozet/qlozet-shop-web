@@ -170,6 +170,8 @@ export default function VendorPage() {
                 src={vendor.business_logo_svg_url || vendor.business_logo_url || ''} 
                 alt={vendorName} 
                 fill 
+                quality={100}
+                unoptimized={true}
                 style={{ objectFit: 'contain' }}
                 priority
               />

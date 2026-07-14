@@ -85,6 +85,8 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
                   src={vendor.business_logo_svg_url || vendor.business_logo_url || ''} 
                   alt={vendorName} 
                   fill 
+                  quality={100}
+                  unoptimized={true}
                   style={{ objectFit: 'contain' }}
                   sizes="180px"
                 />
