@@ -1,7 +1,6 @@
 // Taxonomy & Discover Page Configuration
 // Defines the category hierarchy, hero banners, and browse grid for /discover pages.
 
-import { type Product, productCatalog } from './products';
 
 // ═══════════════════════════════════════════════════════════════
 //  TAXONOMY TREE
@@ -213,36 +212,3 @@ export function buildBreadcrumbs(slugParts: string[]): { label: string; href: st
   return crumbs;
 }
 
-/** Get filtered products for a taxonomy node */
-export function getProductsForNode(node: TaxonomyNode | null): Product[] {
-  if (!node?.productFilter) return productCatalog;
-
-  const f = node.productFilter;
-  return productCatalog.filter((p) => {
-    if (f.kind && !f.kind.includes(p.kind)) return false;
-    if (f.collection && p.collection !== f.collection) return false;
-    if (f.subcategory && p.subcategory !== f.subcategory) return false;
-    if (f.tags && f.tags.length > 0 && !f.tags.includes(p.tag)) return false;
-    if (f.brands && f.brands.length > 0 && !f.brands.includes(p.brand)) return false;
-    return true;
-  });
-}
-
-/** Get products sorted by rating (top rated) */
-export function getTopRated(products: Product[], limit = 8): Product[] {
-  return [...products].sort((a, b) => b.rating - a.rating).slice(0, limit);
-}
-
-/** Get products sorted by reviews (trending) */
-export function getTrending(products: Product[], limit = 8): Product[] {
-  return [...products].sort((a, b) => b.reviews - a.reviews).slice(0, limit);
-}
-
-/** Get newest products (ones with NEW tag, or fallback to shuffled) */
-export function getWhatsNew(products: Product[], limit = 8): Product[] {
-  const newOnes = products.filter((p) => p.tag === 'NEW');
-  if (newOnes.length >= limit) return newOnes.slice(0, limit);
-  // Fill with remaining products shuffled
-  const remaining = products.filter((p) => p.tag !== 'NEW');
-  return [...newOnes, ...remaining].slice(0, limit);
-}
