@@ -34,18 +34,21 @@ interface ShopByCategoryProps {
 }
 
 function buildCategories(products: ApiProduct[]): CategoryColumn[] {
-  // Helper: pick image from filtered products, return undefined if none
-  const pickImage = (pool: ApiProduct[], idx: number): string | undefined => {
-    const p = pool[idx];
-    if (p) {
-      const img = getProductImage(p);
-      if (img) return img;
-    }
-    return undefined;
+  // Helper: pick image from filtered products matching the keywords, return undefined if none
+  const pickMatchingImage = (pool: ApiProduct[], keywords: string[]): string | undefined => {
+    const p = pool.find(item => {
+      const type = (item.clothing?.taxonomy?.product_type || item.clothing?.taxonomy?.categories?.[0] || item.accessory?.taxonomy?.product_type || item.fabric?.taxonomy?.product_type || item.clothing?.name || item.accessory?.name || item.fabric?.name || '').toLowerCase();
+      const collections = (item.collections || []).join(' ').toLowerCase();
+      const tags = (item.tags || []).map(t => t.name).join(' ').toLowerCase();
+      const searchStr = `${type} ${collections} ${tags}`;
+      return keywords.some(k => searchStr.includes(k.toLowerCase()));
+    });
+    return p ? getProductImage(p) : undefined;
   };
 
   const clothing = products.filter((p) => p.kind === 'clothing');
   const customizable = clothing.filter((p) => p.clothing?.type === 'customize');
+  const nonCustomizable = clothing.filter((p) => p.clothing?.type === 'non_customize');
   const accessories = products.filter((p) => p.kind === 'accessory');
   const fabrics = products.filter((p) => p.kind === 'fabric');
 
@@ -54,40 +57,40 @@ function buildCategories(products: ApiProduct[]): CategoryColumn[] {
       title: 'Ready to Wear',
       href: '/discover/ready-to-wear',
       tiles: [
-        { label: 'Agbada', image: pickImage(clothing, 0), bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
-        { label: 'Kaftan', image: pickImage(clothing, 1), bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
-        { label: 'Ankara', image: pickImage(clothing, 2), bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
-        { label: 'Corporate', image: pickImage(clothing, 3), bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
+        { label: 'Agbada', image: pickMatchingImage(nonCustomizable, ['agbada']), bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
+        { label: 'Kaftan', image: pickMatchingImage(nonCustomizable, ['kaftan']), bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
+        { label: 'Ankara', image: pickMatchingImage(nonCustomizable, ['ankara']), bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
+        { label: 'Corporate', image: pickMatchingImage(nonCustomizable, ['corporate', 'suit', 'dress']), bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
       ].filter((t): t is CategoryTile => t.image !== undefined),
     },
     {
       title: 'Custom',
       href: '/discover/custom',
       tiles: [
-        { label: 'Bespoke Agbada', image: pickImage(customizable, 0), bgColor: '#E8DDD3', href: '/discover/custom/bespoke-agbada' },
-        { label: 'Bespoke Kaftan', image: pickImage(customizable, 1), bgColor: '#F2EAE2', href: '/discover/custom/bespoke-kaftan' },
-        { label: 'Bespoke Ankara', image: pickImage(customizable, 2), bgColor: '#E5DCD4', href: '/discover/custom/bespoke-ankara' },
-        { label: 'Design Studio', image: pickImage(customizable, 3), bgColor: '#EDE3DA', href: '/bespoke' },
+        { label: 'Agbada', image: pickMatchingImage(customizable, ['agbada']), bgColor: '#E8DDD3', href: '/discover/custom/agbada' },
+        { label: 'Kaftan', image: pickMatchingImage(customizable, ['kaftan']), bgColor: '#F2EAE2', href: '/discover/custom/kaftan' },
+        { label: 'Ankara', image: pickMatchingImage(customizable, ['ankara']), bgColor: '#E5DCD4', href: '/discover/custom/ankara' },
+        { label: 'Dress', image: pickMatchingImage(customizable, ['dress']), bgColor: '#EDE3DA', href: '/discover/custom/dress' },
       ].filter((t): t is CategoryTile => t.image !== undefined),
     },
     {
       title: 'Accessories',
       href: '/discover/accessories',
       tiles: [
-        { label: 'Bags', image: pickImage(accessories, 0), bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
-        { label: 'Jewelry', image: pickImage(accessories, 1), bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
-        { label: 'Headwraps', image: pickImage(accessories, 2), bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
-        { label: 'Shoes', image: pickImage(accessories, 3), bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
+        { label: 'Bags', image: pickMatchingImage(accessories, ['bag']), bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
+        { label: 'Jewelry', image: pickMatchingImage(accessories, ['jewelry', 'necklace', 'bracelet']), bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
+        { label: 'Headwraps', image: pickMatchingImage(accessories, ['headwrap', 'gele']), bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
+        { label: 'Shoes', image: pickMatchingImage(accessories, ['shoe']), bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
       ].filter((t): t is CategoryTile => t.image !== undefined),
     },
     {
       title: 'Fabrics',
       href: '/discover/fabric',
       tiles: [
-        { label: 'Ankara', image: pickImage(fabrics, 0), bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
-        { label: 'Lace', image: pickImage(fabrics, 1), bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
-        { label: 'Aso-Oke', image: pickImage(fabrics, 2), bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
-        { label: 'Adire', image: pickImage(fabrics, 3), bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
+        { label: 'Ankara', image: pickMatchingImage(fabrics, ['ankara']), bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
+        { label: 'Lace', image: pickMatchingImage(fabrics, ['lace']), bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
+        { label: 'Aso-Oke', image: pickMatchingImage(fabrics, ['aso-oke']), bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
+        { label: 'Adire', image: pickMatchingImage(fabrics, ['adire']), bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
       ].filter((t): t is CategoryTile => t.image !== undefined),
     },
   ];

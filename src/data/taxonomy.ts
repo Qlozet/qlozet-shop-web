@@ -108,10 +108,10 @@ export const TAXONOMY: TaxonomyNode[] = [
     image: '/image/custom-outfit-1.webp',
     productFilter: { tags: ['CUSTOMIZABLE'] },
     children: [
-      { slug: 'bespoke-agbada', label: 'Bespoke Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { subcategory: 'agbada', tags: ['CUSTOMIZABLE'] } },
-      { slug: 'bespoke-kaftan', label: 'Bespoke Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { subcategory: 'kaftan', tags: ['CUSTOMIZABLE'] } },
-      { slug: 'bespoke-ankara', label: 'Bespoke Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { subcategory: 'ankara', tags: ['CUSTOMIZABLE'] } },
-      { slug: 'bespoke-dress', label: 'Custom Dress', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], tags: ['CUSTOMIZABLE'] } },
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { subcategory: 'agbada', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { subcategory: 'kaftan', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { subcategory: 'ankara', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'dress', label: 'Dress', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], tags: ['CUSTOMIZABLE'] } },
     ],
   },
   {
