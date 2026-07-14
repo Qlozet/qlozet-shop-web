@@ -34,16 +34,49 @@ interface ShopByCategoryProps {
 }
 
 function buildCategories(products: ApiProduct[]): CategoryColumn[] {
-  // Helper: pick image from filtered products matching the keywords, return undefined if none
-  const pickMatchingImage = (pool: ApiProduct[], keywords: string[]): string | undefined => {
-    const p = pool.find(item => {
-      const type = (item.clothing?.taxonomy?.product_type || item.clothing?.taxonomy?.categories?.[0] || item.accessory?.taxonomy?.product_type || item.fabric?.taxonomy?.product_type || item.clothing?.name || item.accessory?.name || item.fabric?.name || '').toLowerCase();
-      const collections = (item.collections || []).join(' ').toLowerCase();
-      const tags = (item.tags || []).map(t => t.name).join(' ').toLowerCase();
-      const searchStr = `${type} ${collections} ${tags}`;
-      return keywords.some(k => searchStr.includes(k.toLowerCase()));
-    });
-    return p ? getProductImage(p) : undefined;
+  const bgColors = ['#F5EDE4', '#EDE7E0', '#F0E6DC', '#E8E0D8', '#E8DDD3', '#F2EAE2', '#E5DCD4', '#EDE3DA'];
+  let colorIdx = 0;
+
+  const buildDynamicTiles = (pool: ApiProduct[], max: number, defaultHrefPrefix: string): CategoryTile[] => {
+    const tiles: CategoryTile[] = [];
+    const seenLabels = new Set<string>();
+
+    for (const p of pool) {
+      if (tiles.length >= max) break;
+      
+      let rawLabel = '';
+      if (p.kind === 'clothing') {
+        rawLabel = p.clothing?.taxonomy?.product_type || p.clothing?.taxonomy?.categories?.[0] || p.clothing?.name || 'Clothing';
+      } else if (p.kind === 'accessory') {
+        rawLabel = p.accessory?.taxonomy?.product_type || p.accessory?.taxonomy?.categories?.[0] || p.accessory?.name || 'Accessory';
+      } else if (p.kind === 'fabric') {
+        rawLabel = p.fabric?.taxonomy?.product_type || p.fabric?.taxonomy?.categories?.[0] || p.fabric?.name || 'Fabric';
+      }
+
+      let label = rawLabel.replace(/bespoke\s*/i, '').trim();
+      if (!label) continue;
+      
+      // Capitalize first letter of each word
+      label = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+      if (!seenLabels.has(label.toLowerCase())) {
+        seenLabels.add(label.toLowerCase());
+        const slug = label.toLowerCase().replace(/\s+/g, '-');
+        const bgColor = bgColors[colorIdx % bgColors.length];
+        colorIdx++;
+
+        const img = getProductImage(p);
+        if (img) {
+          tiles.push({
+            label,
+            image: img,
+            bgColor,
+            href: `${defaultHrefPrefix}/${slug}`
+          });
+        }
+      }
+    }
+    return tiles;
   };
 
   const clothing = products.filter((p) => p.kind === 'clothing');
@@ -56,42 +89,22 @@ function buildCategories(products: ApiProduct[]): CategoryColumn[] {
     {
       title: 'Ready to Wear',
       href: '/discover/ready-to-wear',
-      tiles: [
-        { label: 'Agbada', image: pickMatchingImage(nonCustomizable, ['agbada']), bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
-        { label: 'Kaftan', image: pickMatchingImage(nonCustomizable, ['kaftan']), bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
-        { label: 'Ankara', image: pickMatchingImage(nonCustomizable, ['ankara']), bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
-        { label: 'Corporate', image: pickMatchingImage(nonCustomizable, ['corporate', 'suit', 'dress']), bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
-      ].filter((t): t is CategoryTile => t.image !== undefined),
+      tiles: buildDynamicTiles(nonCustomizable, 4, '/discover/ready-to-wear'),
     },
     {
       title: 'Custom',
       href: '/discover/custom',
-      tiles: [
-        { label: 'Agbada', image: pickMatchingImage(customizable, ['agbada']), bgColor: '#E8DDD3', href: '/discover/custom/agbada' },
-        { label: 'Kaftan', image: pickMatchingImage(customizable, ['kaftan']), bgColor: '#F2EAE2', href: '/discover/custom/kaftan' },
-        { label: 'Ankara', image: pickMatchingImage(customizable, ['ankara']), bgColor: '#E5DCD4', href: '/discover/custom/ankara' },
-        { label: 'Dress', image: pickMatchingImage(customizable, ['dress']), bgColor: '#EDE3DA', href: '/discover/custom/dress' },
-      ].filter((t): t is CategoryTile => t.image !== undefined),
+      tiles: buildDynamicTiles(customizable, 4, '/discover/custom'),
     },
     {
       title: 'Accessories',
       href: '/discover/accessories',
-      tiles: [
-        { label: 'Bags', image: pickMatchingImage(accessories, ['bag']), bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
-        { label: 'Jewelry', image: pickMatchingImage(accessories, ['jewelry', 'necklace', 'bracelet']), bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
-        { label: 'Headwraps', image: pickMatchingImage(accessories, ['headwrap', 'gele']), bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
-        { label: 'Shoes', image: pickMatchingImage(accessories, ['shoe']), bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
-      ].filter((t): t is CategoryTile => t.image !== undefined),
+      tiles: buildDynamicTiles(accessories, 4, '/discover/accessories'),
     },
     {
       title: 'Fabrics',
       href: '/discover/fabric',
-      tiles: [
-        { label: 'Ankara', image: pickMatchingImage(fabrics, ['ankara']), bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
-        { label: 'Lace', image: pickMatchingImage(fabrics, ['lace']), bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
-        { label: 'Aso-Oke', image: pickMatchingImage(fabrics, ['aso-oke']), bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
-        { label: 'Adire', image: pickMatchingImage(fabrics, ['adire']), bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
-      ].filter((t): t is CategoryTile => t.image !== undefined),
+      tiles: buildDynamicTiles(fabrics, 4, '/discover/fabric'),
     },
   ];
 
