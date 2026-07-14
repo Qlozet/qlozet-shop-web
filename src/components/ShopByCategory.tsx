@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { ApiProduct } from '@/lib/api-types';
 import { getProductImage } from '@/lib/api-types';
+import { TAXONOMY, TaxonomyNode } from '@/data/taxonomy';
 
 // ─── Category tile definitions ──────────────────────────────────────
 interface CategoryTile {
@@ -33,94 +34,81 @@ interface ShopByCategoryProps {
   products?: ApiProduct[];
 }
 
+
+
+// Map top-level taxonomy slugs to the product pool category
+const TOP_LEVEL_SECTIONS: { slug: string; title: string; fallbackKey: keyof typeof FALLBACK_IMAGES }[] = [
+  { slug: 'ready-to-wear', title: 'Ready to Wear', fallbackKey: 'rtw' },
+  { slug: 'custom', title: 'Custom', fallbackKey: 'custom' },
+  { slug: 'accessories', title: 'Accessories', fallbackKey: 'accessories' },
+  { slug: 'fabric', title: 'Fabrics', fallbackKey: 'fabrics' },
+];
+
 function buildCategories(products: ApiProduct[]): CategoryColumn[] {
   const bgColors = ['#F5EDE4', '#EDE7E0', '#F0E6DC', '#E8E0D8', '#E8DDD3', '#F2EAE2', '#E5DCD4', '#EDE3DA'];
-  let colorIdx = 0;
 
-  const buildDynamicTiles = (pool: ApiProduct[], max: number, defaultHrefPrefix: string): CategoryTile[] => {
-    const tiles: CategoryTile[] = [];
-    const seenLabels = new Set<string>();
-
-    for (const p of pool) {
-      if (tiles.length >= max) break;
-      
-      let rawLabel = '';
-      
-      const getValidLabel = (pt?: string, cat?: string, name?: string, kindStr?: string) => {
-        if (pt && pt.toLowerCase() !== kindStr) return pt;
-        if (cat && cat.toLowerCase() !== kindStr) return cat;
-        if (name) {
-          const parts = name.trim().split(/\s+/);
-          if (parts.length <= 3) return name;
-          return parts.pop();
-        }
-        return '';
-      };
-
-      if (p.kind === 'clothing') {
-        rawLabel = getValidLabel(p.clothing?.taxonomy?.product_type, p.clothing?.taxonomy?.categories?.[0], p.clothing?.name, 'clothing') || 'Clothing';
-      } else if (p.kind === 'accessory') {
-        rawLabel = getValidLabel(p.accessory?.taxonomy?.product_type, p.accessory?.taxonomy?.categories?.[0], p.accessory?.name, 'accessory') || 'Accessory';
-      } else if (p.kind === 'fabric') {
-        rawLabel = getValidLabel(p.fabric?.taxonomy?.product_type, p.fabric?.taxonomy?.categories?.[0], p.fabric?.name, 'fabric') || 'Fabric';
-      }
-
-      let label = rawLabel.replace(/bespoke\s*/i, '').trim();
-      if (!label) continue;
-      
-      // Capitalize first letter of each word
-      label = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-
-      if (!seenLabels.has(label.toLowerCase())) {
-        seenLabels.add(label.toLowerCase());
-        const slug = label.toLowerCase().replace(/\s+/g, '-');
-        const bgColor = bgColors[colorIdx % bgColors.length];
-        colorIdx++;
-
-        const img = getProductImage(p);
-        if (img) {
-          tiles.push({
-            label,
-            image: img,
-            bgColor,
-            href: `${defaultHrefPrefix}/${slug}`
-          });
-        }
-      }
+  // Helper: check if a product matches a taxonomy node's filter
+  const productMatchesFilter = (p: ApiProduct, filter?: TaxonomyNode['productFilter']): boolean => {
+    if (!filter) return false;
+    if (filter.kind && !filter.kind.includes(p.kind)) return false;
+    if (filter.tags) {
+      const productTags = (p.tags || []).map(t => t.name.toUpperCase());
+      if (!filter.tags.some(t => productTags.includes(t))) return false;
     }
-    return tiles;
+    if (filter.subcategory) {
+      const sub = filter.subcategory.toLowerCase();
+      const pt = (p.clothing?.taxonomy?.product_type || p.accessory?.taxonomy?.product_type || p.fabric?.taxonomy?.product_type || '').toLowerCase();
+      const cats = (p.clothing?.taxonomy?.categories || p.accessory?.taxonomy?.categories || p.fabric?.taxonomy?.categories || []).map(c => c.toLowerCase());
+      const name = (p.clothing?.name || p.accessory?.name || p.fabric?.name || '').toLowerCase();
+      const pattern = (p.fabric?.pattern || '').toLowerCase();
+      if (!(pt.includes(sub) || cats.some(c => c.includes(sub)) || name.includes(sub) || pattern.includes(sub) || sub.includes(pt))) return false;
+    }
+    if (filter.collection) {
+      if (!p.collections?.some(c => typeof c === 'string' && c.toLowerCase().includes(filter.collection!.toLowerCase()))) return false;
+    }
+    return true;
   };
 
-  const clothing = products.filter((p) => p.kind === 'clothing');
-  const customizable = clothing.filter((p) => p.clothing?.type === 'customize');
-  const nonCustomizable = clothing.filter((p) => p.clothing?.type === 'non_customize');
-  const accessories = products.filter((p) => p.kind === 'accessory');
-  const fabrics = products.filter((p) => p.kind === 'fabric');
+  // Find a product image that matches a taxonomy node
+  const findImageForNode = (node: TaxonomyNode, pool: ApiProduct[]): string | undefined => {
+    const match = pool.find(p => productMatchesFilter(p, node.productFilter));
+    return match ? getProductImage(match) : undefined;
+  };
 
-  const cols = [
-    {
-      title: 'Ready to Wear',
-      href: '/discover/ready-to-wear',
-      tiles: buildDynamicTiles(nonCustomizable, 4, '/discover/ready-to-wear'),
-    },
-    {
-      title: 'Custom',
-      href: '/discover/custom',
-      tiles: buildDynamicTiles(customizable, 4, '/discover/custom'),
-    },
-    {
-      title: 'Accessories',
-      href: '/discover/accessories',
-      tiles: buildDynamicTiles(accessories, 4, '/discover/accessories'),
-    },
-    {
-      title: 'Fabrics',
-      href: '/discover/fabric',
-      tiles: buildDynamicTiles(fabrics, 4, '/discover/fabric'),
-    },
-  ];
+  const cols: CategoryColumn[] = [];
 
-  return cols.filter((c) => c.tiles.length > 0);
+  for (const section of TOP_LEVEL_SECTIONS) {
+    const topNode = TAXONOMY.find(n => n.slug === section.slug);
+    if (!topNode || !topNode.children?.length) continue;
+
+    const tiles: CategoryTile[] = [];
+    const fallbacks = FALLBACK_IMAGES[section.fallbackKey];
+
+    for (let i = 0; i < topNode.children.length && tiles.length < 4; i++) {
+      const child = topNode.children[i];
+      const href = `/discover/${section.slug}/${child.slug}`;
+      const img = findImageForNode(child, products) || child.image || fallbacks[i % fallbacks.length];
+
+      if (img) {
+        tiles.push({
+          label: child.label,
+          image: img,
+          bgColor: bgColors[tiles.length % bgColors.length],
+          href,
+        });
+      }
+    }
+
+    if (tiles.length > 0) {
+      cols.push({
+        title: section.title,
+        href: `/discover/${section.slug}`,
+        tiles,
+      });
+    }
+  }
+
+  return cols;
 }
 
 export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
