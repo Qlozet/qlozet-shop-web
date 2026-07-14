@@ -34,14 +34,14 @@ interface ShopByCategoryProps {
 }
 
 function buildCategories(products: ApiProduct[]): CategoryColumn[] {
-  // Helper: pick image from filtered products, with fallback
-  const pickImage = (pool: ApiProduct[], idx: number, fallback: string): string => {
+  // Helper: pick image from filtered products, return undefined if none
+  const pickImage = (pool: ApiProduct[], idx: number): string | undefined => {
     const p = pool[idx];
     if (p) {
       const img = getProductImage(p);
       if (img) return img;
     }
-    return fallback;
+    return undefined;
   };
 
   const clothing = products.filter((p) => p.kind === 'clothing');
@@ -49,48 +49,50 @@ function buildCategories(products: ApiProduct[]): CategoryColumn[] {
   const accessories = products.filter((p) => p.kind === 'accessory');
   const fabrics = products.filter((p) => p.kind === 'fabric');
 
-  return [
+  const cols = [
     {
       title: 'Ready to Wear',
       href: '/discover/ready-to-wear',
       tiles: [
-        { label: 'Agbada', image: pickImage(clothing, 0, FALLBACK_IMAGES.rtw[0]), bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
-        { label: 'Kaftan', image: pickImage(clothing, 1, FALLBACK_IMAGES.rtw[1]), bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
-        { label: 'Ankara', image: pickImage(clothing, 2, FALLBACK_IMAGES.rtw[2]), bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
-        { label: 'Corporate', image: pickImage(clothing, 3, FALLBACK_IMAGES.rtw[3]), bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
-      ],
+        { label: 'Agbada', image: pickImage(clothing, 0), bgColor: '#F5EDE4', href: '/discover/ready-to-wear/agbada' },
+        { label: 'Kaftan', image: pickImage(clothing, 1), bgColor: '#EDE7E0', href: '/discover/ready-to-wear/kaftan' },
+        { label: 'Ankara', image: pickImage(clothing, 2), bgColor: '#F0E6DC', href: '/discover/ready-to-wear/ankara' },
+        { label: 'Corporate', image: pickImage(clothing, 3), bgColor: '#E8E0D8', href: '/discover/ready-to-wear/corporate' },
+      ].filter((t): t is CategoryTile => t.image !== undefined),
     },
     {
       title: 'Custom',
       href: '/discover/custom',
       tiles: [
-        { label: 'Bespoke Agbada', image: pickImage(customizable, 0, FALLBACK_IMAGES.custom[0]), bgColor: '#E8DDD3', href: '/discover/custom/bespoke-agbada' },
-        { label: 'Bespoke Kaftan', image: pickImage(customizable, 1, FALLBACK_IMAGES.custom[1]), bgColor: '#F2EAE2', href: '/discover/custom/bespoke-kaftan' },
-        { label: 'Bespoke Ankara', image: pickImage(customizable, 2, FALLBACK_IMAGES.custom[2]), bgColor: '#E5DCD4', href: '/discover/custom/bespoke-ankara' },
-        { label: 'Design Studio', image: pickImage(customizable, 3, FALLBACK_IMAGES.custom[3]), bgColor: '#EDE3DA', href: '/bespoke' },
-      ],
+        { label: 'Bespoke Agbada', image: pickImage(customizable, 0), bgColor: '#E8DDD3', href: '/discover/custom/bespoke-agbada' },
+        { label: 'Bespoke Kaftan', image: pickImage(customizable, 1), bgColor: '#F2EAE2', href: '/discover/custom/bespoke-kaftan' },
+        { label: 'Bespoke Ankara', image: pickImage(customizable, 2), bgColor: '#E5DCD4', href: '/discover/custom/bespoke-ankara' },
+        { label: 'Design Studio', image: pickImage(customizable, 3), bgColor: '#EDE3DA', href: '/bespoke' },
+      ].filter((t): t is CategoryTile => t.image !== undefined),
     },
     {
       title: 'Accessories',
       href: '/discover/accessories',
       tiles: [
-        { label: 'Bags', image: pickImage(accessories, 0, FALLBACK_IMAGES.accessories[0]), bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
-        { label: 'Jewelry', image: pickImage(accessories, 1, FALLBACK_IMAGES.accessories[1]), bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
-        { label: 'Headwraps', image: pickImage(accessories, 2, FALLBACK_IMAGES.accessories[2]), bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
-        { label: 'Shoes', image: pickImage(accessories, 3, FALLBACK_IMAGES.accessories[3]), bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
-      ],
+        { label: 'Bags', image: pickImage(accessories, 0), bgColor: '#F0E8E0', href: '/discover/accessories/bags' },
+        { label: 'Jewelry', image: pickImage(accessories, 1), bgColor: '#E6DED6', href: '/discover/accessories/jewelry' },
+        { label: 'Headwraps', image: pickImage(accessories, 2), bgColor: '#EAE2DA', href: '/discover/accessories/headwraps' },
+        { label: 'Shoes', image: pickImage(accessories, 3), bgColor: '#F4ECE4', href: '/discover/accessories/shoes' },
+      ].filter((t): t is CategoryTile => t.image !== undefined),
     },
     {
       title: 'Fabrics',
       href: '/discover/fabric',
       tiles: [
-        { label: 'Ankara', image: pickImage(fabrics, 0, FALLBACK_IMAGES.fabrics[0]), bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
-        { label: 'Lace', image: pickImage(fabrics, 1, FALLBACK_IMAGES.fabrics[1]), bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
-        { label: 'Aso-Oke', image: pickImage(fabrics, 2, FALLBACK_IMAGES.fabrics[2]), bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
-        { label: 'Adire', image: pickImage(fabrics, 3, FALLBACK_IMAGES.fabrics[3]), bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
-      ],
+        { label: 'Ankara', image: pickImage(fabrics, 0), bgColor: '#E8DDD3', href: '/discover/fabric/ankara-fabric' },
+        { label: 'Lace', image: pickImage(fabrics, 1), bgColor: '#F2EAE2', href: '/discover/fabric/lace' },
+        { label: 'Aso-Oke', image: pickImage(fabrics, 2), bgColor: '#E5DCD4', href: '/discover/fabric/aso-oke-fabric' },
+        { label: 'Adire', image: pickImage(fabrics, 3), bgColor: '#EDE3DA', href: '/discover/fabric/adire-fabric' },
+      ].filter((t): t is CategoryTile => t.image !== undefined),
     },
   ];
+
+  return cols.filter((c) => c.tiles.length > 0);
 }
 
 export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
@@ -161,30 +163,46 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
                 />
               </Link>
 
-              {/* 2×2 Grid of tiles */}
+              {/* Dynamic Grid of tiles */}
               <div
-                className="grid grid-cols-2"
-                style={{ gap: '6px' }}
+                className={`grid gap-[6px] ${
+                  category.tiles.length === 4 ? 'grid-cols-2 grid-rows-2' :
+                  category.tiles.length === 3 ? 'grid-cols-2 grid-rows-2' :
+                  category.tiles.length === 2 ? 'grid-cols-1 grid-rows-2' :
+                  'grid-cols-1 grid-rows-1'
+                }`}
+                style={{ height: '360px' }}
               >
                 {category.tiles.map((tile, idx) => {
-                  // Only round the outer corner of each tile in the 2×2 grid
+                  const len = category.tiles.length;
                   const R = '24px';
-                  const borderRadius = [
-                    `${R} 0 0 0`,   // top-left tile → round top-left
-                    `0 ${R} 0 0`,   // top-right tile → round top-right
-                    `0 0 0 ${R}`,   // bottom-left tile → round bottom-left
-                    `0 0 ${R} 0`,   // bottom-right tile → round bottom-right
-                  ][idx] || '0';
+                  let borderRadius = '0';
+
+                  if (len === 1) borderRadius = R;
+                  else if (len === 2) {
+                    if (idx === 0) borderRadius = `${R} ${R} 0 0`;
+                    if (idx === 1) borderRadius = `0 0 ${R} ${R}`;
+                  } else if (len === 3) {
+                    if (idx === 0) borderRadius = `${R} ${R} 0 0`;
+                    if (idx === 1) borderRadius = `0 0 0 ${R}`;
+                    if (idx === 2) borderRadius = `0 0 ${R} 0`;
+                  } else { // len === 4
+                    if (idx === 0) borderRadius = `${R} 0 0 0`;
+                    if (idx === 1) borderRadius = `0 ${R} 0 0`;
+                    if (idx === 2) borderRadius = `0 0 0 ${R}`;
+                    if (idx === 3) borderRadius = `0 0 ${R} 0`;
+                  }
+
+                  const isStretch = len === 3 && idx === 0;
 
                   return (
                     <Link
                       key={tile.label}
                       href={tile.href}
-                      className="relative flex flex-col overflow-hidden group/tile transition-all"
+                      className={`relative flex flex-col overflow-hidden group/tile transition-all ${isStretch ? 'col-span-2' : ''}`}
                       style={{
                         borderRadius,
                         background: tile.bgColor,
-                        aspectRatio: '1 / 1',
                         textDecoration: 'none',
                       }}
                     >

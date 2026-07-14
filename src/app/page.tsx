@@ -33,11 +33,13 @@ function VendorRow({
   vendorProductMap,
   followedVendors,
   onToggleFollow,
+  section,
 }: {
   vendors: ApiBusinessPublic[];
   vendorProductMap: Map<string, ApiProduct[]>;
   followedVendors: string[];
   onToggleFollow: (id: string) => void;
+  section?: typeof FEED_SECTIONS[number];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,18 @@ function VendorRow({
         style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {vendors.map((vendor) => {
-          const vendorProducts = vendorProductMap.get(vendor._id) ?? [];
+          let vendorProducts = vendorProductMap.get(vendor._id) ?? [];
+          
+          if (section) {
+            vendorProducts = vendorProducts.filter((p) => {
+              if (p.kind !== section.kind) return false;
+              if (section.kind === 'clothing' && 'clothingType' in section) {
+                if (p.clothing?.type !== section.clothingType) return false;
+              }
+              return true;
+            });
+          }
+
           return (
             <VendorShowcaseCard
               key={vendor._id}
@@ -398,6 +411,7 @@ export default function HomePage() {
               vendorProductMap={vendorProductMap}
               followedVendors={followedVendors}
               onToggleFollow={toggleFollowVendor}
+              section={section}
             />
           </div>
         );
