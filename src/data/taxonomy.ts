@@ -95,11 +95,11 @@ export const TAXONOMY: TaxonomyNode[] = [
     image: '/image/bespoke-dress-1.png',
     productFilter: { kind: ['clothing'] },
     children: [
-      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { kind: ['clothing'], subcategory: 'agbada' } },
+      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], subcategory: 'dress' } },
+      { slug: 'suits', label: 'Suits', image: '/image/bespoke-kaftan-milk-1.png', productFilter: { kind: ['clothing'], subcategory: 'suit' } },
       { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { kind: ['clothing'], subcategory: 'kaftan' } },
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { kind: ['clothing'], subcategory: 'agbada' } },
       { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { kind: ['clothing'], subcategory: 'ankara' } },
-      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], subcategory: 'dresses' } },
-      { slug: 'corporate', label: 'Corporate', image: '/image/bespoke-kaftan-milk-1.png', productFilter: { collection: 'corporate' } },
     ],
   },
   {
@@ -108,10 +108,10 @@ export const TAXONOMY: TaxonomyNode[] = [
     image: '/image/custom-outfit-1.webp',
     productFilter: { tags: ['CUSTOMIZABLE'] },
     children: [
-      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { subcategory: 'agbada', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { subcategory: 'dress', tags: ['CUSTOMIZABLE'] } },
       { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { subcategory: 'kaftan', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { subcategory: 'agbada', tags: ['CUSTOMIZABLE'] } },
       { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { subcategory: 'ankara', tags: ['CUSTOMIZABLE'] } },
-      { slug: 'dress', label: 'Dress', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], tags: ['CUSTOMIZABLE'] } },
     ],
   },
   {
@@ -121,8 +121,9 @@ export const TAXONOMY: TaxonomyNode[] = [
     productFilter: { kind: ['accessory'] },
     children: [
       { slug: 'bags', label: 'Bags', productFilter: { subcategory: 'bags' } },
+      { slug: 'belts', label: 'Belts', productFilter: { subcategory: 'belt' } },
+      { slug: 'headwear', label: 'Headwear', productFilter: { subcategory: 'headwear' } },
       { slug: 'jewelry', label: 'Jewelry', productFilter: { subcategory: 'jewelry' } },
-      { slug: 'headwraps', label: 'Headwraps', productFilter: { subcategory: 'headwraps' } },
       { slug: 'shoes', label: 'Shoes', productFilter: { subcategory: 'shoes' } },
     ],
   },
@@ -133,9 +134,10 @@ export const TAXONOMY: TaxonomyNode[] = [
     productFilter: { kind: ['fabric'] },
     children: [
       { slug: 'ankara-fabric', label: 'Ankara', productFilter: { kind: ['fabric'], subcategory: 'ankara' } },
-      { slug: 'lace', label: 'Lace', productFilter: { subcategory: 'lace' } },
-      { slug: 'aso-oke-fabric', label: 'Aso-Oke', productFilter: { subcategory: 'aso-oke' } },
-      { slug: 'adire-fabric', label: 'Adire', productFilter: { subcategory: 'adire' } },
+      { slug: 'linen', label: 'Linen', productFilter: { kind: ['fabric'], subcategory: 'linen' } },
+      { slug: 'cotton', label: 'Cotton', productFilter: { kind: ['fabric'], subcategory: 'cotton' } },
+      { slug: 'lace', label: 'Lace', productFilter: { kind: ['fabric'], subcategory: 'lace' } },
+      { slug: 'adire-fabric', label: 'Adire', productFilter: { kind: ['fabric'], subcategory: 'adire' } },
     ],
   },
 ];

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { ApiProduct } from '@/lib/api-types';
 import { getProductImage } from '@/lib/api-types';
-import { TAXONOMY, TaxonomyNode } from '@/data/taxonomy';
+import { TAXONOMY } from '@/data/taxonomy';
 
 // ─── Category tile definitions ──────────────────────────────────────
 interface CategoryTile {
@@ -34,79 +34,99 @@ interface ShopByCategoryProps {
   products?: ApiProduct[];
 }
 
-
-
-// Map top-level taxonomy slugs to the product pool category
-const TOP_LEVEL_SECTIONS: { slug: string; title: string; fallbackKey: keyof typeof FALLBACK_IMAGES }[] = [
-  { slug: 'ready-to-wear', title: 'Ready to Wear', fallbackKey: 'rtw' },
-  { slug: 'custom', title: 'Custom', fallbackKey: 'custom' },
-  { slug: 'accessories', title: 'Accessories', fallbackKey: 'accessories' },
-  { slug: 'fabric', title: 'Fabrics', fallbackKey: 'fabrics' },
-];
-
 function buildCategories(products: ApiProduct[]): CategoryColumn[] {
   const bgColors = ['#F5EDE4', '#EDE7E0', '#F0E6DC', '#E8E0D8', '#E8DDD3', '#F2EAE2', '#E5DCD4', '#EDE3DA'];
 
-  // Helper: check if a product matches a taxonomy node's filter
-  const productMatchesFilter = (p: ApiProduct, filter?: TaxonomyNode['productFilter']): boolean => {
-    if (!filter) return false;
-    if (filter.kind && !filter.kind.includes(p.kind)) return false;
-    if (filter.tags) {
-      const productTags = (p.tags || []).map(t => t.name.toUpperCase());
-      if (!filter.tags.some(t => productTags.includes(t))) return false;
-    }
-    if (filter.subcategory) {
-      const sub = filter.subcategory.toLowerCase();
-      const pt = (p.clothing?.taxonomy?.product_type || p.accessory?.taxonomy?.product_type || p.fabric?.taxonomy?.product_type || '').toLowerCase();
-      const cats = (p.clothing?.taxonomy?.categories || p.accessory?.taxonomy?.categories || p.fabric?.taxonomy?.categories || []).map(c => c.toLowerCase());
-      const name = (p.clothing?.name || p.accessory?.name || p.fabric?.name || '').toLowerCase();
-      const pattern = (p.fabric?.pattern || '').toLowerCase();
-      if (!(pt.includes(sub) || cats.some(c => c.includes(sub)) || name.includes(sub) || pattern.includes(sub) || sub.includes(pt))) return false;
-    }
-    if (filter.collection) {
-      if (!p.collections?.some(c => typeof c === 'string' && c.toLowerCase().includes(filter.collection!.toLowerCase()))) return false;
-    }
-    return true;
-  };
+  // Split products by kind and clothing type
+  const clothing = products.filter(p => p.kind === 'clothing');
+  const nonCustomizable = clothing.filter(p => p.clothing?.type === 'non_customize');
+  const customizable = clothing.filter(p => p.clothing?.type === 'customize');
+  const accessories = products.filter(p => p.kind === 'accessory');
+  const fabrics = products.filter(p => p.kind === 'fabric');
 
-  // Find a product image that matches a taxonomy node
-  const findImageForNode = (node: TaxonomyNode, pool: ApiProduct[]): string | undefined => {
-    const match = pool.find(p => productMatchesFilter(p, node.productFilter));
-    return match ? getProductImage(match) : undefined;
-  };
+  // Extract unique product-type tiles from a pool of real products
+  const extractTiles = (pool: ApiProduct[], parentSlug: string, max: number): CategoryTile[] => {
+    const seen = new Map<string, { label: string; image: string }>();
 
-  const cols: CategoryColumn[] = [];
+    for (const p of pool) {
+      if (seen.size >= max) break;
 
-  for (const section of TOP_LEVEL_SECTIONS) {
-    const topNode = TAXONOMY.find(n => n.slug === section.slug);
-    if (!topNode || !topNode.children?.length) continue;
+      let label = '';
 
-    const tiles: CategoryTile[] = [];
-    const fallbacks = FALLBACK_IMAGES[section.fallbackKey];
+      if (p.kind === 'clothing') {
+        // Use product_type (e.g. "Dress", "Suit", "Traditional")
+        // If product_type is generic like "Traditional", prefer categories[0] (e.g. "Kaftan", "Agbada")
+        const pt = p.clothing?.taxonomy?.product_type || '';
+        const cat = p.clothing?.taxonomy?.categories?.[0] || '';
+        if (pt.toLowerCase() === 'traditional' && cat) {
+          label = cat;
+        } else {
+          label = pt || cat || '';
+        }
+      } else if (p.kind === 'accessory') {
+        // For accessories, categories[0] is the real type (e.g. "Bags", "Hat", "Belts")
+        // product_type is often just "accessory" which is useless
+        const pt = p.accessory?.taxonomy?.product_type || '';
+        const cat = p.accessory?.taxonomy?.categories?.[0] || '';
+        label = (pt.toLowerCase() !== 'accessory' && pt) ? pt : (cat || p.accessory?.name || '');
+      } else if (p.kind === 'fabric') {
+        // For fabric, extract the material from the name (last word)
+        // e.g. "Crimson Orange Ankara" → "Ankara", "Blue Sea Linen" → "Linen"
+        const name = p.fabric?.name || '';
+        const words = name.trim().split(/\s+/);
+        label = words[words.length - 1] || name;
+      }
 
-    for (let i = 0; i < topNode.children.length && tiles.length < 4; i++) {
-      const child = topNode.children[i];
-      const href = `/discover/${section.slug}/${child.slug}`;
-      const img = findImageForNode(child, products) || child.image || fallbacks[i % fallbacks.length];
+      if (!label) continue;
 
-      if (img) {
-        tiles.push({
-          label: child.label,
-          image: img,
-          bgColor: bgColors[tiles.length % bgColors.length],
-          href,
-        });
+      // Normalize: capitalize first letter of each word
+      label = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+      const key = label.toLowerCase();
+      if (!seen.has(key)) {
+        const img = getProductImage(p);
+        if (img) {
+          seen.set(key, { label, image: img });
+        }
       }
     }
 
-    if (tiles.length > 0) {
-      cols.push({
-        title: section.title,
-        href: `/discover/${section.slug}`,
-        tiles,
+    // Build tiles, finding matching taxonomy route for each
+    const parentNode = TAXONOMY.find(n => n.slug === parentSlug);
+    const children = parentNode?.children || [];
+
+    return Array.from(seen.values()).map((item, i) => {
+      // Try to find a matching taxonomy child for a valid route
+      const matchingChild = children.find(child => {
+        const sub = child.productFilter?.subcategory?.toLowerCase() || '';
+        return item.label.toLowerCase().includes(sub) || sub.includes(item.label.toLowerCase());
       });
-    }
-  }
+
+      return {
+        label: item.label,
+        image: item.image,
+        bgColor: bgColors[i % bgColors.length],
+        href: matchingChild
+          ? `/discover/${parentSlug}/${matchingChild.slug}`
+          : `/discover/${parentSlug}`,
+      };
+    });
+  };
+
+  // Build all columns from real data
+  const cols: CategoryColumn[] = [];
+
+  const rtwTiles = extractTiles(nonCustomizable, 'ready-to-wear', 4);
+  if (rtwTiles.length > 0) cols.push({ title: 'Ready to Wear', href: '/discover/ready-to-wear', tiles: rtwTiles });
+
+  const customTiles = extractTiles(customizable, 'custom', 4);
+  if (customTiles.length > 0) cols.push({ title: 'Custom', href: '/discover/custom', tiles: customTiles });
+
+  const accTiles = extractTiles(accessories, 'accessories', 4);
+  if (accTiles.length > 0) cols.push({ title: 'Accessories', href: '/discover/accessories', tiles: accTiles });
+
+  const fabTiles = extractTiles(fabrics, 'fabric', 4);
+  if (fabTiles.length > 0) cols.push({ title: 'Fabrics', href: '/discover/fabric', tiles: fabTiles });
 
   return cols;
 }
