@@ -70,8 +70,9 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
           src={coverImage}
           alt={vendorName}
           fill
+          quality={100}
           className="object-cover group-hover:scale-105 transition-transform duration-500"
-          sizes="280px"
+          sizes="(max-width: 768px) 100vw, 340px"
         />
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.25)' }} />
 
