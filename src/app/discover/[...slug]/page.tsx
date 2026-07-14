@@ -23,6 +23,7 @@ export default function DiscoverSlugPage() {
   const { gender, setGender } = useApp();
   const [showFilter, setShowFilter] = useState(false);
   const [activeProductType, setActiveProductType] = useState<string | null>(null);
+  const [selectedChildSlug, setSelectedChildSlug] = useState<string | null>(null);
 
   // Parse slug
   const rawSlug = params?.slug;
@@ -37,12 +38,42 @@ export default function DiscoverSlugPage() {
   const breadcrumbs = buildBreadcrumbs(slugParts);
   const depth = slugParts.length;
 
-  // Fetch products from API — use the node's search hint for filtering
-  const searchHint = current?.productFilter?.subcategory || current?.productFilter?.collection || current?.label?.toLowerCase() || '';
-  const { products: apiProducts } = useProducts({ search: searchHint, size: 50 });
+  // Determine what to show
+  const hasChildren = current?.children && current.children.length > 0;
+  const parentPath = slugParts.slice(0, -1).join('/');
+  const currentSlug = slugParts[slugParts.length - 1];
 
-  // Simple sort/filter helpers for ApiProduct
+  // At depth 1 with children, the selected child determines what products to fetch
+  const selectedChild = (depth === 1 && hasChildren && selectedChildSlug)
+    ? current!.children!.find(c => c.slug === selectedChildSlug)
+    : null;
+
+  // Fetch products from API
+  // At depth 1: use selected child's filter if a tab is chosen, otherwise fetch the parent's products
+  const activeNode = selectedChild || current;
+  const searchHint = activeNode?.productFilter?.subcategory || activeNode?.productFilter?.collection || activeNode?.label?.toLowerCase() || '';
+  const kindFilter = activeNode?.productFilter?.kind?.[0];
+  const { products: apiProducts } = useProducts({
+    search: searchHint,
+    kind: kindFilter,
+    size: 50,
+  });
+
+  // Filter products based on the active node
   let products = [...apiProducts];
+
+  // For clothing sections, further filter by clothing type
+  if (depth === 1 && selectedChild) {
+    products = products.filter((p) => {
+      // Match subcategory against product taxonomy
+      const sub = selectedChild.productFilter?.subcategory?.toLowerCase() || '';
+      if (!sub) return true;
+      const pt = (p.clothing?.taxonomy?.product_type || p.accessory?.taxonomy?.product_type || p.fabric?.taxonomy?.product_type || '').toLowerCase();
+      const cats = (p.clothing?.taxonomy?.categories || p.accessory?.taxonomy?.categories || p.fabric?.taxonomy?.categories || []).map(c => c.toLowerCase());
+      const name = (p.clothing?.name || p.accessory?.name || p.fabric?.name || '').toLowerCase();
+      return pt.includes(sub) || cats.some(c => c.includes(sub)) || name.includes(sub) || sub.includes(pt);
+    });
+  }
 
   // Apply product type filter if set
   if (activeProductType) {
@@ -53,26 +84,21 @@ export default function DiscoverSlugPage() {
   const getTopRated = (ps: ApiProduct[], limit = 8) => [...ps].reverse().slice(0, limit);
   const getWhatsNew = (ps: ApiProduct[], limit = 8) => ps.slice(Math.max(0, ps.length - limit));
 
-  // Determine what to show
-  const hasChildren = current?.children && current.children.length > 0;
-  const parentPath = slugParts.slice(0, -1).join('/');
-  const currentSlug = slugParts[slugParts.length - 1];
-
   // Build chips from children or siblings
-  let chips: { label: string; href: string }[] = [];
+  let chips: { label: string; href: string; slug: string }[] = [];
   if (hasChildren) {
-    // Show children as nav chips
     chips = current!.children!.map((child) => ({
       label: child.label,
       href: `/discover/${slugParts.join('/')}/${child.slug}`,
+      slug: child.slug,
     }));
   } else if (depth >= 2) {
-    // At deepest level — show sibling chips
     const parentNode = nodes[nodes.length - 2];
     if (parentNode?.children) {
       chips = parentNode.children.map((sibling) => ({
         label: sibling.label,
         href: `/discover/${parentPath}/${sibling.slug}`,
+        slug: sibling.slug,
       }));
     }
   }
@@ -83,6 +109,11 @@ export default function DiscoverSlugPage() {
 
   // Page title
   const pageTitle = current?.label || slugParts[slugParts.length - 1]?.toUpperCase() || 'DISCOVER';
+
+  // Whether to show product carousels
+  // At depth 1: only show products if a child tab is selected
+  // At depth 2+: always show products
+  const showProducts = depth >= 2 || (depth === 1 && selectedChildSlug !== null);
 
   // 404-like fallback
   if (!current) {
@@ -113,16 +144,53 @@ export default function DiscoverSlugPage() {
         <DiscoverBreadcrumb items={breadcrumbs} />
       </div>
 
-      {/* Collection / Sibling Chips */}
+      {/* Collection / Sibling Chips — at depth 1, act as filter tabs */}
       {chips.length > 0 && (
-        <CollectionChips
-          chips={chips}
-          activeSlug={hasChildren ? undefined : currentSlug}
-        />
+        depth === 1 ? (
+          <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
+            {chips.map((chip) => (
+              <button
+                key={chip.slug}
+                onClick={() => setSelectedChildSlug(selectedChildSlug === chip.slug ? null : chip.slug)}
+                className="flex-shrink-0 transition-all"
+                style={{
+                  height: '38px',
+                  padding: '0 20px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  color: selectedChildSlug === chip.slug ? '#FFFFFF' : '#1A1A1A',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  background: selectedChildSlug === chip.slug ? '#1A1A1A' : '#F4F4F4',
+                  border: 'none',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <CollectionChips
+            chips={chips}
+            activeSlug={hasChildren ? undefined : currentSlug}
+          />
+        )
       )}
 
-      {/* Hero Banners — only at depth 1 (category level) */}
-      {depth === 1 && <DiscoverHeroBanners banners={HERO_BANNERS} />}
+      {/* Hero Banners — only at depth 1 when no tab selected */}
+      {depth === 1 && !selectedChildSlug && <DiscoverHeroBanners banners={HERO_BANNERS} />}
+
+      {/* Prompt to select a tab at depth 1 */}
+      {depth === 1 && !selectedChildSlug && (
+        <div className="flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '8px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#888', textAlign: 'center' }}>
+            Select a product type above to browse
+          </p>
+        </div>
+      )}
 
       {/* Product Type Filter Chips — at deeper levels */}
       {showProductTypeChips && (
@@ -173,18 +241,22 @@ export default function DiscoverSlugPage() {
         </div>
       )}
 
-      {/* Product Carousels */}
-      <ProductCarousel title="Trending" products={getTrending(products)} />
-      <ProductCarousel title="Top Rated" products={getTopRated(products)} />
+      {/* Product Carousels — only show when a tab is selected (depth 1) or always (depth 2+) */}
+      {showProducts && (
+        <>
+          <ProductCarousel title="Trending" products={getTrending(products)} />
+          <ProductCarousel title="Top Rated" products={getTopRated(products)} />
 
-      {/* Show What's New only at root category level */}
-      {depth <= 1 && (
-        <ProductCarousel title="What's New" products={getWhatsNew(products)} />
-      )}
+          {/* Show What's New only at root category level */}
+          {depth <= 1 && (
+            <ProductCarousel title="What's New" products={getWhatsNew(products)} />
+          )}
 
-      {/* Extra top rated row for visual density */}
-      {products.length > 4 && (
-        <ProductCarousel title="Top Rated" products={getTopRated(products).reverse()} />
+          {/* Extra top rated row for visual density */}
+          {products.length > 4 && (
+            <ProductCarousel title="Top Rated" products={getTopRated(products).reverse()} />
+          )}
+        </>
       )}
 
       {/* ══════ FILTER BOTTOM SHEET (reused vendor pattern) ══════ */}
