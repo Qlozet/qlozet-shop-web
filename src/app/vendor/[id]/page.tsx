@@ -137,9 +137,10 @@ export default function VendorPage() {
         ` : ''}
       `}</style>
 
-      {/* ══════ EDGE-TO-EDGE HERO ══════ */}
-      <div className="relative w-full overflow-hidden rounded-b-[40px] lg:rounded-b-[60px]" style={{ height: '55vh', minHeight: '420px' }}>
-        <div className="absolute inset-0">
+      {/* ══════ HERO IMAGE CARD ══════ */}
+      <div className="px-4 pt-4 lg:px-8 lg:pt-8 w-full">
+        <div className="relative w-full overflow-hidden rounded-[40px] lg:rounded-[60px]" style={{ height: '55vh', minHeight: '420px' }}>
+          <div className="absolute inset-0">
           <Image src={heroImage} alt={vendorName} fill quality={90} style={{ objectFit: 'cover', objectPosition: 'center 20%' }} sizes="100vw" priority />
           <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%)` }} />
         </div>
@@ -210,6 +211,7 @@ export default function VendorPage() {
             })}
           </div>
         </div>
+      </div>
       </div>
 
       {/* ══════ COLLECTION GALLERY ══════ */}
