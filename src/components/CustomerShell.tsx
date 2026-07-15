@@ -116,7 +116,13 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      if (isSearchPage) {
+        // On search page: dispatch event so the page can route to search or AI
+        window.dispatchEvent(new CustomEvent('shell-search', { detail: searchQuery.trim() }));
+        setSearchQuery('');
+      } else {
+        router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      }
       setIsSearchFocused(false);
       setMobileSearchOpen(false);
     }

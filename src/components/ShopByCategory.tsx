@@ -135,6 +135,8 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const categories = buildCategories(products);
 
+  if (categories.length === 0) return null;
+
   const scrollRight = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });

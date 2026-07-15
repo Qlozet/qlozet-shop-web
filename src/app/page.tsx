@@ -16,8 +16,10 @@ import { FollowingBar } from '@/components/FollowingBar';
 import { ForYouSection } from '@/components/ForYouSection';
 import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
+import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
+import { ProductCarousel } from '@/components/discover/ProductCarousel';
 import { getProductImage } from '@/lib/api-types';
-import type { ApiProduct, ApiBusinessPublic } from '@/lib/api-types';
+import type { ApiProduct, ApiBusinessPublic, ApiFeedItem } from '@/lib/api-types';
 
 // ─── Category Section Config ──────────────────────────────────────
 const FEED_SECTIONS = [
@@ -68,6 +70,9 @@ function VendorRow({
               return true;
             });
           }
+
+          // Skip vendors with no products to display
+          if (vendorProducts.length === 0) return null;
 
           return (
             <VendorShowcaseCard
@@ -152,8 +157,18 @@ export default function HomePage() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // ── Fetch live data ─────────────────────────────────────────────
-  const { products: allProducts, loading: productsLoading } = useProducts({ size: 50 });
+  const audience = gender === 'male' ? 'men' : 'women';
+  const { products: allProducts, loading: productsLoading } = useProducts({ size: 50, audience });
   const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 50 });
+
+  // ── Recommendation engine feeds ─────────────────────────────────
+  const { items: trendingItems } = useTrendingProducts(10);
+  const { items: newArrivalItems } = useNewArrivals(10);
+  const { items: personalizedItems } = usePersonalizedFeed({ limit: 12 });
+
+  // Helper: extract ApiProduct[] from feed items
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items.map(i => i.product).filter((p): p is ApiProduct => !!p);
 
   const suggestions = [
     "A comfortable wedding attire hot weather",
@@ -378,10 +393,8 @@ export default function HomePage() {
       {FEED_SECTIONS.map((section) => {
         const vendors = sectionVendors[section.key] ?? [];
 
-        // If no vendors in this category, show first 4 vendors as fallback
-        const displayVendors = vendors.length > 0
-          ? vendors.slice(0, 8)
-          : allVendors.slice(0, 4);
+        // Only show vendors that have products in this category — no fallback to generic vendors
+        const displayVendors = vendors.slice(0, 8);
 
         if (displayVendors.length === 0) return null;
 
@@ -417,7 +430,38 @@ export default function HomePage() {
         );
       })}
 
-      {/* For You + Recently Seen — signed-in users only */}
+      {/* ── Recommendation Engine Rows ──────────────────────────── */}
+
+      {/* Personalized "For You" — logged-in only */}
+      {user && feedToProducts(personalizedItems).length > 0 && (
+        <ProductCarousel
+          title="For You"
+          products={feedToProducts(personalizedItems)}
+          href="/discover"
+        />
+      )}
+
+      {/* Trending — powered by recommendation engine, fallback to generic */}
+      {(() => {
+        const trendingProducts = feedToProducts(trendingItems).length > 0
+          ? feedToProducts(trendingItems)
+          : allProducts.slice(0, 10);
+        return trendingProducts.length > 0 ? (
+          <ProductCarousel title="Trending" products={trendingProducts} href="/products?sort=relevance" />
+        ) : null;
+      })()}
+
+      {/* What's New — powered by recommendation engine, fallback to reversed products */}
+      {(() => {
+        const newProducts = feedToProducts(newArrivalItems).length > 0
+          ? feedToProducts(newArrivalItems)
+          : [...allProducts].reverse().slice(0, 10);
+        return newProducts.length > 0 ? (
+          <ProductCarousel title="What's New" products={newProducts} href="/products?sort=date" />
+        ) : null;
+      })()}
+
+      {/* For You Hero + Recently Seen — signed-in users only */}
       {user && (
         <ForYouSection recentlyViewed={recentlyViewed} heroImage={forYouHeroImage} />
       )}

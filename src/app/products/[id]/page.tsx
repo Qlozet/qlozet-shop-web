@@ -23,9 +23,10 @@ import {
   getTurnaroundDays,
   hasDiscount,
 } from '@/lib/api-types';
-import type { ApiProduct } from '@/lib/api-types';
+import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 import { useCustomization } from '@/hooks/useCustomization';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
+import { useBoughtTogether, useCompleteTheLook } from '@/hooks/useRecommendations';
 import { SILHOUETTES, NECKLINES, SLEEVES, FABRICS, ACCESSORIES } from '@/data/studio-options';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
@@ -115,6 +116,17 @@ export default function ProductDetailsPage() {
     const others = vendorProducts.filter((p) => p._id !== product?._id);
     return others.length >= 2 ? others : vendorProducts.slice(0, 6);
   }, [vendorProducts, product?._id]);
+
+  // ── Recommendation engine: bought-together + complete-look ─────
+  const { items: boughtTogetherItems } = useBoughtTogether(product?._id, 6);
+  const { items: completeTheLookItems } = useCompleteTheLook(
+    product?._id ? [product._id] : [],
+    6
+  );
+
+  // Helper: extract ApiProduct[] from feed items
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items.map(i => i.product).filter((p): p is ApiProduct => !!p && p._id !== product?._id);
 
   // Track product view on mount
   useEffect(() => {
@@ -1102,6 +1114,54 @@ export default function ProductDetailsPage() {
             </h3>
             <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '12px', paddingBottom: '8px' }}>
               {recommendedProducts.map((p) => (
+                <div key={p._id} style={{ minWidth: '160px', maxWidth: '214px', flexShrink: 0 }}>
+                  <ProductCard
+                    id={p._id}
+                    imageUrl={getProductImage(p)}
+                    title={getProductName(p)}
+                    brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
+                    price={getProductPrice(p)}
+                    originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
+                    tag={getProductTag(p)}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ─── Bought Together (Recommendation Engine) ──────────── */}
+        {feedToProducts(boughtTogetherItems).length > 0 && (
+          <section>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
+              Frequently Bought Together
+            </h3>
+            <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '12px', paddingBottom: '8px' }}>
+              {feedToProducts(boughtTogetherItems).map((p) => (
+                <div key={p._id} style={{ minWidth: '160px', maxWidth: '214px', flexShrink: 0 }}>
+                  <ProductCard
+                    id={p._id}
+                    imageUrl={getProductImage(p)}
+                    title={getProductName(p)}
+                    brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
+                    price={getProductPrice(p)}
+                    originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
+                    tag={getProductTag(p)}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ─── Complete the Look (Recommendation Engine) ────────── */}
+        {feedToProducts(completeTheLookItems).length > 0 && (
+          <section>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
+              Complete the Look
+            </h3>
+            <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '12px', paddingBottom: '8px' }}>
+              {feedToProducts(completeTheLookItems).map((p) => (
                 <div key={p._id} style={{ minWidth: '160px', maxWidth: '214px', flexShrink: 0 }}>
                   <ProductCard
                     id={p._id}

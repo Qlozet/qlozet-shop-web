@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
@@ -9,6 +9,7 @@ import { useVendors } from '@/hooks/useVendors';
 import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
+import { useAskFashion } from '@/hooks/useRecommendations';
 import {
   Search,
   List,
@@ -33,44 +34,25 @@ function darkenHex(hex: string, amount: number = 0.65): string {
 
 // ─── Vendor data — use live vendors ───────────────────────────
 
-// ─── LLM Demo Response ───────────────────────────────────────
-interface LLMSection {
-  title: string;
-  subtitle: string;
-  productIds: string[];
-}
-
-const LLM_RESPONSE = {
-  title: 'Best African fashion pieces for your style',
-  summary: 'African fashion is a beautiful blend of heritage and modern design. The best approach focuses on statement pieces: items that showcase authentic craftsmanship (hand-embroidered agbadas, bespoke kaftans), premium quality fabrics (genuine ankara, silk blends), and versatile accessories (leather bags, traditional accents).',
-  sections: [
-    {
-      title: 'Bespoke agbada collection',
-      subtitle: 'Hand-crafted luxury traditional wear for special occasions',
-      productIds: ['prod_1', 'prod_2'],
-    },
-    {
-      title: 'Premium kaftan essentials',
-      subtitle: 'Modern silhouettes with traditional fabric techniques',
-      productIds: ['prod_3', 'prod_4'],
-    },
-    {
-      title: 'Fabric and accessories',
-      subtitle: 'Premium textiles and leather goods to complete your look',
-      productIds: ['prod_5', 'prod_6', 'prod_7', 'prod_8'],
-    },
-  ] as LLMSection[],
-};
-
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
   const { wishlist, toggleWishlist } = useApp();
   const trackEvent = useTrackEvent();
+  const { ask, response: aiResponse, loading: aiLoading, error: aiError, reset: resetAI, history: chatHistory } = useAskFashion();
 
-  // Toggle: 'search' for product results, 'ai' for LLM response
+  // Toggle: 'search' for product results, 'ai' for AI response
   const [viewMode, setViewMode] = useState<'search' | 'ai'>('search');
   const [showSteps, setShowSteps] = useState(false);
+
+  // When toggling to AI mode with an existing query, fire ask once
+  const handleSetViewMode = (mode: 'search' | 'ai') => {
+    setViewMode(mode);
+    if (mode === 'ai' && query && chatHistory.length === 0) {
+      ask(query);
+    }
+  };
 
   // Track search event when query changes
   useEffect(() => {
@@ -248,77 +230,153 @@ function SearchContent() {
     </div>
   );
 
-  // ═══════════════════════════════════════════════════════════
-  //  AI / LLM RESPONSE VIEW
-  // ═══════════════════════════════════════════════════════════
-  const renderAIResponse = () => (
-    <div className="animate-fade-in flex flex-col mx-auto w-full" style={{ gap: '28px', maxWidth: '800px' }}>
-      {/* Title */}
-      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3 }}>
-        {LLM_RESPONSE.title}
-      </h2>
+  // ═════════════════════════════════════════════════════════
+  //  AI / ASK RESPONSE VIEW (Chat Thread)
+  // ═════════════════════════════════════════════════════════
+  const chatEndRef = React.useRef<HTMLDivElement>(null);
 
-      {/* Assistant steps toggle */}
-      <button
-        onClick={() => setShowSteps(!showSteps)}
-        className="flex items-center self-start transition-all hover:opacity-70"
-        style={{ gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-      >
-        <span style={{ fontSize: '13px', fontWeight: 600, color: '#D4AF37', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-          Assistant steps
-        </span>
-        <ChevronRight size={14} color="#D4AF37" style={{ transform: showSteps ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
-      </button>
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory.length, aiLoading]);
 
-      {showSteps && (
-        <div className="animate-fade-in" style={{ padding: '16px 20px', borderRadius: '14px', background: '#F8F6F3', border: '1px solid rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.6 }}>
-            Searching product catalog... → Filtering by relevance... → Categorizing results... → Generating recommendations...
-          </p>
-        </div>
-      )}
+  // Listen for search submissions from the bottom bar (CustomerShell)
+  useEffect(() => {
+    const handleShellSearch = (e: Event) => {
+      const query = (e as CustomEvent).detail as string;
+      if (!query) return;
+      if (viewMode === 'ai') {
+        // AI mode: send to Ask
+        ask(query);
+      } else {
+        // Search mode: update URL for product search
+        router.push(`/search?q=${encodeURIComponent(query)}`);
+      }
+    };
+    window.addEventListener('shell-search', handleShellSearch);
+    return () => window.removeEventListener('shell-search', handleShellSearch);
+  }, [viewMode, ask, router]);
 
-      {/* Summary paragraph */}
-      <p style={{ fontSize: '15px', color: '#555', lineHeight: 1.75, maxWidth: '700px' }}>
-        {LLM_RESPONSE.summary}
-      </p>
+  const renderAIResponse = () => {
+    const aiProducts = aiResponse?.products ?? [];
+    const hasHistory = chatHistory.length > 0;
 
-      {/* Product sections */}
-      {LLM_RESPONSE.sections.map((section, sIdx) => {
-        const sectionProducts = section.productIds
-          .map((id) => allProducts.find((p) => p._id === id))
-          .filter(Boolean) as ApiProduct[];
+    return (
+      <div className="flex flex-col h-full" style={{ minHeight: '60vh' }}>
+        {/* Chat messages area */}
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '16px' }}>
+          {/* Empty state */}
+          {!hasHistory && !aiLoading && (
+            <div className="flex flex-col items-center justify-center" style={{ gap: '12px', padding: '60px 20px' }}>
+              <PenLine size={24} color="#D4AF37" />
+              <p style={{ fontSize: '14px', color: '#888', textAlign: 'center' }}>
+                Ask me anything about fashion!<br />
+                <span style={{ fontSize: '12px', color: '#aaa' }}>e.g. &quot;Show me agbada styles under 100k&quot;</span>
+              </p>
+            </div>
+          )}
 
-        return (
-          <div key={sIdx}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>
-              {section.title}
-            </h3>
-            <p style={{ fontSize: '13px', color: '#2D6A4F', fontWeight: 500, marginBottom: '16px' }}>
-              {section.subtitle}
-            </p>
-            <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '14px', paddingBottom: '4px' }}>
-              {sectionProducts.map((product) => (
-                <div key={product._id} style={{ minWidth: '160px', maxWidth: '180px', flexShrink: 0 }}>
-                  <ProductCard
-                    id={product._id}
-                    imageUrl={getProductImage(product)}
-                    title={getProductName(product)}
-                    brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
-                    price={getProductPrice(product)}
-                    originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
-                    tag={getProductTag(product)}
-                    isFavorite={wishlist.includes(product._id)}
-                    onFavoriteToggle={(id) => toggleWishlist(id as string)}
-                  />
+          {/* Conversation thread */}
+          {hasHistory && (
+            <div className="flex flex-col mx-auto w-full" style={{ gap: '20px', maxWidth: '800px' }}>
+              {chatHistory.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className="animate-fade-in"
+                  style={{
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: msg.role === 'user' ? '85%' : '95%',
+                  }}
+                >
+                  {msg.role === 'user' ? (
+                    /* User message bubble */
+                    <div style={{
+                      background: '#1A1A1A',
+                      color: '#FFFFFF',
+                      padding: '12px 18px',
+                      borderRadius: '20px 20px 4px 20px',
+                      fontSize: '14px',
+                      lineHeight: 1.6,
+                    }}>
+                      {msg.content}
+                    </div>
+                  ) : (
+                    /* Assistant message */
+                    <div style={{
+                      background: '#F8F6F3',
+                      padding: '14px 18px',
+                      borderRadius: '20px 20px 20px 4px',
+                      fontSize: '14px',
+                      lineHeight: 1.75,
+                      color: '#444',
+                      border: '1px solid rgba(0,0,0,0.04)',
+                    }}>
+                      {msg.content}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+          )}
+
+          {/* Loading indicator */}
+          {aiLoading && (
+            <div className="animate-fade-in flex items-center" style={{ gap: '8px', padding: '16px 0', maxWidth: '800px', margin: '0 auto' }}>
+              <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span style={{ fontSize: '13px', color: '#999', marginLeft: '4px' }}>Thinking...</span>
+            </div>
+          )}
+
+          {/* Error */}
+          {aiError && (
+            <div className="animate-fade-in flex items-center" style={{ gap: '8px', padding: '12px 0', maxWidth: '800px', margin: '0 auto' }}>
+              <p style={{ fontSize: '14px', color: '#CC3333' }}>{aiError}</p>
+              <button
+                onClick={() => { resetAI(); }}
+                style={{ fontSize: '13px', color: '#D4AF37', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Products from latest response */}
+          {aiProducts.length > 0 && !aiLoading && (
+            <div className="animate-fade-in mx-auto w-full" style={{ maxWidth: '800px', marginTop: '16px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', marginBottom: '12px' }}>
+                Recommended for you
+              </h3>
+              <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '14px', paddingBottom: '4px' }}>
+                {aiProducts.map((item: any) => {
+                  const product = item.product || item;
+                  const productId = product._id || item.itemId;
+                  return (
+                    <div key={productId} style={{ minWidth: '160px', maxWidth: '180px', flexShrink: 0 }}>
+                      <ProductCard
+                        id={productId}
+                        imageUrl={getProductImage(product)}
+                        title={getProductName(product)}
+                        brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+                        price={getProductPrice(product)}
+                        originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+                        tag={getProductTag(product)}
+                        isFavorite={wishlist.includes(productId)}
+                        onFavoriteToggle={(id) => toggleWishlist(id as string)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+      </div>
+    );
+  };
 
   // ═══════════════════════════════════════════════════════════
   //  RENDER
@@ -338,7 +396,7 @@ function SearchContent() {
         {/* Toggle: Search / AI */}
         <div className="flex items-center" style={{ gap: '0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden', background: '#FFFFFF' }}>
           <button
-            onClick={() => setViewMode('search')}
+            onClick={() => handleSetViewMode('search')}
             className="flex items-center justify-center transition-all"
             style={{
               width: '44px',
@@ -351,7 +409,7 @@ function SearchContent() {
             <Search size={16} color={viewMode === 'search' ? '#FFFFFF' : '#999'} />
           </button>
           <button
-            onClick={() => setViewMode('ai')}
+            onClick={() => handleSetViewMode('ai')}
             className="flex items-center justify-center transition-all"
             style={{
               width: '44px',
@@ -365,8 +423,9 @@ function SearchContent() {
           </button>
         </div>
 
-        {/* Compose icon */}
+        {/* Compose icon — new conversation */}
         <button
+          onClick={() => { resetAI(); }}
           className="flex items-center justify-center transition-all hover:bg-[#F5F5F5] active:scale-90"
           style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFFFFF', cursor: 'pointer' }}
         >

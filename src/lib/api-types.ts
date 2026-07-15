@@ -295,6 +295,8 @@ export interface ApiFeedItem {
   name: string;
   price: number;
   vendor: string;
+  /** Full populated product object (hydrated by backend) */
+  product?: ApiProduct;
 }
 
 export interface ApiVendorFeedItem {
@@ -495,7 +497,7 @@ export function getProductTag(p: ApiProduct): string {
   if (p.kind === 'clothing' && p.clothing?.type === 'customize') return 'CUSTOMIZABLE';
   if (p.kind === 'fabric') return 'FABRIC YARD';
   if (p.kind === 'accessory') return 'ACCESSORY';
-  if (p.tags?.length > 0) return p.tags[0].name.toUpperCase();
+  if (p.tags?.length > 0 && p.tags[0]?.name) return p.tags[0].name.toUpperCase();
   return '';
 }
 

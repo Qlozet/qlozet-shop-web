@@ -6,7 +6,9 @@ import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
+import { useCompleteTheLook } from '@/hooks/useRecommendations';
 import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
+import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 import {
   Trash2,
   ChevronDown,
@@ -77,14 +79,22 @@ export default function CartPage() {
 
   const { products: allProducts } = useProducts({ size: 20 });
 
-  // Suggested products (not in cart)
-  const cartIds = cart.map((c) => c.id);
-  const suggestedProducts = allProducts
-    .filter((p) => !cartIds.includes(p._id))
-    .slice(0, 4);
+  // Recommendation engine: complete-the-look based on cart items
+  const cartItemIds = cart.map((c) => c.id);
+  const { items: ctlItems } = useCompleteTheLook(cartItemIds, 6);
+
+  // Helper: extract ApiProduct[] from feed items
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items.map(i => i.product).filter((p): p is ApiProduct => !!p && !cartItemIds.includes(p._id));
+
+  // Suggested products: prefer recommendation engine, fallback to generic
+  const ctlProducts = feedToProducts(ctlItems);
+  const suggestedProducts = ctlProducts.length > 0
+    ? ctlProducts.slice(0, 4)
+    : allProducts.filter((p) => !cartItemIds.includes(p._id)).slice(0, 4);
 
   // "Looking for this?" — product tagged CUSTOMIZABLE
-  const lookingProduct = allProducts.find((p) => !cartIds.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE');
+  const lookingProduct = allProducts.find((p) => !cartItemIds.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE');
 
   // ─── Card style ─────────────────────────────────────────────
   const cardStyle: React.CSSProperties = {

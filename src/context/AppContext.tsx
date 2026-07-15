@@ -1,8 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import { trackEventDirect } from '@/hooks/useTrackEvent';
+import {
+  getProductName,
+  getProductImage,
+  getProductPrice,
+} from '@/lib/api-types';
+import type { ApiProduct } from '@/lib/api-types';
 
 // Definitions
 export interface User {
@@ -92,6 +98,19 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// ─── Helper: map a backend cart item (populated product_id) → frontend CartItem ──
+function mapBackendCartItem(item: any): CartItem {
+  const p: ApiProduct | null = item.product_id && typeof item.product_id === 'object' ? item.product_id : null;
+  return {
+    id: p?._id ?? (typeof item.product_id === 'string' ? item.product_id : ''),
+    title: p ? getProductName(p) : 'Product',
+    price: item.unit_price ?? (p ? getProductPrice(p) : 0),
+    image: p ? getProductImage(p) : '',
+    quantity: item.quantity ?? 1,
+    kind: p?.kind ?? 'clothing',
+  };
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Global States
   const [user, setUser] = useState<User | null>(null);
@@ -104,6 +123,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [jobs, setJobs] = useState<TryOnJob[]>([]);
   const [reservations, setReservations] = useState<FabricReservation[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<RecentItem[]>([]);
+
+  // Track whether the user is authenticated for fire-and-forget API calls
+  const isAuthenticated = useRef(false);
 
   // Seed demo details on initial load
   useEffect(() => {
@@ -120,7 +142,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setGenderSelectedState(true); // logged-in users always have gender set
     }
     if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWish) setWishlist(JSON.parse(savedWish));
+    if (savedWish) {
+      const parsed = JSON.parse(savedWish);
+      setWishlist([...new Set(parsed as string[])]);
+    }
     if (savedJobs) setJobs(JSON.parse(savedJobs));
     if (savedGender) setGenderState(savedGender as 'male' | 'female');
     if (savedGenderSelected === 'true') setGenderSelectedState(true);
@@ -146,6 +171,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           };
           setUser(mappedUser);
           localStorage.setItem('qlozet_user', JSON.stringify(mappedUser));
+          isAuthenticated.current = true;
 
           // Fetch real token balance from dedicated endpoint
           api.get('/token/balance').then((tokenRes) => {
@@ -154,6 +180,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setUser(userWithBalance);
             localStorage.setItem('qlozet_user', JSON.stringify(userWithBalance));
           }).catch(() => { /* token fetch failed, keep default */ });
+
+          // ── Sync Cart & Wishlist from backend ─────────────────
+          const localCartRaw = localStorage.getItem('qlozet_cart');
+          const localCart: CartItem[] = localCartRaw ? JSON.parse(localCartRaw) : [];
+
+          Promise.allSettled([
+            api.get('/cart'),
+            api.get('/users/wishlist'),
+          ]).then(([cartResult, wishResult]) => {
+            // -- Cart sync --
+            if (cartResult.status === 'fulfilled') {
+              const backendCart = cartResult.value.data;
+              const backendItems: CartItem[] = (backendCart?.items ?? []).map(mapBackendCartItem);
+
+              // Merge local guest items that aren't already in the backend cart
+              const backendIds = new Set(backendItems.map((i: CartItem) => i.id));
+              const guestOnly = localCart.filter((i) => !backendIds.has(i.id));
+
+              // Push guest-only items to backend silently
+              for (const item of guestOnly) {
+                api.post('/cart/add', { productId: item.id, quantity: item.quantity }).catch(() => {});
+              }
+
+              const merged = [...backendItems, ...guestOnly];
+              setCart(merged);
+              saveState('qlozet_cart', merged);
+            }
+
+            // -- Wishlist sync --
+            if (wishResult.status === 'fulfilled') {
+              const backendWishlist = wishResult.value.data;
+              // Backend returns array of populated products or IDs
+              const raw = Array.isArray(backendWishlist?.data) ? backendWishlist.data : (Array.isArray(backendWishlist) ? backendWishlist : []);
+              const ids: string[] = [...new Set<string>(raw.map((item: any) => typeof item === 'string' ? item : item._id).filter(Boolean))];
+              setWishlist(ids);
+              saveState('qlozet_wishlist', ids);
+            }
+          });
         })
         .catch(() => {
           // Clean logout on token expiration / error
@@ -337,6 +401,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setUser(null);
+    isAuthenticated.current = false;
     localStorage.removeItem('qlozet_user');
     localStorage.removeItem('qlozet_access_token');
     localStorage.removeItem('qlozet_refresh_token');
@@ -356,6 +421,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveState('qlozet_cart', updated);
       return updated;
     });
+    // Sync to backend
+    if (isAuthenticated.current) {
+      api.post('/cart/add', { productId: newItem.id, quantity: 1 }).catch(() => {});
+    }
     // Track add_to_cart event
     if (user?.id) {
       trackEventDirect(user.id, {
@@ -372,6 +441,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveState('qlozet_cart', updated);
       return updated;
     });
+    // Sync to backend
+    if (isAuthenticated.current) {
+      api.delete(`/cart/remove/${id}`).catch(() => {});
+    }
     // Track remove_from_cart event
     if (user?.id) {
       trackEventDirect(user.id, {
@@ -392,23 +465,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearCart = () => {
     setCart([]);
     localStorage.removeItem('qlozet_cart');
+    // Sync to backend
+    if (isAuthenticated.current) {
+      api.delete('/cart/clear').catch(() => {});
+    }
   };
 
   // Wishlist Handlers
   const toggleWishlist = (id: string) => {
+    // Check current state BEFORE updating
+    const exists = wishlist.includes(id);
+
+    // Optimistic local update
     setWishlist((prev) => {
-      const exists = prev.includes(id);
-      const updated = exists ? prev.filter((w) => w !== id) : [...prev, id];
+      const dedupedPrev = [...new Set(prev)];
+      const updated = exists ? dedupedPrev.filter((w) => w !== id) : [...dedupedPrev, id];
       saveState('qlozet_wishlist', updated);
-      // Track wishlist event
-      if (user?.id) {
-        trackEventDirect(user.id, {
-          eventType: exists ? 'wishlist_remove' : 'wishlist_add',
-          properties: { itemId: id },
-        });
-      }
       return updated;
     });
+
+    // Sync to backend (toggle endpoint) — OUTSIDE the state updater
+    if (isAuthenticated.current) {
+      api.post(`/products/${id}/wishlist`)
+        .then((res) => {
+          console.log('[Wishlist] toggle success:', id, res.data);
+        })
+        .catch((err) => {
+          console.error('[Wishlist] toggle FAILED:', id, err?.response?.status, err?.response?.data);
+          // Rollback: revert the optimistic update
+          setWishlist((current) => {
+            const rolledBack = exists
+              ? [...new Set([...current, id])]
+              : current.filter((w) => w !== id);
+            saveState('qlozet_wishlist', rolledBack);
+            return rolledBack;
+          });
+        });
+    }
+
+    // Track wishlist event
+    if (user?.id) {
+      trackEventDirect(user.id, {
+        eventType: exists ? 'wishlist_remove' : 'wishlist_add',
+        properties: { itemId: id },
+      });
+    }
   };
 
   // Token Credit Balance operations

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 
 export interface ProductCardProps {
   id: string | number;
@@ -40,11 +41,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     ? (typeof originalPrice === 'number' ? `₦${originalPrice.toLocaleString()}` : originalPrice)
     : null;
 
+  const trackEvent = useTrackEvent();
+
+  const handleClick = () => {
+    trackEvent({
+      eventType: 'click_item',
+      properties: { itemId: String(id), price: typeof price === 'number' ? price : undefined },
+      context: { surface: 'product_card' },
+    });
+  };
+
   return (
     <Link 
       href={`/products/${id}`} 
       className="group flex flex-col w-full cursor-pointer transition-transform duration-300 hover:-translate-y-1"
       style={{ gap: '12px' }}
+      onClick={handleClick}
     >
       {/* Image Section */}
       <div 
@@ -53,7 +65,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       >
         <div className="relative w-full h-full overflow-hidden rounded-[8px] lg:rounded-[10px] bg-gray-50">
           <Image
-            src={imageUrl}
+            src={imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlDQTNCOCI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'}
             alt={title}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-105"

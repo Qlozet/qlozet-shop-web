@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import type { ApiProduct } from '@/lib/api-types';
@@ -35,20 +36,38 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
       {/* Section header */}
-      <div className="flex items-center" style={{ gap: '8px' }}>
-        <h3
-          style={{
-            fontSize: '12px',
-            fontWeight: 900,
-            color: '#1A1A1A',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-          }}
-        >
-          {title}
-        </h3>
-        <ChevronRight size={14} color="#1A1A1A" />
-      </div>
+      {/* Section header */}
+      {href ? (
+        <Link href={href} className="flex items-center hover:opacity-70 transition-opacity" style={{ gap: '8px' }}>
+          <h3
+            style={{
+              fontSize: '12px',
+              fontWeight: 900,
+              color: '#1A1A1A',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {title}
+          </h3>
+          <ChevronRight size={14} color="#1A1A1A" />
+        </Link>
+      ) : (
+        <div className="flex items-center" style={{ gap: '8px' }}>
+          <h3
+            style={{
+              fontSize: '12px',
+              fontWeight: 900,
+              color: '#1A1A1A',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {title}
+          </h3>
+          <ChevronRight size={14} color="#1A1A1A" />
+        </div>
+      )}
 
       {/* Scrollable product row */}
       <div className="relative group/row">

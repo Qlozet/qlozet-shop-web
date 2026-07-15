@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { useProducts } from '@/hooks/useProducts';
+import { api } from '@/lib/api';
 import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
-import { Heart, ChevronDown } from 'lucide-react';
+import type { ApiProduct } from '@/lib/api-types';
+import { Heart, ChevronDown, Loader2 } from 'lucide-react';
 
 type SortOption = 'recent' | 'priceAsc' | 'priceDesc' | 'name';
 
@@ -14,6 +15,45 @@ export default function WishlistPage() {
   const { wishlist, toggleWishlist, user } = useApp();
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch wishlist products from backend
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem('qlozet_access_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    api.get('/users/wishlist')
+      .then((res) => {
+        const data = res.data;
+        // Backend may return { data: [...] } or [...] directly
+        const raw = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        // Filter to only populated product objects (not plain IDs)
+        const populated = raw.filter((item: any) => typeof item === 'object' && item._id);
+        // Deduplicate by _id
+        const seen = new Set<string>();
+        const unique = populated.filter((item: any) => {
+          if (seen.has(item._id)) return false;
+          seen.add(item._id);
+          return true;
+        });
+        setProducts(unique);
+      })
+      .catch(() => {
+        // Fallback: clear products on error
+        setProducts([]);
+      })
+      .finally(() => setLoading(false));
+  }, [user, wishlist.length]); // re-fetch when wishlist changes
 
   if (!user) {
     return (
@@ -64,12 +104,8 @@ export default function WishlistPage() {
     );
   }
 
-  const { products: allProducts } = useProducts({ size: 20 });
-
-  // Get full product data for wishlisted items
-  const wishlistedProducts = allProducts.filter((p) =>
-    wishlist.includes(p._id)
-  );
+  // Filter products to only show items still in the wishlist (handles optimistic removal)
+  const wishlistedProducts = products.filter((p) => wishlist.includes(p._id));
 
   // Sort products
   const sortedProducts = [...wishlistedProducts].sort((a, b) => {
@@ -161,12 +197,26 @@ export default function WishlistPage() {
             letterSpacing: '0.02em',
           }}
         >
-          {sortedProducts.length} {sortedProducts.length === 1 ? 'Item' : 'Items'}
+          {loading ? '...' : `${sortedProducts.length} ${sortedProducts.length === 1 ? 'Item' : 'Items'}`}
         </span>
       </div>
 
-      {/* ─── Product Grid ───────────────────────────────────────── */}
-      {sortedProducts.length > 0 ? (
+      {/* ─── Loading Skeleton ────────────────────────────────────── */}
+      {loading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="w-full animate-pulse" style={{ maxWidth: '260px' }}>
+              <div className="bg-gray-100 rounded-[14px] lg:rounded-[20px]" style={{ aspectRatio: '214/264' }} />
+              <div className="flex flex-col" style={{ gap: '6px', marginTop: '12px' }}>
+                <div className="bg-gray-100 rounded-md" style={{ height: '10px', width: '40%' }} />
+                <div className="bg-gray-100 rounded-md" style={{ height: '14px', width: '70%' }} />
+                <div className="bg-gray-100 rounded-md" style={{ height: '12px', width: '30%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : sortedProducts.length > 0 ? (
+        /* ─── Product Grid ───────────────────────────────────────── */
         <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-slide-up justify-items-center">
           {sortedProducts.map((product) => (
             <ProductCard
@@ -178,7 +228,7 @@ export default function WishlistPage() {
               price={getProductPrice(product)}
               originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
               tag={getProductTag(product)}
-              isFavorite={true}
+              isFavorite={wishlist.includes(product._id)}
               onFavoriteToggle={(id) => toggleWishlist(id as string)}
             />
           ))}

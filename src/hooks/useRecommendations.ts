@@ -346,11 +346,16 @@ export function useCompleteTheLook(
 
 // ─── useAskFashion ────────────────────────────────────────────
 // AI fashion assistant — returns a mutation function (not auto-fetching).
-// Token-gated: costs tokens per query.
+// Maintains conversation history for multi-turn chat.
 //
 // Usage:
-//   const { ask, response, loading, error } = useAskFashion();
+//   const { ask, response, loading, error, history } = useAskFashion();
 //   const result = await ask('Show me red dresses for a wedding under 50k');
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export interface UseAskFashionReturn {
   /** Call this to send a query to the AI assistant */
@@ -358,7 +363,9 @@ export interface UseAskFashionReturn {
   response: ApiAskResponse | null;
   loading: boolean;
   error: string | null;
-  /** Reset state to initial */
+  /** Full conversation history */
+  history: ChatMessage[];
+  /** Reset state and conversation history */
   reset: () => void;
 }
 
@@ -369,6 +376,7 @@ export function useAskFashion(): UseAskFashionReturn {
     loading: false,
     error: null,
   });
+  const [history, setHistory] = useState<ChatMessage[]>([]);
 
   const ask = useCallback(
     async (
@@ -387,9 +395,20 @@ export function useAskFashion(): UseAskFashionReturn {
       try {
         const res = await api.post('/recommendations/ask', {
           query,
+          history, // Send conversation history for context
           ...(filters ? { filters } : {}),
         });
         const payload: ApiAskResponse = res.data?.data ?? res.data;
+
+        // Append user query and assistant reply to history
+        setHistory((prev) => [
+          ...prev,
+          { role: 'user' as const, content: query },
+          ...(payload.reply
+            ? [{ role: 'assistant' as const, content: payload.reply }]
+            : []),
+        ]);
+
         setState({ data: payload, loading: false, error: null });
         return payload;
       } catch (err: unknown) {
@@ -399,11 +418,12 @@ export function useAskFashion(): UseAskFashionReturn {
         return null;
       }
     },
-    [user?.id]
+    [user?.id, history]
   );
 
   const reset = useCallback(() => {
     setState({ data: null, loading: false, error: null });
+    setHistory([]);
   }, []);
 
   return {
@@ -411,6 +431,7 @@ export function useAskFashion(): UseAskFashionReturn {
     response: state.data,
     loading: state.loading,
     error: state.error,
+    history,
     reset,
   };
 }

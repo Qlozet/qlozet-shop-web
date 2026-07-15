@@ -50,7 +50,7 @@ function CatalogContent() {
   const [selectedKind, setSelectedKind] = useState<CategoryKind>(
     (searchParams.get('kind') as CategoryKind) || 'all'
   );
-  const [sortBy, setSortBy] = useState<string>('rating');
+  const [sortBy, setSortBy] = useState<string>(searchParams.get('sort') || 'rating');
   const [maxPrice, setMaxPrice] = useState<number>(200000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -59,7 +59,9 @@ function CatalogContent() {
   useEffect(() => {
     const qSearch = searchParams.get('search');
     const qKind = searchParams.get('kind');
+    const qSort = searchParams.get('sort');
     if (qSearch !== null) setSearchQuery(qSearch);
+    if (qSort !== null) setSortBy(qSort);
     if (qKind) {
       if (qKind === 'clothing') {
         setSelectedKind('bespoke');

@@ -12,18 +12,20 @@ import {
   HERO_BANNERS,
 } from '@/data/taxonomy';
 import { useProducts } from '@/hooks/useProducts';
-import type { ApiProduct } from '@/lib/api-types';
+import { useTrendingProducts, useNewArrivals } from '@/hooks/useRecommendations';
+import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
+import { getProductTag } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
-import { CollectionChips } from '@/components/discover/CollectionChips';
+
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 
 export default function DiscoverSlugPage() {
   const params = useParams();
   const { gender, setGender } = useApp();
   const [showFilter, setShowFilter] = useState(false);
-  const [activeProductType, setActiveProductType] = useState<string | null>(null);
-  const [selectedChildSlug, setSelectedChildSlug] = useState<string | null>(null);
+  const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Parse slug
   const rawSlug = params?.slug;
@@ -34,86 +36,113 @@ export default function DiscoverSlugPage() {
       : [];
 
   // Resolve taxonomy
-  const { nodes, current } = resolveSlug(slugParts);
+  const { current } = resolveSlug(slugParts);
   const breadcrumbs = buildBreadcrumbs(slugParts);
-  const depth = slugParts.length;
 
-  // Determine what to show
-  const hasChildren = current?.children && current.children.length > 0;
-  const parentPath = slugParts.slice(0, -1).join('/');
-  const currentSlug = slugParts[slugParts.length - 1];
-
-  // At depth 1 with children, the selected child determines what products to fetch
-  const selectedChild = (depth === 1 && hasChildren && selectedChildSlug)
-    ? current!.children!.find(c => c.slug === selectedChildSlug)
-    : null;
-
-  // Fetch products from API
-  // At depth 1: use selected child's filter if a tab is chosen, otherwise fetch the parent's products
-  const activeNode = selectedChild || current;
-  const searchHint = activeNode?.productFilter?.subcategory || activeNode?.productFilter?.collection || activeNode?.label?.toLowerCase() || '';
-  const kindFilter = activeNode?.productFilter?.kind?.[0];
-  const { products: apiProducts } = useProducts({
+  // Fetch products from API using the current node's filter
+  const searchHint = current?.productFilter?.subcategory || current?.productFilter?.collection || '';
+  const kindFilter = current?.productFilter?.kind?.[0] as 'clothing' | 'fabric' | 'accessory' | undefined;
+  const audienceValue = gender === 'male' ? 'men' : 'women';
+  const { products: apiProducts, loading: productsLoading } = useProducts({
     search: searchHint,
     kind: kindFilter,
+    audience: audienceValue,
     size: 50,
   });
 
-  // Filter products based on the active node
-  let products = [...apiProducts];
+  // ── Step 1: Apply tag-based filtering (include/exclude) ────────
+  let filteredProducts = [...apiProducts];
 
-  // For clothing sections, further filter by clothing type
-  if (depth === 1 && selectedChild) {
-    products = products.filter((p) => {
-      // Match subcategory against product taxonomy
-      const sub = selectedChild.productFilter?.subcategory?.toLowerCase() || '';
-      if (!sub) return true;
-      const pt = (p.clothing?.taxonomy?.product_type || p.accessory?.taxonomy?.product_type || p.fabric?.taxonomy?.product_type || '').toLowerCase();
-      const cats = (p.clothing?.taxonomy?.categories || p.accessory?.taxonomy?.categories || p.fabric?.taxonomy?.categories || []).map(c => c.toLowerCase());
-      const name = (p.clothing?.name || p.accessory?.name || p.fabric?.name || '').toLowerCase();
-      return pt.includes(sub) || cats.some(c => c.includes(sub)) || name.includes(sub) || sub.includes(pt);
+  const includeTags = current?.productFilter?.tags;
+  if (includeTags && includeTags.length > 0) {
+    filteredProducts = filteredProducts.filter((p) => {
+      const tag = getProductTag(p);
+      return includeTags.includes(tag);
     });
   }
 
-  // Apply product type filter if set
-  if (activeProductType) {
-    products = products.filter((p) => p.kind?.toLowerCase().includes(activeProductType.toLowerCase()));
+  const excludeTags = current?.productFilter?.excludeTags;
+  if (excludeTags && excludeTags.length > 0) {
+    filteredProducts = filteredProducts.filter((p) => {
+      const tag = getProductTag(p);
+      return !excludeTags.includes(tag);
+    });
   }
 
-  const getTrending = (ps: ApiProduct[], limit = 8) => ps.slice(0, limit);
+  // ── Step 2: Extract dynamic product types from filtered products ─
+  // Helper to get product_type from any product kind
+  const getProductType = (p: ApiProduct): string => {
+    return (
+      p.clothing?.taxonomy?.product_type ||
+      p.accessory?.taxonomy?.product_type ||
+      p.fabric?.taxonomy?.product_type ||
+      ''
+    );
+  };
+
+  // Helper to get categories from any product kind
+  const getCategories = (p: ApiProduct): string[] => {
+    return (
+      p.clothing?.taxonomy?.categories ||
+      p.accessory?.taxonomy?.categories ||
+      p.fabric?.taxonomy?.categories ||
+      []
+    );
+  };
+
+  // Unique product types derived from actual products
+  const dynamicProductTypes = Array.from(
+    new Set(filteredProducts.map(getProductType).filter(Boolean))
+  ).sort();
+
+  // ── Step 3: Apply product type filter ──────────────────────────
+  let products = [...filteredProducts];
+
+  if (selectedProductType) {
+    products = products.filter((p) =>
+      getProductType(p).toLowerCase() === selectedProductType.toLowerCase()
+    );
+  }
+
+  // ── Step 4: Extract dynamic categories from type-filtered products ─
+  const dynamicCategories = selectedProductType
+    ? Array.from(
+        new Set(products.flatMap(getCategories).filter(Boolean))
+      ).sort()
+    : [];
+
+  // ── Step 5: Apply category filter ──────────────────────────────
+  if (selectedCategory) {
+    products = products.filter((p) =>
+      getCategories(p).some(c => c.toLowerCase() === selectedCategory.toLowerCase())
+    );
+  }
+
+  // ── Recommendation engine feeds ─────────────────────────────────
+  const { items: trendingItems } = useTrendingProducts(8);
+  const { items: newArrivalItems } = useNewArrivals(8);
+
+  // Helper: extract ApiProduct[] from feed items, filtered to current kind
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items
+      .map(i => i.product)
+      .filter((p): p is ApiProduct => !!p && (!kindFilter || p.kind === kindFilter));
+
+  const getTrending = (ps: ApiProduct[], limit = 8) => {
+    const recProducts = feedToProducts(trendingItems);
+    return recProducts.length > 0 ? recProducts.slice(0, limit) : ps.slice(0, limit);
+  };
   const getTopRated = (ps: ApiProduct[], limit = 8) => [...ps].reverse().slice(0, limit);
-  const getWhatsNew = (ps: ApiProduct[], limit = 8) => ps.slice(Math.max(0, ps.length - limit));
-
-  // Build chips from children or siblings
-  let chips: { label: string; href: string; slug: string }[] = [];
-  if (hasChildren) {
-    chips = current!.children!.map((child) => ({
-      label: child.label,
-      href: `/discover/${slugParts.join('/')}/${child.slug}`,
-      slug: child.slug,
-    }));
-  } else if (depth >= 2) {
-    const parentNode = nodes[nodes.length - 2];
-    if (parentNode?.children) {
-      chips = parentNode.children.map((sibling) => ({
-        label: sibling.label,
-        href: `/discover/${parentPath}/${sibling.slug}`,
-        slug: sibling.slug,
-      }));
-    }
-  }
-
-  // Product type filter chips (at deeper levels with filterChips)
-  const filterChips = current?.filterChips || [];
-  const showProductTypeChips = filterChips.length > 0;
+  const getWhatsNew = (ps: ApiProduct[], limit = 8) => {
+    const recProducts = feedToProducts(newArrivalItems);
+    return recProducts.length > 0 ? recProducts.slice(0, limit) : ps.slice(Math.max(0, ps.length - limit));
+  };
 
   // Page title
   const pageTitle = current?.label || slugParts[slugParts.length - 1]?.toUpperCase() || 'DISCOVER';
 
-  // Whether to show product carousels
-  // At depth 1: only show products if a child tab is selected
-  // At depth 2+: always show products
-  const showProducts = depth >= 2 || (depth === 1 && selectedChildSlug !== null);
+  // Whether to show product carousels — always show when we have a current node
+  const showProducts = true;
 
   // 404-like fallback
   if (!current) {
@@ -144,56 +173,48 @@ export default function DiscoverSlugPage() {
         <DiscoverBreadcrumb items={breadcrumbs} />
       </div>
 
-      {/* Collection / Sibling Chips — at depth 1, act as filter tabs */}
-      {chips.length > 0 && (
-        depth === 1 ? (
-          <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
-            {chips.map((chip) => (
-              <button
-                key={chip.slug}
-                onClick={() => setSelectedChildSlug(selectedChildSlug === chip.slug ? null : chip.slug)}
-                className="flex-shrink-0 transition-all"
-                style={{
-                  height: '38px',
-                  padding: '0 20px',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                  color: selectedChildSlug === chip.slug ? '#FFFFFF' : '#1A1A1A',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  background: selectedChildSlug === chip.slug ? '#1A1A1A' : '#F4F4F4',
-                  border: 'none',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <CollectionChips
-            chips={chips}
-            activeSlug={hasChildren ? undefined : currentSlug}
-          />
-        )
-      )}
-
-      {/* Hero Banners — only at depth 1 when no tab selected */}
-      {depth === 1 && !selectedChildSlug && <DiscoverHeroBanners banners={HERO_BANNERS} />}
-
-      {/* Prompt to select a tab at depth 1 */}
-      {depth === 1 && !selectedChildSlug && (
-        <div className="flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '8px' }}>
-          <p style={{ fontSize: '14px', fontWeight: 600, color: '#888', textAlign: 'center' }}>
-            Select a product type above to browse
-          </p>
+      {/* ── Dynamic Product Type Tabs ─────────────────────────────── */}
+      {dynamicProductTypes.length > 0 && (
+        <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
+          {dynamicProductTypes.map((pt) => (
+            <button
+              key={pt}
+              onClick={() => {
+                if (selectedProductType === pt) {
+                  setSelectedProductType(null);
+                  setSelectedCategory(null);
+                } else {
+                  setSelectedProductType(pt);
+                  setSelectedCategory(null);
+                }
+              }}
+              className="flex-shrink-0 transition-all"
+              style={{
+                height: '38px',
+                padding: '0 20px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: 800,
+                color: selectedProductType === pt ? '#FFFFFF' : '#1A1A1A',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                background: selectedProductType === pt ? '#1A1A1A' : '#F4F4F4',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {pt}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Product Type Filter Chips — at deeper levels */}
-      {showProductTypeChips && (
+      {/* Hero Banners — only when no product type tab selected */}
+      {!selectedProductType && <DiscoverHeroBanners banners={HERO_BANNERS} />}
+
+      {/* ── Dynamic Category Chips (shown when a product type is selected) ── */}
+      {dynamicCategories.length > 0 && (
         <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
           <button
             onClick={() => setShowFilter(true)}
@@ -215,10 +236,10 @@ export default function DiscoverSlugPage() {
               <line x1="17" y1="16" x2="23" y2="16" />
             </svg>
           </button>
-          {filterChips.map((chip) => (
+          {dynamicCategories.map((cat) => (
             <button
-              key={chip}
-              onClick={() => setActiveProductType(activeProductType === chip ? null : chip)}
+              key={cat}
+              onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
               className="flex-shrink-0 transition-all"
               style={{
                 height: '36px',
@@ -226,37 +247,72 @@ export default function DiscoverSlugPage() {
                 borderRadius: '10px',
                 fontSize: '11px',
                 fontWeight: 800,
-                color: activeProductType === chip ? '#FFFFFF' : '#1A1A1A',
+                color: selectedCategory === cat ? '#FFFFFF' : '#1A1A1A',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                background: activeProductType === chip ? '#1A1A1A' : '#F4F4F4',
+                background: selectedCategory === cat ? '#1A1A1A' : '#F4F4F4',
                 border: 'none',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
               }}
             >
-              {chip}
+              {cat}
             </button>
           ))}
         </div>
       )}
 
-      {/* Product Carousels — only show when a tab is selected (depth 1) or always (depth 2+) */}
-      {showProducts && (
-        <>
-          <ProductCarousel title="Trending" products={getTrending(products)} />
-          <ProductCarousel title="Top Rated" products={getTopRated(products)} />
+      {/* ── Product Carousels / Skeleton ─────────────────────────────── */}
+      {productsLoading ? (
+        <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
+          {[1, 2].map((i) => (
+            <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
+              <div className="h-4 w-40 bg-[#E5E5E5] rounded" />
+              <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px' }}>
+                {[1, 2, 3, 4].map((j) => (
+                  <div key={j} className="flex-shrink-0 flex flex-col" style={{ width: '240px', gap: '12px' }}>
+                    <div className="rounded-[16px] bg-[#E5E5E5]" style={{ width: '240px', height: '320px' }} />
+                    <div className="h-4 w-3/4 bg-[#E5E5E5] rounded" />
+                    <div className="h-3 w-1/2 bg-[#E5E5E5] rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        showProducts && (
+          <>
+            <ProductCarousel 
+              title="Trending" 
+              products={getTrending(products)} 
+              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=relevance`} 
+            />
+            <ProductCarousel 
+              title="Top Rated" 
+              products={getTopRated(products)} 
+              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
+            />
 
-          {/* Show What's New only at root category level */}
-          {depth <= 1 && (
-            <ProductCarousel title="What's New" products={getWhatsNew(products)} />
-          )}
+            {/* Show What's New only at root category level */}
+            {!selectedProductType && (
+              <ProductCarousel 
+                title="What's New" 
+                products={getWhatsNew(products)} 
+                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=date`} 
+              />
+            )}
 
-          {/* Extra top rated row for visual density */}
-          {products.length > 4 && (
-            <ProductCarousel title="Top Rated" products={getTopRated(products).reverse()} />
-          )}
-        </>
+            {/* Extra top rated row for visual density */}
+            {products.length > 4 && (
+              <ProductCarousel 
+                title="Top Rated" 
+                products={getTopRated(products).reverse()} 
+                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
+              />
+            )}
+          </>
+        )
       )}
 
       {/* ══════ FILTER BOTTOM SHEET (reused vendor pattern) ══════ */}
