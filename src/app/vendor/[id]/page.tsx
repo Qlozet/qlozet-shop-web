@@ -146,7 +146,7 @@ export default function VendorPage() {
         </div>
 
         {/* Floating Top Nav */}
-        <div className="relative z-20 w-full flex items-start justify-between" style={{ padding: '24px 32px' }}>
+        <div className="relative z-20 w-full flex items-start justify-between" style={{ padding: '16px' }}>
           <button onClick={() => setShowSidebar(true)} className="flex items-center gap-3 backdrop-blur-md rounded-full hover:bg-white/20 transition-all border border-white/15 shadow-lg" style={{ padding: '6px 20px 6px 6px', backgroundColor: 'rgba(255,255,255,0.12)' }}>
             <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
               {vendorLogo ? (
@@ -216,7 +216,7 @@ export default function VendorPage() {
 
       {/* ══════ COLLECTION GALLERY ══════ */}
       {collections.length > 0 && (
-        <div className="relative z-20 mt-12 px-8 md:px-12">
+        <div className="relative z-20 mt-12 px-5 md:px-12">
           <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pb-6 snap-x">
             {collections.map((col) => {
               const colImage = col.cover_image || (col.products?.[0] ? getProductImage(col.products[0]) : undefined);
@@ -246,7 +246,7 @@ export default function VendorPage() {
       )}
 
       {/* ══════ PRODUCT GRID ══════ */}
-      <div className="relative z-10 w-full px-8 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '0' : '48px' }}>
+      <div className="relative z-10 w-full px-5 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '0' : '48px' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ marginBottom: '16px' }}>
           <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
             <h2 className="text-white text-lg font-bold mr-4 flex-shrink-0">Products</h2>
