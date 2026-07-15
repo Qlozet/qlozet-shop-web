@@ -17,6 +17,7 @@ import {
   PenLine,
   ChevronRight,
   Star,
+  Wand2,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -436,7 +437,56 @@ function SearchContent() {
       {/* ─── Content ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center" style={{ paddingBottom: '20px' }}>
         <div className="w-full" style={{ maxWidth: viewMode === 'ai' ? '800px' : undefined }}>
-          {viewMode === 'search' ? renderSearchResults() : renderAIResponse()}
+          {!query ? (
+            /* ─── Suggestions — shown when no query yet ─── */
+            <div className="flex flex-col items-center animate-fade-in" style={{ gap: '32px', paddingTop: '40px' }}>
+              <div className="flex flex-col items-center" style={{ gap: '8px' }}>
+                <Wand2 size={28} color="#D4AF37" strokeWidth={1.5} />
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textAlign: 'center' }}>
+                  What are you looking for?
+                </h2>
+                <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', maxWidth: '300px' }}>
+                  Search for products or ask our AI stylist anything about fashion
+                </p>
+              </div>
+
+              <div className="flex flex-col w-full" style={{ gap: '12px', maxWidth: '400px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Try asking
+                </span>
+                {[
+                  "A comfortable wedding attire for hot weather",
+                  "Show me red dresses under 50k",
+                  "Cargo pants",
+                  "Silk agbada for a naming ceremony",
+                  "Ankara styles for a date night",
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => router.push(`/search?q=${encodeURIComponent(suggestion)}`)}
+                    className="flex items-center transition-colors text-left"
+                    style={{
+                      padding: '14px 20px',
+                      gap: '12px',
+                      background: '#F8F6F3',
+                      borderRadius: '16px',
+                      border: '1px solid rgba(0,0,0,0.04)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#333',
+                    }}
+                  >
+                    <Search size={14} color="#AAAAAA" className="flex-shrink-0" />
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            viewMode === 'search' ? renderSearchResults() : renderAIResponse()
+          )}
         </div>
       </div>
     </div>

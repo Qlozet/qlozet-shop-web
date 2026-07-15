@@ -43,7 +43,6 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // Track top search visibility on Home page gender selection screen
   const [isTopSearchVisible, setIsTopSearchVisible] = useState(false);
@@ -124,13 +123,12 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
       }
       setIsSearchFocused(false);
-      setMobileSearchOpen(false);
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setSearchQuery(suggestion);
-    router.push(`/products?search=${encodeURIComponent(suggestion)}`);
+    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
     setIsSearchFocused(false);
   };
 
@@ -182,7 +180,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         )}
 
         {/* ── Mobile Content ── */}
-        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio ? '0' : '72px' }}>
+        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio ? '0' : isSearchPage ? '140px' : '72px' }}>
           <div style={{ padding: isStudio || isVendorPage ? '0' : '24px 20px 20px 20px' }}>
             {children}
           </div>
@@ -193,10 +191,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           )}
         </main>
 
-        {/* ── Floating Search Button — above bottom bar, right side ── */}
-        {!isStudio && (
+        {/* ── Floating Search Button — navigates to /search on non-search pages ── */}
+        {!isStudio && !isSearchPage && (
         <button
-          onClick={() => setMobileSearchOpen(true)}
+          onClick={() => router.push('/search')}
           className="fixed z-50 flex items-center justify-center transition-all active:scale-90"
           style={{
             bottom: '90px',
@@ -204,81 +202,64 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             width: '52px',
             height: '52px',
             borderRadius: '50%',
-            background: isSearchPage ? '#2C1810' : '#FFFFFF',
+            background: '#FFFFFF',
             boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
-            border: isSearchPage ? 'none' : '1px solid rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.05)',
             cursor: 'pointer',
           }}
         >
-          {isSearchPage
-            ? <Wand2 size={20} strokeWidth={2} color="#FFFFFF" />
-            : <Search size={20} strokeWidth={2} color="#1A1A1A" />
-          }
+          <Search size={20} strokeWidth={2} color="#1A1A1A" />
         </button>
         )}
 
-        {/* ── Mobile Search Overlay ── */}
-        {mobileSearchOpen && (
-          <div className="fixed inset-0 z-[60] bg-white flex flex-col animate-fade-in">
-            {/* Search Header */}
-            <div className="flex items-center" style={{ padding: '20px 16px', gap: '12px', borderBottom: '1px solid #F2F2F2' }}>
-              <form
-                onSubmit={handleSearchSubmit}
-                className="flex-1 flex items-center rounded-full"
-                style={{ padding: '10px 16px', gap: '10px', background: isSearchPage ? '#F0EDE8' : '#F5F5F5' }}
-              >
-                {isSearchPage
-                  ? <Wand2 size={18} strokeWidth={2} color="#D4AF37" />
-                  : <Search size={18} strokeWidth={2} color="#999" />
-                }
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={isSearchPage ? 'Ask anything about fashion...' : 'What are you looking for?'}
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#111] placeholder-[#999]"
-                  style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0 }}
-                  autoFocus
-                />
-                {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery('')} className="text-[#999]">
-                    <X size={16} />
-                  </button>
-                )}
-              </form>
+        {/* ── Bottom Search Bar — only on /search page, above tab bar ── */}
+        {isSearchPage && !isStudio && (
+          <div
+            className="fixed left-0 right-0 z-50"
+            style={{ bottom: '84px' }}
+          >
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex items-center"
+              style={{
+                padding: '8px 8px 8px 18px',
+                gap: '8px',
+                margin: '0 12px',
+                background: '#FFFFFF',
+                borderRadius: '50px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                border: '1px solid rgba(0,0,0,0.06)',
+              }}
+            >
+              <Search size={18} strokeWidth={2} color="#AAAAAA" className="flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Ask anything about fashion..."
+                className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#1A1A1A] placeholder-[#999]"
+                style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0, minWidth: 0 }}
+              />
+              {searchQuery && (
+                <button type="button" onClick={() => setSearchQuery('')} className="flex-shrink-0" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                  <X size={16} color="#AAAAAA" />
+                </button>
+              )}
               <button
-                onClick={() => setMobileSearchOpen(false)}
-                style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', background: 'none', border: 'none', cursor: 'pointer' }}
+                type="submit"
+                className="flex items-center justify-center flex-shrink-0 transition-transform active:scale-90"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  background: '#2C1810',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
-                Cancel
+                <ArrowRight size={18} strokeWidth={2.5} color="#FFFFFF" />
               </button>
-            </div>
-
-            {/* Suggestions */}
-            <div className="flex-1 overflow-y-auto" style={{ padding: '24px 20px' }}>
-              <div className="flex flex-col" style={{ gap: '16px' }}>
-                <span className="text-[12px] font-extrabold text-[#1A1A1A] tracking-wide uppercase">Suggestions</span>
-                <div className="flex flex-col" style={{ gap: '10px' }}>
-                  {SEARCH_SUGGESTIONS.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => { handleSuggestionClick(suggestion); setMobileSearchOpen(false); }}
-                      className="bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#333] text-[13px] font-medium rounded-full transition-colors text-left"
-                      style={{ padding: '12px 20px' }}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-[#F5F5F5] rounded-[16px]" style={{ padding: '16px 20px', marginTop: '28px' }}>
-                <p className="text-[11.5px] text-[#888] leading-[1.6] font-semibold text-left">
-                  Learn more on how we use your data to give you a personalized experience. Recommendations are for information purposes only.
-                </p>
-              </div>
-            </div>
+            </form>
           </div>
         )}
 
