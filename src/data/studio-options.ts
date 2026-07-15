@@ -9,8 +9,29 @@ export interface StyleOption {
   id: string;
   label: string;
   emoji: string;
+  imageUrl?: string;       // AI-generated image from API
+  description?: string;    // Style description for tooltip
+  styleCode?: string;      // Backend style_code for order submission
   extraCost?: number;
 }
+
+// ── Clothing Types ──────────────────────────────────────────────
+export type ClothingType = 'top' | 'bottom' | 'full_body';
+export type DesignGender = 'male' | 'female' | 'unisex';
+
+export interface ClothingTypeOption {
+  id: ClothingType;
+  label: string;
+  description: string;
+  emoji: string;
+}
+
+export const CLOTHING_TYPES: ClothingTypeOption[] = [
+  { id: 'top', label: 'Top', description: 'Blouse, Shirt, Crop Top', emoji: '👕' },
+  { id: 'bottom', label: 'Bottom', description: 'Skirt, Trouser, Pants', emoji: '👖' },
+  { id: 'full_body', label: 'Full Body', description: 'Dress, Kaftan, Agbada, Jumpsuit', emoji: '👗' },
+];
+
 
 export interface FabricOption {
   id: string;

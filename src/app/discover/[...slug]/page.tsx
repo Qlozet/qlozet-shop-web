@@ -9,74 +9,140 @@ import { GenderToggle } from '@/components/GenderToggle';
 import {
   resolveSlug,
   buildBreadcrumbs,
-  getProductsForNode,
-  getTrending,
-  getTopRated,
-  getWhatsNew,
   HERO_BANNERS,
 } from '@/data/taxonomy';
+import { useProducts } from '@/hooks/useProducts';
+import { useTrendingProducts, useNewArrivals } from '@/hooks/useRecommendations';
+import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
+import { getProductTag } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
-import { CollectionChips } from '@/components/discover/CollectionChips';
+
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 
 export default function DiscoverSlugPage() {
   const params = useParams();
   const { gender, setGender } = useApp();
   const [showFilter, setShowFilter] = useState(false);
-  const [activeProductType, setActiveProductType] = useState<string | null>(null);
+  const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Parse slug
   const rawSlug = params?.slug;
   const slugParts: string[] = Array.isArray(rawSlug)
     ? rawSlug
     : rawSlug
-    ? [rawSlug]
-    : [];
+      ? [rawSlug]
+      : [];
 
   // Resolve taxonomy
-  const { nodes, current } = resolveSlug(slugParts);
+  const { current } = resolveSlug(slugParts);
   const breadcrumbs = buildBreadcrumbs(slugParts);
-  const depth = slugParts.length;
 
-  // Get products for this level
-  let products = getProductsForNode(current);
+  // Fetch products from API using the current node's filter
+  const searchHint = current?.productFilter?.subcategory || current?.productFilter?.collection || '';
+  const kindFilter = current?.productFilter?.kind?.[0] as 'clothing' | 'fabric' | 'accessory' | undefined;
+  const audienceValue = gender === 'male' ? 'men' : 'women';
+  const { products: apiProducts, loading: productsLoading } = useProducts({
+    search: searchHint,
+    kind: kindFilter,
+    audience: audienceValue,
+    size: 50,
+  });
 
-  // Apply product type filter if set
-  if (activeProductType) {
-    products = products.filter((p) => p.productType === activeProductType);
+  // ── Step 1: Apply tag-based filtering (include/exclude) ────────
+  let filteredProducts = [...apiProducts];
+
+  const includeTags = current?.productFilter?.tags;
+  if (includeTags && includeTags.length > 0) {
+    filteredProducts = filteredProducts.filter((p) => {
+      const tag = getProductTag(p);
+      return includeTags.includes(tag);
+    });
   }
 
-  // Determine what to show
-  const hasChildren = current?.children && current.children.length > 0;
-  const parentPath = slugParts.slice(0, -1).join('/');
-  const currentSlug = slugParts[slugParts.length - 1];
-
-  // Build chips from children or siblings
-  let chips: { label: string; href: string }[] = [];
-  if (hasChildren) {
-    // Show children as nav chips
-    chips = current!.children!.map((child) => ({
-      label: child.label,
-      href: `/discover/${slugParts.join('/')}/${child.slug}`,
-    }));
-  } else if (depth >= 2) {
-    // At deepest level — show sibling chips
-    const parentNode = nodes[nodes.length - 2];
-    if (parentNode?.children) {
-      chips = parentNode.children.map((sibling) => ({
-        label: sibling.label,
-        href: `/discover/${parentPath}/${sibling.slug}`,
-      }));
-    }
+  const excludeTags = current?.productFilter?.excludeTags;
+  if (excludeTags && excludeTags.length > 0) {
+    filteredProducts = filteredProducts.filter((p) => {
+      const tag = getProductTag(p);
+      return !excludeTags.includes(tag);
+    });
   }
 
-  // Product type filter chips (at deeper levels with filterChips)
-  const filterChips = current?.filterChips || [];
-  const showProductTypeChips = filterChips.length > 0;
+  // ── Step 2: Extract dynamic product types from filtered products ─
+  // Helper to get product_type from any product kind
+  const getProductType = (p: ApiProduct): string => {
+    return (
+      p.clothing?.taxonomy?.product_type ||
+      p.accessory?.taxonomy?.product_type ||
+      p.fabric?.taxonomy?.product_type ||
+      ''
+    );
+  };
+
+  // Helper to get categories from any product kind
+  const getCategories = (p: ApiProduct): string[] => {
+    return (
+      p.clothing?.taxonomy?.categories ||
+      p.accessory?.taxonomy?.categories ||
+      p.fabric?.taxonomy?.categories ||
+      []
+    );
+  };
+
+  // Unique product types derived from actual products
+  const dynamicProductTypes = Array.from(
+    new Set(filteredProducts.map(getProductType).filter(Boolean))
+  ).sort();
+
+  // ── Step 3: Apply product type filter ──────────────────────────
+  let products = [...filteredProducts];
+
+  if (selectedProductType) {
+    products = products.filter((p) =>
+      getProductType(p).toLowerCase() === selectedProductType.toLowerCase()
+    );
+  }
+
+  // ── Step 4: Extract dynamic categories from type-filtered products ─
+  const dynamicCategories = selectedProductType
+    ? Array.from(
+        new Set(products.flatMap(getCategories).filter(Boolean))
+      ).sort()
+    : [];
+
+  // ── Step 5: Apply category filter ──────────────────────────────
+  if (selectedCategory) {
+    products = products.filter((p) =>
+      getCategories(p).some(c => c.toLowerCase() === selectedCategory.toLowerCase())
+    );
+  }
+
+  // ── Recommendation engine feeds ─────────────────────────────────
+  const { items: trendingItems } = useTrendingProducts(8);
+  const { items: newArrivalItems } = useNewArrivals(8);
+
+  // Helper: extract ApiProduct[] from feed items, filtered to current kind
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items
+      .map(i => i.product)
+      .filter((p): p is ApiProduct => !!p && (!kindFilter || p.kind === kindFilter));
+
+  const getTrending = (ps: ApiProduct[], limit = 8) => {
+    const recProducts = feedToProducts(trendingItems);
+    return recProducts.length > 0 ? recProducts.slice(0, limit) : ps.slice(0, limit);
+  };
+  const getTopRated = (ps: ApiProduct[], limit = 8) => [...ps].reverse().slice(0, limit);
+  const getWhatsNew = (ps: ApiProduct[], limit = 8) => {
+    const recProducts = feedToProducts(newArrivalItems);
+    return recProducts.length > 0 ? recProducts.slice(0, limit) : ps.slice(Math.max(0, ps.length - limit));
+  };
 
   // Page title
   const pageTitle = current?.label || slugParts[slugParts.length - 1]?.toUpperCase() || 'DISCOVER';
+
+  // Whether to show product carousels — always show when we have a current node
+  const showProducts = true;
 
   // 404-like fallback
   if (!current) {
@@ -107,19 +173,48 @@ export default function DiscoverSlugPage() {
         <DiscoverBreadcrumb items={breadcrumbs} />
       </div>
 
-      {/* Collection / Sibling Chips */}
-      {chips.length > 0 && (
-        <CollectionChips
-          chips={chips}
-          activeSlug={hasChildren ? undefined : currentSlug}
-        />
+      {/* ── Dynamic Product Type Tabs ─────────────────────────────── */}
+      {dynamicProductTypes.length > 0 && (
+        <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
+          {dynamicProductTypes.map((pt) => (
+            <button
+              key={pt}
+              onClick={() => {
+                if (selectedProductType === pt) {
+                  setSelectedProductType(null);
+                  setSelectedCategory(null);
+                } else {
+                  setSelectedProductType(pt);
+                  setSelectedCategory(null);
+                }
+              }}
+              className="flex-shrink-0 transition-all"
+              style={{
+                height: '38px',
+                padding: '0 20px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: 800,
+                color: selectedProductType === pt ? '#FFFFFF' : '#1A1A1A',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                background: selectedProductType === pt ? '#1A1A1A' : '#F4F4F4',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {pt}
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Hero Banners — only at depth 1 (category level) */}
-      {depth === 1 && <DiscoverHeroBanners banners={HERO_BANNERS} />}
+      {/* Hero Banners — only when no product type tab selected */}
+      {!selectedProductType && <DiscoverHeroBanners banners={HERO_BANNERS} />}
 
-      {/* Product Type Filter Chips — at deeper levels */}
-      {showProductTypeChips && (
+      {/* ── Dynamic Category Chips (shown when a product type is selected) ── */}
+      {dynamicCategories.length > 0 && (
         <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
           <button
             onClick={() => setShowFilter(true)}
@@ -141,10 +236,10 @@ export default function DiscoverSlugPage() {
               <line x1="17" y1="16" x2="23" y2="16" />
             </svg>
           </button>
-          {filterChips.map((chip) => (
+          {dynamicCategories.map((cat) => (
             <button
-              key={chip}
-              onClick={() => setActiveProductType(activeProductType === chip ? null : chip)}
+              key={cat}
+              onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
               className="flex-shrink-0 transition-all"
               style={{
                 height: '36px',
@@ -152,33 +247,72 @@ export default function DiscoverSlugPage() {
                 borderRadius: '10px',
                 fontSize: '11px',
                 fontWeight: 800,
-                color: activeProductType === chip ? '#FFFFFF' : '#1A1A1A',
+                color: selectedCategory === cat ? '#FFFFFF' : '#1A1A1A',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                background: activeProductType === chip ? '#1A1A1A' : '#F4F4F4',
+                background: selectedCategory === cat ? '#1A1A1A' : '#F4F4F4',
                 border: 'none',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
               }}
             >
-              {chip}
+              {cat}
             </button>
           ))}
         </div>
       )}
 
-      {/* Product Carousels */}
-      <ProductCarousel title="Trending" products={getTrending(products)} />
-      <ProductCarousel title="Top Rated" products={getTopRated(products)} />
+      {/* ── Product Carousels / Skeleton ─────────────────────────────── */}
+      {productsLoading ? (
+        <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
+          {[1, 2].map((i) => (
+            <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
+              <div className="h-4 w-40 bg-[#E5E5E5] rounded" />
+              <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px' }}>
+                {[1, 2, 3, 4].map((j) => (
+                  <div key={j} className="flex-shrink-0 flex flex-col" style={{ width: '240px', gap: '12px' }}>
+                    <div className="rounded-[16px] bg-[#E5E5E5]" style={{ width: '240px', height: '320px' }} />
+                    <div className="h-4 w-3/4 bg-[#E5E5E5] rounded" />
+                    <div className="h-3 w-1/2 bg-[#E5E5E5] rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        showProducts && (
+          <>
+            <ProductCarousel 
+              title="Trending" 
+              products={getTrending(products)} 
+              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=relevance`} 
+            />
+            <ProductCarousel 
+              title="Top Rated" 
+              products={getTopRated(products)} 
+              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
+            />
 
-      {/* Show What's New only at root category level */}
-      {depth <= 1 && (
-        <ProductCarousel title="What's New" products={getWhatsNew(products)} />
-      )}
+            {/* Show What's New only at root category level */}
+            {!selectedProductType && (
+              <ProductCarousel 
+                title="What's New" 
+                products={getWhatsNew(products)} 
+                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=date`} 
+              />
+            )}
 
-      {/* Extra top rated row for visual density */}
-      {products.length > 4 && (
-        <ProductCarousel title="Top Rated" products={getTopRated(products).reverse()} />
+            {/* Extra top rated row for visual density */}
+            {products.length > 4 && (
+              <ProductCarousel 
+                title="Top Rated" 
+                products={getTopRated(products).reverse()} 
+                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
+              />
+            )}
+          </>
+        )
       )}
 
       {/* ══════ FILTER BOTTOM SHEET (reused vendor pattern) ══════ */}

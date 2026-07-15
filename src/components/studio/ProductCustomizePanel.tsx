@@ -2,7 +2,10 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
+import Link from 'next/link';
 import { X } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
+import { TokenIcon } from '../icons/TokenIcon';
 import { PRODUCT_TABS, type SectionTab } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
@@ -27,6 +30,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
   customization,
   onClose,
 }) => {
+  const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
 
   const panelContent = (
@@ -43,7 +47,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         </div>
         <div className="flex items-center" style={{ gap: '10px' }}>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '5px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
-            <span style={{ fontSize: '13px' }}>🪙</span>
+            <TokenIcon size={14} color="#D4AF37" />
             <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A' }}>{customization.tokenBalance.toLocaleString()}</span>
           </div>
           <button
@@ -58,7 +62,12 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       {/* Tabs */}
       <div
         className="flex items-center overflow-x-auto hide-scrollbar shrink-0"
-        style={{ gap: '20px', padding: '8px 24px 14px', borderBottom: '1px solid #F0F0F0' }}
+        style={{
+          gap: '20px',
+          padding: '8px 24px 14px',
+          borderBottom: '1px solid #F0F0F0',
+          ...(!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {})
+        }}
       >
         {PRODUCT_TABS.map((tab: SectionTab) => (
           <button
@@ -88,7 +97,13 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: '16px' }}>
+      <div
+        className="flex-1 overflow-y-auto hide-scrollbar"
+        style={{
+          paddingBottom: '16px',
+          ...(!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {})
+        }}
+      >
         {expandedSection === 'addons' ? (
           <AccessoriesPanel
             selectedAccessories={customization.selectedAccessories}
@@ -100,45 +115,71 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       </div>
 
       {/* Footer CTAs */}
-      <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px' }}>
-        <button
-          onClick={onClose}
-          className="flex-1 transition-colors hover:bg-gray-200"
-          style={{
-            padding: '14px',
-            borderRadius: '14px',
-            background: '#F4F4F4',
-            color: '#1A1A1A',
-            fontSize: '13px',
-            fontWeight: 700,
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onClose}
-          className="flex-1 flex items-center justify-center transition-colors hover:opacity-90"
-          style={{
-            padding: '14px',
-            borderRadius: '14px',
-            background: '#7C3AED',
-            color: '#FFFFFF',
-            fontSize: '13px',
-            fontWeight: 700,
-            border: 'none',
-            cursor: 'pointer',
-            gap: '8px',
-          }}
-        >
-          <span>Apply</span>
-          <div className="flex items-center" style={{ gap: '4px', opacity: 0.85 }}>
-            <span style={{ fontSize: '13px' }}>🪙</span>
-            <span style={{ fontSize: '12px', fontWeight: 800 }}>25</span>
-          </div>
-        </button>
-      </div>
+      {!user ? (
+        <div className="shrink-0 flex flex-col gap-3" style={{ padding: '16px 24px 24px', background: '#FAF6F1', borderTop: '1px solid #F0F0F0' }}>
+          <p style={{ fontSize: '11.5px', color: '#8B5A2B', fontWeight: 600, lineHeight: 1.4, margin: 0, textAlign: 'center', fontFamily: 'Outfit, sans-serif' }}>
+            ⚠ You must sign in first to customize this product.
+          </p>
+          <Link
+            href="/auth/login"
+            className="w-full flex items-center justify-center transition-all hover:opacity-90 text-center"
+            style={{
+              padding: '13px',
+              borderRadius: '12px',
+              background: '#2C1810',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              textDecoration: 'none',
+              fontFamily: 'Outfit, sans-serif',
+            }}
+          >
+            Sign In to Customize
+          </Link>
+        </div>
+      ) : (
+        <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px' }}>
+          <button
+            onClick={onClose}
+            className="flex-1 transition-colors hover:bg-gray-200"
+            style={{
+              padding: '14px',
+              borderRadius: '14px',
+              background: '#F4F4F4',
+              color: '#1A1A1A',
+              fontSize: '13px',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 flex items-center justify-center transition-colors hover:opacity-90"
+            style={{
+              padding: '14px',
+              borderRadius: '14px',
+              background: '#4C1D95',
+              color: '#FFFFFF',
+              fontSize: '13px',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              gap: '8px',
+            }}
+          >
+            <span>Apply</span>
+            <div className="flex items-center" style={{ gap: '4px', opacity: 0.85 }}>
+              <TokenIcon size={14} color="#D4AF37" />
+              <span style={{ fontSize: '12px', fontWeight: 800 }}>25</span>
+            </div>
+          </button>
+        </div>
+      )}
     </>
   );
 

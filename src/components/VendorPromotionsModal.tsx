@@ -3,7 +3,13 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { type VendorPromotion } from '@/data/vendors';
+
+/** Promotion display data — decoupled from backend shape */
+interface VendorPromotion {
+  title: string;
+  subtitle?: string;
+  color: string;
+}
 
 interface VendorPromotionsModalProps {
   isOpen: boolean;

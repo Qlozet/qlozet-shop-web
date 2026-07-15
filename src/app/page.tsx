@@ -1,36 +1,47 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
-import { productCatalog } from '@/data/products';
-import { vendorCatalog } from '@/data/vendors';
 import { GenderToggle } from '@/components/GenderToggle';
 import { TrendingBanner } from '@/components/TrendingBanner';
-import { VendorCard } from '@/components/VendorCard';
+import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
 import { PromoBanner } from '@/components/PromoBanner';
+import { ShopByCategory } from '@/components/ShopByCategory';
+import { FollowingBar } from '@/components/FollowingBar';
+import { ForYouSection } from '@/components/ForYouSection';
+import { useProducts } from '@/hooks/useProducts';
+import { useVendors } from '@/hooks/useVendors';
+import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
+import { ProductCarousel } from '@/components/discover/ProductCarousel';
+import { getProductImage } from '@/lib/api-types';
+import type { ApiProduct, ApiBusinessPublic, ApiFeedItem } from '@/lib/api-types';
 
 // ─── Category Section Config ──────────────────────────────────────
 const FEED_SECTIONS = [
-  { key: 'accessories', label: 'ACCESSORIES', filter: 'accessories' },
-  { key: 'custom_made', label: 'CUSTOM MADE', filter: 'custom_made' },
-  { key: 'clothing', label: 'READY TO WEAR', filter: 'clothing' },
-  { key: 'fabric', label: 'FABRIC', filter: 'fabric' },
+  { key: 'accessories', label: 'ACCESSORIES', kind: 'accessory' as const, href: '/discover/accessories' },
+  { key: 'custom_made', label: 'CUSTOM MADE', kind: 'clothing' as const, clothingType: 'customize', href: '/discover/custom' },
+  { key: 'clothing', label: 'READY TO WEAR', kind: 'clothing' as const, clothingType: 'non_customize', href: '/discover/ready-to-wear' },
+  { key: 'fabric', label: 'FABRIC', kind: 'fabric' as const, href: '/discover/fabric' },
 ] as const;
 
 // ─── Scrollable Vendor Row ────────────────────────────────────────
 function VendorRow({
   vendors,
+  vendorProductMap,
   followedVendors,
   onToggleFollow,
+  section,
 }: {
-  vendors: typeof vendorCatalog;
+  vendors: ApiBusinessPublic[];
+  vendorProductMap: Map<string, ApiProduct[]>;
   followedVendors: string[];
   onToggleFollow: (id: string) => void;
+  section?: typeof FEED_SECTIONS[number];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -48,16 +59,28 @@ function VendorRow({
         style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {vendors.map((vendor) => {
-          const vendorProducts = productCatalog.filter((p) =>
-            vendor.productIds.includes(p.id)
-          );
+          let vendorProducts = vendorProductMap.get(vendor._id) ?? [];
+          
+          if (section) {
+            vendorProducts = vendorProducts.filter((p) => {
+              if (p.kind !== section.kind) return false;
+              if (section.kind === 'clothing' && 'clothingType' in section) {
+                if (p.clothing?.type !== section.clothingType) return false;
+              }
+              return true;
+            });
+          }
+
+          // Skip vendors with no products to display
+          if (vendorProducts.length === 0) return null;
+
           return (
-            <VendorCard
-              key={vendor.id}
+            <VendorShowcaseCard
+              key={vendor._id}
               vendor={vendor}
               products={vendorProducts}
-              isFollowing={followedVendors.includes(vendor.id)}
-              onToggleFollow={() => onToggleFollow(vendor.id)}
+              isFollowing={followedVendors.includes(vendor._id)}
+              onToggleFollow={() => onToggleFollow(vendor._id)}
             />
           );
         })}
@@ -88,6 +111,33 @@ function VendorRow({
   );
 }
 
+// ─── Loading Skeleton ─────────────────────────────────────────────
+function FeedSkeleton() {
+  return (
+    <div className="flex flex-col w-full animate-pulse" style={{ gap: '36px' }}>
+      {/* Trending banner skeleton */}
+      <div className="rounded-[30px] bg-[#E8DDD0]" style={{ height: '280px' }} />
+      {/* Category skeleton */}
+      <div className="flex" style={{ gap: '20px' }}>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '360px' }} />
+        ))}
+      </div>
+      {/* Vendor row skeletons */}
+      {[1, 2].map((i) => (
+        <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
+          <div className="h-3 w-32 bg-[#E5E5E5] rounded" />
+          <div className="flex" style={{ gap: '16px' }}>
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main Home Page ───────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
@@ -100,10 +150,25 @@ export default function HomePage() {
     followedVendors,
     toggleFollowVendor,
     isInitialized,
+    recentlyViewed,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // ── Fetch live data ─────────────────────────────────────────────
+  const audience = gender === 'male' ? 'men' : 'women';
+  const { products: allProducts, loading: productsLoading } = useProducts({ size: 50, audience });
+  const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 50 });
+
+  // ── Recommendation engine feeds ─────────────────────────────────
+  const { items: trendingItems } = useTrendingProducts(10);
+  const { items: newArrivalItems } = useNewArrivals(10);
+  const { items: personalizedItems } = usePersonalizedFeed({ limit: 12 });
+
+  // Helper: extract ApiProduct[] from feed items
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items.map(i => i.product).filter((p): p is ApiProduct => !!p);
 
   const suggestions = [
     "A comfortable wedding attire hot weather",
@@ -127,6 +192,38 @@ export default function HomePage() {
     setGender(g);
     setGenderSelected(true);
   };
+
+  // ── Build vendor → products lookup ──────────────────────────────
+  const vendorProductMap = useMemo(() => {
+    const map = new Map<string, ApiProduct[]>();
+    for (const p of allProducts) {
+      const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
+      if (!bizId) continue;
+      if (!map.has(bizId)) map.set(bizId, []);
+      map.get(bizId)!.push(p);
+    }
+    return map;
+  }, [allProducts]);
+
+  // ── Derive vendor "category" from their products (Option B) ────
+  const sectionVendors = useMemo(() => {
+    const result: Record<string, ApiBusinessPublic[]> = {};
+    for (const section of FEED_SECTIONS) {
+      const vendorIds = new Set<string>();
+      for (const p of allProducts) {
+        const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
+        if (!bizId) continue;
+        if (p.kind !== section.kind) continue;
+        // For clothing sections, also check clothing type
+        if (section.kind === 'clothing' && 'clothingType' in section) {
+          if (p.clothing?.type !== section.clothingType) continue;
+        }
+        vendorIds.add(bizId);
+      }
+      result[section.key] = allVendors.filter((v) => vendorIds.has(v._id));
+    }
+    return result;
+  }, [allProducts, allVendors]);
 
   // ─── Determine which view to show ──────────────────────────────
   const showFeed = genderSelected || !!user;
@@ -264,6 +361,15 @@ export default function HomePage() {
   }
 
   // ─── STATE B: Main Home Feed ────────────────────────────────────
+  const isLoading = productsLoading || vendorsLoading;
+
+  if (isLoading) {
+    return <FeedSkeleton />;
+  }
+
+  // First product image for "For You" hero
+  const forYouHeroImage = allProducts[0] ? getProductImage(allProducts[0]) : undefined;
+
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '36px' }}>
 
@@ -272,24 +378,30 @@ export default function HomePage() {
         <GenderToggle gender={gender} onToggle={setGender} />
       </div>
 
+      {/* Following Bar — only for signed-in users with followed vendors */}
+      {user && followedVendors.length > 0 && (
+        <FollowingBar followedVendorIds={followedVendors} vendors={allVendors} />
+      )}
+
       {/* Trending Banner */}
       <TrendingBanner />
 
+      {/* Shop by Category — Amazon-style grid */}
+      <ShopByCategory products={allProducts} />
+
       {/* Category Sections */}
       {FEED_SECTIONS.map((section) => {
-        const sectionVendors = vendorCatalog.filter(
-          (v) => v.category === section.filter
-        );
+        const vendors = sectionVendors[section.key] ?? [];
 
-        // If no vendors in this category, show all vendors as fallback
-        const displayVendors = sectionVendors.length > 0
-          ? sectionVendors
-          : vendorCatalog.slice(0, 4);
+        // Only show vendors that have products in this category — no fallback to generic vendors
+        const displayVendors = vendors.slice(0, 8);
+
+        if (displayVendors.length === 0) return null;
 
         return (
           <div key={section.key} className="flex flex-col" style={{ gap: '16px' }}>
             {/* Section Header */}
-            <div className="flex items-center justify-between">
+            <Link href={section.href} className="flex items-center group/sec" style={{ gap: '8px', textDecoration: 'none' }}>
               <h3
                 style={{
                   fontSize: '13px',
@@ -302,18 +414,57 @@ export default function HomePage() {
               >
                 {section.label}
               </h3>
-              <div style={{ height: '1px', flex: 1, background: '#EBEBEB', marginLeft: '16px' }} />
-            </div>
+              <ChevronRight size={14} color="#1A1A1A" className="transition-transform group-hover/sec:translate-x-1" />
+              <div style={{ height: '1px', flex: 1, background: '#EBEBEB' }} />
+            </Link>
 
             {/* Vendor Cards Row */}
             <VendorRow
               vendors={displayVendors}
+              vendorProductMap={vendorProductMap}
               followedVendors={followedVendors}
               onToggleFollow={toggleFollowVendor}
+              section={section}
             />
           </div>
         );
       })}
+
+      {/* ── Recommendation Engine Rows ──────────────────────────── */}
+
+      {/* Personalized "For You" — logged-in only */}
+      {user && feedToProducts(personalizedItems).length > 0 && (
+        <ProductCarousel
+          title="For You"
+          products={feedToProducts(personalizedItems)}
+          href="/discover"
+        />
+      )}
+
+      {/* Trending — powered by recommendation engine, fallback to generic */}
+      {(() => {
+        const trendingProducts = feedToProducts(trendingItems).length > 0
+          ? feedToProducts(trendingItems)
+          : allProducts.slice(0, 10);
+        return trendingProducts.length > 0 ? (
+          <ProductCarousel title="Trending" products={trendingProducts} href="/products?sort=relevance" />
+        ) : null;
+      })()}
+
+      {/* What's New — powered by recommendation engine, fallback to reversed products */}
+      {(() => {
+        const newProducts = feedToProducts(newArrivalItems).length > 0
+          ? feedToProducts(newArrivalItems)
+          : [...allProducts].reverse().slice(0, 10);
+        return newProducts.length > 0 ? (
+          <ProductCarousel title="What's New" products={newProducts} href="/products?sort=date" />
+        ) : null;
+      })()}
+
+      {/* For You Hero + Recently Seen — signed-in users only */}
+      {user && (
+        <ForYouSection recentlyViewed={recentlyViewed} heroImage={forYouHeroImage} />
+      )}
 
       {/* Promo Banner */}
       <PromoBanner />

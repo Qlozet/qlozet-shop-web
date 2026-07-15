@@ -2,14 +2,23 @@
 
 import React, { useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { type Product } from '@/data/products';
+import type { ApiProduct } from '@/lib/api-types';
+import {
+  getProductName,
+  getProductPrice,
+  getProductOriginalPrice,
+  getProductImage,
+  getProductTag,
+  hasDiscount,
+} from '@/lib/api-types';
 
 interface ProductCarouselProps {
   title: string;
-  products: Product[];
-  href?: string; // Optional "see all" link
+  products: ApiProduct[];
+  href?: string;
 }
 
 export function ProductCarousel({ title, products, href }: ProductCarouselProps) {
@@ -27,40 +36,58 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
       {/* Section header */}
-      <div className="flex items-center" style={{ gap: '8px' }}>
-        <h3
-          style={{
-            fontSize: '12px',
-            fontWeight: 900,
-            color: '#1A1A1A',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-          }}
-        >
-          {title}
-        </h3>
-        <ChevronRight size={14} color="#1A1A1A" />
-      </div>
+      {/* Section header */}
+      {href ? (
+        <Link href={href} className="flex items-center hover:opacity-70 transition-opacity" style={{ gap: '8px' }}>
+          <h3
+            style={{
+              fontSize: '12px',
+              fontWeight: 900,
+              color: '#1A1A1A',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {title}
+          </h3>
+          <ChevronRight size={14} color="#1A1A1A" />
+        </Link>
+      ) : (
+        <div className="flex items-center" style={{ gap: '8px' }}>
+          <h3
+            style={{
+              fontSize: '12px',
+              fontWeight: 900,
+              color: '#1A1A1A',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {title}
+          </h3>
+          <ChevronRight size={14} color="#1A1A1A" />
+        </div>
+      )}
 
       {/* Scrollable product row */}
       <div className="relative group/row">
         <div
           ref={scrollRef}
           className="flex overflow-x-auto hide-scrollbar snap-x"
-          style={{ gap: '12px', paddingBottom: '4px' }}
+          style={{ gap: '16px', paddingBottom: '4px' }}
         >
           {products.map((product) => (
-            <div key={product.id} className="flex-shrink-0 snap-start" style={{ width: '214px' }}>
+            <div key={product._id} className="flex-shrink-0 snap-start" style={{ width: '214px' }}>
               <ProductCard
-                id={product.id}
-                imageUrl={product.image}
-                title={product.title}
-                brand={product.brand}
-                price={`₦${product.price.toLocaleString()}`}
-                originalPrice={product.originalPrice ? `₦${product.originalPrice.toLocaleString()}` : undefined}
-                tag={product.tag}
-                isFavorite={wishlist.includes(product.id)}
-                onFavoriteToggle={() => toggleWishlist(product.id)}
+                id={product._id}
+                imageUrl={getProductImage(product)}
+                title={getProductName(product)}
+                brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+                price={getProductPrice(product)}
+                originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+                tag={getProductTag(product)}
+                isFavorite={wishlist.includes(product._id)}
+                onFavoriteToggle={() => toggleWishlist(product._id)}
               />
             </div>
           ))}

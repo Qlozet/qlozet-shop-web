@@ -1,7 +1,6 @@
 // Taxonomy & Discover Page Configuration
 // Defines the category hierarchy, hero banners, and browse grid for /discover pages.
 
-import { type Product, productCatalog } from './products';
 
 // ═══════════════════════════════════════════════════════════════
 //  TAXONOMY TREE
@@ -17,6 +16,7 @@ export interface TaxonomyNode {
     collection?: string;
     subcategory?: string;
     tags?: string[];
+    excludeTags?: string[];
     brands?: string[];
   };
   filterChips?: string[]; // Product type chips at deepest level
@@ -93,8 +93,40 @@ export const TAXONOMY: TaxonomyNode[] = [
   {
     slug: 'clothing',
     label: 'Clothing',
-    image: '/image/bespoke-dress-1.png',
+    image: '/image/bespoke-outfit-1.webp',
     productFilter: { kind: ['clothing'] },
+    children: [
+      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], subcategory: 'dress' } },
+      { slug: 'suits', label: 'Suits', image: '/image/bespoke-kaftan-milk-1.png', productFilter: { kind: ['clothing'], subcategory: 'suit' } },
+      { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { kind: ['clothing'], subcategory: 'kaftan' } },
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { kind: ['clothing'], subcategory: 'agbada' } },
+      { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { kind: ['clothing'], subcategory: 'ankara' } },
+    ],
+  },
+  {
+    slug: 'ready-to-wear',
+    label: 'Ready to Wear',
+    image: '/image/bespoke-dress-1.png',
+    productFilter: { kind: ['clothing'], excludeTags: ['CUSTOMIZABLE'] },
+    children: [
+      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { kind: ['clothing'], subcategory: 'dress' } },
+      { slug: 'suits', label: 'Suits', image: '/image/bespoke-kaftan-milk-1.png', productFilter: { kind: ['clothing'], subcategory: 'suit' } },
+      { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { kind: ['clothing'], subcategory: 'kaftan' } },
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { kind: ['clothing'], subcategory: 'agbada' } },
+      { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { kind: ['clothing'], subcategory: 'ankara' } },
+    ],
+  },
+  {
+    slug: 'custom',
+    label: 'Custom',
+    image: '/image/custom-outfit-1.webp',
+    productFilter: { tags: ['CUSTOMIZABLE'] },
+    children: [
+      { slug: 'dresses', label: 'Dresses', image: '/image/bespoke-dress-1.png', productFilter: { subcategory: 'dress', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'kaftan', label: 'Kaftan', image: '/image/bespoke-kaftan-brown-1.png', productFilter: { subcategory: 'kaftan', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'agbada', label: 'Agbada', image: '/image/bespoke-agbada-orange.webp', productFilter: { subcategory: 'agbada', tags: ['CUSTOMIZABLE'] } },
+      { slug: 'ankara', label: 'Ankara', image: '/image/bespoke-ankara-1.png', productFilter: { subcategory: 'ankara', tags: ['CUSTOMIZABLE'] } },
+    ],
   },
   {
     slug: 'accessories',
@@ -103,8 +135,9 @@ export const TAXONOMY: TaxonomyNode[] = [
     productFilter: { kind: ['accessory'] },
     children: [
       { slug: 'bags', label: 'Bags', productFilter: { subcategory: 'bags' } },
+      { slug: 'belts', label: 'Belts', productFilter: { subcategory: 'belt' } },
+      { slug: 'headwear', label: 'Headwear', productFilter: { subcategory: 'headwear' } },
       { slug: 'jewelry', label: 'Jewelry', productFilter: { subcategory: 'jewelry' } },
-      { slug: 'headwraps', label: 'Headwraps', productFilter: { subcategory: 'headwraps' } },
       { slug: 'shoes', label: 'Shoes', productFilter: { subcategory: 'shoes' } },
     ],
   },
@@ -115,9 +148,10 @@ export const TAXONOMY: TaxonomyNode[] = [
     productFilter: { kind: ['fabric'] },
     children: [
       { slug: 'ankara-fabric', label: 'Ankara', productFilter: { kind: ['fabric'], subcategory: 'ankara' } },
-      { slug: 'lace', label: 'Lace', productFilter: { subcategory: 'lace' } },
-      { slug: 'aso-oke-fabric', label: 'Aso-Oke', productFilter: { subcategory: 'aso-oke' } },
-      { slug: 'adire-fabric', label: 'Adire', productFilter: { subcategory: 'adire' } },
+      { slug: 'linen', label: 'Linen', productFilter: { kind: ['fabric'], subcategory: 'linen' } },
+      { slug: 'cotton', label: 'Cotton', productFilter: { kind: ['fabric'], subcategory: 'cotton' } },
+      { slug: 'lace', label: 'Lace', productFilter: { kind: ['fabric'], subcategory: 'lace' } },
+      { slug: 'adire-fabric', label: 'Adire', productFilter: { kind: ['fabric'], subcategory: 'adire' } },
     ],
   },
 ];
@@ -128,14 +162,15 @@ export const TAXONOMY: TaxonomyNode[] = [
 
 export interface HeroBanner {
   label: string;
+  description: string;
   image: string;
   href: string;
 }
 
 export const HERO_BANNERS: HeroBanner[] = [
-  { label: 'FOR YOU', image: '/image/bespoke-dress-1.png', href: '/discover/traditional' },
-  { label: 'CORPORATE', image: '/image/bespoke-kaftan-milk-1.png', href: '/discover/corporate' },
-  { label: 'TRADITIONAL', image: '/image/bespoke-agbada-orange.webp', href: '/discover/traditional' },
+  { label: 'FOR YOU', description: 'Curated picks based on your style preferences', image: '/image/bespoke-dress-1.png', href: '/discover/traditional' },
+  { label: 'CORPORATE', description: 'Tailored suits, blouses & office-ready elegance', image: '/image/bespoke-kaftan-milk-1.png', href: '/discover/corporate' },
+  { label: 'TRADITIONAL', description: 'Agbada, Kaftan, Ankara & heritage styles', image: '/image/bespoke-agbada-orange.webp', href: '/discover/traditional' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -146,18 +181,20 @@ export interface BrowseCategory {
   label: string;
   href: string;
   images: string[]; // 2-3 thumbnail images
+  productIds?: string[]; // matching product IDs for each image
   color?: string;   // Optional accent
+  size?: 'large' | 'medium' | 'small'; // For bento box layout
 }
 
 export const BROWSE_CATEGORIES: BrowseCategory[] = [
-  { label: 'CLOTHING', href: '/discover/clothing', images: ['/image/bespoke-dress-1.png', '/image/bespoke-outfit-1.webp', '/image/bespoke-kaftan-brown-1.png'], color: '#3B3026' },
-  { label: 'ACCESSORIES', href: '/discover/accessories', images: ['/image/qlozet-bag.png', '/image/bag.webp'], color: '#4A6741' },
-  { label: 'FABRIC', href: '/discover/fabric', images: ['/image/fabric-1.jpg', '/image/ankara.png', '/image/fabric-swatch-1.jpg'], color: '#5B4A6B' },
-  { label: 'DESIGNS', href: '/bespoke', images: ['/image/bespoke-dress-2.png', '/image/bespoke-ankara-1.png', '/image/bespoke-outfit-3.webp'], color: '#2E4A62' },
-  { label: "WHAT'S NEW", href: '/discover/clothing', images: ['/image/bespoke-outfit-4.webp', '/image/pattern-bespoke-1.png'], color: '#B04A4A' },
-  { label: 'DISCOUNTS', href: '/discover/clothing', images: ['/image/bespoke-agbada-lime.webp', '/image/bag.webp'], color: '#C48B3F' },
-  { label: 'TOP RATED', href: '/discover/clothing', images: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-milk-1.png'], color: '#3A7A6A' },
-  { label: 'VENDORS', href: '/vendor/vendor_1', images: ['/image/icon1.jpg', '/image/icon2.jpg', '/image/icon3.jpg'], color: '#6B5B4A' },
+  { label: 'CLOTHING', href: '/discover/clothing', images: ['/image/bespoke-dress-1.png', '/image/bespoke-outfit-1.webp', '/image/bespoke-kaftan-brown-1.png'], productIds: ['prod_9', 'prod_11', 'prod_3'], color: '#3B3026', size: 'large' },
+  { label: 'ACCESSORIES', href: '/discover/accessories', images: ['/image/qlozet-bag.png', '/image/bag.webp', '/image/bespoke-outfit-4.webp'], productIds: ['prod_7', 'prod_8', 'prod_27'], color: '#4A6741', size: 'medium' },
+  { label: 'FABRIC', href: '/discover/fabric', images: ['/image/fabric-1.jpg', '/image/ankara.png', '/image/fabric-swatch-1.jpg'], productIds: ['prod_6', 'prod_5', 'prod_21'], color: '#5B4A6B', size: 'medium' },
+  { label: 'DESIGNS', href: '/bespoke', images: ['/image/bespoke-dress-2.png', '/image/bespoke-ankara-1.png', '/image/bespoke-outfit-3.webp'], productIds: ['prod_16', 'prod_10', 'prod_12'], color: '#2E4A62', size: 'large' },
+  { label: "WHAT'S NEW", href: '/discover/clothing', images: ['/image/bespoke-outfit-4.webp', '/image/pattern-bespoke-1.png', '/image/bespoke-ankara-2.png'], productIds: ['prod_27', 'prod_20', 'prod_19'], color: '#B04A4A', size: 'medium' },
+  { label: 'DISCOUNTS', href: '/discover/clothing', images: ['/image/bespoke-agbada-lime.webp', '/image/bag.webp', '/image/bespoke-kaftan-milk-1.png'], productIds: ['prod_2', 'prod_8', 'prod_4'], color: '#C48B3F', size: 'medium' },
+  { label: 'TOP RATED', href: '/discover/clothing', images: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-milk-1.png', '/image/bespoke-dress-1.png'], productIds: ['prod_1', 'prod_4', 'prod_9'], color: '#3A7A6A', size: 'large' },
+  { label: 'TRENDING', href: '/products?sort=relevance', images: ['/image/bespoke-outfit-1.webp', '/image/bespoke-dress-2.png', '/image/ankara.png'], color: '#6B5B4A', size: 'medium' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -192,36 +229,3 @@ export function buildBreadcrumbs(slugParts: string[]): { label: string; href: st
   return crumbs;
 }
 
-/** Get filtered products for a taxonomy node */
-export function getProductsForNode(node: TaxonomyNode | null): Product[] {
-  if (!node?.productFilter) return productCatalog;
-
-  const f = node.productFilter;
-  return productCatalog.filter((p) => {
-    if (f.kind && !f.kind.includes(p.kind)) return false;
-    if (f.collection && p.collection !== f.collection) return false;
-    if (f.subcategory && p.subcategory !== f.subcategory) return false;
-    if (f.tags && f.tags.length > 0 && !f.tags.includes(p.tag)) return false;
-    if (f.brands && f.brands.length > 0 && !f.brands.includes(p.brand)) return false;
-    return true;
-  });
-}
-
-/** Get products sorted by rating (top rated) */
-export function getTopRated(products: Product[], limit = 8): Product[] {
-  return [...products].sort((a, b) => b.rating - a.rating).slice(0, limit);
-}
-
-/** Get products sorted by reviews (trending) */
-export function getTrending(products: Product[], limit = 8): Product[] {
-  return [...products].sort((a, b) => b.reviews - a.reviews).slice(0, limit);
-}
-
-/** Get newest products (ones with NEW tag, or fallback to shuffled) */
-export function getWhatsNew(products: Product[], limit = 8): Product[] {
-  const newOnes = products.filter((p) => p.tag === 'NEW');
-  if (newOnes.length >= limit) return newOnes.slice(0, limit);
-  // Fill with remaining products shuffled
-  const remaining = products.filter((p) => p.tag !== 'NEW');
-  return [...newOnes, ...remaining].slice(0, limit);
-}

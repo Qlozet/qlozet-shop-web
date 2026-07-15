@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, ShoppingBag, Trash2, AlertTriangle } from 'lucide-react';
+import { Clock, ShoppingBag, Trash2, AlertTriangle, Scissors } from 'lucide-react';
 import { cardStyle, sectionTitle } from '../styles';
 
 // ─── Demo reserved fabric data ─────────────────────────────────
@@ -92,10 +92,25 @@ export default function ReservedFabric() {
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
+      {/* ── Section Header Card ───────────────────────────────── */}
+      <div style={{ ...cardStyle, padding: '28px' }}>
+        <Scissors size={28} color="#462814" strokeWidth={1.5} />
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: 800,
+          color: '#1A1A1A',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginTop: '12px',
+          fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+        }}>
+          Reserved Fabric
+        </h3>
+      </div>
+
       {/* Summary Card */}
       <div style={cardStyle}>
-        <h3 style={sectionTitle}>Reserved Fabric</h3>
-        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '0 20px 12px' }}>
+        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '20px 20px 12px' }}>
           Fabrics you&apos;ve placed on hold. Reservations last 7 days before expiring.
         </p>
 

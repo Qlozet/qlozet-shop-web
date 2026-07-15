@@ -275,7 +275,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
             onClick={handleConfirm}
             disabled={!eventName.trim() || !deadline || yards < 6}
             className="flex-1 transition-colors hover:opacity-90 disabled:opacity-40"
-            style={{ padding: '14px', borderRadius: '14px', background: '#065F46', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+            style={{ padding: '14px', borderRadius: '14px', background: '#064E3B', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
           >
             Reserve · ₦{reservationFee.toLocaleString()}
           </button>

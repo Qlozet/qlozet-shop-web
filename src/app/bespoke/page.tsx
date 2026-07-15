@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useRef, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
 import {
   Plus,
   Search,
@@ -24,7 +26,13 @@ import {
   Star,
   ChevronRight,
   TrendingUp,
+  Loader2,
+  ImagePlus,
 } from 'lucide-react';
+import { TokenIcon } from '@/components/icons/TokenIcon';
+import { api } from '@/lib/api';
+import { useUpload } from '@/hooks/useUpload';
+import { pollJobStatus } from '@/lib/pollJobStatus';
 
 // ═══════════════════════════════════════════════════════════════
 //  DATA
@@ -130,7 +138,9 @@ const QUOTE_STATUS_MAP = {
 // ═══════════════════════════════════════════════════════════════
 //  NEW DESIGN MODAL FLOW
 // ═══════════════════════════════════════════════════════════════
-type ModalStep = null | 'start' | 'name' | 'category';
+type ModalStep = null | 'start' | 'name' | 'category' | 'upload';
+
+const REFERENCE_ANALYSIS_COST = 15; // tokens
 
 function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: ModalStep) => void }) {
   const router = useRouter();
@@ -138,208 +148,234 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
   const [styleName, setStyleName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Dresses');
   const [gender, setGender] = useState<'men' | 'women'>('women');
+  const refFileInput = useRef<HTMLInputElement | null>(null);
+  const { uploadOutfitImages } = useUpload();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
-  if (!step) return null;
+  if (!step || typeof document === 'undefined') return null;
 
   const GARMENT_TYPES = gender === 'women'
     ? ['Tops', 'Dresses', 'Skirts', 'Pants', 'Jumpsuits', 'Sets']
     : ['Kaftan', 'Agbada', 'Pants', 'Shirts', 'Suits', 'Sets'];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-      <div
-        className="relative w-full animate-fade-in"
-        style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: '#FFFFFF', boxShadow: '0 24px 80px rgba(0,0,0,0.15)', overflow: 'hidden' }}
-      >
-        {/* Close */}
-        <button
-          onClick={() => setStep(null)}
-          className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
-          style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer' }}
-        >
-          <X size={14} color="#666" />
-        </button>
-
-        <div style={{ padding: '32px 28px' }}>
-          {/* ─── Step 1: Start Journey ─── */}
-          {step === 'start' && (
-            <div className="flex flex-col" style={{ gap: '24px' }}>
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                  Start Your Bespoke<br />Journey
-                </h3>
-                <p style={{ fontSize: '13px', color: '#888', marginTop: '8px', lineHeight: 1.6 }}>
-                  Use pictures of an existing product or design from scratch
-                </p>
-              </div>
-
-              {/* Options */}
-              <div className="flex flex-col" style={{ gap: '10px' }}>
-                <button
-                  onClick={() => setDesignMethod('reference')}
-                  className="w-full flex items-center justify-between transition-all"
-                  style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'reference' ? '#F9F6F1' : '#F9F9F9', border: designMethod === 'reference' ? '1.5px solid #2C1810' : '1.5px solid transparent', cursor: 'pointer' }}
-                >
-                  <div className="flex items-center" style={{ gap: '14px' }}>
-                    <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(139,90,43,0.08)' }}>
-                      <Upload size={16} color="#8B5A2B" />
-                    </div>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upload Reference</span>
-                  </div>
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'reference' ? '5px solid #2C1810' : '2px solid #CCC' }} />
-                </button>
-
-                <button
-                  onClick={() => setDesignMethod('scratch')}
-                  className="w-full flex items-center justify-between transition-all"
-                  style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'scratch' ? '#F9F6F1' : '#F9F9F9', border: designMethod === 'scratch' ? '1.5px solid #2C1810' : '1.5px solid transparent', cursor: 'pointer' }}
-                >
-                  <div className="flex items-center" style={{ gap: '14px' }}>
-                    <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
-                      <Sparkles size={16} color="#D4AF37" />
-                    </div>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Start from Scratch</span>
-                  </div>
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'scratch' ? '5px solid #2C1810' : '2px solid #CCC' }} />
-                </button>
-              </div>
-
-              {/* Fabric usage info */}
-              <div style={{ padding: '16px 18px', borderRadius: '14px', background: '#F9F7F4' }}>
-                <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
-                  <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
-                    <Scissors size={12} color="#EA580C" />
-                  </div>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
+  // ─── Shared step content (used in both mobile + desktop) ───
+  const stepContent = (
+    <>
+      {step === 'start' && (
+        <div className="flex flex-col" style={{ gap: '24px' }}>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+              Start Your Bespoke<br />Journey
+            </h3>
+            <p style={{ fontSize: '13px', color: '#888', marginTop: '8px', lineHeight: 1.6 }}>
+              Use pictures of an existing product or design from scratch
+            </p>
+          </div>
+          <div className="flex flex-col" style={{ gap: '10px' }}>
+            <button
+              onClick={() => setDesignMethod('reference')}
+              className="w-full flex items-center justify-between transition-all"
+              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'reference' ? '#F9F6F1' : '#F9F9F9', border: designMethod === 'reference' ? '1.5px solid #2C1810' : '1.5px solid transparent', cursor: 'pointer' }}
+            >
+              <div className="flex items-center" style={{ gap: '14px' }}>
+                <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(139,90,43,0.08)' }}>
+                  <Upload size={16} color="#8B5A2B" />
                 </div>
-                <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6, marginBottom: '8px' }}>
-                  We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
-                </p>
-                <button className="flex items-center" style={{ gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>Learn more</span>
-                  <ArrowRight size={12} color="#1A1A1A" />
-                </button>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upload Reference</span>
+                <span className="inline-flex items-center" style={{ fontSize: '9px', fontWeight: 700, color: '#D4AF37', background: 'rgba(212,175,55,0.12)', padding: '2px 8px', borderRadius: '6px', marginLeft: '6px', gap: '3px' }}><TokenIcon size={10} color="#D4AF37" /> {REFERENCE_ANALYSIS_COST}</span>
               </div>
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'reference' ? '5px solid #2C1810' : '2px solid #CCC' }} />
+            </button>
+            <button
+              onClick={() => setDesignMethod('scratch')}
+              className="w-full flex items-center justify-between transition-all"
+              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'scratch' ? '#F9F6F1' : '#F9F9F9', border: designMethod === 'scratch' ? '1.5px solid #2C1810' : '1.5px solid transparent', cursor: 'pointer' }}
+            >
+              <div className="flex items-center" style={{ gap: '14px' }}>
+                <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
+                  <Sparkles size={16} color="#D4AF37" />
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Start from Scratch</span>
+              </div>
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'scratch' ? '5px solid #2C1810' : '2px solid #CCC' }} />
+            </button>
+          </div>
+          <div style={{ padding: '16px 18px', borderRadius: '14px', background: '#F9F7F4' }}>
+            <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
+              <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
+                <Scissors size={12} color="#EA580C" />
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
+            </div>
+            <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6, marginBottom: '8px' }}>
+              We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
+            </p>
+            <button className="flex items-center" style={{ gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>Learn more</span>
+              <ArrowRight size={12} color="#1A1A1A" />
+            </button>
+          </div>
+          <button
+            onClick={() => setStep('name')}
+            className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+          >
+            Continue
+          </button>
+        </div>
+      )}
 
-              <button
-                onClick={() => setStep('name')}
-                className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
-              >
-                Continue
+      {step === 'name' && (
+        <div className="flex flex-col" style={{ gap: '24px' }}>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+              Name Your<br />Masterpiece
+            </h3>
+          </div>
+          <div>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+              Style Name
+            </label>
+            <input
+              type="text"
+              value={styleName}
+              onChange={(e) => setStyleName(e.target.value)}
+              placeholder="e.g. My Wedding Agbada"
+              style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', borderBottom: '1.5px solid #E5E5E5', outline: 'none', padding: '10px 0' }}
+            />
+          </div>
+          <div style={{ padding: '16px 18px', borderRadius: '14px', background: '#F9F7F4' }}>
+            <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
+              <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
+                <Scissors size={12} color="#EA580C" />
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
+            </div>
+            <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>
+              We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
+            </p>
+          </div>
+          <button
+            onClick={() => setStep('category')}
+            className="transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer', maxWidth: '320px', margin: '0 auto', width: '100%' }}
+          >
+            Continue
+          </button>
+        </div>
+      )}
+
+      {step === 'category' && (
+        <div className="flex flex-col" style={{ gap: '24px' }}>
+          <div className="text-center">
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+              Create Your Masterpiece
+            </h3>
+            <div className="flex items-center justify-center" style={{ gap: '16px', marginTop: '12px' }}>
+              <button onClick={() => setGender('men')} style={{ fontSize: '12px', fontWeight: gender === 'men' ? 800 : 500, color: gender === 'men' ? '#1A1A1A' : '#999', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'men' ? '2px solid #1A1A1A' : '2px solid transparent', padding: '4px 0' }}>
+                Men
+              </button>
+              <button onClick={() => setGender('women')} style={{ fontSize: '12px', fontWeight: gender === 'women' ? 800 : 500, color: gender === 'women' ? '#1A1A1A' : '#999', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'women' ? '2px solid #1A1A1A' : '2px solid transparent', padding: '4px 0' }}>
+                Women
               </button>
             </div>
-          )}
-
-          {/* ─── Step 2: Name Masterpiece ─── */}
-          {step === 'name' && (
-            <div className="flex flex-col" style={{ gap: '24px' }}>
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                  Name Your<br />Masterpiece
-                </h3>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-                  Style Name
-                </label>
-                <input
-                  type="text"
-                  value={styleName}
-                  onChange={(e) => setStyleName(e.target.value)}
-                  placeholder="e.g. My Wedding Agbada"
-                  style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', borderBottom: '1.5px solid #E5E5E5', outline: 'none', padding: '10px 0' }}
-                />
-              </div>
-
-              {/* Fabric usage info */}
-              <div style={{ padding: '16px 18px', borderRadius: '14px', background: '#F9F7F4' }}>
-                <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
-                  <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
-                    <Scissors size={12} color="#EA580C" />
-                  </div>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>
-                  We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
-                </p>
-              </div>
-
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {GARMENT_TYPES.map((type) => (
               <button
-                onClick={() => setStep('category')}
-                className="transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer', maxWidth: '320px', margin: '0 auto', width: '100%' }}
-              >
-                Continue
-              </button>
-            </div>
-          )}
-
-          {/* ─── Step 3: Category / Garment Type ─── */}
-          {step === 'category' && (
-            <div className="flex flex-col" style={{ gap: '24px' }}>
-              <div className="text-center">
-                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                  Create Your Masterpiece
-                </h3>
-                {/* Gender toggle */}
-                <div className="flex items-center justify-center" style={{ gap: '16px', marginTop: '12px' }}>
-                  <button onClick={() => setGender('men')} style={{ fontSize: '12px', fontWeight: gender === 'men' ? 800 : 500, color: gender === 'men' ? '#1A1A1A' : '#999', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'men' ? '2px solid #1A1A1A' : '2px solid transparent', padding: '4px 0' }}>
-                    Men
-                  </button>
-                  <button onClick={() => setGender('women')} style={{ fontSize: '12px', fontWeight: gender === 'women' ? 800 : 500, color: gender === 'women' ? '#1A1A1A' : '#999', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'women' ? '2px solid #1A1A1A' : '2px solid transparent', padding: '4px 0' }}>
-                    Women
-                  </button>
-                </div>
-              </div>
-
-              {/* Garment grid */}
-              <div className="grid grid-cols-3 gap-3">
-                {GARMENT_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedCategory(type)}
-                    className="flex flex-col items-center transition-all"
-                    style={{
-                      padding: '16px 8px',
-                      borderRadius: '16px',
-                      background: selectedCategory === type ? 'rgba(107,114,128,0.12)' : '#F9F9F9',
-                      border: selectedCategory === type ? '2px solid #1A1A1A' : '2px solid transparent',
-                      cursor: 'pointer',
-                      gap: '8px',
-                    }}
-                  >
-                    <Scissors size={24} color={selectedCategory === type ? '#1A1A1A' : '#999'} />
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: selectedCategory === type ? '#1A1A1A' : '#666', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{type}</span>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  setStep(null);
-                  const name = encodeURIComponent(styleName || 'Untitled Design');
-                  router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}`);
+                key={type}
+                onClick={() => setSelectedCategory(type)}
+                className="flex flex-col items-center transition-all"
+                style={{
+                  padding: '16px 8px', borderRadius: '16px',
+                  background: selectedCategory === type ? 'rgba(107,114,128,0.12)' : '#F9F9F9',
+                  border: selectedCategory === type ? '2px solid #1A1A1A' : '2px solid transparent',
+                  cursor: 'pointer', gap: '8px',
                 }}
-                className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
               >
-                Get Started
+                <Scissors size={24} color={selectedCategory === type ? '#1A1A1A' : '#999'} />
+                <span style={{ fontSize: '10px', fontWeight: 700, color: selectedCategory === type ? '#1A1A1A' : '#666', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{type}</span>
               </button>
-            </div>
-          )}
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              setStep(null);
+              const name = encodeURIComponent(styleName || 'Untitled Design');
+              if (designMethod === 'reference') {
+                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&method=reference`);
+              } else {
+                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}`);
+              }
+            }}
+            className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+          >
+            Get Started
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  return createPortal(
+    <>
+      {/* ═══ MOBILE: Bottom Sheet ═══ */}
+      <div className="lg:hidden">
+        <div
+          className="fixed inset-0 z-[100] bg-black/40 animate-fade-in"
+          onClick={() => setStep(null)}
+        />
+        <div
+          className="fixed left-3 right-3 bottom-3 z-[101] bg-white rounded-[24px] flex flex-col"
+          style={{ maxHeight: '85vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)' }}
+        >
+          <div className="flex justify-center pt-3 pb-1">
+            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+          </div>
+          <div className="flex-1 overflow-y-auto hide-scrollbar relative" style={{ padding: '20px 24px 24px' }}>
+            <button
+              onClick={() => setStep(null)}
+              className="absolute top-0 right-0 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
+              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer' }}
+            >
+              <X size={14} color="#666" />
+            </button>
+            {stepContent}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ═══ DESKTOP: Centered Modal ═══ */}
+      <div className="hidden lg:flex fixed inset-0 z-[100] items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+        <div
+          className="relative w-full animate-fade-in"
+          style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: '#FFFFFF', boxShadow: '0 24px 80px rgba(0,0,0,0.15)', overflow: 'hidden' }}
+        >
+          <button
+            onClick={() => setStep(null)}
+            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
+            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer' }}
+          >
+            <X size={14} color="#666" />
+          </button>
+          <div style={{ padding: '32px 28px' }}>
+            {stepContent}
+          </div>
+        </div>
+      </div>
+    </>,
+    document.body
   );
 }
-
 // ═══════════════════════════════════════════════════════════════
 //  MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
 function BespokeContent() {
-  const { wishlist, toggleWishlist } = useApp();
+  const { wishlist, toggleWishlist, user } = useApp();
+  const router = useRouter();
+  const { designs: backendDesigns, isLoading: designsLoading, cancelDesign } = useBespokeDesigns();
 
   // Page tabs
   const [activeTab, setActiveTab] = useState<'designs' | 'templates' | 'community' | 'quotes'>('designs');
@@ -347,8 +383,33 @@ function BespokeContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalStep, setModalStep] = useState<ModalStep>(null);
 
+  // Map backend designs to display format
+  const STATUS_MAP: Record<string, DesignStatus> = {
+    draft: 'Draft',
+    requesting_quotes: 'Awaiting Price',
+    quoting: 'Awaiting Price',
+    quoted: 'Price Ready!',
+    accepted: 'In Progress...',
+    in_progress: 'In Progress...',
+    in_production: 'In Progress...',
+    completed: 'Outfit Ready!',
+    cancelled: 'Draft',
+  };
+
+  const mappedDesigns: typeof DEMO_DESIGNS = backendDesigns.map((d) => ({
+    id: d._id,
+    image: d.design_images?.[0] || '/image/bespoke-agbada-green.webp',
+    name: d.name,
+    status: STATUS_MAP[d.status] || 'Draft',
+    date: new Date(d.createdAt || d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    category: d.category || 'Design',
+  }));
+
+  // Use backend designs only — no dummy fallback
+  const displayDesigns = mappedDesigns;
+
   // Filter designs
-  const filteredDesigns = DEMO_DESIGNS.filter((d) => {
+  const filteredDesigns = displayDesigns.filter((d) => {
     const matchCat = activeCategory === 'All' || d.category === activeCategory;
     const matchSearch = !searchQuery || d.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchSearch;
@@ -394,9 +455,26 @@ function BespokeContent() {
 
         {/* New Design button */}
         <button
-          onClick={() => setModalStep('start')}
+          onClick={() => {
+            if (!user) return;
+            setModalStep('start');
+          }}
+          disabled={!user}
           className="hidden sm:flex items-center transition-all hover:opacity-90 active:scale-[0.98] sm:w-auto justify-center sm:justify-start"
-          style={{ padding: '10px 20px', borderRadius: '10px', background: '#2C1810', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer', gap: '6px' }}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            background: '#2C1810',
+            color: '#FFF',
+            fontSize: '11px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            border: 'none',
+            cursor: !user ? 'not-allowed' : 'pointer',
+            gap: '6px',
+            opacity: !user ? 0.4 : 1,
+          }}
         >
           <Plus size={14} />
           New Design
@@ -406,108 +484,228 @@ function BespokeContent() {
       {/* ═══ DESIGNS TAB ═══ */}
       {activeTab === 'designs' && (
         <div className="flex flex-col animate-fade-in" style={{ gap: '24px' }}>
-          {/* Search + filter */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
-            <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
-              <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: '#F5F5F5', gap: '8px', maxWidth: '300px' }}>
-                <Search size={14} color="#999" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search bespoke"
-                  className="flex-1 bg-transparent border-none outline-none"
-                  style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A', background: 'transparent', border: 'none', outline: 'none' }}
-                />
-              </div>
-
-              {/* Mobile New Design button */}
-              <button
-                onClick={() => setModalStep('start')}
-                className="flex sm:hidden items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  background: '#2C1810',
-                  color: '#FFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
+          {!user ? (
+            <div className="flex flex-col items-center justify-center text-center" style={{ padding: '60px 24px', gap: '20px' }}>
+              <div
+                className="flex items-center justify-center"
+                style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
               >
-                <Plus size={22} />
-              </button>
-            </div>
-
-            {/* Category chips */}
-            <div className="flex items-center overflow-x-auto no-scrollbar w-full" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className="transition-all"
+                <AlertCircle size={32} color="#8B5A2B" strokeWidth={1.5} />
+              </div>
+              <div className="flex flex-col" style={{ gap: '8px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Sign In Required
+                </h3>
+                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+                  You must sign in first before being able to view, use, or create custom designs.
+                  However, you can browse and open templates in the templates tab.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center" style={{ gap: '12px' }}>
+                <Link
+                  href="/auth/login"
+                  className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
                   style={{
-                    height: '36px',
-                    padding: '0 16px',
+                    padding: '14px 32px',
                     borderRadius: '100px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: activeCategory === cat ? '#FFFFFF' : '#1A1A1A',
+                    background: '#2C1810',
+                    color: '#FFF',
+                    fontSize: '12px',
+                    fontWeight: 800,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    background: activeCategory === cat ? '#1A1A1A' : '#F4F4F4',
+                    letterSpacing: '0.06em',
                     border: 'none',
                     cursor: 'pointer',
-                    flexShrink: 0,
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
                   }}
                 >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Designs Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
-            {filteredDesigns.map((design) => {
-              const statusStyle = STATUS_COLORS[design.status];
-              return (
-                <Link href={`/bespoke/studio?name=${encodeURIComponent(design.name)}&type=${encodeURIComponent(design.category)}`} key={design.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
-                  <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
-                    <Image src={design.image} alt={design.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
-                    {/* Status badge */}
-                    <div
-                      className="absolute"
-                      style={{ top: '10px', left: '10px', padding: '4px 10px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, background: statusStyle.bg, color: statusStyle.text }}
-                    >
-                      {design.status}
-                    </div>
-                    {/* Action buttons */}
-                    <div className="absolute bottom-3 right-3 flex flex-col" style={{ gap: '6px' }}>
-                      <button
-                        className="flex items-center justify-center transition-all hover:scale-110"
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
-                      >
-                        <Eye size={16} color="#FFF" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(design.id); }}
-                        className="flex items-center justify-center transition-all hover:scale-110"
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
-                      >
-                        <Heart size={16} color="#FFF" fill={wishlist.includes(design.id) ? '#FFF' : 'none'} />
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', marginBottom: '2px' }}>{design.name}</p>
-                    <p style={{ fontSize: '11px', color: '#999' }}>{design.date}</p>
-                  </div>
+                  Sign In
                 </Link>
-              );
-            })}
-          </div>
+                <button
+                  onClick={() => setActiveTab('templates')}
+                  className="flex items-center transition-all hover:bg-gray-100 active:scale-[0.98]"
+                  style={{
+                    padding: '14px 32px',
+                    borderRadius: '100px',
+                    background: 'transparent',
+                    color: '#2C1810',
+                    border: '1.5px solid #2C1810',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Browse Templates
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Search + filter */}
+              <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
+                <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
+                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: '#F5F5F5', gap: '8px', maxWidth: '300px' }}>
+                    <Search size={14} color="#999" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search bespoke"
+                      className="flex-1 bg-transparent border-none outline-none"
+                      style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A', background: 'transparent', border: 'none', outline: 'none' }}
+                    />
+                  </div>
+
+                  {/* Mobile New Design button */}
+                  <button
+                    onClick={() => {
+                      if (!user) {
+                        router.push('/auth/login');
+                      } else {
+                        setModalStep('start');
+                      }
+                    }}
+                    className="flex sm:hidden items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: '#2C1810',
+                      color: '#FFF',
+                      border: 'none',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Plus size={22} />
+                  </button>
+                </div>
+
+                {/* Category chips */}
+                <div className="flex items-center overflow-x-auto no-scrollbar w-full" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className="transition-all"
+                      style={{
+                        height: '36px',
+                        padding: '0 16px',
+                        borderRadius: '100px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        color: activeCategory === cat ? '#FFFFFF' : '#1A1A1A',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        background: activeCategory === cat ? '#1A1A1A' : '#F4F4F4',
+                        border: 'none',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Loading Skeleton */}
+              {designsLoading ? (
+                <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex flex-col animate-pulse" style={{ gap: '8px' }}>
+                      <div style={{ aspectRatio: '214/264', borderRadius: '20px', background: '#F0EDEB' }} />
+                      <div style={{ height: '12px', width: '70%', borderRadius: '6px', background: '#F0EDEB' }} />
+                      <div style={{ height: '10px', width: '40%', borderRadius: '6px', background: '#F5F3F1' }} />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredDesigns.length === 0 ? (
+                /* Empty State */
+                <div className="flex flex-col items-center justify-center text-center" style={{ padding: '60px 24px', gap: '20px' }}>
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(44,24,16,0.06), rgba(44,24,16,0.02))' }}
+                  >
+                    <Scissors size={32} color="#8B5A2B" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex flex-col" style={{ gap: '8px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      No designs yet
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '320px' }}>
+                      Start creating your first custom outfit. Choose your style, fabric, and let AI generate your perfect design.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setModalStep('start')}
+                    className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+                    style={{
+                      padding: '14px 32px',
+                      borderRadius: '100px',
+                      background: '#2C1810',
+                      color: '#FFF',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      border: 'none',
+                      cursor: 'pointer',
+                      gap: '8px',
+                      boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
+                    }}
+                  >
+                    <Plus size={16} />
+                    Start Your First Design
+                  </button>
+                </div>
+              ) : (
+                /* Designs Grid */
+                <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
+                  {filteredDesigns.map((design) => {
+                    const statusStyle = STATUS_COLORS[design.status];
+                    return (
+                      <Link href={`/bespoke/studio?name=${encodeURIComponent(design.name)}&type=${encodeURIComponent(design.category)}&designId=${design.id}`} key={design.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
+                        <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
+                          <Image src={design.image} alt={design.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
+                          {/* Status badge */}
+                          <div
+                            className="absolute"
+                            style={{ top: '10px', left: '10px', padding: '4px 10px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, background: statusStyle.bg, color: statusStyle.text }}
+                          >
+                            {design.status}
+                          </div>
+                          {/* Action buttons */}
+                          <div className="absolute bottom-3 right-3 flex flex-col" style={{ gap: '6px' }}>
+                            <button
+                              className="flex items-center justify-center transition-all hover:scale-110"
+                              style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
+                            >
+                              <Eye size={16} color="#FFF" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(design.id); }}
+                              className="flex items-center justify-center transition-all hover:scale-110"
+                              style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
+                            >
+                              <Heart size={16} color="#FFF" fill={wishlist.includes(design.id) ? '#FFF' : 'none'} />
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <p style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', marginBottom: '2px' }}>{design.name}</p>
+                          <p style={{ fontSize: '11px', color: '#999' }}>{design.date}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -603,63 +801,106 @@ function BespokeContent() {
       {/* ═══ QUOTES TAB ═══ */}
       {activeTab === 'quotes' && (
         <div className="flex flex-col animate-fade-in" style={{ gap: '20px' }}>
-          {/* Quotes header */}
-          <div
-            className="flex items-center justify-between"
-            style={{ padding: '24px 20px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
-          >
-            <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Your Quotes
-              </h3>
-              <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
-                {DEMO_QUOTES.length} quote{DEMO_QUOTES.length !== 1 ? 's' : ''} from vendors
-              </p>
+          {!user ? (
+            <div className="flex flex-col items-center justify-center text-center" style={{ padding: '60px 24px', gap: '20px' }}>
+              <div
+                className="flex items-center justify-center"
+                style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
+              >
+                <AlertCircle size={32} color="#8B5A2B" strokeWidth={1.5} />
+              </div>
+              <div className="flex flex-col" style={{ gap: '8px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Sign In Required
+                </h3>
+                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+                  You must sign in first before being able to view or manage your quotes.
+                </p>
+              </div>
+              <Link
+                href="/auth/login"
+                className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{
+                  padding: '14px 32px',
+                  borderRadius: '100px',
+                  background: '#2C1810',
+                  color: '#FFF',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
+                  width: 'fit-content',
+                  margin: '0 auto',
+                }}
+              >
+                Sign In
+              </Link>
             </div>
-            <div className="flex items-center justify-center" style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
-              <Quote size={18} color="#D4AF37" />
-            </div>
-          </div>
-
-          {/* Quote list */}
-          <div className="flex flex-col" style={{ gap: '0' }}>
-            {DEMO_QUOTES.map((q, idx) => {
-              const status = QUOTE_STATUS_MAP[q.status];
-              const isFirst = idx === 0;
-              const isLast = idx === DEMO_QUOTES.length - 1;
-              return (
-                <div
-                  key={q.id}
-                  className="flex items-center justify-between transition-all hover:bg-gray-50"
-                  style={{
-                    padding: '18px 20px',
-                    borderRadius: isFirst ? '16px 16px 0 0' : isLast ? '0 0 16px 16px' : '0',
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    borderTop: isFirst ? undefined : 'none',
-                    background: '#FFFFFF',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>{q.vendor}</p>
-                    <div className="flex items-center" style={{ gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#888' }}>{q.items} item{q.items > 1 ? 's' : ''}</span>
-                      <span style={{ fontSize: '11px', color: '#888' }}>·</span>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#1A1A1A' }}>{q.total}</span>
-                      <span style={{ fontSize: '11px', color: '#888' }}>·</span>
-                      <span style={{ fontSize: '11px', color: '#888' }}>{q.date}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center" style={{ gap: '10px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: status.bg, color: status.text, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {status.label}
-                    </span>
-                    <ChevronRight size={16} color="#CCC" />
-                  </div>
+          ) : (
+            <>
+              {/* Quotes header */}
+              <div
+                className="flex items-center justify-between"
+                style={{ padding: '24px 20px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
+              >
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Your Quotes
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    {DEMO_QUOTES.length} quote{DEMO_QUOTES.length !== 1 ? 's' : ''} from vendors
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex items-center justify-center" style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
+                  <Quote size={18} color="#D4AF37" />
+                </div>
+              </div>
+
+              {/* Quote list */}
+              <div className="flex flex-col" style={{ gap: '0' }}>
+                {DEMO_QUOTES.map((q, idx) => {
+                  const status = QUOTE_STATUS_MAP[q.status];
+                  const isFirst = idx === 0;
+                  const isLast = idx === DEMO_QUOTES.length - 1;
+                  return (
+                    <div
+                      key={q.id}
+                      className="flex items-center justify-between transition-all hover:bg-gray-50"
+                      style={{
+                        padding: '18px 20px',
+                        borderRadius: isFirst ? '16px 16px 0 0' : isLast ? '0 0 16px 16px' : '0',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        borderTop: isFirst ? undefined : 'none',
+                        background: '#FFFFFF',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>{q.vendor}</p>
+                        <div className="flex items-center" style={{ gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#888' }}>{q.items} item{q.items > 1 ? 's' : ''}</span>
+                          <span style={{ fontSize: '11px', color: '#888' }}>·</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#1A1A1A' }}>{q.total}</span>
+                          <span style={{ fontSize: '11px', color: '#888' }}>·</span>
+                          <span style={{ fontSize: '11px', color: '#888' }}>{q.date}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center" style={{ gap: '10px' }}>
+                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: status.bg, color: status.text, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          {status.label}
+                        </span>
+                        <ChevronRight size={16} color="#CCC" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 

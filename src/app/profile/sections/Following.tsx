@@ -1,26 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserMinus, Check } from 'lucide-react';
-import { vendorCatalog } from '@/data/vendors';
+import { UserMinus, Check, Heart } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
+import { useVendors } from '@/hooks/useVendors';
+import type { ApiBusinessPublic } from '@/lib/api-types';
 import { cardStyle, sectionTitle } from '../styles';
 
-// Demo: user follows some vendors
-const FOLLOWED_VENDOR_IDS = ['vendor_1', 'vendor_2', 'vendor_3', 'vendor_4', 'vendor_5'];
-
 export default function Following() {
-  const [followedIds, setFollowedIds] = useState<string[]>(FOLLOWED_VENDOR_IDS);
+  const { followedVendors: followedIds, toggleFollowVendor } = useApp();
+  const { vendors: allVendors, loading } = useVendors({ limit: 20 });
 
-  const followedVendors = vendorCatalog.filter((v) => followedIds.includes(v.id));
-  const suggestedVendors = vendorCatalog.filter((v) => !followedIds.includes(v.id)).slice(0, 4);
-
-  const handleToggle = (vendorId: string) => {
-    setFollowedIds((prev) =>
-      prev.includes(vendorId) ? prev.filter((id) => id !== vendorId) : [...prev, vendorId]
-    );
-  };
+  const followedVendors = allVendors.filter((v) => followedIds.includes(v._id));
+  const suggestedVendors = allVendors.filter((v) => !followedIds.includes(v._id)).slice(0, 4);
 
   // ─── Reusable Vendor Row ──────────────────────────────────────
   const VendorRow = ({
@@ -28,121 +22,142 @@ export default function Following() {
     isFollowed,
     showBorder = true,
   }: {
-    vendor: (typeof vendorCatalog)[0];
+    vendor: ApiBusinessPublic;
     isFollowed: boolean;
     showBorder?: boolean;
-  }) => (
-    <div
-      className="flex items-center justify-between transition-colors hover:bg-gray-50/50"
-      style={{
-        padding: '14px 20px',
-        borderBottom: showBorder ? '1px solid #F5F5F5' : 'none',
-      }}
-    >
-      {/* Left: Logo + Name + Promo */}
-      <Link
-        href={`/vendor/${vendor.id}`}
-        className="flex items-center flex-1 min-w-0"
-        style={{ gap: '14px', textDecoration: 'none' }}
+  }) => {
+    const vendorName = vendor.business_name;
+    const vendorLogo = vendor.business_logo_url;
+    const logoInitials = vendorName.slice(0, 2).toUpperCase();
+    const themeColor = vendor.theme_color || '#E0E0E0';
+
+    return (
+      <div
+        className="flex items-center justify-between transition-colors hover:bg-gray-50/50"
+        style={{
+          padding: '14px 20px',
+          borderBottom: showBorder ? '1px solid #F5F5F5' : 'none',
+        }}
       >
-        {/* Circular logo with ring */}
-        <div
-          className="flex-shrink-0 overflow-hidden flex items-center justify-center"
-          style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '50%',
-            background: '#FFFFFF',
-            border: `2px solid ${vendor.themeColor || '#E0E0E0'}`,
-          }}
+        {/* Left: Logo + Name */}
+        <Link
+          href={`/vendor/${vendor._id}`}
+          className="flex items-center flex-1 min-w-0"
+          style={{ gap: '14px', textDecoration: 'none' }}
         >
-          {vendor.logoStyle === 'image' && vendor.logoImage ? (
-            <Image
-              src={vendor.logoImage}
-              alt={vendor.name}
-              width={48}
-              height={48}
-              style={{ borderRadius: '50%', objectFit: 'cover' }}
-            />
-          ) : (
+          <div
+            className="flex-shrink-0 overflow-hidden flex items-center justify-center"
+            style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: `2px solid ${themeColor}`,
+            }}
+          >
+            {vendorLogo ? (
+              <Image
+                src={vendorLogo}
+                alt={vendorName}
+                width={48}
+                height={48}
+                quality={90}
+                style={{ borderRadius: '50%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  color: '#1A1A1A',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {logoInitials}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col min-w-0">
             <span
+              className="truncate"
               style={{
-                fontSize: '12px',
-                fontWeight: 800,
+                fontSize: '14px',
+                fontWeight: 700,
                 color: '#1A1A1A',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
+                fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
               }}
             >
-              {vendor.logoInitials}
+              {vendorName}
             </span>
-          )}
-        </div>
-
-        {/* Name + promo */}
-        <div className="flex flex-col min-w-0">
-          <span
-            className="truncate"
-            style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}
-          >
-            {vendor.name}
-          </span>
-          {vendor.promo ? (
-            <span style={{ fontSize: '12px', color: '#999', lineHeight: 1.4 }}>
-              <span style={{ color: '#D4800D', fontWeight: 600 }}>{vendor.promo.label}</span>{' '}
-              {vendor.promo.condition}
-            </span>
-          ) : (
             <span style={{ fontSize: '12px', color: '#BBB', fontWeight: 500 }}>
-              {vendor.followers.toLocaleString()} followers
+              {vendor.description 
+                ? vendor.description.replace(/<[^>]*>?/gm, '').slice(0, 40)
+                : `${vendor.total_ratings ?? 0} ratings`}
             </span>
-          )}
-        </div>
-      </Link>
+          </div>
+        </Link>
 
-      {/* Right: Follow/Following button */}
-      {isFollowed ? (
-        <button
-          onClick={() => handleToggle(vendor.id)}
-          className="flex items-center justify-center transition-all hover:opacity-80 active:scale-90 flex-shrink-0"
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            background: '#F0F0F0',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          <Check size={16} color="#1A1A1A" strokeWidth={2.5} />
-        </button>
-      ) : (
-        <button
-          onClick={() => handleToggle(vendor.id)}
-          className="flex items-center justify-center transition-all hover:opacity-90 active:scale-95 flex-shrink-0"
-          style={{
-            padding: '8px 20px',
-            borderRadius: '100px',
-            background: '#1A1A1A',
-            color: '#FFFFFF',
-            border: 'none',
-            fontSize: '12px',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          FOLLOW
-        </button>
-      )}
-    </div>
-  );
+        {/* Right: Follow/Following button */}
+        {isFollowed ? (
+          <button
+            onClick={() => toggleFollowVendor(vendor._id)}
+            className="flex items-center justify-center transition-all hover:opacity-80 active:scale-90 flex-shrink-0"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: '#F0F0F0',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <Check size={16} color="#1A1A1A" strokeWidth={2.5} />
+          </button>
+        ) : (
+          <button
+            onClick={() => toggleFollowVendor(vendor._id)}
+            className="flex items-center justify-center transition-all hover:opacity-90 active:scale-95 flex-shrink-0"
+            style={{
+              padding: '8px 20px',
+              borderRadius: '100px',
+              background: '#1A1A1A',
+              color: '#FFFFFF',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            FOLLOW
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
+      {/* ── Section Header Card ───────────────────────────────── */}
+      <div style={{ ...cardStyle, padding: '28px' }}>
+        <Heart size={28} color="#462814" strokeWidth={1.5} />
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: 800,
+          color: '#1A1A1A',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginTop: '12px',
+          fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+        }}>
+          Following
+        </h3>
+      </div>
+
       {/* ── Following List ─────────────────────────────────────── */}
       <div style={cardStyle}>
-        <h3 style={sectionTitle}>Following</h3>
-        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '0 20px 12px' }}>
+        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '20px 20px 12px' }}>
           Vendors and brands you follow.
         </p>
 
@@ -164,7 +179,7 @@ export default function Following() {
 
           {followedVendors.map((vendor, idx) => (
             <VendorRow
-              key={vendor.id}
+              key={vendor._id}
               vendor={vendor}
               isFollowed={true}
               showBorder={idx < followedVendors.length - 1}
@@ -181,9 +196,9 @@ export default function Following() {
           <div className="flex flex-col">
             {suggestedVendors.map((vendor, idx) => (
               <VendorRow
-                key={vendor.id}
+                key={vendor._id}
                 vendor={vendor}
-                isFollowed={followedIds.includes(vendor.id)}
+                isFollowed={followedIds.includes(vendor._id)}
                 showBorder={idx < suggestedVendors.length - 1}
               />
             ))}

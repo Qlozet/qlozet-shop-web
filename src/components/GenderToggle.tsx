@@ -26,7 +26,7 @@ export const GenderToggle: React.FC<GenderToggleProps> = ({ gender, onToggle }) 
           width: '32px',
           height: '32px',
           borderRadius: '50%',
-          background: gender === 'male' ? '#1A1A1A' : 'transparent',
+          background: gender === 'male' ? '#381F10' : 'transparent',
           border: 'none',
           cursor: 'pointer',
         }}
@@ -45,7 +45,7 @@ export const GenderToggle: React.FC<GenderToggleProps> = ({ gender, onToggle }) 
           width: '32px',
           height: '32px',
           borderRadius: '50%',
-          background: gender === 'female' ? '#1A1A1A' : 'transparent',
+          background: gender === 'female' ? '#381F10' : 'transparent',
           border: 'none',
           cursor: 'pointer',
         }}

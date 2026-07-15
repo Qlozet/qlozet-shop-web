@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
@@ -21,7 +21,8 @@ import {
   Scissors,
   Package,
   ChevronDown,
-  Wand2
+  Wand2,
+  LayoutGrid
 } from 'lucide-react';
 
 interface CustomerShellProps {
@@ -94,16 +95,34 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const isVendorPage = pathname.startsWith('/vendor');
   const isProductDetailPage = /^\/products\/[^/]+$/.test(pathname);
 
+  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  // Cart bounce animation on count change
+  const prevCartCount = useRef(cartCount);
+  const [cartBounce, setCartBounce] = useState(false);
+  useEffect(() => {
+    if (cartCount > prevCartCount.current) {
+      setCartBounce(true);
+      const t = setTimeout(() => setCartBounce(false), 400);
+      return () => clearTimeout(t);
+    }
+    prevCartCount.current = cartCount;
+  }, [cartCount]);
+
   if (isAuthPage) {
     return <div className="min-h-screen bg-[#F5F5F5] relative overflow-hidden">{children}</div>;
   }
 
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      if (isSearchPage) {
+        // On search page: dispatch event so the page can route to search or AI
+        window.dispatchEvent(new CustomEvent('shell-search', { detail: searchQuery.trim() }));
+        setSearchQuery('');
+      } else {
+        router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      }
       setIsSearchFocused(false);
       setMobileSearchOpen(false);
     }
@@ -118,7 +137,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   // Bottom tab items for mobile
   const mobileTabItems = [
     { href: '/', label: 'HOME', icon: Home, match: pathname === '/' },
-    { href: '/discover', label: 'DISCOVER', icon: Compass, match: pathname.startsWith('/discover') },
+    { href: '/discover', label: 'DISCOVER', icon: LayoutGrid, match: pathname.startsWith('/discover') },
     { href: '/bespoke', label: 'BESPOKE', icon: Scissors, match: pathname.startsWith('/bespoke') },
     { href: '/cart', label: 'CART', icon: ShoppingCart, match: pathname === '/cart' },
     { href: user ? '/profile' : '/auth/login', label: 'PROFILE', icon: User, match: pathname === '/profile' },
@@ -275,33 +294,48 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               <Link
                 key={tab.href + tab.label}
                 href={tab.href}
-                className="flex flex-col items-center justify-center relative"
-                style={{ gap: '4px', flex: 1 }}
+                className="flex items-center justify-center"
+                style={{ flex: 1, padding: '8px 0' }}
               >
-                <div className="relative">
-                  <IconComp
-                    size={20}
-                    strokeWidth={tab.match ? 0 : 1.8}
-                    fill={tab.match ? '#2C1810' : 'none'}
-                    color={tab.match ? '#2C1810' : '#AAAAAA'}
-                  />
-                  {tab.label === 'CART' && cartCount > 0 && (
-                    <span className="absolute -top-1 -right-2 bg-[#FF2E63] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                      {cartCount}
-                    </span>
+                <div className="relative flex items-center justify-center">
+                  {tab.label === 'CART' && cartCount > 0 ? (
+                    <div
+                      className="flex items-center justify-center relative"
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: '#2C1810',
+                        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transform: cartBounce ? 'scale(1.25)' : 'scale(1)',
+                      }}
+                    >
+                      <ShoppingCart size={18} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+                      <span
+                        className="absolute flex items-center justify-center font-bold"
+                        style={{
+                          top: '-4px', right: '-4px',
+                          width: '16px', height: '16px',
+                          borderRadius: '50%',
+                          background: '#FFFFFF',
+                          fontSize: '9px',
+                          color: '#2C1810',
+                          lineHeight: 1,
+                          border: '2px solid #2C1810',
+                        }}
+                      >
+                        {cartCount}
+                      </span>
+                    </div>
+                  ) : (
+                    <IconComp
+                      size={24}
+                      strokeWidth={tab.match ? 0 : 1.6}
+                      fill={tab.match ? '#2C1810' : 'none'}
+                      color={tab.match ? '#2C1810' : '#AAAAAA'}
+                    />
                   )}
                 </div>
-                <span
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: tab.match ? 800 : 600,
-                    color: tab.match ? '#2C1810' : '#AAAAAA',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {tab.label}
-                </span>
               </Link>
             );
           })}
@@ -335,14 +369,14 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               href="/discover" 
               className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/discover') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
-              <Compass size={22} fill={pathname.startsWith('/discover') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/discover') ? 0 : 2} />
+              <LayoutGrid size={22} fill={pathname.startsWith('/discover') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/discover') ? 0 : 2} />
             </Link>
 
             <Link 
               href="/bespoke" 
               className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/bespoke') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
             >
-              <ImageIcon size={22} fill={pathname.startsWith('/bespoke') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/bespoke') ? 0 : 2} />
+              <Scissors size={22} fill={pathname.startsWith('/bespoke') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/bespoke') ? 0 : 2} />
             </Link>
 
             <Link 
@@ -354,13 +388,42 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
 
             <Link 
               href="/cart" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all relative ${pathname === '/cart' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              className="flex items-center justify-center transition-all"
+              style={{ padding: '3px' }}
             >
-              <ShoppingCart size={22} fill={pathname === '/cart' ? 'currentColor' : 'none'} strokeWidth={pathname === '/cart' ? 0 : 2} />
-              {cartCount > 0 && (
-                <span className="absolute 0 top-1 right-1 bg-[#FF2E63] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
+              {cartCount > 0 ? (
+                <div
+                  className="flex items-center justify-center relative"
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    background: '#2C1810',
+                    transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    transform: cartBounce ? 'scale(1.25)' : 'scale(1)',
+                  }}
+                >
+                  <ShoppingCart size={20} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+                  <span
+                    className="absolute flex items-center justify-center font-bold"
+                    style={{
+                      top: '-3px', right: '-3px',
+                      width: '18px', height: '18px',
+                      borderRadius: '50%',
+                      background: '#FFFFFF',
+                      fontSize: '10px',
+                      color: '#2C1810',
+                      lineHeight: 1,
+                      border: '2px solid #2C1810',
+                    }}
+                  >
+                    {cartCount}
+                  </span>
+                </div>
+              ) : (
+                <div className="p-3">
+                  <ShoppingCart size={22} fill={pathname === '/cart' ? 'currentColor' : 'none'} strokeWidth={pathname === '/cart' ? 0 : 2} color={pathname === '/cart' ? '#2C1810' : '#9CA3AF'} />
+                </div>
               )}
             </Link>
           </nav>

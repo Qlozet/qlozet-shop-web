@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { X, ArrowLeft, Scissors, Pen, Sparkles } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { productCatalog } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
+import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
 import { OUTFIT_POOL } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
@@ -37,9 +38,11 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
   const { wishlist } = useApp();
   const [step, setStep] = useState<Step>('choose');
 
+  const { products: allProducts } = useProducts({ size: 20 });
+
   // Get CUSTOMIZABLE items from the user's wishlist
-  const customizableWishlistItems = productCatalog.filter(
-    (p) => wishlist.includes(p.id) && p.tag === 'CUSTOMIZABLE'
+  const customizableWishlistItems = allProducts.filter(
+    (p) => wishlist.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE'
   );
 
   const handleBack = () => {
@@ -129,7 +132,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               style={{
                 padding: '20px',
                 borderRadius: '20px',
-                background: 'linear-gradient(135deg, #7C3AED 0%, #9B51E0 100%)',
+                background: 'linear-gradient(135deg, #3B0764 0%, #4C1D95 100%)',
                 border: 'none',
                 cursor: 'pointer',
                 gap: '16px',
@@ -149,10 +152,10 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               onClick={() => setStep('custom')}
               className="w-full flex items-center transition-all hover:scale-[1.01] active:scale-[0.99]"
               style={{
-                padding: '20px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #065F46 0%, #059669 100%)',
-                border: 'none',
+                padding: '16px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #064E3B 0%, #065F46 100%)',
+                color: '#FFF',
                 cursor: 'pointer',
                 gap: '16px',
               }}
@@ -179,7 +182,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                 <button
                   onClick={() => { handleClose(); router.push('/bespoke/studio'); }}
                   className="transition-all hover:opacity-90"
-                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#7C3AED', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#4C1D95', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
                 >
                   Go to Studio
                 </button>
@@ -214,7 +217,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                 <button
                   onClick={() => { handleClose(); router.push('/products'); }}
                   className="transition-all hover:opacity-90"
-                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#065F46', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                  style={{ marginTop: '8px', padding: '12px 24px', borderRadius: '12px', background: '#064E3B', color: '#FFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
                 >
                   Browse Products
                 </button>
@@ -223,18 +226,18 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               <div className="grid grid-cols-2" style={{ gap: '12px' }}>
                 {customizableWishlistItems.map((product) => (
                   <button
-                    key={product.id}
-                    onClick={() => handleSelectProduct(product.id)}
+                    key={product._id}
+                    onClick={() => handleSelectProduct(product._id)}
                     className="relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] text-left"
                     style={{ borderRadius: '16px', border: '2px solid #E5E5E5', background: '#F5F5F5', cursor: 'pointer', padding: 0 }}
                   >
                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
-                      <Image src={product.image} alt={product.title} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 45vw, 180px" />
+                      <Image src={getProductImage(product)} alt={getProductName(product)} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 45vw, 180px" />
                       <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%)' }} />
                     </div>
                     <div className="absolute bottom-0 left-0 right-0" style={{ padding: '10px 12px' }}>
-                      <p className="text-white" style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.3 }}>{product.title}</p>
-                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>₦{product.price.toLocaleString()}</p>
+                      <p className="text-white" style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.3 }}>{getProductName(product)}</p>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>₦{getProductPrice(product).toLocaleString()}</p>
                     </div>
                   </button>
                 ))}

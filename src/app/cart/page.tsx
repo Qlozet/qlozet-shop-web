@@ -5,7 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { productCatalog } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
+import { useCompleteTheLook } from '@/hooks/useRecommendations';
+import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
+import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 import {
   Trash2,
   ChevronDown,
@@ -17,7 +20,53 @@ import {
 } from 'lucide-react';
 
 export default function CartPage() {
-  const { cart, removeFromCart, toggleWishlist, wishlist } = useApp();
+  const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
+
+  if (!user) {
+    return (
+      <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in">
+        <h1
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          style={{ fontSize: '22px' }}
+        >
+          My Cart
+        </h1>
+        <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '20px' }}>
+          <div className="flex items-center justify-center" style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}>
+            <ShoppingBag size={32} color="#8B5A2B" strokeWidth={1.5} />
+          </div>
+          <div className="flex flex-col" style={{ gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Sign In Required
+            </h3>
+            <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+              You must sign in first before being able to view or manage your shopping cart.
+            </p>
+          </div>
+          <Link
+            href="/auth/login"
+            className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              padding: '14px 32px',
+              borderRadius: '100px',
+              background: '#2C1810',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
+            }}
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Collapsible sections
   const [showPremiere, setShowPremiere] = useState(false);
@@ -28,14 +77,24 @@ export default function CartPage() {
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const shipping = subtotal > 100000 || subtotal === 0 ? 0 : 5000;
 
-  // Suggested products (not in cart)
-  const cartIds = cart.map((c) => c.id);
-  const suggestedProducts = productCatalog
-    .filter((p) => !cartIds.includes(p.id))
-    .slice(0, 4);
+  const { products: allProducts } = useProducts({ size: 20 });
 
-  // "Looking for this?" — random product not in cart
-  const lookingProduct = productCatalog.find((p) => !cartIds.includes(p.id) && p.tag === 'CUSTOMIZABLE');
+  // Recommendation engine: complete-the-look based on cart items
+  const cartItemIds = cart.map((c) => c.id);
+  const { items: ctlItems } = useCompleteTheLook(cartItemIds, 6);
+
+  // Helper: extract ApiProduct[] from feed items
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items.map(i => i.product).filter((p): p is ApiProduct => !!p && !cartItemIds.includes(p._id));
+
+  // Suggested products: prefer recommendation engine, fallback to generic
+  const ctlProducts = feedToProducts(ctlItems);
+  const suggestedProducts = ctlProducts.length > 0
+    ? ctlProducts.slice(0, 4)
+    : allProducts.filter((p) => !cartItemIds.includes(p._id)).slice(0, 4);
+
+  // "Looking for this?" — product tagged CUSTOMIZABLE
+  const lookingProduct = allProducts.find((p) => !cartItemIds.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE');
 
   // ─── Card style ─────────────────────────────────────────────
   const cardStyle: React.CSSProperties = {
@@ -108,6 +167,22 @@ export default function CartPage() {
                       fill
                       style={{ objectFit: 'cover' }}
                     />
+                    {/* Item number badge */}
+                    <span
+                      className="absolute flex items-center justify-center"
+                      style={{
+                        top: '6px', left: '6px',
+                        width: '20px', height: '20px',
+                        borderRadius: '50%',
+                        background: '#2C1810',
+                        color: '#FFFFFF',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
                   </Link>
 
                   {/* Product Info */}
@@ -247,14 +322,14 @@ export default function CartPage() {
               {showLooking && (
                 <div className="animate-fade-in" style={{ marginTop: '16px', maxWidth: '180px' }}>
                   <ProductCard
-                    id={lookingProduct.id}
-                    imageUrl={lookingProduct.image}
-                    title={lookingProduct.title}
-                    brand={lookingProduct.brand}
-                    price={lookingProduct.price}
-                    originalPrice={lookingProduct.originalPrice}
-                    tag={lookingProduct.tag}
-                    isFavorite={wishlist.includes(lookingProduct.id)}
+                    id={lookingProduct._id}
+                    imageUrl={getProductImage(lookingProduct)}
+                    title={getProductName(lookingProduct)}
+                    brand={typeof lookingProduct.business === 'object' ? lookingProduct.business?.business_name ?? '' : ''}
+                    price={getProductPrice(lookingProduct)}
+                    originalPrice={undefined}
+                    tag={getProductTag(lookingProduct)}
+                    isFavorite={wishlist.includes(lookingProduct._id)}
                     onFavoriteToggle={(id) => toggleWishlist(id as string)}
                   />
                 </div>
@@ -278,16 +353,16 @@ export default function CartPage() {
             {showSuggested && (
               <div className="animate-fade-in hide-scrollbar flex overflow-x-auto gap-3 mt-4" style={{ paddingBottom: '4px' }}>
                 {suggestedProducts.map((p) => (
-                  <div key={p.id} style={{ minWidth: '150px', maxWidth: '170px', flexShrink: 0 }}>
+                  <div key={p._id} style={{ minWidth: '150px', maxWidth: '170px', flexShrink: 0 }}>
                     <ProductCard
-                      id={p.id}
-                      imageUrl={p.image}
-                      title={p.title}
-                      brand={p.brand}
-                      price={p.price}
-                      originalPrice={p.originalPrice}
-                      tag={p.tag}
-                      isFavorite={wishlist.includes(p.id)}
+                      id={p._id}
+                      imageUrl={getProductImage(p)}
+                      title={getProductName(p)}
+                      brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
+                      price={getProductPrice(p)}
+                      originalPrice={undefined}
+                      tag={getProductTag(p)}
+                      isFavorite={wishlist.includes(p._id)}
                       onFavoriteToggle={(id) => toggleWishlist(id as string)}
                     />
                   </div>
@@ -345,7 +420,7 @@ export default function CartPage() {
               style={{
                 padding: '13px',
                 borderRadius: '10px',
-                background: '#2D6A4F',
+                background: '#064E3B',
                 color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: 800,

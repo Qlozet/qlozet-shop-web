@@ -81,8 +81,53 @@ export const defaultAddresses = [
 ];
 
 export const suggestedAddresses = [
-  { main: 'Gold Estate, Abuja, Federal Capital Territory', sub: 'Gold estate, Abuja, Nigeria' },
-  { main: 'Gold Estate, Abuja, Federal Capital Territory', sub: 'Gold estate, Abuja, Nigeria' },
-  { main: 'Gold Estate, Abuja, Federal Capital Territory', sub: 'Gold estate, Abuja, Nigeria' },
-  { main: 'Gold Estate, Abuja, Federal Capital Territory', sub: 'Gold estate, Abuja, Nigeria' },
+  // Lagos
+  { main: 'Victoria Island', sub: 'Lagos Island, Lagos' },
+  { main: 'Lekki Phase 1', sub: 'Lekki, Lagos' },
+  { main: 'Lekki Phase 2', sub: 'Lekki, Lagos' },
+  { main: 'Ikeja GRA', sub: 'Ikeja, Lagos' },
+  { main: 'Maryland', sub: 'Ikeja, Lagos' },
+  { main: 'Surulere', sub: 'Surulere, Lagos' },
+  { main: 'Yaba', sub: 'Yaba, Lagos' },
+  { main: 'Ikoyi', sub: 'Lagos Island, Lagos' },
+  { main: 'Ajah', sub: 'Eti-Osa, Lagos' },
+  { main: 'Gbagada', sub: 'Kosofe, Lagos' },
+  { main: 'Magodo', sub: 'Kosofe, Lagos' },
+  { main: 'Ogba', sub: 'Ikeja, Lagos' },
+  { main: 'Festac Town', sub: 'Amuwo-Odofin, Lagos' },
+  { main: 'Ilupeju', sub: 'Mushin, Lagos' },
+  { main: 'Banana Island', sub: 'Ikoyi, Lagos' },
+  // Abuja
+  { main: 'Wuse 2', sub: 'Wuse, Abuja, FCT' },
+  { main: 'Maitama', sub: 'Maitama, Abuja, FCT' },
+  { main: 'Garki Area 11', sub: 'Garki, Abuja, FCT' },
+  { main: 'Asokoro', sub: 'Asokoro, Abuja, FCT' },
+  { main: 'Gwarinpa', sub: 'Gwarinpa, Abuja, FCT' },
+  { main: 'Jabi', sub: 'Jabi, Abuja, FCT' },
+  { main: 'Utako', sub: 'Utako, Abuja, FCT' },
+  { main: 'Kubwa', sub: 'Bwari, Abuja, FCT' },
+  { main: 'Life Camp', sub: 'Gwarinpa, Abuja, FCT' },
+  { main: 'Lugbe', sub: 'Lugbe, Abuja, FCT' },
+  { main: 'Gold Estate', sub: 'Gold Estate, Abuja, FCT' },
+  // Port Harcourt
+  { main: 'GRA Phase 2', sub: 'Port Harcourt, Rivers' },
+  { main: 'Trans Amadi', sub: 'Port Harcourt, Rivers' },
+  { main: 'Rumuokwurushi', sub: 'Obio-Akpor, Rivers' },
+  { main: 'Eliozu', sub: 'Obio-Akpor, Rivers' },
+  // Ibadan
+  { main: 'Bodija', sub: 'Ibadan North, Oyo' },
+  { main: 'Ring Road', sub: 'Ibadan South-West, Oyo' },
+  { main: 'Oluyole Estate', sub: 'Oluyole, Oyo' },
+  // Kano
+  { main: 'Nasarawa GRA', sub: 'Nasarawa, Kano' },
+  { main: 'Bompai', sub: 'Nassarawa, Kano' },
+  // Enugu
+  { main: 'Independence Layout', sub: 'Enugu North, Enugu' },
+  { main: 'New Haven', sub: 'Enugu East, Enugu' },
+  { main: 'GRA Enugu', sub: 'Enugu North, Enugu' },
+  // Other Major Cities
+  { main: 'Calabar Municipal', sub: 'Calabar, Cross River' },
+  { main: 'GRA Benin', sub: 'Benin City, Edo' },
+  { main: 'Barnawa', sub: 'Kaduna South, Kaduna' },
+  { main: 'Rayfield', sub: 'Jos South, Plateau' },
 ];

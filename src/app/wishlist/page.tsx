@@ -1,30 +1,119 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
-import { productCatalog } from '@/data/products';
-import { Heart, ChevronDown } from 'lucide-react';
+import { api } from '@/lib/api';
+import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
+import type { ApiProduct } from '@/lib/api-types';
+import { Heart, ChevronDown, Loader2 } from 'lucide-react';
 
 type SortOption = 'recent' | 'priceAsc' | 'priceDesc' | 'name';
 
 export default function WishlistPage() {
-  const { wishlist, toggleWishlist } = useApp();
+  const { wishlist, toggleWishlist, user } = useApp();
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get full product data for wishlisted items
-  const wishlistedProducts = productCatalog.filter((p) =>
-    wishlist.includes(p.id)
-  );
+  // Fetch wishlist products from backend
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem('qlozet_access_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    api.get('/users/wishlist')
+      .then((res) => {
+        const data = res.data;
+        // Backend may return { data: [...] } or [...] directly
+        const raw = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        // Filter to only populated product objects (not plain IDs)
+        const populated = raw.filter((item: any) => typeof item === 'object' && item._id);
+        // Deduplicate by _id
+        const seen = new Set<string>();
+        const unique = populated.filter((item: any) => {
+          if (seen.has(item._id)) return false;
+          seen.add(item._id);
+          return true;
+        });
+        setProducts(unique);
+      })
+      .catch(() => {
+        // Fallback: clear products on error
+        setProducts([]);
+      })
+      .finally(() => setLoading(false));
+  }, [user, wishlist.length]); // re-fetch when wishlist changes
+
+  if (!user) {
+    return (
+      <div className="flex flex-col gap-6 lg:gap-8 py-4 lg:py-8 animate-fade-in">
+        <h1
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          style={{ fontSize: '22px' }}
+        >
+          Wishlist
+        </h1>
+        <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '20px' }}>
+          <div
+            className="flex items-center justify-center"
+            style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
+          >
+            <Heart size={32} color="#8B5A2B" strokeWidth={1.5} />
+          </div>
+          <div className="flex flex-col" style={{ gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Sign In Required
+            </h3>
+            <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+              You must sign in first before being able to view or manage your wishlist.
+            </p>
+          </div>
+          <Link
+            href="/auth/login"
+            className="flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              padding: '14px 32px',
+              borderRadius: '100px',
+              background: '#2C1810',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(44,24,16,0.2)',
+            }}
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter products to only show items still in the wishlist (handles optimistic removal)
+  const wishlistedProducts = products.filter((p) => wishlist.includes(p._id));
 
   // Sort products
   const sortedProducts = [...wishlistedProducts].sort((a, b) => {
-    if (sortBy === 'priceAsc') return a.price - b.price;
-    if (sortBy === 'priceDesc') return b.price - a.price;
-    if (sortBy === 'name') return a.title.localeCompare(b.title);
+    if (sortBy === 'priceAsc') return a.base_price - b.base_price;
+    if (sortBy === 'priceDesc') return b.base_price - a.base_price;
+    if (sortBy === 'name') return getProductName(a).localeCompare(getProductName(b));
     // 'recent' — reverse order (last added first)
-    return wishlist.indexOf(b.id) - wishlist.indexOf(a.id);
+    return wishlist.indexOf(b._id) - wishlist.indexOf(a._id);
   });
 
   const sortLabels: Record<SortOption, string> = {
@@ -108,24 +197,38 @@ export default function WishlistPage() {
             letterSpacing: '0.02em',
           }}
         >
-          {sortedProducts.length} {sortedProducts.length === 1 ? 'Item' : 'Items'}
+          {loading ? '...' : `${sortedProducts.length} ${sortedProducts.length === 1 ? 'Item' : 'Items'}`}
         </span>
       </div>
 
-      {/* ─── Product Grid ───────────────────────────────────────── */}
-      {sortedProducts.length > 0 ? (
+      {/* ─── Loading Skeleton ────────────────────────────────────── */}
+      {loading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="w-full animate-pulse" style={{ maxWidth: '260px' }}>
+              <div className="bg-gray-100 rounded-[14px] lg:rounded-[20px]" style={{ aspectRatio: '214/264' }} />
+              <div className="flex flex-col" style={{ gap: '6px', marginTop: '12px' }}>
+                <div className="bg-gray-100 rounded-md" style={{ height: '10px', width: '40%' }} />
+                <div className="bg-gray-100 rounded-md" style={{ height: '14px', width: '70%' }} />
+                <div className="bg-gray-100 rounded-md" style={{ height: '12px', width: '30%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : sortedProducts.length > 0 ? (
+        /* ─── Product Grid ───────────────────────────────────────── */
         <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-slide-up justify-items-center">
           {sortedProducts.map((product) => (
             <ProductCard
-              key={product.id}
-              id={product.id}
-              imageUrl={product.image}
-              title={product.title}
-              brand={product.brand}
-              price={product.price}
-              originalPrice={product.originalPrice}
-              tag={product.tag}
-              isFavorite={true}
+              key={product._id}
+              id={product._id}
+              imageUrl={getProductImage(product)}
+              title={getProductName(product)}
+              brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+              price={getProductPrice(product)}
+              originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+              tag={getProductTag(product)}
+              isFavorite={wishlist.includes(product._id)}
               onFavoriteToggle={(id) => toggleWishlist(id as string)}
             />
           ))}

@@ -3,7 +3,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { Vendor } from '@/data/vendors';
+import type { ApiBusinessPublic, ApiCollection } from '@/lib/api-types';
 import { 
   X, Share, ChevronRight, Info, DollarSign, Calendar,
   Camera as Instagram, PlayCircle as Youtube, Link as LinkIcon, Mail, AlertCircle
@@ -12,14 +12,22 @@ import {
 interface VendorSidebarModalProps {
   isOpen: boolean;
   onClose: () => void;
-  vendor: Vendor;
+  vendor: ApiBusinessPublic;
+  collections?: ApiCollection[];
   onShowReviews?: () => void;
   isLightTheme?: boolean;
 }
 
-export function VendorSidebarModal({ isOpen, onClose, vendor, onShowReviews, isLightTheme = false }: VendorSidebarModalProps) {
+export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], onShowReviews, isLightTheme = false }: VendorSidebarModalProps) {
+  const vendorName = vendor.business_name;
+  const vendorLogo = vendor.business_logo_url;
+  const vendorRating = vendor.average_rating ?? 0;
+  const vendorReviewCount = vendor.total_ratings ?? 0;
+  const coverImage = vendor.cover_image_url || '/image/bespoke-agbada-orange.webp';
+  const logoInitials = vendorName.slice(0, 2).toUpperCase();
+
   // Darken the theme color to match the page's luxury dark aesthetic
-  const hex = (vendor.themeColor || '#918171').replace('#', '');
+  const hex = (vendor.theme_color || '#918171').replace('#', '');
   const r = Math.round(parseInt(hex.substring(0, 2), 16) * 0.35);
   const g = Math.round(parseInt(hex.substring(2, 4), 16) * 0.35);
   const b = Math.round(parseInt(hex.substring(4, 6), 16) * 0.35);
@@ -27,7 +35,6 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, onShowReviews, isL
   const sText = isLightTheme ? '#1a1a1a' : '#ffffff';
   const sSubtle = isLightTheme ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
   const sMuted = isLightTheme ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
-  const sBorder = isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
 
   // Shared content
   const panelContent = (
@@ -48,32 +55,32 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, onShowReviews, isL
           {/* Vendor Info Header */}
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0">
-              {vendor.logoStyle === 'image' && vendor.logoImage ? (
-                <Image src={vendor.logoImage} alt={vendor.name} width={56} height={56} className="object-cover" />
+              {vendorLogo ? (
+                <Image src={vendorLogo} alt={vendorName} width={56} height={56} quality={90} className="object-cover" />
               ) : (
-                <span className="text-xl font-bold text-black">{vendor.logoInitials}</span>
+                <span className="text-xl font-bold text-black">{logoInitials}</span>
               )}
             </div>
             <div>
-              <h2 style={{ color: sText, fontSize: '24px', fontWeight: 700 }}>{vendor.name}</h2>
-              <p style={{ color: sMuted, fontSize: '14px' }}>{vendor.rating} ★ ({vendor.reviewCount} Reviews)</p>
+              <h2 style={{ color: sText, fontSize: '24px', fontWeight: 700 }}>{vendorName}</h2>
+              <p style={{ color: sMuted, fontSize: '14px' }}>{vendorRating.toFixed(1)} ★ ({vendorReviewCount} Reviews)</p>
             </div>
           </div>
 
-          {/* Links Block */}
+          {/* Collections Block */}
           <div style={{ backgroundColor: sSubtle, borderRadius: '24px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <button className="flex items-center w-full text-left group" style={{ gap: '12px' }}>
               <div className="flex items-center justify-center overflow-hidden bg-white" style={{ width: '32px', height: '32px', borderRadius: '9999px' }}>
-                <Image src={vendor.heroImage} alt="Shop all" width={32} height={32} className="object-cover" />
+                <Image src={coverImage} alt="Shop all" width={32} height={32} className="object-cover" />
               </div>
               <span style={{ color: sText, fontWeight: 700 }}>Shop all</span>
             </button>
-            {vendor.collections.slice(0, 3).map((col, idx) => (
-              <button key={idx} className="flex items-center gap-3 w-full text-left group">
+            {collections.slice(0, 3).map((col) => (
+              <button key={col._id} className="flex items-center gap-3 w-full text-left group">
                 <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs" style={{ backgroundColor: sSubtle, color: sText }}>
-                  {col[0]}
+                  {(col.title || col.name || '?')[0]}
                 </div>
-                <span style={{ color: sText, fontWeight: 700 }}>{col}</span>
+                <span style={{ color: sText, fontWeight: 700 }}>{col.title || col.name}</span>
               </button>
             ))}
           </div>
@@ -88,12 +95,12 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, onShowReviews, isL
             </div>
             <div>
               <div className="flex items-baseline gap-2" style={{ color: sText, fontSize: '30px', fontWeight: 700 }}>
-                {vendor.rating}
+                {vendorRating.toFixed(1)}
                 <div className="flex text-[10px]">
                   <span>★</span><span>★</span><span>★</span><span>★</span><span style={{ color: sMuted }}>★</span>
                 </div>
               </div>
-              <p style={{ color: sMuted, fontSize: '12px' }}>{vendor.reviewCount} ratings</p>
+              <p style={{ color: sMuted, fontSize: '12px' }}>{vendorReviewCount} ratings</p>
             </div>
 
             {/* Mock Review */}
@@ -152,16 +159,16 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, onShowReviews, isL
                 <span>YouTube</span>
                 <Youtube size={16} />
               </a>
-              <a href="#" className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>{vendor.socialLinks?.website || 'website.com'}</span>
+              <a href={vendor.website || '#'} className="flex items-center justify-between text-sm" style={{ color: sText }}>
+                <span>{vendor.website || 'website.com'}</span>
                 <LinkIcon size={16} />
               </a>
-              <a href="#" className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>{vendor.socialLinks?.email || 'help@vendor.com'}</span>
+              <a href={vendor.social_links?.email ? `mailto:${vendor.social_links.email}` : '#'} className="flex items-center justify-between text-sm" style={{ color: sText }}>
+                <span>{vendor.social_links?.email || 'help@vendor.com'}</span>
                 <Mail size={16} />
               </a>
               <div className="text-sm pr-6 mt-4" style={{ color: sText }}>
-                {vendor.socialLinks?.address || 'Lagos, Nigeria'}
+                {vendor.business_address || vendor.city || 'Lagos, Nigeria'}
               </div>
             </div>
           </div>
@@ -183,48 +190,31 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, onShowReviews, isL
 
   return (
     <>
-      {/* ══════ MOBILE: Bottom Sheet — same pattern as ProductCustomizePanel ══════ */}
+      {/* ══════ MOBILE: Bottom Sheet ══════ */}
       {typeof document !== 'undefined' && createPortal(
         <div className="lg:hidden">
-          {/* Backdrop */}
-          <div
-            className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            onClick={onClose}
-          />
-
-          {/* Bottom Sheet */}
+          <div className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
           <div
             className={`fixed left-3 right-3 bottom-3 z-[100] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
             style={{ maxHeight: '75vh', backgroundColor: sidebarBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
           >
-            {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: isLightTheme ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.3)' }} />
             </div>
-
             {panelContent}
           </div>
         </div>,
         document.body
       )}
 
-      {/* ══════ DESKTOP: Floating sidebar — same pattern as ProductCustomizePanel ══════ */}
+      {/* ══════ DESKTOP: Floating sidebar ══════ */}
       {typeof document !== 'undefined' && createPortal(
         <div
           className={`hidden lg:block fixed z-[60] pointer-events-none transition-all duration-500 ease-in-out ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8 pointer-events-none'}`}
           style={{ left: '120px', top: '48px', bottom: '48px' }}
         >
-          {/* Backdrop */}
-          <div
-            className={`fixed inset-0 z-[-1] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            onClick={onClose}
-            style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
-          />
-
-          <aside
-            className={`h-full w-[400px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-            style={{ backgroundColor: sidebarBg }}
-          >
+          <div className={`fixed inset-0 z-[-1] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} style={{ pointerEvents: isOpen ? 'auto' : 'none' }} />
+          <aside className={`h-full w-[400px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`} style={{ backgroundColor: sidebarBg }}>
             {panelContent}
           </aside>
         </div>,

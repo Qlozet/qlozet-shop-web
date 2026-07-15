@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useWallet } from '@/hooks/useWallet';
 import {
   User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
-  HelpCircle, BookOpen, FileText, Lock, Star, LogOut, Coins, Award,
-  Heart, Scissors,
+  HelpCircle, BookOpen, FileText, Lock, Star, LogOut, Award,
+  Heart, Scissors, MapPin,
 } from 'lucide-react';
+import { TokenIcon } from '@/components/icons/TokenIcon';
 
 import type { ActiveSection, Order } from './types';
 import { cardStyle, sectionTitle } from './styles';
@@ -53,6 +55,7 @@ const sectionTitles: Record<ActiveSection, string> = {
   'measurement-detail': 'Measurement Details',
   'add-measurement': 'Add Measurement',
   'measurement-form': 'Measurement Form',
+  'measurement-results': 'AI Results',
   'account-security': 'Account Security',
   'change-password': 'Change Password',
   'notifications': 'Notifications',
@@ -65,6 +68,7 @@ const sectionTitles: Record<ActiveSection, string> = {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, demoLogin, logout } = useApp();
+  const { walletBalance, tokenBalance } = useWallet();
 
   // ─── Shared State ───────────────────────────────────────────
   const [activeSection, setActiveSection] = useState<ActiveSection>('welcome');
@@ -98,6 +102,7 @@ export default function ProfilePage() {
     else if (activeSection === 'order-item-detail') setActiveSection('order-detail');
     else if (activeSection === 'order-detail') setActiveSection('orders');
     else if (activeSection === 'measurement-form') setActiveSection('add-measurement');
+    else if (activeSection === 'measurement-results') setActiveSection('measurement-form');
     else if (activeSection === 'add-measurement') setActiveSection('measurements');
     else if (activeSection === 'measurement-detail') setActiveSection('measurements');
     else if (activeSection === 'change-password') setActiveSection('account-security');
@@ -105,11 +110,101 @@ export default function ProfilePage() {
     else setActiveSection('welcome');
   };
 
+  // ─── Sign-In Prompt (for unauthenticated users) ─────────────
+  const renderSignInPrompt = () => (
+    <div
+      className="flex flex-col items-center justify-center text-center"
+      style={{
+        padding: '64px 32px',
+        borderRadius: '20px',
+        background: '#FFFFFF',
+        border: '1px solid rgba(0,0,0,0.06)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        minHeight: '420px',
+        gap: '24px',
+      }}
+    >
+      {/* Icon */}
+      <div
+        className="flex items-center justify-center"
+        style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, rgba(70,40,20,0.08), rgba(70,40,20,0.03))',
+          border: '1px solid rgba(70,40,20,0.06)',
+        }}
+      >
+        <Lock size={32} color="#8B5A2B" strokeWidth={1.5} />
+      </div>
+
+      {/* Heading */}
+      <div className="flex flex-col" style={{ gap: '8px' }}>
+        <h2
+          className="font-display font-extrabold uppercase tracking-[0.06em]"
+          style={{ fontSize: '20px', color: '#1A1A1A' }}
+        >
+          Sign In Required
+        </h2>
+        <p style={{ fontSize: '14px', color: '#888', fontWeight: 500, lineHeight: 1.6, maxWidth: '340px' }}>
+          Please sign in to access your {sectionTitles[activeSection]?.toLowerCase() || 'account settings'}. Your personalized experience awaits.
+        </p>
+      </div>
+
+      {/* Sign In Button */}
+      <button
+        onClick={() => router.push('/auth/login')}
+        className="transition-all hover:opacity-90 active:scale-[0.97]"
+        style={{
+          padding: '14px 48px',
+          borderRadius: '100px',
+          background: 'linear-gradient(135deg, #462814, #5A3A20)',
+          color: '#FFF',
+          fontSize: '13px',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 14px rgba(70,40,20,0.25)',
+        }}
+      >
+        Sign In
+      </button>
+
+      {/* Register link */}
+      <p style={{ fontSize: '12px', color: '#AAA', fontWeight: 500 }}>
+        Don&apos;t have an account?{' '}
+        <button
+          onClick={() => router.push('/auth/register')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#462814',
+            fontWeight: 700,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+            fontSize: '12px',
+            padding: 0,
+          }}
+        >
+          Create one
+        </button>
+      </p>
+    </div>
+  );
+
   // ─── Right Panel Router ─────────────────────────────────────
   const renderRightPanel = () => {
+    // If user is not signed in and viewing a non-default section, show sign-in prompt
+    if (!user && activeSection !== 'welcome') {
+      return renderSignInPrompt();
+    }
+
     switch (activeSection) {
       case 'personal-info':
-        return <PersonalInfo userName={user?.name} />;
+        return <PersonalInfo userName={user?.name} onNavigateToAddressBook={() => setActiveSection('address-book')} />;
       case 'address-book':
       case 'add-address':
         return <AddressBook activeSection={activeSection} setActiveSection={setActiveSection} />;
@@ -158,6 +253,7 @@ export default function ProfilePage() {
       case 'measurement-detail':
       case 'add-measurement':
       case 'measurement-form':
+      case 'measurement-results':
         return (
           <MeasurementsSection
             activeSection={activeSection}
@@ -251,19 +347,19 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex flex-col">
                   <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>{user?.name || 'Guest User'}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#999' }}>@{user ? user.name.split(' ')[0].toLowerCase() : 'guest'}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#999' }}>@{user?.username || (user ? user.name.split(' ')[0].toLowerCase() : 'guest')}</span>
                 </div>
               </div>
 
               {user && (
                 <div className="flex flex-col items-end" style={{ gap: '4px' }}>
                   <div className="flex items-center" style={{ gap: '5px', padding: '4px 10px', borderRadius: '100px', background: 'rgba(45,106,79,0.08)' }}>
-                    <Coins size={12} color="#2D6A4F" />
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#2D6A4F' }}>₦{(70000).toLocaleString()}</span>
+                    <Wallet size={12} color="#2D6A4F" strokeWidth={2} />
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#2D6A4F' }}>₦{walletBalance.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center" style={{ gap: '5px', padding: '4px 10px', borderRadius: '100px', background: 'rgba(212,175,55,0.1)' }}>
-                    <Award size={12} color="#D4AF37" />
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#B8941F' }}>3,000.8pts</span>
+                    <TokenIcon size={13} color="#D4AF37" />
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#B8941F' }}>{tokenBalance} tokens</span>
                   </div>
                 </div>
               )}
@@ -282,6 +378,8 @@ export default function ProfilePage() {
             <div className="flex flex-col">
               <MenuRow icon={User} label="Personal Information" iconBg="rgba(70,40,20,0.06)" iconColor="#8B5A2B"
                 onClick={() => setActiveSection('personal-info')} isActive={activeSection === 'personal-info'} />
+              <MenuRow icon={MapPin} label="Address Book" iconBg="rgba(13,148,136,0.08)" iconColor="#0D9488"
+                onClick={() => setActiveSection('address-book')} isActive={activeSection === 'address-book' || activeSection === 'add-address'} />
               <MenuRow icon={Wallet} label="Wallet" iconBg="rgba(45,106,79,0.08)" iconColor="#2D6A4F"
                 onClick={() => setActiveSection('wallet')} isActive={activeSection === 'wallet' || activeSection === 'wallet-detail' || activeSection === 'fund-wallet' || activeSection === 'fund-wallet-success' || activeSection === 'buy-tokens' || activeSection === 'confirm-token-purchase' || activeSection === 'token-purchase-success'} />
               <MenuRow icon={Package} label="My Orders" iconBg="rgba(212,175,55,0.1)" iconColor="#B8941F"

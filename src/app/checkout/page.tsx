@@ -567,7 +567,7 @@ export default function CheckoutPage() {
                 padding: '14px',
                 borderRadius: '10px',
                 border: paymentMethod === 'paypal' ? '2px solid #462814' : 'none',
-                background: '#2D6A4F',
+                background: '#064E3B',
                 fontSize: '11px',
                 fontWeight: 800,
                 color: '#FFF',
@@ -610,7 +610,7 @@ export default function CheckoutPage() {
             style={{
               padding: '16px',
               borderRadius: '14px',
-              background: '#2D6A4F',
+              background: '#064E3B',
               color: '#FFFFFF',
               fontSize: '14px',
               fontWeight: 800,

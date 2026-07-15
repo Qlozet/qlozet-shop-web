@@ -8,29 +8,45 @@ interface StudioCanvasProps {
   currentImage: string | null;
   isGenerating: boolean;
   referenceImages: string[];
+  isLoading?: boolean;
 }
 
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   currentImage,
   isGenerating,
   referenceImages,
+  isLoading = false,
 }) => (
   <div className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pt-[72px] pb-4 px-4 lg:pt-0 lg:pb-0 lg:px-0">
     {/* Card Wrapper */}
     <div className="relative w-full h-full lg:w-full lg:h-full lg:max-w-none lg:max-h-none max-w-[500px] max-h-[800px] flex items-center justify-center lg:bg-transparent rounded-[32px] lg:rounded-none">
 
       {/* Mobile Order Now (Cart Icon) */}
-      {(currentImage || referenceImages.length > 0) && !isGenerating && (
+      {(currentImage || referenceImages.length > 0) && !isGenerating && !isLoading && (
         <button
           className="absolute top-4 right-4 z-10 lg:hidden flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md"
-          style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#065F46', border: 'none', cursor: 'pointer' }}
+          style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#064E3B', border: 'none', cursor: 'pointer' }}
         >
           <ShoppingCart size={18} color="#FFF" />
         </button>
       )}
 
       {/* Canvas content */}
-      {isGenerating ? (
+      {isLoading ? (
+        // Loading saved design state
+        <div className="flex flex-col items-center animate-pulse" style={{ gap: '16px' }}>
+          <div
+            className="flex items-center justify-center"
+            style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(70,40,20,0.08)' }}
+          >
+            <Loader2 size={32} color="#462814" className="animate-spin" />
+          </div>
+          <div className="text-center">
+            <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>Loading saved design...</p>
+            <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Retrieving your customization</p>
+          </div>
+        </div>
+      ) : isGenerating ? (
         // Generating state
         <div className="flex flex-col items-center animate-pulse" style={{ gap: '16px' }}>
           <div
@@ -46,8 +62,8 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         </div>
       ) : currentImage ? (
         // Generated image
-        <div className="relative animate-fade-in w-full h-full lg:max-w-[500px] lg:max-h-[90%]">
-          <Image src={currentImage} alt="Generated outfit" fill style={{ objectFit: 'contain', padding: '16px' }} />
+        <div className="relative animate-fade-in w-full h-full lg:max-w-[680px] lg:max-h-[95%]">
+          <Image src={currentImage} alt="Generated outfit" fill style={{ objectFit: 'contain', padding: '8px' }} />
         </div>
       ) : (
         // Empty state

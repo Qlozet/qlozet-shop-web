@@ -29,6 +29,16 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization })
         onSelectNeckline={(id) => customization.setSelectedNeckline(id)}
         selectedSleeve={customization.selectedSleeve}
         onSelectSleeve={(id) => customization.setSelectedSleeve(id)}
+        clothingType={customization.clothingType ?? undefined}
+        gender={customization.designGender ?? undefined}
+        selectedCollar={customization.selectedCollar}
+        onSelectCollar={(id) => customization.setSelectedCollar(id)}
+        selectedSkirt={customization.selectedSkirt}
+        onSelectSkirt={(id) => customization.setSelectedSkirt(id)}
+        selectedTrouser={customization.selectedTrouser}
+        onSelectTrouser={(id) => customization.setSelectedTrouser(id)}
+        selectedFullBody={customization.selectedFullBody}
+        onSelectFullBody={(id) => customization.setSelectedFullBody(id)}
       />
     );
   }
@@ -70,6 +80,13 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization })
         onUploadClick={() => customization.fileInputRef.current?.click()}
         fileInputRef={customization.fileInputRef}
         onFileChange={customization.handleFileUpload}
+        isUploading={customization.isUploading}
+        uploadStatus={customization.uploadStatus}
+        uploadError={customization.uploadError}
+        userPrompt={customization.userPrompt}
+        onPromptChange={customization.setUserPrompt}
+        suggestedPrompt={customization.suggestedPrompt}
+        isAnalyzing={customization.isAnalyzing}
       />
     );
   }

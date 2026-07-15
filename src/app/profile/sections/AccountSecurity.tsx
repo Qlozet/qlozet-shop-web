@@ -28,10 +28,8 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
         {/* Header card */}
         <div style={cardStyle}>
           <div style={{ padding: '24px 20px' }}>
-            <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', marginBottom: '14px' }}>
-              <ShieldCheck size={18} color="#1A1A1A" />
-            </div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <ShieldCheck size={28} color="#462814" strokeWidth={1.5} />
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
               Account Security
             </h3>
           </div>
@@ -129,10 +127,8 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
       {/* Header card */}
       <div style={cardStyle}>
         <div style={{ padding: '24px 20px' }}>
-          <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', marginBottom: '14px' }}>
-            <ShieldCheck size={18} color="#1A1A1A" />
-          </div>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <ShieldCheck size={28} color="#462814" strokeWidth={1.5} />
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
             Account Security
           </h3>
         </div>
