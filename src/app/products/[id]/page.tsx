@@ -517,6 +517,22 @@ export default function ProductDetailsPage() {
           })
           .filter(Boolean) as any;
       }
+    } else if (product.kind === 'fabric') {
+      // Fabric product — send fabric selection with the product ID
+      selections.fabric_selections = [{
+        fabric_id: product._id,
+        yardage: product.fabric?.min_cut || 1,
+        size: selectedSize || undefined,
+        quantity: 1,
+      }];
+    } else if (product.kind === 'accessory' && product.accessory) {
+      // Accessory product — send accessory selection with the product accessory ID
+      const firstVariant = product.accessory.variants?.[0];
+      selections.accessory_selections = [{
+        accessory_id: product.accessory._id,
+        variant_id: firstVariant?._id || product.accessory._id,
+        quantity: 1,
+      }];
     }
 
     addToCart({
