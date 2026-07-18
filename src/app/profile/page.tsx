@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useWallet } from '@/hooks/useWallet';
@@ -65,7 +65,7 @@ const sectionTitles: Record<ActiveSection, string> = {
   'reserved-fabric': 'Reserved Fabric',
 };
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, demoLogin, logout } = useApp();
@@ -447,5 +447,13 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+      <ProfilePageContent />
+    </Suspense>
   );
 }
