@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
-import type { ApiCollection } from '@/lib/api-types';
+import type { ApiCollection, ApiProduct, ApiProductPaginated } from '@/lib/api-types';
 
 // ─── Shared hook state shape ──────────────────────────────────
 
@@ -191,5 +191,80 @@ export function useVendorCollections(
       hasPrevious: data?.has_previous_page ?? false,
     },
     refetch: fetchCollections,
+  };
+}
+
+// --- useCollectionProducts ------------------------------------
+// Fetch products for a specific collection.
+//
+// Usage:
+//   const { products, loading } = useCollectionProducts('64abc123...');
+
+export interface UseCollectionProductsReturn {
+  products: ApiProduct[];
+  loading: boolean;
+  error: string | null;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+  refetch: () => void;
+}
+
+export function useCollectionProducts(
+  collectionId: string | undefined,
+  params: { page?: number; size?: number } = {}
+): UseCollectionProductsReturn {
+  const [state, setState] = useState<UseAsyncState<ApiProductPaginated>>({
+    data: null,
+    loading: !!collectionId,
+    error: null,
+  });
+
+  const paramsKey = JSON.stringify({ collectionId, ...params });
+
+  const fetchProducts = useCallback(async () => {
+    if (!collectionId) {
+      setState({ data: null, loading: false, error: null });
+      return;
+    }
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const cleanParams: Record<string, string | number> = {};
+      if (params.page) cleanParams.page = params.page;
+      if (params.size) cleanParams.size = params.size;
+
+      const res = await api.get(`/collections/${collectionId}/products`, { params: cleanParams });
+      const payload: ApiProductPaginated = res.data?.data ?? res.data;
+      setState({ data: payload, loading: false, error: null });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to fetch collection products';
+      setState({ data: null, loading: false, error: message });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsKey]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const { data } = state;
+
+  return {
+    products: data?.data ?? [],
+    loading: state.loading,
+    error: state.error,
+    pagination: {
+      currentPage: data?.current_page ?? 1,
+      totalPages: data?.total_pages ?? 1,
+      totalItems: data?.total_items ?? 0,
+      hasNext: data?.has_next_page ?? false,
+      hasPrevious: data?.has_previous_page ?? false,
+    },
+    refetch: fetchProducts,
   };
 }

@@ -12,6 +12,7 @@ export interface ApiProductImage {
   width?: number;
   height?: number;
   is_primary?: boolean;
+  hotspots?: ApiStyleHotspot[];
 }
 
 export interface ApiVariant {
@@ -26,8 +27,11 @@ export interface ApiVariant {
 }
 
 export interface ApiColorVariant {
-  color_name: string;
-  hex_code: string;
+  _id?: string;
+  name?: string;
+  color_name?: string;
+  hex?: string;
+  hex_code?: string;
   images?: ApiProductImage[];
   variants?: ApiVariant[];
 }
@@ -58,13 +62,23 @@ export interface ApiStyleHotspot {
   y: number;
   label: string;
   description?: string;
+  field_key?: string;
+  anchor?: string;
+  zIndex?: number;
 }
 
 export interface ApiStyle {
+  _id?: string;
   name: string;
   description?: string;
   images?: ApiProductImage[];
   hotspots?: ApiStyleHotspot[];
+  categories?: string[];
+  attributes?: string[];
+  type?: string;
+  style_code?: string;
+  price?: number;
+  min_width_cm?: number;
 }
 
 export interface ApiClothing {
@@ -79,11 +93,29 @@ export interface ApiClothing {
   accessories?: ApiAccessorySubDoc[];
   color_variants?: ApiColorVariant[];
   fabrics?: ApiFabricSubDoc[];
+  addons?: ApiAddon[];
+  accepts_external_fabric?: boolean;
+}
+
+export interface ApiAddonVariant {
+  _id?: string;
+  name: string;
+  price: number;
+  color_hex?: string;
+  image_url?: string;
+}
+
+export interface ApiAddon {
+  _id?: string;
+  name: string;
+  display_type: 'colour' | 'picture';
+  variants: ApiAddonVariant[];
 }
 
 export interface ApiFabricSubDoc {
   name: string;
   description?: string;
+  price?: number;
   product_type?: string;
   price_per_yard?: number;
   yard_length?: number;
@@ -97,6 +129,7 @@ export interface ApiFabricSubDoc {
 }
 
 export interface ApiAccessorySubDoc {
+  _id: string;
   name: string;
   description?: string;
   price?: number;
@@ -389,6 +422,64 @@ export interface FeedQueryParams {
   gender?: string;
 }
 
+export interface ApiSizeMeasurement {
+  body_part: string;
+  min: number;
+  max: number;
+}
+
+export interface ApiSizeDefinition {
+  label: string;
+  sort_order: number;
+  measurements: ApiSizeMeasurement[];
+}
+
+export interface ApiFitAllowance {
+  body_part: string;
+  value: number;
+}
+
+export interface ApiFitType {
+  name: string;
+  label: string;
+  description: string;
+  allowances: ApiFitAllowance[];
+}
+
+export interface ApiSizeGuide {
+  _id: string;
+  title: string;
+  description?: string;
+  unit: string;
+  body_parts: string[];
+  sizes: ApiSizeDefinition[];
+  fit_types?: ApiFitType[];
+}
+
+export interface ApiSizeBreakdown {
+  body_part: string;
+  customer_value: number;
+  range: string;
+  fits: boolean;
+  note: string | null;
+}
+
+export interface ApiGarmentMeasurement {
+  body_part: string;
+  body_range: string;
+  garment_range: string;
+  ease: number;
+  fit_label: string;
+}
+
+export interface ApiSizeRecommendation {
+  recommended_size: string;
+  confidence: number;
+  unit: string;
+  breakdown: ApiSizeBreakdown[];
+  garment_measurements?: ApiGarmentMeasurement[];
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  Helper Extractors
 //  Pure functions to pull common display values from backend
@@ -462,8 +553,8 @@ export function getProductTaxonomy(p: ApiProduct): ApiTaxonomy | null {
 export function getProductColors(p: ApiProduct): { name: string; hex: string }[] {
   if (p.kind === 'clothing' && p.clothing?.color_variants) {
     return p.clothing.color_variants.map((cv) => ({
-      name: cv.color_name,
-      hex: cv.hex_code,
+      name: cv.name || cv.color_name || '',
+      hex: cv.hex || cv.hex_code || '',
     }));
   }
   if (p.kind === 'fabric' && p.fabric?.colors) {
@@ -513,4 +604,152 @@ export function getFabricPricePerYard(p: ApiProduct): number | null {
     return p.fabric.price_per_yard;
   }
   return null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Cart Selections
+//  Mirrors backend OrderItemSelectionsDto for add-to-cart
+// ═══════════════════════════════════════════════════════════════
+
+export interface CartColorVariantSelection {
+  color_variant_id: string;
+  size?: string;
+  quantity?: number;
+}
+
+export interface CartFabricSelection {
+  fabric_id: string;
+  yardage?: number;
+  size?: string;
+  quantity?: number;
+}
+
+export interface CartStyleSelection {
+  style_id: string;
+}
+
+export interface CartAccessorySelection {
+  accessory_id: string;
+  variant_id: string;
+  quantity?: number;
+}
+
+export interface CartAddonSelection {
+  addon_id: string;
+  variant_id: string;
+  quantity?: number;
+}
+
+export interface CartSelections {
+  color_variant_selections?: CartColorVariantSelection[];
+  fabric_selections?: CartFabricSelection[];
+  style_selections?: CartStyleSelection[];
+  accessory_selections?: CartAccessorySelection[];
+  addon_selections?: CartAddonSelection[];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Checkout Preview
+//  Response from POST /orders/checkout-preview
+// ═══════════════════════════════════════════════════════════════
+
+export interface CourierRate {
+  courier_id: string | number;
+  courier_name: string;
+  courier_image: string;
+  service_code: string;
+  rate_amount: number;
+  delivery_eta: string;
+  delivery_eta_time: string;
+  insurance_fee: number;
+  insurance_code: string;
+}
+
+export interface VendorShippingRate {
+  business_id: string;
+  business_name: string;
+  items: { product_id: string; product_name: string }[];
+  request_token: string;
+  rates: CourierRate[];
+  cheapest_rate: number;
+  fastest_rate: number;
+}
+
+export interface FabricTransferRate {
+  fabric_vendor_id: string;
+  fabric_vendor_name: string;
+  tailor_vendor_id: string;
+  tailor_vendor_name: string;
+  fabric_product_id: string;
+  fabric_name: string;
+  fabric_yards: number;
+  request_token: string;
+  rates: CourierRate[];
+  cheapest_rate: number;
+  fastest_rate: number;
+}
+
+export interface CheckoutPreviewResponse {
+  vendor_shipping: VendorShippingRate[];
+  fabric_transfers: FabricTransferRate[];
+  total_shipping_fee: number;
+  subtotal: number;
+  total: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Create Order
+//  Payload for POST /orders
+// ═══════════════════════════════════════════════════════════════
+
+export interface OrderItemPayload {
+  product_id: string;
+  note?: string;
+  quantity?: number;
+  selections: CartSelections;
+}
+
+export interface SelectedShipping {
+  business_id: string;
+  request_token: string;
+  courier_id: string;
+  service_code: string;
+  courier_name: string;
+  shipping_fee: number;
+}
+
+export interface SelectedFabricTransfer {
+  fabric_vendor_id: string;
+  tailor_vendor_id: string;
+  fabric_product_id: string;
+  fabric_yards: number;
+  request_token: string;
+  courier_id: string;
+  service_code: string;
+  courier_name: string;
+  shipping_fee: number;
+}
+
+export interface CreateOrderPayload {
+  items: OrderItemPayload[];
+  selected_shipping?: SelectedShipping[];
+  selected_fabric_transfers?: SelectedFabricTransfer[];
+  address_id?: string;
+  payment_method?: 'paystack' | 'wallet';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Order Response
+//  Returned from POST /orders
+// ═══════════════════════════════════════════════════════════════
+
+export interface OrderResponse {
+  _id: string;
+  reference: string;
+  status: string;
+  total: number;
+  subtotal: number;
+  shipping_fee: number;
+  authorization_url?: string; // Paystack redirect URL
+  access_code?: string;
 }

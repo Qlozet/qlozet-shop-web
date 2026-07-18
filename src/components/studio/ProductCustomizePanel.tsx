@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { X } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { TokenIcon } from '../icons/TokenIcon';
-import { PRODUCT_TABS, type SectionTab } from '@/data/studio-options';
+import { type SectionTab } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { AccessoriesPanel } from './AccessoriesPanel';
+import { AddonsPanel } from './AddonsPanel';
 
 // ═══════════════════════════════════════════════════════════════
 //  ProductCustomizePanel
@@ -19,16 +20,20 @@ import { AccessoriesPanel } from './AccessoriesPanel';
 //  Follows the same UX pattern as SizeGuideModal.
 // ═══════════════════════════════════════════════════════════════
 
+import { type ApiProduct } from '@/lib/api-types';
+
 interface ProductCustomizePanelProps {
   isOpen: boolean;
   customization: CustomizationState;
   onClose: () => void;
+  product?: ApiProduct;
 }
 
 export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
   isOpen,
   customization,
   onClose,
+  product,
 }) => {
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
@@ -69,31 +74,47 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           ...(!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {})
         }}
       >
-        {PRODUCT_TABS.map((tab: SectionTab) => (
-          <button
-            key={tab.id}
-            onClick={() => setExpandedSection(tab.id)}
-            className="flex flex-col items-center gap-1 shrink-0 relative transition-all"
-            style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
-          >
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: expandedSection === tab.id ? 800 : 500,
-                color: expandedSection === tab.id ? '#1A1A1A' : '#999',
-                letterSpacing: '0.04em',
-              }}
+        {(() => {
+          // Build tabs dynamically based on what the product has
+          const hasStyles = (product?.clothing?.styles?.length ?? 0) > 0;
+          const hasFabrics = (product?.clothing?.fabrics?.length ?? 0) > 0 || (product?.clothing?.color_variants?.length ?? 0) > 0;
+          const hasAccessories = (product?.clothing?.accessories?.length ?? 0) > 0;
+          const hasAddons = (product?.clothing?.addons?.length ?? 0) > 0;
+
+          const dynamicTabs: SectionTab[] = [];
+          // Always show STYLE if the product has styles, or if no product is provided (studio mode)
+          if (hasStyles || !product) dynamicTabs.push({ id: 'styles', label: 'STYLE' });
+          if (hasFabrics || !product) dynamicTabs.push({ id: 'fabric', label: 'FABRIC' });
+          if (hasAccessories || !product) dynamicTabs.push({ id: 'accessories', label: 'ACCESSORIES' });
+          dynamicTabs.push({ id: 'fit', label: 'FIT' });
+          if (hasAddons || !product) dynamicTabs.push({ id: 'addons', label: 'ADD-ONS' });
+
+          return dynamicTabs.map((tab: SectionTab) => (
+            <button
+              key={tab.id}
+              onClick={() => setExpandedSection(tab.id)}
+              className="flex flex-col items-center gap-1 shrink-0 relative transition-all"
+              style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
             >
-              {tab.label}
-            </span>
-            {expandedSection === tab.id && (
-              <div
-                className="absolute -bottom-[14px] w-full h-[2px] rounded-full"
-                style={{ background: '#1A1A1A' }}
-              />
-            )}
-          </button>
-        ))}
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: expandedSection === tab.id ? 800 : 500,
+                  color: expandedSection === tab.id ? '#1A1A1A' : '#999',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {tab.label}
+              </span>
+              {expandedSection === tab.id && (
+                <div
+                  className="absolute -bottom-[14px] w-full h-[2px] rounded-full"
+                  style={{ background: '#1A1A1A' }}
+                />
+              )}
+            </button>
+          ));
+        })()}
       </div>
 
       {/* Scrollable Content */}
@@ -105,12 +126,19 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         }}
       >
         {expandedSection === 'addons' ? (
+          <AddonsPanel
+            selectedAddons={customization.selectedAddons}
+            onSelectAddon={customization.selectAddon}
+            product={product}
+          />
+        ) : expandedSection === 'accessories' ? (
           <AccessoriesPanel
             selectedAccessories={customization.selectedAccessories}
             onToggle={customization.toggleAccessory}
+            product={product}
           />
         ) : (
-          <SectionContent customization={customization} />
+          <SectionContent customization={customization} product={product} />
         )}
       </div>
 

@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { useVendor, useVendorProducts } from '@/hooks/useVendors';
-import { useVendorCollections } from '@/hooks/useCollections';
+import { useVendorCollections, useCollectionProducts } from '@/hooks/useCollections';
 import { VendorSidebarModal } from '@/components/VendorSidebarModal';
 import { VendorPromotionsModal } from '@/components/VendorPromotionsModal';
 import {
@@ -58,6 +58,10 @@ export default function VendorPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
+  // Fetch collection specific products
+  const collectionIdFilter = activeFilter === 'All' ? undefined : activeFilter;
+  const { products: collectionProducts, loading: colProductsLoading } = useCollectionProducts(collectionIdFilter);
+
   // ── Loading state ───────────────────────────────────────────
   if (vendorLoading || productsLoading) {
     return (
@@ -103,16 +107,20 @@ export default function VendorPage() {
   const logoInitials = vendorName.slice(0, 2).toUpperCase();
   const heroImage = vendor.cover_image_url || (vendorProducts[0] ? getProductImage(vendorProducts[0]) : '/image/bespoke-agbada-orange.webp');
 
-  // Collection names for filter tabs
+  // Collection lookup for filter tabs
+  const collectionMap = new Map(collections.map((c) => [c._id, c.title || c.name || '']));
   const collectionNames = collections.map((c) => c.title || c.name || '').filter(Boolean);
-  const filterTabs = ['All', ...collectionNames];
+  const filterTabs = [
+    { id: 'All', name: 'All' },
+    ...collections.map((c) => ({ id: c._id, name: c.title || c.name || '' })).filter((c) => c.name)
+  ];
 
-  // Filter products
-  const filteredProducts = vendorProducts.filter((p) => {
+  // Filter products by collection ID or 'All'
+  const activeProductsList = activeFilter === 'All' ? vendorProducts : collectionProducts;
+  
+  const filteredProducts = activeProductsList.filter((p) => {
     const name = getProductName(p);
-    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'All' || p.kind?.toLowerCase().includes(activeFilter.toLowerCase());
-    return matchesSearch && matchesFilter;
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   return (
@@ -196,16 +204,16 @@ export default function VendorPage() {
               </div>
               <span className="text-white text-xs font-bold">Shop all</span>
             </button>
-            {collectionNames.slice(0, 3).map((col, idx) => {
-              const colImage = vendorProducts.find(p => p.kind === col.toLowerCase())
-                ? getProductImage(vendorProducts.find(p => p.kind === col.toLowerCase())!)
-                : vendorProducts[idx + 1] ? getProductImage(vendorProducts[idx + 1]) : undefined;
+            {collections.slice(0, 3).map((col) => {
+              const colName = col.title || col.name || '';
+              const colImage = col.cover_image || (col.products?.[0] ? getProductImage(col.products[0]) : undefined)
+                || (vendorProducts.find(p => (p.collections ?? []).includes(col._id)) ? getProductImage(vendorProducts.find(p => (p.collections ?? []).includes(col._id))!) : undefined);
               return (
-                <button key={idx} onClick={() => setActiveFilter(col)} className="flex items-center gap-2 backdrop-blur-md rounded-full hover:bg-white/25 transition-colors border border-white/15 shadow-lg" style={{ padding: '5px 16px 5px 5px', backgroundColor: activeFilter === col ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)' }}>
+                <button key={col._id} onClick={() => setActiveFilter(col._id)} className="flex items-center gap-2 backdrop-blur-md rounded-full hover:bg-white/25 transition-colors border border-white/15 shadow-lg" style={{ padding: '5px 16px 5px 5px', backgroundColor: activeFilter === col._id ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)' }}>
                   <div className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden relative bg-white/20 flex items-center justify-center text-[10px] text-white font-bold">
-                    {colImage ? <Image src={colImage} alt={col} fill className="object-cover" /> : col[0]}
+                    {colImage ? <Image src={colImage} alt={colName} fill className="object-cover" /> : colName[0]}
                   </div>
-                  <span className="text-white text-xs font-bold whitespace-nowrap">{col}</span>
+                  <span className="text-white text-xs font-bold whitespace-nowrap">{colName}</span>
                 </button>
               );
             })}
@@ -221,8 +229,8 @@ export default function VendorPage() {
             {collections.map((col) => {
               const colImage = col.cover_image || (col.products?.[0] ? getProductImage(col.products[0]) : undefined);
               return (
-                <div key={col._id} className="flex-shrink-0 w-[220px] md:w-[260px] snap-center group cursor-pointer" onClick={() => setActiveFilter(col.title || col.name || '')}>
-                  <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-2 relative border border-white/8" style={{ backgroundColor: midBg }}>
+                <div key={col._id} className="flex-shrink-0 w-[220px] md:w-[260px] snap-center group cursor-pointer" onClick={() => setActiveFilter(col._id)}>
+                  <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden relative border border-white/8" style={{ backgroundColor: midBg, marginBottom: '14px' }}>
                     {colImage ? (
                       <Image src={colImage} alt={col.title || col.name || ''} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                     ) : (
@@ -274,7 +282,17 @@ export default function VendorPage() {
         </div>
 
         {/* Product Grid */}
-        {filteredProducts.length > 0 ? (
+        {colProductsLoading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center" style={{ marginTop: '32px' }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex flex-col w-full animate-pulse">
+                <div className="w-full rounded-[14px] lg:rounded-[20px]" style={{ backgroundColor: midBg, aspectRatio: '214/264', marginBottom: '14px' }} />
+                <div className="h-4 rounded-md w-3/4 mb-2" style={{ backgroundColor: midBg }} />
+                <div className="h-4 rounded-md w-1/2" style={{ backgroundColor: midBg }} />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center" style={{ marginTop: '32px' }}>
             {filteredProducts.map((product) => {
               const isFav = wishlist.includes(product._id);
@@ -286,7 +304,7 @@ export default function VendorPage() {
 
               return (
                 <Link href={`/products/${product._id}`} key={product._id} className="flex flex-col group cursor-pointer w-full">
-                  <div className="relative w-full rounded-[14px] lg:rounded-[20px] overflow-hidden mb-3" style={{ backgroundColor: midBg, aspectRatio: '214/264' }}>
+                  <div className="relative w-full rounded-[14px] lg:rounded-[20px] overflow-hidden" style={{ backgroundColor: midBg, aspectRatio: '214/264', marginBottom: '14px' }}>
                     <Image src={prodImage} alt={prodName} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                     {prodTag === 'CUSTOMIZABLE' && (
                       <div style={{ position: 'absolute', bottom: '10px', left: '10px', backgroundColor: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#2D2D2D', fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 12px', borderRadius: '6px', lineHeight: 1, pointerEvents: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
@@ -353,8 +371,8 @@ export default function VendorPage() {
                 <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Category</p>
                 <div className="flex flex-wrap gap-2">
                   {filterTabs.map((tab) => (
-                    <button key={tab} onClick={() => { setActiveFilter(tab); setShowFilter(false); }} style={{ color: sheetText, fontSize: '12px', fontWeight: 700, padding: '10px 20px', borderRadius: '9999px', backgroundColor: activeFilter === tab ? (isLightTheme ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.25)') : sheetSubtle, border: activeFilter === tab ? `1px solid ${isLightTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}` : `1px solid ${sheetBorder}`, transition: 'all 0.2s' }}>
-                      {tab}
+                    <button key={tab.id} onClick={() => { setActiveFilter(tab.id); setShowFilter(false); }} style={{ color: sheetText, fontSize: '12px', fontWeight: 700, padding: '10px 20px', borderRadius: '9999px', backgroundColor: activeFilter === tab.id ? (isLightTheme ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.25)') : sheetSubtle, border: activeFilter === tab.id ? `1px solid ${isLightTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}` : `1px solid ${sheetBorder}`, transition: 'all 0.2s' }}>
+                      {tab.name}
                     </button>
                   ))}
                 </div>

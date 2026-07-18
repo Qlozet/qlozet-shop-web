@@ -11,6 +11,7 @@ export interface StyleOption {
   emoji: string;
   imageUrl?: string;       // AI-generated image from API
   description?: string;    // Style description for tooltip
+  tags?: string[];         // Attribute tags (e.g., "classic", "casual")
   styleCode?: string;      // Backend style_code for order submission
   extraCost?: number;
 }
@@ -44,6 +45,8 @@ export interface AccessoryOption {
   id: string;
   name: string;
   emoji: string;
+  imageUrl?: string;
+  description?: string;
   extraCost?: number;
 }
 

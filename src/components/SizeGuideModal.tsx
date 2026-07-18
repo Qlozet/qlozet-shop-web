@@ -5,20 +5,14 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, ChevronDown, Minus, Plus } from 'lucide-react';
 
+import type { ApiSizeGuide } from '@/lib/api-types';
+
 interface SizeGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
   category?: string; // e.g. "Men / Kaftan"
+  guideData?: ApiSizeGuide | null;
 }
-
-const MEASUREMENT_DATA = [
-  { size: 'XS', chest: '31.5 - 35.0', hip: '31.5 - 35.0', waist: '31.5 - 35.0', leg: '31.5 - 35.0' },
-  { size: 'S',  chest: '31.5 - 35.0', hip: '31.5 - 35.0', waist: '31.5 - 35.0', leg: '31.5 - 35.0' },
-  { size: 'M',  chest: '31.5 - 35.0', hip: '31.5 - 35.0', waist: '31.5 - 35.0', leg: '31.5 - 35.0' },
-  { size: 'L',  chest: '31.5 - 35.0', hip: '31.5 - 35.0', waist: '31.5 - 35.0', leg: '31.5 - 35.0' },
-  { size: 'XL', chest: '31.5 - 35.0', hip: '31.5 - 35.0', waist: '31.5 - 35.0', leg: '31.5 - 35.0' },
-  { size: 'XXL',chest: '31.5 - 35.0', hip: '31.5 - 35.0', waist: '31.5 - 35.0', leg: '31.5 - 35.0' },
-];
 
 const HOW_TO_MEASURE_STEPS = [
   'Neck – Measure around neck base where shirt fits.',
@@ -31,6 +25,22 @@ const HOW_TO_MEASURE_STEPS = [
 const ACCESSORY_SECTIONS = ['Footing', 'Rings', 'Hats', 'Bags'];
 
 // ─── Shared Size Guide Content ────────────────────────────────────
+
+/** Convert a raw measurement value based on source/target unit */
+const CM_PER_INCH = 2.54;
+function convertValue(val: number, fromUnit: string, toUnit: 'CM' | 'IN'): number {
+  const from = fromUnit.toLowerCase();
+  if ((from === 'cm' && toUnit === 'CM') || (from === 'inch' && toUnit === 'IN') || (from === 'in' && toUnit === 'IN')) return val;
+  if (from === 'cm' && toUnit === 'IN') return Math.round((val / CM_PER_INCH) * 10) / 10;
+  // inch → cm
+  return Math.round(val * CM_PER_INCH * 10) / 10;
+}
+
+function formatRange(min: number, max: number): string {
+  if (min === max) return String(min);
+  return `${min} – ${max}`;
+}
+
 const SizeGuideContent: React.FC<{
   unit: 'CM' | 'IN';
   setUnit: (u: 'CM' | 'IN') => void;
@@ -38,11 +48,40 @@ const SizeGuideContent: React.FC<{
   setShowHowTo: (v: boolean) => void;
   expandedAccessory: string | null;
   setExpandedAccessory: (v: string | null) => void;
-}> = ({ unit, setUnit, showHowTo, setShowHowTo, expandedAccessory, setExpandedAccessory }) => (
+  guideData?: ApiSizeGuide | null;
+}> = ({ unit, setUnit, showHowTo, setShowHowTo, expandedAccessory, setExpandedAccessory, guideData }) => {
+  
+  const [selectedFitIdx, setSelectedFitIdx] = useState(0);
+  const [showFitDropdown, setShowFitDropdown] = useState(false);
+
+  const fitTypes = guideData?.fit_types ?? [];
+  const selectedFit = fitTypes[selectedFitIdx] ?? null;
+  const currentFitLabel = selectedFit?.label ?? 'Regular fit';
+
+  const headers = guideData ? ['SIZE', ...guideData.body_parts.map(bp => bp.toUpperCase())] : [];
+  const gridTemplateColumns = headers.length > 0 ? `50px repeat(${headers.length - 1}, 1fr)` : '50px 1fr';
+
+  /** Get the ease allowance for a body part from the selected fit type */
+  const getEase = (bodyPart: string): number => {
+    if (!selectedFit) return 0;
+    const a = selectedFit.allowances.find(x => x.body_part === bodyPart);
+    return a?.value ?? 0;
+  };
+
+  /** Format a measurement cell with unit conversion + fit ease */
+  const formatCell = (m: { min: number; max: number; body_part: string } | undefined, bp: string): string => {
+    if (!m || !guideData) return '-';
+    const ease = getEase(bp);
+    const rawMin = convertValue(m.min + ease, guideData.unit, unit);
+    const rawMax = convertValue(m.max + ease, guideData.unit, unit);
+    return formatRange(rawMin, rawMax);
+  };
+
+  return (
   <>
     {/* BODY MEASUREMENT header */}
     <h4 className="text-sm font-bold text-[#111111]" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-      Body Measurement
+      {selectedFit && getEase(guideData?.body_parts?.[0] ?? '') > 0 ? 'Garment Measurement' : 'Body Measurement'}
     </h4>
 
     {/* Unit Toggle + Fit */}
@@ -67,24 +106,60 @@ const SizeGuideContent: React.FC<{
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-1.5" style={{ fontSize: '13px', color: '#666' }}>
-        <span>Regular fit</span>
-        <ChevronDown size={14} />
+      {/* Fit type selector — dynamic from API or static fallback */}
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={() => fitTypes.length > 1 && setShowFitDropdown(!showFitDropdown)}
+          className="flex items-center gap-1.5"
+          style={{ fontSize: '13px', color: '#666', background: 'none', border: 'none', cursor: fitTypes.length > 1 ? 'pointer' : 'default', padding: 0 }}
+        >
+          <span>{currentFitLabel}</span>
+          {fitTypes.length > 1 && <ChevronDown size={14} />}
+        </button>
+        {showFitDropdown && fitTypes.length > 1 && (
+          <div
+            className="animate-fade-in"
+            style={{
+              position: 'absolute', right: 0, top: '100%', marginTop: '4px',
+              background: 'white', borderRadius: '10px', border: '1px solid #E5E5E5',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 10, overflow: 'hidden',
+              minWidth: '150px',
+            }}
+          >
+            {fitTypes.map((ft, idx) => (
+              <button
+                key={ft.name}
+                onClick={() => { setSelectedFitIdx(idx); setShowFitDropdown(false); }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '10px 14px', fontSize: '12px', fontWeight: idx === selectedFitIdx ? 700 : 400,
+                  color: idx === selectedFitIdx ? '#1A1A1A' : '#666',
+                  background: idx === selectedFitIdx ? '#F5F5F5' : 'white',
+                  border: 'none', cursor: 'pointer',
+                }}
+              >
+                {ft.label}
+                {ft.description && <span style={{ display: 'block', fontSize: '10px', color: '#999', marginTop: '2px' }}>{ft.description}</span>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
 
     {/* Measurement Table */}
+    {guideData && headers.length > 0 && (
     <div>
       {/* Table Header */}
       <div
         className="grid"
         style={{
-          gridTemplateColumns: '50px 1fr 1fr 1fr 1fr',
+          gridTemplateColumns,
           padding: '10px 0',
           borderBottom: '2px solid #E5E5E5',
         }}
       >
-        {['SIZE', 'CHEST', 'HIP', 'WAIST', 'LEG'].map((h) => (
+        {headers.map((h) => (
           <span key={h} style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {h}
           </span>
@@ -92,25 +167,30 @@ const SizeGuideContent: React.FC<{
       </div>
 
       {/* Table Rows */}
-      {MEASUREMENT_DATA.map((row, idx) => (
+      {guideData.sizes.sort((a, b) => a.sort_order - b.sort_order).map((row, idx) => (
         <div
-          key={row.size}
-          className="grid"
+          key={row.label}
+          className="grid items-center"
           style={{
-            gridTemplateColumns: '50px 1fr 1fr 1fr 1fr',
+            gridTemplateColumns,
             padding: '14px 0',
             borderBottom: '1px solid #F0F0F0',
             backgroundColor: idx === 0 ? '#FAFAFA' : 'transparent',
           }}
         >
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{row.size}</span>
-          <span style={{ fontSize: '12px', color: '#555' }}>{row.chest}</span>
-          <span style={{ fontSize: '12px', color: '#555' }}>{row.hip}</span>
-          <span style={{ fontSize: '12px', color: '#555' }}>{row.waist}</span>
-          <span style={{ fontSize: '12px', color: '#555' }}>{row.leg}</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{row.label}</span>
+          {guideData.body_parts.map(bp => {
+            const m = row.measurements.find(x => x.body_part === bp);
+            return (
+              <span key={bp} style={{ fontSize: '12px', color: '#555' }}>
+                {formatCell(m, bp)}
+              </span>
+            );
+          })}
         </div>
       ))}
     </div>
+    )}
 
     {/* Progress bar accent */}
     <div style={{ width: '60px', height: '3px', borderRadius: '2px', background: '#D4752A', margin: '0 auto' }} />
@@ -203,13 +283,15 @@ const SizeGuideContent: React.FC<{
       </button>
     ))}
   </>
-);
+  );
+};
 
 // ─── SizeGuideModal Component ─────────────────────────────────────
 export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
   isOpen,
   onClose,
   category = 'Men / Kaftan',
+  guideData,
 }) => {
   const [unit, setUnit] = useState<'CM' | 'IN'>('IN');
   const [showHowTo, setShowHowTo] = useState(false);
@@ -257,6 +339,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
               unit={unit} setUnit={setUnit}
               showHowTo={showHowTo} setShowHowTo={setShowHowTo}
               expandedAccessory={expandedAccessory} setExpandedAccessory={setExpandedAccessory}
+              guideData={guideData}
             />
           </div>
 
@@ -309,6 +392,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
                 unit={unit} setUnit={setUnit}
                 showHowTo={showHowTo} setShowHowTo={setShowHowTo}
                 expandedAccessory={expandedAccessory} setExpandedAccessory={setExpandedAccessory}
+                guideData={guideData}
               />
             </div>
 

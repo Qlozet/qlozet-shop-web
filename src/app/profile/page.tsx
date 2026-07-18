@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useWallet } from '@/hooks/useWallet';
 import {
@@ -67,11 +67,23 @@ const sectionTitles: Record<ActiveSection, string> = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, demoLogin, logout } = useApp();
   const { walletBalance, tokenBalance } = useWallet();
 
   // ─── Shared State ───────────────────────────────────────────
-  const [activeSection, setActiveSection] = useState<ActiveSection>('welcome');
+  // Read initial tab from URL if present
+  const initialTab = (searchParams.get('tab') as ActiveSection) || 'welcome';
+  const [activeSection, setActiveSection] = useState<ActiveSection>(initialTab);
+
+  // Sync state if URL changes
+  useEffect(() => {
+    const tab = searchParams.get('tab') as ActiveSection;
+    if (tab && sectionTitles[tab]) {
+      setActiveSection(tab);
+    }
+  }, [searchParams]);
+
   const [pushNotif, setPushNotif] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);

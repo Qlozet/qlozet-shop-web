@@ -52,10 +52,20 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
         }}
       >
         <div
-          className="flex items-center justify-center bg-white shadow-sm"
+          className="flex items-center justify-center bg-white shadow-sm overflow-hidden"
           style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }}
         >
-          <span style={{ fontSize: '24px' }}>{accessory.emoji}</span>
+          {accessory.imageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={accessory.imageUrl}
+              alt={accessory.name}
+              style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+              loading="lazy"
+            />
+          ) : (
+            <span style={{ fontSize: '24px' }}>{accessory.emoji}</span>
+          )}
         </div>
         <div className="flex-1 text-left flex flex-col justify-center" style={{ overflow: 'hidden', minWidth: 0 }}>
           <p style={{
@@ -85,7 +95,8 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
         <PreviewCard
           info={{
             label: accessory.name,
-            description: ACCESSORY_DESC[accessory.id] || `${accessory.name} — a premium finishing detail for your bespoke garment.`,
+            imageUrl: accessory.imageUrl,
+            description: accessory.description || ACCESSORY_DESC[accessory.id] || `${accessory.name} — a premium finishing detail for your bespoke garment.`,
             extraCost: accessory.extraCost,
           }}
           anchorRef={btnRef}

@@ -50,7 +50,7 @@ function loadScript(apiKey: string): Promise<void> {
 }
 
 // ─── Hook ────────────────────────────────────────────────────
-export function useGooglePlaces(countryCode: string = 'ng') {
+export function useGooglePlaces(countryCodes: string | string[] = ['ng', 'us', 'gb']) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -97,7 +97,7 @@ export function useGooglePlaces(countryCode: string = 'ng') {
           {
             input,
             sessionToken: session.current,
-            componentRestrictions: { country: countryCode },
+            componentRestrictions: { country: countryCodes },
             types: ['geocode', 'establishment'],
           },
           (results: any[] | null, status: string) => {
@@ -118,7 +118,7 @@ export function useGooglePlaces(countryCode: string = 'ng') {
         );
       }, 300);
     },
-    [countryCode]
+    [countryCodes]
   );
 
   // ── Geocode a selected place → structured address details ───

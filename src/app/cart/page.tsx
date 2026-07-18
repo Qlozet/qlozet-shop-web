@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
 import { useCompleteTheLook } from '@/hooks/useRecommendations';
 import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
+import { useCheckout } from '@/hooks/useCheckout';
 import {
   Trash2,
   ChevronDown,
@@ -21,6 +23,38 @@ import {
 
 export default function CartPage() {
   const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
+  const router = useRouter();
+  const { fetchPreview, loading: previewLoading, error: previewError } = useCheckout();
+
+
+
+  // Collapsible sections
+  const [showPremiere, setShowPremiere] = useState(false);
+  const [showLooking, setShowLooking] = useState(false);
+  const [showSuggested, setShowSuggested] = useState(false);
+
+  // Computations
+  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const shipping = subtotal > 100000 || subtotal === 0 ? 0 : 5000;
+
+  const { products: allProducts } = useProducts({ size: 20 });
+
+  // Recommendation engine: complete-the-look based on cart items
+  const cartItemIds = cart.map((c) => c.id);
+  const { items: ctlItems } = useCompleteTheLook(cartItemIds, 6);
+
+  // Helper: extract ApiProduct[] from feed items
+  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
+    items.map(i => i.product).filter((p): p is ApiProduct => !!p && !cartItemIds.includes(p._id));
+
+  // Suggested products: prefer recommendation engine, fallback to generic
+  const ctlProducts = feedToProducts(ctlItems);
+  const suggestedProducts = ctlProducts.length > 0
+    ? ctlProducts.slice(0, 4)
+    : allProducts.filter((p) => !cartItemIds.includes(p._id)).slice(0, 4);
+
+  // "Looking for this?" — product tagged CUSTOMIZABLE
+  const lookingProduct = allProducts.find((p) => !cartItemIds.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE');
 
   if (!user) {
     return (
@@ -67,34 +101,6 @@ export default function CartPage() {
       </div>
     );
   }
-
-  // Collapsible sections
-  const [showPremiere, setShowPremiere] = useState(false);
-  const [showLooking, setShowLooking] = useState(false);
-  const [showSuggested, setShowSuggested] = useState(false);
-
-  // Computations
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const shipping = subtotal > 100000 || subtotal === 0 ? 0 : 5000;
-
-  const { products: allProducts } = useProducts({ size: 20 });
-
-  // Recommendation engine: complete-the-look based on cart items
-  const cartItemIds = cart.map((c) => c.id);
-  const { items: ctlItems } = useCompleteTheLook(cartItemIds, 6);
-
-  // Helper: extract ApiProduct[] from feed items
-  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
-    items.map(i => i.product).filter((p): p is ApiProduct => !!p && !cartItemIds.includes(p._id));
-
-  // Suggested products: prefer recommendation engine, fallback to generic
-  const ctlProducts = feedToProducts(ctlItems);
-  const suggestedProducts = ctlProducts.length > 0
-    ? ctlProducts.slice(0, 4)
-    : allProducts.filter((p) => !cartItemIds.includes(p._id)).slice(0, 4);
-
-  // "Looking for this?" — product tagged CUSTOMIZABLE
-  const lookingProduct = allProducts.find((p) => !cartItemIds.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE');
 
   // ─── Card style ─────────────────────────────────────────────
   const cardStyle: React.CSSProperties = {
@@ -181,7 +187,7 @@ export default function CartPage() {
                         lineHeight: 1,
                       }}
                     >
-                      {idx + 1}
+                      {item.quantity}
                     </span>
                   </Link>
 
@@ -197,9 +203,16 @@ export default function CartPage() {
                       </button>
                     </div>
 
-                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
-                      ₦{item.price.toLocaleString()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                        ₦{(item.price * item.quantity).toLocaleString()}
+                      </span>
+                      {item.quantity > 1 && (
+                        <span style={{ fontSize: '11px', color: '#888', fontWeight: 500 }}>
+                          (₦{item.price.toLocaleString()} each)
+                        </span>
+                      )}
+                    </div>
 
                     {/* Customization tag */}
                     {item.kind === 'clothing' && (
@@ -414,24 +427,39 @@ export default function CartPage() {
             </div>
 
             {/* Checkout Button */}
-            <Link
-              href="/checkout"
+            <button
+              onClick={async () => {
+                const data = await fetchPreview();
+                if (data) {
+                  // Store preview for the checkout page
+                  sessionStorage.setItem('qlozet_checkout_preview', JSON.stringify(data));
+                  router.push('/checkout');
+                }
+              }}
+              disabled={previewLoading || cart.length === 0}
               className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
                 padding: '13px',
                 borderRadius: '10px',
-                background: '#064E3B',
+                background: previewLoading ? '#999' : '#064E3B',
                 color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                textDecoration: 'none',
                 marginBottom: '14px',
+                border: 'none',
+                cursor: previewLoading ? 'wait' : 'pointer',
+                opacity: cart.length === 0 ? 0.5 : 1,
               }}
             >
-              Check Out
-            </Link>
+              {previewLoading ? 'Loading Shipping Rates…' : 'Check Out'}
+            </button>
+            {previewError && (
+              <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', marginBottom: '10px' }}>
+                {previewError}
+              </p>
+            )}
 
             {/* Payment Icons */}
             <div className="flex items-center justify-center gap-2.5">

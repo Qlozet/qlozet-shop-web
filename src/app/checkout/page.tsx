@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useCheckout } from '@/hooks/useCheckout';
+import { api } from '@/lib/api';
+import type { CheckoutPreviewResponse } from '@/lib/api-types';
 import {
   ChevronUp,
   ChevronDown,
@@ -12,6 +15,7 @@ import {
   CreditCard,
   AlertCircle,
   CheckCircle2,
+  Truck,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -20,6 +24,7 @@ type PromoTab = 'promo' | 'voucher' | 'rewards';
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, clearCart, user } = useApp();
+  const checkout = useCheckout();
 
   // Promo section
   const [showPromo, setShowPromo] = useState(true);
@@ -29,26 +34,110 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState('');
 
   // Delivery address
-  const [deliveryName] = useState(user?.name || 'Guest User');
-  const [deliveryAddress] = useState({
-    line1: '13c Hallen Estate',
-    area: 'Abuja',
-    state: 'FCT',
-    zip: '900001',
-    country: 'Nigeria',
+  const [deliveryName, setDeliveryName] = useState(user?.name || 'Guest User');
+  const [deliveryAddress, setDeliveryAddress] = useState({
+    line1: '',
+    area: '',
+    state: '',
+    zip: '',
+    country: '',
   });
+  const [isLoadingAddress, setIsLoadingAddress] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const initCheckout = async () => {
+      setIsLoadingAddress(true);
+      let addressId: string | undefined = undefined;
+
+      // 1. Fetch user address (if token exists)
+      const token = typeof window !== 'undefined' ? localStorage.getItem('qlozet_access_token') : null;
+      if (token) {
+        try {
+          const res = await api.get('/users/customer/addresses');
+          console.log('[Checkout] Raw address response:', JSON.stringify(res.data));
+          
+          // The backend response interceptor wraps in { statusCode, data }
+          // But sometimes it could be nested: res.data.data or just res.data
+          let addressList: any[] = [];
+          
+          if (res.data?.data && Array.isArray(res.data.data)) {
+            addressList = res.data.data;
+          } else if (Array.isArray(res.data?.data)) {
+            addressList = res.data.data;
+          } else if (Array.isArray(res.data)) {
+            addressList = res.data;
+          } else if (res.data?.data && !Array.isArray(res.data.data)) {
+            // Single address object wrapped
+            addressList = [res.data.data];
+          }
+          
+          console.log('[Checkout] Parsed address list:', addressList.length, 'addresses');
+          
+          if (addressList.length > 0) {
+            const defaultAddr = addressList.find((addr: any) => addr.is_default) || addressList[0];
+            console.log('[Checkout] Using address:', JSON.stringify(defaultAddr));
+            if (defaultAddr) {
+              addressId = defaultAddr._id || defaultAddr.id;
+              if (isMounted) {
+                setDeliveryName(defaultAddr.full_name || defaultAddr.label || defaultAddr.name || 'Guest User');
+                setDeliveryAddress({
+                  line1: defaultAddr.address || defaultAddr.address_line_1 || '',
+                  area: defaultAddr.city || '',
+                  state: defaultAddr.state || '',
+                  zip: defaultAddr.postal_code || defaultAddr.zip_code || '',
+                  country: defaultAddr.country || 'Nigeria',
+                });
+              }
+            }
+          } else {
+            console.warn('[Checkout] No addresses found in response');
+          }
+        } catch (err: any) {
+          console.warn('[Checkout] Failed to fetch addresses:', err?.response?.status, err?.response?.data || err.message);
+        }
+      } else {
+        console.warn('[Checkout] No auth token found, skipping address fetch');
+      }
+      
+      if (isMounted) {
+        setIsLoadingAddress(false);
+      }
+
+      // 2. Hydrate Checkout Preview using the determined addressId
+      const stored = sessionStorage.getItem('qlozet_checkout_preview');
+      if (stored && !addressId) {
+        try {
+          JSON.parse(stored);
+          checkout.fetchPreview();
+        } catch {
+          checkout.fetchPreview(addressId);
+        }
+      } else {
+        checkout.fetchPreview(addressId);
+      }
+    };
+
+    initCheckout();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Payment
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
 
   // Processing
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [orderRef, setOrderRef] = useState('');
 
-  // Computations
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  // Computations — use real values from preview when available
+  const subtotal = checkout.preview?.subtotal ?? cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const discount = promoApplied ? Math.round(subtotal * 0.15) : 0;
-  const shipping = subtotal > 100000 ? 0 : 5000;
+  const shipping = checkout.totalShipping;
   const total = subtotal - discount + shipping;
 
   const handleApplyPromo = () => {
@@ -60,21 +149,31 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (cart.length === 0) return;
     setIsProcessing(true);
 
-    setTimeout(() => {
+    const method = paymentMethod === 'wallet' ? 'wallet' : 'paystack';
+    const result = await checkout.placeOrder(method);
+
+    if (result) {
+      // Paystack redirect is handled inside placeOrder
+      if (method === 'wallet' || !result.authorization_url) {
+        setOrderRef(result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
+        setIsProcessing(false);
+        setOrderComplete(true);
+        clearCart();
+        sessionStorage.removeItem('qlozet_checkout_preview');
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#FF2E63', '#FF6B8B', '#D4AF37', '#4A2306', '#FFFFFF'],
+        });
+      }
+    } else {
       setIsProcessing(false);
-      setOrderComplete(true);
-      clearCart();
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#FF2E63', '#FF6B8B', '#D4AF37', '#4A2306', '#FFFFFF'],
-      });
-    }, 2500);
+    }
   };
 
   // Card style
@@ -96,7 +195,7 @@ export default function CheckoutPage() {
 
   // ─── Order Complete ─────────────────────────────────────────
   if (orderComplete) {
-    const orderNumber = `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    const orderNumber = orderRef || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
     const deliveryDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
     const formattedDate = deliveryDate.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -461,21 +560,125 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* ── DELIVERY OPTIONS ───────────────────────────────── */}
+          {/* ── DELIVERY OPTIONS (per vendor) ────────────────── */}
           <div style={cardStyle}>
             <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
-              <h3 style={sectionTitle}>Delivery Options</h3>
-              <Info size={16} color="#CCC" />
+              <h3 style={sectionTitle}>Shipping</h3>
+              <Truck size={16} color="#CCC" />
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>
-                {shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}
-              </span>
-              <span style={{ fontSize: '13px', color: '#777', marginLeft: '12px' }}>Standard Delivery</span>
-            </div>
+            {checkout.loading && (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <span className="animate-spin" style={{ width: '20px', height: '20px', border: '2px solid #E5E5E5', borderTopColor: '#064E3B', borderRadius: '50%', display: 'inline-block' }} />
+                <p style={{ fontSize: '11px', color: '#999', marginTop: '8px' }}>Loading shipping rates…</p>
+              </div>
+            )}
 
-            <div className="flex items-start gap-2" style={{ padding: '12px 14px', borderRadius: '10px', background: '#FAFAFA' }}>
+            {checkout.error && (
+              <div className="flex items-start gap-2" style={{ padding: '12px 14px', borderRadius: '10px', background: '#FEF2F2', marginBottom: '12px' }}>
+                <AlertCircle size={14} color="#DC2626" className="flex-shrink-0" style={{ marginTop: '2px' }} />
+                <p style={{ fontSize: '11px', color: '#DC2626', lineHeight: 1.6, margin: 0 }}>{checkout.error}</p>
+              </div>
+            )}
+
+            {checkout.preview?.vendor_shipping.map((vendor) => {
+              const selected = checkout.selectedCouriers.find((s) => s.business_id === vendor.business_id);
+              return (
+                <div key={vendor.business_id} style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px' }}>
+                    {vendor.business_name}
+                    <span style={{ fontSize: '10px', fontWeight: 400, color: '#999', marginLeft: '8px' }}>
+                      {vendor.items.length} item{vendor.items.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {vendor.rates.map((rate) => (
+                      <button
+                        key={String(rate.courier_id)}
+                        onClick={() => checkout.selectCourier(vendor.business_id, rate)}
+                        className="flex items-center justify-between w-full transition-all"
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '10px',
+                          border: selected?.courier.courier_id === rate.courier_id
+                            ? '2px solid #064E3B'
+                            : '1px solid #E5E5E5',
+                          background: selected?.courier.courier_id === rate.courier_id
+                            ? 'rgba(6,78,59,0.03)'
+                            : '#FAFAFA',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          {rate.courier_image && (
+                            <Image src={rate.courier_image} alt="" width={20} height={20} style={{ borderRadius: '4px' }} />
+                          )}
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{rate.courier_name}</div>
+                            <div style={{ fontSize: '9px', color: '#999' }}>{rate.delivery_eta_time}</div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A' }}>
+                          ₦{rate.rate_amount.toLocaleString()}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Fabric transfers */}
+            {checkout.preview?.fabric_transfers.map((ft) => {
+              const key = `${ft.fabric_vendor_id}_${ft.tailor_vendor_id}`;
+              const selected = checkout.selectedFabricCouriers.find((s) => s.key === key);
+              return (
+                <div key={key} style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#8B5A2B', marginBottom: '6px' }}>
+                    Fabric Transfer
+                    <span style={{ fontSize: '10px', fontWeight: 400, color: '#999', marginLeft: '8px' }}>
+                      {ft.fabric_name} ({ft.fabric_yards}yd) → {ft.tailor_vendor_name}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {ft.rates.map((rate) => (
+                      <button
+                        key={String(rate.courier_id)}
+                        onClick={() => checkout.selectFabricCourier(key, rate)}
+                        className="flex items-center justify-between w-full transition-all"
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '10px',
+                          border: selected?.courier.courier_id === rate.courier_id
+                            ? '2px solid #8B5A2B'
+                            : '1px solid #E5E5E5',
+                          background: selected?.courier.courier_id === rate.courier_id
+                            ? 'rgba(139,90,43,0.03)'
+                            : '#FAFAFA',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{rate.courier_name}</div>
+                          <div style={{ fontSize: '9px', color: '#999' }}>{rate.delivery_eta_time}</div>
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A' }}>
+                          ₦{rate.rate_amount.toLocaleString()}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {!checkout.loading && shipping > 0 && (
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', marginTop: '8px' }}>
+                Total Shipping: ₦{shipping.toLocaleString()}
+              </div>
+            )}
+
+            <div className="flex items-start gap-2" style={{ padding: '12px 14px', borderRadius: '10px', background: '#FAFAFA', marginTop: '12px' }}>
               <AlertCircle size={14} color="#999" className="flex-shrink-0" style={{ marginTop: '2px' }} />
               <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.6, margin: 0 }}>
                 No delivery on Public Holidays. All orders are subject to Customs and Duty charges, payable by the recipient of the order.
@@ -497,16 +700,31 @@ export default function CheckoutPage() {
               </div>
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4AF37' }} />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{deliveryName}</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#777', lineHeight: 1.7, paddingLeft: '16px' }}>
-                    <p style={{ margin: 0 }}>{deliveryAddress.line1}</p>
-                    <p style={{ margin: 0 }}>{deliveryAddress.area}</p>
-                    <p style={{ margin: 0 }}>{deliveryAddress.state}, {deliveryAddress.zip}</p>
-                    <p style={{ margin: 0 }}>{deliveryAddress.country}</p>
-                  </div>
+                  {isLoadingAddress ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-3 w-48 bg-gray-100 rounded animate-pulse mt-2" />
+                      <div className="h-3 w-40 bg-gray-100 rounded animate-pulse" />
+                      <div className="h-3 w-36 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                  ) : deliveryAddress.line1 ? (
+                    <>
+                      <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4AF37' }} />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{deliveryName}</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#777', lineHeight: 1.7, paddingLeft: '16px' }}>
+                        <p style={{ margin: 0 }}>{deliveryAddress.line1}</p>
+                        <p style={{ margin: 0 }}>{deliveryAddress.area}</p>
+                        <p style={{ margin: 0 }}>{deliveryAddress.state}, {deliveryAddress.zip}</p>
+                        <p style={{ margin: 0 }}>{deliveryAddress.country}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: '#999', fontStyle: 'italic', paddingLeft: '16px' }}>
+                      No default address saved.
+                    </div>
+                  )}
                 </div>
                 <button
                   className="transition-all hover:bg-gray-100"
@@ -559,14 +777,14 @@ export default function CheckoutPage() {
 
             <p className="text-center" style={{ fontSize: '12px', fontWeight: 700, color: '#999', margin: '0 0 12px 0' }}>OR</p>
 
-            {/* PayPal Button */}
+            {/* Wallet Button */}
             <button
-              onClick={() => setPaymentMethod('paypal')}
+              onClick={() => setPaymentMethod('wallet')}
               className="w-full flex items-center justify-center gap-2 transition-all hover:opacity-90"
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                border: paymentMethod === 'paypal' ? '2px solid #462814' : 'none',
+                border: paymentMethod === 'wallet' ? '2px solid #462814' : 'none',
                 background: '#064E3B',
                 fontSize: '11px',
                 fontWeight: 800,
@@ -577,8 +795,8 @@ export default function CheckoutPage() {
                 marginBottom: '16px',
               }}
             >
-              <span style={{ fontSize: '14px' }}>₱</span>
-              Paypal
+              <span style={{ fontSize: '14px' }}>💳</span>
+              Pay with Wallet
             </button>
 
             {/* Payment Icons */}
@@ -603,9 +821,15 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── BUY NOW BUTTON ─────────────────────────────────── */}
+          {checkout.error && !checkout.loading && (
+            <div className="flex items-start gap-2" style={{ padding: '10px 14px', borderRadius: '10px', background: '#FEF2F2', marginBottom: '12px' }}>
+              <AlertCircle size={14} color="#DC2626" className="flex-shrink-0" style={{ marginTop: '2px' }} />
+              <p style={{ fontSize: '11px', color: '#DC2626', lineHeight: 1.6, margin: 0 }}>{checkout.error}</p>
+            </div>
+          )}
           <button
             onClick={handleBuyNow}
-            disabled={isProcessing}
+            disabled={isProcessing || checkout.placing || !checkout.isReady}
             className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
             style={{
               padding: '16px',
@@ -617,17 +841,20 @@ export default function CheckoutPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
               border: 'none',
-              cursor: isProcessing ? 'not-allowed' : 'pointer',
+              cursor: (isProcessing || checkout.placing || !checkout.isReady) ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 20px rgba(45,106,79,0.25)',
+              opacity: !checkout.isReady ? 0.5 : 1,
             }}
           >
-            {isProcessing ? (
+            {isProcessing || checkout.placing ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFF', borderRadius: '50%', display: 'inline-block' }} />
-                Processing...
+                Placing Order...
               </span>
+            ) : !checkout.isReady ? (
+              'Select Shipping to Continue'
             ) : (
-              'Buy Now'
+              `Pay ₦${total.toLocaleString()}`
             )}
           </button>
         </div>
@@ -638,7 +865,7 @@ export default function CheckoutPage() {
             {/* Header */}
             <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {cart.length} {cart.length === 1 ? 'Item' : 'Items'}
+                {cart.reduce((acc, item) => acc + item.quantity, 0)} {cart.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'Item' : 'Items'}
               </h3>
               <Link href="/cart" style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none' }}>
                 Edit
@@ -661,10 +888,10 @@ export default function CheckoutPage() {
                     <div className="flex items-start justify-between gap-1">
                       <div className="min-w-0">
                         <h4 className="truncate" style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3 }}>{item.title}</h4>
-                        <p className="truncate" style={{ fontSize: '10px', color: '#AAA', marginTop: '2px' }}>{item.title}</p>
+                        <p className="truncate" style={{ fontSize: '10px', color: '#AAA', marginTop: '2px' }}>Qty: {item.quantity}</p>
                       </div>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', flexShrink: 0 }}>
-                        ₦{item.price.toLocaleString()}
+                        ₦{(item.price * item.quantity).toLocaleString()}
                       </span>
                     </div>
                     {/* Discount tags */}

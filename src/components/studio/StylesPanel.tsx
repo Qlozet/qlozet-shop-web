@@ -4,6 +4,7 @@ import React from 'react';
 import { SILHOUETTES, NECKLINES, SLEEVES, type StyleOption, type ClothingType } from '@/data/studio-options';
 import { useStyleLibrary, type PlatformStyle, type StyleGender } from '@/hooks/useStyleLibrary';
 import { StyleOptionButton } from './StyleOptionButton';
+import { type ApiProduct, type ApiStyle } from '@/lib/api-types';
 
 // ─── Map API PlatformStyle → local StyleOption ──────────────
 const EMOJI_MAP: Record<string, string> = {
@@ -11,15 +12,16 @@ const EMOJI_MAP: Record<string, string> = {
   trouser: '👖', full_body: '👘', bodice: '🎀', hemline: '📏', back: '🔙',
 };
 
-function toStyleOption(s: PlatformStyle): StyleOption {
+function toStyleOption(s: PlatformStyle | ApiStyle): StyleOption {
   return {
-    id: s._id,
+    id: ('_id' in s ? s._id : null) || s.style_code || s.name,
     label: s.name,
-    emoji: EMOJI_MAP[s.category] || '✂️',
-    imageUrl: s.image_url,
+    emoji: EMOJI_MAP['category' in s ? s.category : (s.categories?.[0] || 'none')] || '✂️',
+    imageUrl: ('images' in s && s.images && s.images[0]) ? s.images[0].url : ('image_url' in s ? s.image_url : undefined),
     description: s.description,
+    tags: 'attributes' in s ? s.attributes : undefined,
     styleCode: s.style_code,
-    extraCost: s.price_suggestion,
+    extraCost: ('price_suggestion' in s ? s.price_suggestion : ('price' in s ? s.price : 0)) || 0,
   };
 }
 
@@ -59,7 +61,7 @@ function StyleSection({
   fallback,
 }: {
   title: string;
-  options: PlatformStyle[];
+  options: (PlatformStyle | ApiStyle)[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   isLoading: boolean;
@@ -117,6 +119,7 @@ interface StylesPanelProps {
   onSelectTrouser?: (id: string) => void;
   selectedFullBody?: string | null;
   onSelectFullBody?: (id: string) => void;
+  product?: ApiProduct;
 }
 
 export const StylesPanel: React.FC<StylesPanelProps> = ({
@@ -136,14 +139,52 @@ export const StylesPanel: React.FC<StylesPanelProps> = ({
   onSelectTrouser,
   selectedFullBody,
   onSelectFullBody,
+  product,
 }) => {
-  const { necklines, sleeves, collars, skirts, trousers, fullBody, isLoading } = useStyleLibrary(gender);
+  const { necklines, sleeves, collars, skirts, trousers, fullBody, all: allPlatformStyles, isLoading } = useStyleLibrary(gender);
 
-  // Debug — only log once when loading transitions
-  const prevLoading = React.useRef(true);
-  if (prevLoading.current !== isLoading) {
-    console.log('[StylesPanel]', { clothingType, gender, isLoading, necklines: necklines.length, sleeves: sleeves.length, collars: collars.length, skirts: skirts.length, trousers: trousers.length, fullBody: fullBody.length });
-    prevLoading.current = isLoading;
+  const productStyles = product?.clothing?.styles || [];
+  const useProductStyles = productStyles.length > 0;
+
+  // Enrich product styles with descriptions from the platform style library
+  // Product-embedded styles don't carry descriptions, but the library does
+  const enrichedProductStyles: ApiStyle[] = useProductStyles
+    ? productStyles.map(ps => {
+        if (ps.description) return ps; // already has one
+        const match = allPlatformStyles.find(lib => lib.style_code === ps.style_code);
+        if (match?.description) {
+          return { ...ps, description: match.description };
+        }
+        return ps;
+      })
+    : [];
+
+  const getStyles = (cat: string, defaultStyles: PlatformStyle[]) => {
+    if (useProductStyles) {
+      return enrichedProductStyles.filter(s => s.categories?.includes(cat) || s.type === cat);
+    }
+    return defaultStyles;
+  };
+
+  const currentNecklines = getStyles('neckline', necklines);
+  const currentSleeves = getStyles('sleeve', sleeves);
+  const currentCollars = getStyles('collar', collars);
+  const currentSkirts = getStyles('skirt', skirts);
+  const currentTrousers = getStyles('trouser', trousers);
+  const currentFullBody = getStyles('full_body', fullBody);
+
+  // If using product styles, we don't strictly need a clothingType, we can just show what's available
+  if (useProductStyles) {
+    return (
+      <div style={{ padding: '20px' }}>
+        {currentFullBody.length > 0 && <StyleSection title="Silhouette" options={currentFullBody} selectedId={selectedFullBody ?? null} onSelect={onSelectFullBody ?? (() => {})} isLoading={false} fallback={[]} />}
+        {currentNecklines.length > 0 && <StyleSection title="Neckline" options={currentNecklines} selectedId={selectedNeckline} onSelect={onSelectNeckline} isLoading={false} fallback={[]} />}
+        {currentSleeves.length > 0 && <StyleSection title="Sleeves" options={currentSleeves} selectedId={selectedSleeve} onSelect={onSelectSleeve} isLoading={false} fallback={[]} />}
+        {currentCollars.length > 0 && <StyleSection title="Collar" options={currentCollars} selectedId={selectedCollar ?? null} onSelect={onSelectCollar ?? (() => {})} isLoading={false} fallback={[]} />}
+        {currentSkirts.length > 0 && <StyleSection title="Skirt Style" options={currentSkirts} selectedId={selectedSkirt ?? null} onSelect={onSelectSkirt ?? (() => {})} isLoading={false} fallback={[]} />}
+        {currentTrousers.length > 0 && <StyleSection title="Trouser Style" options={currentTrousers} selectedId={selectedTrouser ?? null} onSelect={onSelectTrouser ?? (() => {})} isLoading={false} fallback={[]} />}
+      </div>
+    );
   }
 
   // If no clothing type set, show the original layout (backward compat)
