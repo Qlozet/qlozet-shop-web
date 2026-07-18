@@ -22,8 +22,11 @@ import {
   getProductTag,
   getTurnaroundDays,
   hasDiscount,
+  type ApiSizeGuide,
+  type ApiSizeRecommendation,
 } from '@/lib/api-types';
-import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
+import type { ApiProduct, ApiFeedItem, CartSelections } from '@/lib/api-types';
+import { api } from '@/lib/api';
 import { useCustomization } from '@/hooks/useCustomization';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useBoughtTogether, useCompleteTheLook } from '@/hooks/useRecommendations';
@@ -47,6 +50,7 @@ import {
   Scissors,
   CalendarDays,
   Loader2,
+  X,
 } from 'lucide-react';
 
 // ─── Loading Skeleton ─────────────────────────────────────────
@@ -82,7 +86,7 @@ function ProductDetailSkeleton() {
 export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { wishlist, toggleWishlist, addToCart, addRecentlyViewed } = useApp();
+  const { wishlist, toggleWishlist, addToCart, addRecentlyViewed, user } = useApp();
   const trackEvent = useTrackEvent();
 
   const productId = params.id as string;
@@ -94,10 +98,8 @@ export default function ProductDetailsPage() {
   const productName = product ? getProductName(product) : '';
   const productPrice = product ? getProductPrice(product) : 0;
   const productImage = product ? getProductImage(product) : '';
-  const gallery = product ? getProductImages(product) : [];
   const productDesc = product ? getProductDescription(product) : '';
   const colors = product ? getProductColors(product) : [];
-  const sizes = product ? getProductSizes(product) : [];
   const tag = product ? getProductTag(product) : '';
   const turnaroundDays = product ? getTurnaroundDays(product) : null;
   const isCustomizable = tag === 'CUSTOMIZABLE';
@@ -149,6 +151,74 @@ export default function ProductDetailsPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+  const [sizeGuideData, setSizeGuideData] = useState<ApiSizeGuide | null>(null);
+  const [sizeGuideLoading, setSizeGuideLoading] = useState(true);
+
+  useEffect(() => {
+    if (!product?._id) {
+      setSizeGuideData(null);
+      setSizeGuideLoading(false);
+      return;
+    }
+    const fetchSizeGuide = async () => {
+      try {
+        setSizeGuideLoading(true);
+        // Public endpoint — looks up the size guide assigned to this product
+        const res = await api.get(`/size-guides/product/${product._id}`);
+        const actualData = res.data?.data ?? res.data;
+        setSizeGuideData(actualData);
+      } catch {
+        // 404 means no size guide is assigned — that's fine
+        setSizeGuideData(null);
+      } finally {
+        setSizeGuideLoading(false);
+      }
+    };
+    fetchSizeGuide();
+  }, [product?._id]);
+
+  let galleryObjects: import('@/lib/api-types').ApiProductImage[] = [];
+  if (product?.kind === 'clothing' && product.clothing?.images) {
+    galleryObjects = product.clothing.images;
+  } else if (product?.kind === 'fabric' && product.fabric?.images) {
+    galleryObjects = product.fabric.images;
+  } else if (product?.kind === 'accessory' && product.accessory?.images) {
+    galleryObjects = product.accessory.images;
+  }
+
+  let gallery = galleryObjects.map(img => img.url).filter(Boolean);
+  let sizes = product ? getProductSizes(product) : [];
+
+  if (product?.kind === 'clothing' && selectedColor) {
+    const cv = product.clothing?.color_variants?.find(c => (c.name || c.color_name) === selectedColor);
+    if (cv) {
+      const cvSizes = cv.variants?.map(v => v.size).filter(Boolean) as string[];
+      if (cvSizes && cvSizes.length > 0) {
+        sizes = cvSizes;
+      }
+      
+      let cvImagesObj: import('@/lib/api-types').ApiProductImage[] = [];
+      if (cv.images && cv.images.length > 0) {
+        cvImagesObj = cv.images;
+      } else if (cv.variants && cv.variants.length > 0) {
+        const vWithImages = cv.variants.find(v => v.images && v.images.length > 0);
+        if (vWithImages && vWithImages.images) {
+          cvImagesObj = vWithImages.images;
+        }
+      }
+      if (cvImagesObj.length > 0) {
+        galleryObjects = cvImagesObj;
+        gallery = cvImagesObj.map(img => img.url).filter(Boolean);
+      }
+    }
+  }
+
+  // Ensure activeImageIdx is valid
+  if (gallery.length > 0 && activeImageIdx >= gallery.length) {
+    setActiveImageIdx(0);
+  }
+
   const [showDetails, setShowDetails] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
@@ -156,11 +226,21 @@ export default function ProductDetailsPage() {
   const [showReserve, setShowReserve] = useState(false);
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
 
+  // AI Size Recommendation
+  const [sizeRec, setSizeRec] = useState<ApiSizeRecommendation | null>(null);
+  const [sizeRecLoading, setSizeRecLoading] = useState(false);
+  const [sizeRecError, setSizeRecError] = useState<string | null>(null);
+  const [showSizeRecPopover, setShowSizeRecPopover] = useState(false);
+
   // Initialize size/color when product loads
   useEffect(() => {
-    if (sizes.length > 0 && !selectedSize) setSelectedSize(sizes[0]);
     if (colors.length > 0 && !selectedColor) setSelectedColor(colors[0].name);
-  }, [sizes, colors]); // eslint-disable-line react-hooks/exhaustive-deps
+    // If selectedColor is set, sizes will be filtered for that color.
+    // If selectedSize is not in the new sizes list, select the first size.
+    if (sizes.length > 0 && (!selectedSize || !sizes.includes(selectedSize))) {
+      setSelectedSize(sizes[0]);
+    }
+  }, [sizes, colors, selectedColor, selectedSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Zoom state
   const [isZoomed, setIsZoomed] = useState(false);
@@ -266,8 +346,98 @@ export default function ProductDetailsPage() {
 
   const customization = useCustomization({ mode: 'product', defaultSection: 'styles' });
 
+  // Sync color selection between main product details and Fabric panel
+  useEffect(() => {
+    if (selectedColor && selectedColor !== customization.selectedColor) {
+      customization.setSelectedColor(selectedColor);
+    }
+  }, [selectedColor]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (customization.selectedColor && customization.selectedColor !== '#1B2A4A' && customization.selectedColor !== selectedColor) {
+      setSelectedColor(customization.selectedColor);
+    }
+  }, [customization.selectedColor]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Look up selected styles from API cache or hardcoded fallback
   const { all: apiStyles } = useStyleLibrary();
+
+  // ── Dynamic price: base price + all extras ──────────────────────
+  const customizationExtra = useMemo(() => {
+    if (!product || product.kind !== 'clothing') return 0;
+    const clothing = product.clothing;
+    if (!clothing) return 0;
+
+    let extras = 0;
+
+    // Color variant price difference from base (can be positive or negative)
+    if (selectedColor && selectedSize) {
+      const cv = clothing.color_variants?.find(c => (c.name || c.color_name) === selectedColor);
+      if (cv?.variants) {
+        const variant = cv.variants.find(v => v.size === selectedSize);
+        if (variant?.price) extras += variant.price;
+      }
+    }
+
+    // ── Helper: resolve extra cost for a selected style ID ──
+    const resolveStyleCost = (id: string | null): number => {
+      if (!id) return 0;
+      // 1. Check product-level styles first
+      const productStyle = clothing.styles?.find(
+        (s: any) => s._id === id || s.style_code === id || s.name === id,
+      );
+      if (productStyle?.price) return productStyle.price;
+      // 2. Check platform style library
+      const apiMatch = apiStyles.find((s) => s._id === id);
+      if (apiMatch?.price_suggestion) return apiMatch.price_suggestion;
+      // 3. Hardcoded fallback
+      const hardcoded = [...SILHOUETTES, ...NECKLINES, ...SLEEVES].find((s) => s.id === id);
+      if (hardcoded?.extraCost) return hardcoded.extraCost;
+      return 0;
+    };
+
+    // Sum prices of selected style options
+    extras += resolveStyleCost(customization.selectedNeckline);
+    extras += resolveStyleCost(customization.selectedSleeve);
+    extras += resolveStyleCost(customization.selectedCollar);
+    extras += resolveStyleCost(customization.selectedSilhouette);
+    extras += resolveStyleCost(customization.selectedSkirt);
+    extras += resolveStyleCost(customization.selectedTrouser);
+    extras += resolveStyleCost(customization.selectedFullBody);
+
+    // Sum prices of selected accessories
+    for (const accId of customization.selectedAccessories) {
+      const acc = clothing.accessories?.find(a => a._id === accId);
+      if (acc?.price) extras += acc.price;
+    }
+
+    // Sum prices of selected add-on variants
+    for (const [addonId, variantId] of Object.entries(customization.selectedAddons)) {
+      const addon = clothing.addons?.find(a => a._id === addonId);
+      if (addon) {
+        const variant = addon.variants?.find(v => v._id === variantId);
+        if (variant?.price) extras += variant.price;
+      }
+    }
+
+    return extras;
+  }, [
+    product, productPrice, selectedColor, selectedSize, apiStyles,
+    customization.selectedAccessories,
+    customization.selectedAddons,
+    customization.selectedNeckline,
+    customization.selectedSleeve,
+    customization.selectedCollar,
+    customization.selectedSilhouette,
+    customization.selectedSkirt,
+    customization.selectedTrouser,
+    customization.selectedFullBody,
+  ]);
+
+  // Base price + all extras (color variant diff, styles, accessories, addons)
+  const displayPrice = productPrice + customizationExtra;
+
+  // Look up selected styles from hardcoded fallback
   const findApiStyle = (id: string | null) => {
     if (!id) return null;
     const apiMatch = apiStyles.find((s) => s._id === id);
@@ -281,14 +451,83 @@ export default function ProductDetailsPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    // Build selections based on product kind
+    const selections: CartSelections = {};
+
+    if (product.kind === 'clothing' && product.clothing) {
+      const clothing = product.clothing;
+
+      // Color variant selection
+      if (selectedColor) {
+        const cv = clothing.color_variants?.find(
+          (c: any) => (c.name || c.color_name) === selectedColor
+        );
+        if (cv?._id) {
+          selections.color_variant_selections = [{
+            color_variant_id: cv._id,
+            size: selectedSize || undefined,
+            quantity: 1,
+          }];
+        }
+      }
+
+      // Style selections (from customization hook)
+      const styleIds = [
+        customization.selectedSilhouette,
+        customization.selectedNeckline,
+        customization.selectedSleeve,
+        customization.selectedCollar,
+        customization.selectedSkirt,
+        customization.selectedTrouser,
+        customization.selectedFullBody,
+      ].filter(Boolean) as string[];
+      if (styleIds.length > 0) {
+        selections.style_selections = styleIds.map((id) => ({ style_id: id }));
+      }
+
+      // Accessory selections
+      if (customization.selectedAccessories.length > 0 && clothing.accessories) {
+        selections.accessory_selections = customization.selectedAccessories
+          .map((accId) => {
+            const acc = clothing.accessories?.find((a: any) => a._id === accId);
+            const firstVariant = acc?.variants?.[0];
+            return acc && firstVariant?._id
+              ? { accessory_id: accId, variant_id: firstVariant._id, quantity: 1 }
+              : null;
+          })
+          .filter(Boolean) as CartSelections['accessory_selections'];
+      }
+
+      // Addon selections
+      if (Object.keys(customization.selectedAddons).length > 0) {
+        selections.addon_selections = Object.entries(customization.selectedAddons)
+          .map(([addonName, variantName]) => {
+            const addonObj = product.clothing?.addons?.find(a => a.name === addonName);
+            const variantObj = addonObj?.variants?.find(v => v.name === variantName);
+            
+            if (addonObj?._id && variantObj?._id) {
+              return {
+                addon_id: addonObj._id,
+                variant_id: variantObj._id,
+                quantity: 1,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) as any;
+      }
+    }
+
     addToCart({
       id: product._id,
       title: productName,
-      price: productPrice,
+      price: productPrice + customizationExtra,
       image: productImage,
       kind: product.kind,
       size: selectedSize,
       color: selectedColor,
+      selections,
     });
   };
 
@@ -296,6 +535,43 @@ export default function ProductDetailsPage() {
     router.push(
       `/bespoke?tryOnImg=${encodeURIComponent(productImage)}&title=${encodeURIComponent(productName)}`
     );
+  };
+
+  const handleAIRecommend = async () => {
+    if (!user) {
+      setSizeRecError('Please sign in to get AI size recommendations');
+      setShowSizeRecPopover(true);
+      return;
+    }
+    if (!sizeGuideData?._id) {
+      setSizeRecError('No size guide available for this product');
+      setShowSizeRecPopover(true);
+      return;
+    }
+    try {
+      setSizeRecLoading(true);
+      setSizeRecError(null);
+      setShowSizeRecPopover(true);
+      const res = await api.post(`/size-guides/${sizeGuideData._id}/recommend`, {
+        preferred_unit: 'cm',
+      });
+      const data = res.data?.data ?? res.data;
+      setSizeRec(data);
+      // Auto-select the recommended size
+      if (data.recommended_size) {
+        setSelectedSize(data.recommended_size);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('400') || msg.includes('measurement')) {
+        setSizeRecError('Please add your body measurements in your profile first');
+      } else {
+        setSizeRecError('Unable to get recommendation. Please try again.');
+      }
+      setSizeRec(null);
+    } finally {
+      setSizeRecLoading(false);
+    }
   };
 
   const prevImage = () =>
@@ -348,6 +624,7 @@ export default function ProductDetailsPage() {
         isOpen={showSizeGuide}
         onClose={() => setShowSizeGuide(false)}
         category={`Men / ${kindLabel}`}
+        guideData={sizeGuideData}
       />
       <div
         className="flex flex-col animate-fade-in relative lg:overflow-x-clip"
@@ -458,10 +735,32 @@ export default function ProductDetailsPage() {
 
               {/* ── Customization Hotspots ── */}
               {isCustomizable && !isZoomed && (() => {
-                const selNeck = findApiStyle(customization.selectedNeckline);
-                const selSleeve = findApiStyle(customization.selectedSleeve);
-                const selFabric = FABRICS.find((f) => f.id === customization.selectedFabric);
-                const selAccs = customization.selectedAccessories.map((id) => ACCESSORIES.find((a) => a.id === id)).filter(Boolean);
+                const productStyles = product?.clothing?.styles || [];
+
+                // Look up a style selection by its ID
+                const findSelectedStyle = (id: string | null) => {
+                  if (!id) return null;
+                  const s = productStyles.find(st => st._id === id || st.style_code === id || st.name === id);
+                  if (s) return { label: s.name, emoji: '✂️', imageUrl: s.images?.[0]?.url, extraCost: s.price || 0 };
+                  return findApiStyle(id);
+                };
+
+                // Map field_key → which customization selection to display
+                const FIELD_KEY_MAP: Record<string, {
+                  getSelected: () => ReturnType<typeof findSelectedStyle>;
+                  section: string;
+                  emoji: string;
+                  fallbackLabel: string;
+                }> = {
+                  neckline: { getSelected: () => findSelectedStyle(customization.selectedNeckline), section: 'styles', emoji: '👗', fallbackLabel: 'Neckline' },
+                  collar: { getSelected: () => findSelectedStyle(customization.selectedCollar), section: 'styles', emoji: '👔', fallbackLabel: 'Collar' },
+                  sleeve: { getSelected: () => findSelectedStyle(customization.selectedSleeve), section: 'styles', emoji: '🧤', fallbackLabel: 'Sleeves' },
+                  trouser: { getSelected: () => findSelectedStyle(customization.selectedTrouser), section: 'styles', emoji: '👖', fallbackLabel: 'Trouser' },
+                  skirt: { getSelected: () => findSelectedStyle(customization.selectedSkirt), section: 'styles', emoji: '👗', fallbackLabel: 'Skirt' },
+                  full_body: { getSelected: () => findSelectedStyle(customization.selectedFullBody), section: 'styles', emoji: '👘', fallbackLabel: 'Silhouette' },
+                  fabric: { getSelected: () => null, section: 'fabric', emoji: '🧵', fallbackLabel: 'Fabric' },
+                  accessories: { getSelected: () => null, section: 'accessories', emoji: '✨', fallbackLabel: 'Accessories' },
+                };
 
                 const openSection = (section: string) => {
                   setShowCustomize(true);
@@ -494,75 +793,53 @@ export default function ProductDetailsPage() {
                   </div>
                 );
 
+                const imageHotspots = galleryObjects[activeImageIdx]?.hotspots || [];
+                if (imageHotspots.length === 0) return null;
+
                 return (
                   <>
-                    {/* Neckline hotspot */}
-                    <Hotspot name="neckline" top="22%" left="50%" transform="translateX(-50%)" section="styles">
-                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                        <div>
-                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selNeck?.label || 'Neckline'}</p>
-                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selNeck?.extraCost ? `+ ₦${selNeck.extraCost.toLocaleString()}` : 'Included'}</p>
-                        </div>
-                        <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0 overflow-hidden" style={{ width: '32px', height: '32px' }}>
-                          {selNeck?.imageUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={selNeck.imageUrl} alt={selNeck.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontSize: '18px' }}>{selNeck?.emoji || '👗'}</span>
-                          )}
-                        </div>
-                      </div>
-                    </Hotspot>
+                    {imageHotspots.map((hs, idx) => {
+                      const fieldKey = hs.field_key || hs.label.toLowerCase();
+                      const mapping = FIELD_KEY_MAP[fieldKey];
+                      const selected = mapping?.getSelected();
+                      const section = mapping?.section || 'styles';
+                      const fallbackEmoji = mapping?.emoji || '✨';
+                      const fallbackLabel = mapping?.fallbackLabel || fieldKey;
 
-                    {/* Sleeves hotspot */}
-                    <Hotspot name="sleeves" top="38%" left="18%" delay="0.3s" section="styles">
-                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                        <div>
-                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selSleeve?.label || 'Sleeves'}</p>
-                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selSleeve?.extraCost ? `+ ₦${selSleeve.extraCost.toLocaleString()}` : 'Included'}</p>
-                        </div>
-                        <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0 overflow-hidden" style={{ width: '32px', height: '32px' }}>
-                          {selSleeve?.imageUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={selSleeve.imageUrl} alt={selSleeve.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontSize: '18px' }}>{selSleeve?.emoji || '💪'}</span>
-                          )}
-                        </div>
-                      </div>
-                    </Hotspot>
+                      const displayName = selected?.label || fallbackLabel;
+                      const displayCost = selected?.extraCost || 0;
+                      const displayEmoji = selected?.emoji || fallbackEmoji;
+                      const displayImage = selected?.imageUrl;
 
-                    {/* Fabric hotspot */}
-                    <Hotspot name="fabric" top="55%" left="50%" transform="translateX(-50%)" delay="0.6s" section="fabric">
-                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                        <div>
-                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selFabric?.name || 'Fabric'}</p>
-                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selFabric?.extraCost ? `+ ₦${selFabric.extraCost.toLocaleString()}` : 'Included'}</p>
-                        </div>
-                        {selFabric ? (
-                          <div className="relative overflow-hidden rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                            <Image src={selFabric.image} alt={selFabric.name} fill className="object-cover" sizes="32px" />
+                      return (
+                        <Hotspot
+                          key={idx}
+                          name={`${fieldKey}-${idx}`}
+                          top={`${hs.y * 100}%`}
+                          left={`${hs.x * 100}%`}
+                          transform="translate(-50%, -50%)"
+                          section={section}
+                          delay={`${idx * 0.3}s`}
+                        >
+                          <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px', maxWidth: '200px' }}>
+                            <div className="flex-1" style={{ overflow: 'hidden', minWidth: 0 }}>
+                              <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</p>
+                              <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {displayCost > 0 ? `+ ₦${displayCost.toLocaleString()}` : 'Included'}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0 overflow-hidden" style={{ width: '32px', height: '32px' }}>
+                              {displayImage ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={displayImage} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <span style={{ fontSize: '18px' }}>{displayEmoji}</span>
+                              )}
+                            </div>
                           </div>
-                        ) : (
-                          <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                            <span style={{ fontSize: '18px' }}>🧵</span>
-                          </div>
-                        )}
-                      </div>
-                    </Hotspot>
-
-                    {/* Accessories hotspot */}
-                    <Hotspot name="accessories" top="72%" left="45%" delay="0.9s" section="accessories">
-                      <div className="flex items-center bg-[#333]/85 backdrop-blur-sm rounded-[12px] shadow-lg" style={{ padding: '8px 10px', gap: '8px' }}>
-                        <div>
-                          <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800 }}>{selAccs.length > 0 ? selAccs.map((a) => a!.name).join(', ') : 'Accessories'}</p>
-                          <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600 }}>{selAccs.length > 0 ? `+ ₦${selAccs.reduce((sum, a) => sum + (a!.extraCost || 0), 0).toLocaleString()}` : 'None selected'}</p>
-                        </div>
-                        <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0" style={{ width: '32px', height: '32px' }}>
-                          <span style={{ fontSize: '18px' }}>{selAccs.length > 0 ? selAccs[0]!.emoji : '🪢'}</span>
-                        </div>
-                      </div>
-                    </Hotspot>
+                        </Hotspot>
+                      );
+                    })}
                   </>
                 );
               })()}
@@ -778,10 +1055,18 @@ export default function ProductDetailsPage() {
             </p>
 
             {/* Price */}
-            <div className="flex items-center" style={{ gap: '12px' }}>
+            <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
               <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
-                ₦{productPrice.toLocaleString()}
+                ₦{displayPrice.toLocaleString()}
               </span>
+              {customizationExtra > 0 && (
+                <span style={{
+                  fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
+                  background: '#EDE9FE', color: '#6D28D9',
+                }}>
+                  +₦{customizationExtra.toLocaleString()} styling
+                </span>
+              )}
               {hasDiscount(product) && (
                 <span style={{ fontSize: '15px', fontWeight: 500, color: '#AAA', textDecoration: 'line-through' }}>
                   ₦{getProductOriginalPrice(product).toLocaleString()}
@@ -896,8 +1181,8 @@ export default function ProductDetailsPage() {
               </div>
             )}
 
-            {/* Size Guide Link */}
-            {product.kind === 'clothing' && (
+            {/* Size Guide Link — only shown when a real size guide is assigned */}
+            {product.kind === 'clothing' && sizeGuideData && (
               <button
                 onClick={() => setShowSizeGuide(true)}
                 className="flex items-center self-start hover:text-gray-800 transition-colors"
@@ -932,21 +1217,125 @@ export default function ProductDetailsPage() {
                   </button>
                 ))}
 
-                {/* AI Size Button */}
+                {/* AI Size Recommendation Button */}
                 {product.kind === 'clothing' && (
-                  <button
-                    onClick={handleCustomize}
-                    className="flex items-center justify-center transition-all hover:bg-gray-100"
-                    style={{
-                      minWidth: '42px', height: '42px', padding: '0 12px',
-                      borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      background: '#F5F5F5', color: '#666', border: '1px solid #E0E0E0', gap: '4px',
-                    }}
-                    title="AI-powered size recommendation"
-                  >
-                    <Sparkles size={13} />
-                    AI
-                  </button>
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={handleAIRecommend}
+                      disabled={sizeRecLoading}
+                      className="flex items-center justify-center transition-all hover:bg-gray-100"
+                      style={{
+                        minWidth: '42px', height: '42px', padding: '0 12px',
+                        borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                        background: sizeRec ? 'linear-gradient(135deg, #7C3AED, #4F46E5)' : '#F5F5F5',
+                        color: sizeRec ? '#FFF' : '#666',
+                        border: sizeRec ? '2px solid #7C3AED' : '1px solid #E0E0E0', gap: '4px',
+                        opacity: sizeRecLoading ? 0.6 : 1,
+                      }}
+                      title="AI-powered size recommendation"
+                    >
+                      {sizeRecLoading ? (
+                        <span className="animate-spin" style={{ width: 13, height: 13, border: '2px solid #999', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block' }} />
+                      ) : (
+                        <Sparkles size={13} />
+                      )}
+                      AI
+                    </button>
+
+                    {/* AI Recommendation Popover */}
+                    {showSizeRecPopover && (
+                      <div
+                        className="animate-fade-in"
+                        style={{
+                          position: 'absolute', right: 0, top: '100%', marginTop: '8px',
+                          background: 'white', borderRadius: '16px', border: '1px solid #E5E5E5',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50,
+                          minWidth: '280px', maxWidth: '320px', overflow: 'hidden',
+                        }}
+                      >
+                        {/* Header */}
+                        <div className="flex items-center justify-between" style={{ padding: '14px 16px 10px', borderBottom: '1px solid #F0F0F0' }}>
+                          <div className="flex items-center gap-2">
+                            <Sparkles size={14} color="#7C3AED" />
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>AI Size Recommendation</span>
+                          </div>
+                          <button onClick={() => setShowSizeRecPopover(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
+                            <X size={14} color="#999" />
+                          </button>
+                        </div>
+
+                        <div style={{ padding: '14px 16px' }}>
+                          {/* Error State */}
+                          {sizeRecError && (
+                            <div style={{ fontSize: '12px', color: '#DC2626', lineHeight: 1.5 }}>
+                              {sizeRecError}
+                              {sizeRecError.includes('measurements') && (
+                                <button
+                                  onClick={() => router.push('/profile?tab=measurements')}
+                                  style={{ display: 'block', marginTop: '8px', fontSize: '12px', fontWeight: 600, color: '#7C3AED', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                                >
+                                  Add Measurements →
+                                </button>
+                              )}
+                              {sizeRecError.includes('sign in') && (
+                                <button
+                                  onClick={() => router.push('/profile')}
+                                  style={{ display: 'block', marginTop: '8px', fontSize: '12px', fontWeight: 600, color: '#7C3AED', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                                >
+                                  Sign In →
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Loading State */}
+                          {sizeRecLoading && !sizeRecError && (
+                            <div className="flex items-center gap-2" style={{ fontSize: '12px', color: '#888' }}>
+                              <span className="animate-spin" style={{ width: 14, height: 14, border: '2px solid #E5E5E5', borderTopColor: '#7C3AED', borderRadius: '50%', display: 'inline-block' }} />
+                              Analyzing your measurements…
+                            </div>
+                          )}
+
+                          {/* Results */}
+                          {sizeRec && !sizeRecLoading && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              {/* Recommended Size */}
+                              <div className="flex items-center justify-between">
+                                <span style={{ fontSize: '12px', color: '#666' }}>Your size</span>
+                                <div className="flex items-center gap-2">
+                                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#1A1A1A' }}>{sizeRec.recommended_size}</span>
+                                  <span style={{
+                                    fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
+                                    background: sizeRec.confidence >= 0.8 ? '#DCFCE7' : sizeRec.confidence >= 0.6 ? '#FEF9C3' : '#FEE2E2',
+                                    color: sizeRec.confidence >= 0.8 ? '#166534' : sizeRec.confidence >= 0.6 ? '#854D0E' : '#991B1B',
+                                  }}>
+                                    {Math.round(sizeRec.confidence * 100)}% match
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Breakdown */}
+                              {sizeRec.breakdown && sizeRec.breakdown.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                  {sizeRec.breakdown.map(b => (
+                                    <div key={b.body_part} className="flex items-center justify-between" style={{ fontSize: '11px', padding: '6px 10px', borderRadius: '8px', background: '#FAFAFA' }}>
+                                      <span style={{ color: '#555', textTransform: 'capitalize' }}>{b.body_part.replace(/_/g, ' ')}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span style={{ color: '#888' }}>{b.customer_value} → {b.range}</span>
+                                        <span style={{ fontSize: '10px', color: b.fits ? '#16A34A' : '#DC2626' }}>
+                                          {b.fits ? '✓' : '✗'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -1022,6 +1411,7 @@ export default function ProductDetailsPage() {
                 isOpen={showCustomize}
                 customization={customization}
                 onClose={() => setShowCustomize(false)}
+                product={product}
               />
             )}
 

@@ -64,9 +64,9 @@ export const FabricCard: React.FC<FabricCardProps> = ({
           }}>
             {fabric.name}
           </p>
-          {fabric.extraCost && (
-            <p style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>
-              +₦{fabric.extraCost.toLocaleString()}
+          {fabric.extraCost !== undefined && (
+            <p style={{ fontSize: '9px', fontWeight: 700, color: fabric.extraCost > 0 ? '#1A1A1A' : '#059669', marginTop: '2px' }}>
+              {fabric.extraCost > 0 ? `+₦${fabric.extraCost.toLocaleString()}` : 'Included'}
             </p>
           )}
         </div>

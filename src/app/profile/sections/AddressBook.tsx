@@ -64,17 +64,35 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
 
     const sanitizedName = (user?.name || 'Guest').replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ').trim() || 'Guest';
 
-    // Mock geolocation coordinates for selected Nigerian addresses
+    // Detect country from address sub text
+    const subLower = selectedAddr.sub.toLowerCase();
+    let country = 'Nigeria';
+    let defaultPostal = '900108';
+    let defaultLat = 9.0765;
+    let defaultLng = 7.3986;
+    if (subLower.includes('united states')) {
+      country = 'United States';
+      defaultPostal = '10001';
+      defaultLat = 40.7128;
+      defaultLng = -74.0060;
+    } else if (subLower.includes('united kingdom')) {
+      country = 'United Kingdom';
+      defaultPostal = 'SW1A 1AA';
+      defaultLat = 51.5074;
+      defaultLng = -0.1278;
+    }
+
+    // Mock geolocation coordinates for selected addresses
     const payload = {
       full_name: sanitizedName,
       phone_number: user?.phone || '',
       address: selectedAddr.main,
-      city: selectedAddr.sub.split(',')[0]?.trim() || 'Abuja',
-      state: selectedAddr.sub.split(',')[1]?.trim() || 'FCT',
-      country: 'Nigeria',
-      postal_code: '900108',
-      latitude: 9.0765,
-      longitude: 7.3986
+      city: selectedAddr.sub.split(',')[0]?.trim() || '',
+      state: selectedAddr.sub.split(',')[1]?.trim() || '',
+      country,
+      postal_code: defaultPostal,
+      latitude: defaultLat,
+      longitude: defaultLng
     };
 
     api.post('/users/customer/addresses', { ...payload, label: selectedAddr.main })

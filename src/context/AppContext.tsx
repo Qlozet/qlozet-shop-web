@@ -8,7 +8,7 @@ import {
   getProductImage,
   getProductPrice,
 } from '@/lib/api-types';
-import type { ApiProduct } from '@/lib/api-types';
+import type { ApiProduct, CartSelections } from '@/lib/api-types';
 
 // Definitions
 export interface User {
@@ -32,6 +32,10 @@ export interface CartItem {
   color?: string;
   kind: 'clothing' | 'fabric' | 'accessory';
   extra?: string; // yards for fabric, dimensions for accessories
+  selections?: CartSelections;
+  applied_fabric_id?: string;
+  applied_fabric_yards?: number;
+  note?: string;
 }
 
 export interface TryOnJob {
@@ -108,6 +112,11 @@ function mapBackendCartItem(item: any): CartItem {
     image: p ? getProductImage(p) : '',
     quantity: item.quantity ?? 1,
     kind: p?.kind ?? 'clothing',
+    // Carry through selections from backend
+    selections: item.selections ?? undefined,
+    applied_fabric_id: item.applied_fabric_id ?? undefined,
+    applied_fabric_yards: item.applied_fabric_yards ?? undefined,
+    note: item.note ?? undefined,
   };
 }
 
@@ -191,16 +200,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ]).then(([cartResult, wishResult]) => {
             // -- Cart sync --
             if (cartResult.status === 'fulfilled') {
-              const backendCart = cartResult.value.data;
-              const backendItems: CartItem[] = (backendCart?.items ?? []).map(mapBackendCartItem);
+              const rawCart = cartResult.value.data;
+              // API returns { data: { items: [...] } } — unwrap correctly
+              const backendCartData = rawCart?.data ?? rawCart;
+              const backendItems: CartItem[] = (backendCartData?.items ?? []).map(mapBackendCartItem);
 
               // Merge local guest items that aren't already in the backend cart
               const backendIds = new Set(backendItems.map((i: CartItem) => i.id));
               const guestOnly = localCart.filter((i) => !backendIds.has(i.id));
 
-              // Push guest-only items to backend silently
+              // Push guest-only items to backend silently (include selections)
               for (const item of guestOnly) {
-                api.post('/cart/add', { productId: item.id, quantity: item.quantity }).catch(() => {});
+                api.post('/cart/add', {
+                  productId: item.id,
+                  quantity: item.quantity,
+                  ...(item.selections ? { selections: item.selections } : {}),
+                  ...(item.applied_fabric_id ? { appliedFabricId: item.applied_fabric_id } : {}),
+                  ...(item.applied_fabric_yards ? { appliedFabricYards: item.applied_fabric_yards } : {}),
+                  ...(item.note ? { note: item.note } : {}),
+                }).catch(() => {});
               }
 
               const merged = [...backendItems, ...guestOnly];
@@ -421,9 +439,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveState('qlozet_cart', updated);
       return updated;
     });
-    // Sync to backend
+    // Sync to backend (include selections if present)
     if (isAuthenticated.current) {
-      api.post('/cart/add', { productId: newItem.id, quantity: 1 }).catch(() => {});
+      api.post('/cart/add', {
+        productId: newItem.id,
+        quantity: 1,
+        ...(newItem.selections ? { selections: newItem.selections } : {}),
+        ...(newItem.applied_fabric_id ? { appliedFabricId: newItem.applied_fabric_id } : {}),
+        ...(newItem.applied_fabric_yards ? { appliedFabricYards: newItem.applied_fabric_yards } : {}),
+        ...(newItem.note ? { note: newItem.note } : {}),
+      }).catch((error) => {
+        const msg = error.response?.data?.message || error.message;
+        alert(`Failed to add item to cart on server: ${msg}`);
+        // Optional: revert local cart state here if needed, but alerting is the priority
+      });
     }
     // Track add_to_cart event
     if (user?.id) {

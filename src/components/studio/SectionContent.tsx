@@ -13,11 +13,14 @@ import { ReferencePanel } from './ReferencePanel';
 //  Shared by MobileBottomSheet and DesktopConfigPanel.
 // ═══════════════════════════════════════════════════════════════
 
+import { type ApiProduct } from '@/lib/api-types';
+
 interface SectionContentProps {
   customization: CustomizationState;
+  product?: ApiProduct;
 }
 
-export const SectionContent: React.FC<SectionContentProps> = ({ customization }) => {
+export const SectionContent: React.FC<SectionContentProps> = ({ customization, product }) => {
   const { expandedSection } = customization;
 
   if (expandedSection === 'styles') {
@@ -39,6 +42,7 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization })
         onSelectTrouser={(id) => customization.setSelectedTrouser(id)}
         selectedFullBody={customization.selectedFullBody}
         onSelectFullBody={(id) => customization.setSelectedFullBody(id)}
+        product={product}
       />
     );
   }
@@ -50,6 +54,7 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization })
         onSelectFabric={(id) => customization.setSelectedFabric(id)}
         selectedColor={customization.selectedColor}
         onSelectColor={(color) => customization.setSelectedColor(color)}
+        product={product}
       />
     );
   }
@@ -59,6 +64,7 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization })
       <AccessoriesPanel
         selectedAccessories={customization.selectedAccessories}
         onToggle={customization.toggleAccessory}
+        product={product}
       />
     );
   }

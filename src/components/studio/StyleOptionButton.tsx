@@ -88,12 +88,13 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
         </div>
       </button>
 
-      {showPreview && (option.imageUrl || option.description) && (
+      {showPreview && (option.imageUrl || option.description || option.tags) && (
         <PreviewCard
           info={{
             label: option.label,
             imageUrl: option.imageUrl,
             description: option.description,
+            tags: option.tags,
             extraCost: option.extraCost,
           }}
           anchorRef={btnRef}

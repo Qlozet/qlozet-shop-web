@@ -61,6 +61,8 @@ export interface CustomizationState {
   setSelectedColor: (id: string | null) => void;
   selectedAccessories: string[];
   toggleAccessory: (id: string) => void;
+  selectedAddons: Record<string, string>;
+  selectAddon: (addonName: string, variantName: string) => void;
   selectedFit: string | null;
   setSelectedFit: (id: string | null) => void;
   referenceImages: string[];  // Cloudinary URLs (or blob URLs as preview fallback)
@@ -131,6 +133,7 @@ export function useCustomization({
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
+  const [selectedAddons, setSelectedAddons] = useState<Record<string, string>>({});
   const [userPrompt, setUserPrompt] = useState('');
   const [suggestedPrompt, setSuggestedPrompt] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -168,6 +171,18 @@ export function useCustomization({
     setSelectedAccessories((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
     );
+  }, []);
+
+  const selectAddon = useCallback((addonName: string, variantName: string) => {
+    setSelectedAddons((prev) => {
+      // Toggle off if same variant selected again
+      if (prev[addonName] === variantName) {
+        const next = { ...prev };
+        delete next[addonName];
+        return next;
+      }
+      return { ...prev, [addonName]: variantName };
+    });
   }, []);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -428,6 +443,7 @@ export function useCustomization({
     selectedFabric, setSelectedFabric,
     selectedColor, setSelectedColor,
     selectedAccessories, toggleAccessory,
+    selectedAddons, selectAddon,
     selectedFit, setSelectedFit,
     referenceImages, setReferenceImages, removeReference,
     handleFileUpload, fileInputRef,

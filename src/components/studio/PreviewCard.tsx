@@ -8,6 +8,7 @@ export interface PreviewInfo {
   label: string;
   imageUrl?: string;
   description?: string;
+  tags?: string[];
   extraCost?: number;
 }
 
@@ -143,6 +144,26 @@ export function PreviewCard({
           <p style={{ fontSize: '11px', color: '#777', lineHeight: 1.5, marginBottom: '8px' }}>
             {info.description}
           </p>
+        )}
+        {info.tags && info.tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+            {info.tags.map((tag) => (
+              <span
+                key={tag}
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 600,
+                  color: '#666',
+                  background: '#F0F0F0',
+                  borderRadius: '6px',
+                  padding: '2px 7px',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
         {info.extraCost !== undefined && (
           <p style={{ fontSize: '11px', fontWeight: 700, color: info.extraCost > 0 ? '#2C1810' : '#059669' }}>
