@@ -113,6 +113,7 @@ export interface ApiAddon {
 }
 
 export interface ApiFabricSubDoc {
+  _id: string;
   name: string;
   description?: string;
   price?: number;
