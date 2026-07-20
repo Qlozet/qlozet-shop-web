@@ -231,6 +231,8 @@ export default function ProductDetailsPage() {
   const [sizeRecLoading, setSizeRecLoading] = useState(false);
   const [sizeRecError, setSizeRecError] = useState<string | null>(null);
   const [showSizeRecPopover, setShowSizeRecPopover] = useState(false);
+  const aiButtonRef = useRef<HTMLDivElement>(null);
+  const [aiPopoverAlign, setAiPopoverAlign] = useState<'left' | 'right'>('right');
 
   // Initialize size/color when product loads
   useEffect(() => {
@@ -554,6 +556,17 @@ export default function ProductDetailsPage() {
   };
 
   const handleAIRecommend = async () => {
+    if (aiButtonRef.current) {
+      const rect = aiButtonRef.current.getBoundingClientRect();
+      // If button is on the left half of screen, align popover to left edge (extending right).
+      // Otherwise align to right edge (extending left).
+      if (rect.left < window.innerWidth / 2) {
+        setAiPopoverAlign('left');
+      } else {
+        setAiPopoverAlign('right');
+      }
+    }
+
     if (!user) {
       setSizeRecError('Please sign in to get AI size recommendations');
       setShowSizeRecPopover(true);
@@ -1235,7 +1248,7 @@ export default function ProductDetailsPage() {
 
                 {/* AI Size Recommendation Button */}
                 {product.kind === 'clothing' && (
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative' }} ref={aiButtonRef}>
                     <button
                       onClick={handleAIRecommend}
                       disabled={sizeRecLoading}
@@ -1263,10 +1276,11 @@ export default function ProductDetailsPage() {
                       <div
                         className="animate-fade-in"
                         style={{
-                          position: 'absolute', right: 0, top: '100%', marginTop: '8px',
+                          position: 'absolute', top: '100%', marginTop: '8px',
                           background: 'white', borderRadius: '16px', border: '1px solid #E5E5E5',
                           boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50,
                           minWidth: '280px', maxWidth: '320px', overflow: 'hidden',
+                          ...(aiPopoverAlign === 'right' ? { right: 0 } : { left: 0 }),
                         }}
                       >
                         {/* Header */}
@@ -1352,6 +1366,7 @@ export default function ProductDetailsPage() {
                       </div>
                     )}
                   </div>
+
                 )}
               </div>
             )}
