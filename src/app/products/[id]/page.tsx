@@ -115,7 +115,9 @@ export default function ProductDetailsPage() {
         const minCut = Number(fab?.fabric?.min_cut) || 1;
         if (!cancelled) {
           setAppliedFabricMinCut(minCut);
-          setAppliedFabricYards((y) => (y == null ? minCut : y));
+          // Leave appliedFabricYards unset so it defaults to the garment's
+          // requirement (resolveGarmentYards) at use time; the input still lets
+          // the customer override.
         }
       })
       .catch(() => {
@@ -397,6 +399,14 @@ export default function ProductDetailsPage() {
   const { all: apiStyles } = useStyleLibrary();
 
   // ── Dynamic price: base price + all extras ──────────────────────
+  // Garment fabric requirement (yards) for a given size — the bill of materials
+  // that drives fabric pricing (embedded + external) and the yardage sent to cart.
+  const resolveGarmentYards = useCallback((size: string | null): number | undefined => {
+    const list = (product?.clothing as { yardage_per_size?: Array<{ size?: string; yards?: number }> } | undefined)?.yardage_per_size;
+    const gy = list?.find((y) => (y.size ?? '').toLowerCase() === (size ?? '').toLowerCase());
+    return gy?.yards;
+  }, [product]);
+
   const customizationExtra = useMemo(() => {
     if (!product || product.kind !== 'clothing') return 0;
     const clothing = product.clothing;
@@ -417,11 +427,12 @@ export default function ProductDetailsPage() {
     }
 
     // Fabric priced by yardage (yards × price_per_yard) for customize garments.
+    // Yards come from the GARMENT's per-size requirement (bill of materials),
+    // falling back to the fabric's min_cut.
     if (hasFabrics && customization.selectedFabric) {
       const fab = clothing.fabrics?.find((f: { _id?: string }) => f._id === customization.selectedFabric);
       if (fab?.price_per_yard) {
-        const variant = (fab.variants || []).find((v: { size?: string; yard_per_order?: number }) => v.size === selectedSize);
-        const yards = variant?.yard_per_order || fab.min_cut || 1;
+        const yards = resolveGarmentYards(selectedSize) || fab.min_cut || 1;
         extras += fab.price_per_yard * yards;
       }
     }
@@ -506,13 +517,13 @@ export default function ProductDetailsPage() {
       const hasFabrics = (clothing.fabrics?.length ?? 0) > 0;
 
       // Fabric priced by yardage (customize garments with embedded fabrics).
+      // Yards = the garment's per-size requirement, else the fabric's min_cut.
       if (hasFabrics && customization.selectedFabric) {
         const fab = clothing.fabrics?.find(
           (f: { _id?: string }) => f._id === customization.selectedFabric,
-        ) as { _id?: string; min_cut?: number; variants?: Array<{ size?: string; yard_per_order?: number }> } | undefined;
+        ) as { _id?: string; min_cut?: number } | undefined;
         if (fab?._id) {
-          const variant = (fab.variants || []).find((v) => v.size === selectedSize);
-          const yardage = variant?.yard_per_order || fab.min_cut || 1;
+          const yardage = resolveGarmentYards(selectedSize) || fab.min_cut || 1;
           selections.fabric_selections = [{
             fabric_id: fab._id,
             yardage,
@@ -614,7 +625,10 @@ export default function ProductDetailsPage() {
       ...(appliedFabricId && product.kind === 'clothing'
         ? {
             applied_fabric_id: appliedFabricId,
-            applied_fabric_yards: appliedFabricYards ?? appliedFabricMinCut,
+            // How many yards of the external fabric this garment needs (its
+            // bill of materials), unless the customer overrode it.
+            applied_fabric_yards:
+              appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut,
           }
         : {}),
     });
@@ -1485,7 +1499,7 @@ export default function ProductDetailsPage() {
                       type="number"
                       min={appliedFabricMinCut}
                       step={0.5}
-                      value={appliedFabricYards ?? appliedFabricMinCut}
+                      value={appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut}
                       onChange={(e) =>
                         setAppliedFabricYards(
                           Math.max(appliedFabricMinCut, Number(e.target.value) || appliedFabricMinCut)
