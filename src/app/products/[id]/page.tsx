@@ -403,13 +403,26 @@ export default function ProductDetailsPage() {
     if (!clothing) return 0;
 
     let extras = 0;
+    const hasFabrics = (clothing.fabrics?.length ?? 0) > 0;
 
-    // Color variant price difference from base (can be positive or negative)
-    if (selectedColor && selectedSize) {
+    // Ready-to-wear / no embedded fabrics: price the chosen color variant.
+    // Customize garments with embedded fabrics price the FABRIC by yardage
+    // instead (below), so skip the color-variant price to avoid double-count.
+    if (!hasFabrics && selectedColor && selectedSize) {
       const cv = clothing.color_variants?.find(c => (c.name || c.color_name) === selectedColor);
       if (cv?.variants) {
         const variant = cv.variants.find(v => v.size === selectedSize);
         if (variant?.price) extras += variant.price;
+      }
+    }
+
+    // Fabric priced by yardage (yards × price_per_yard) for customize garments.
+    if (hasFabrics && customization.selectedFabric) {
+      const fab = clothing.fabrics?.find((f: { _id?: string }) => f._id === customization.selectedFabric);
+      if (fab?.price_per_yard) {
+        const variant = (fab.variants || []).find((v: { size?: string; yard_per_order?: number }) => v.size === selectedSize);
+        const yards = variant?.yard_per_order || fab.min_cut || 1;
+        extras += fab.price_per_yard * yards;
       }
     }
 
@@ -445,13 +458,11 @@ export default function ProductDetailsPage() {
       if (acc?.price) extras += acc.price;
     }
 
-    // Sum prices of selected add-on variants
-    for (const [addonId, variantId] of Object.entries(customization.selectedAddons)) {
-      const addon = clothing.addons?.find(a => a._id === addonId);
-      if (addon) {
-        const variant = addon.variants?.find(v => v._id === variantId);
-        if (variant?.price) extras += variant.price;
-      }
+    // Sum prices of selected add-on variants (selectedAddons is keyed by NAME → variant NAME)
+    for (const [addonName, variantName] of Object.entries(customization.selectedAddons)) {
+      const addon = clothing.addons?.find(a => a.name === addonName);
+      const variant = addon?.variants?.find(v => v.name === variantName);
+      if (variant?.price) extras += variant.price;
     }
 
     return extras;
@@ -459,6 +470,7 @@ export default function ProductDetailsPage() {
     product, productPrice, selectedColor, selectedSize, apiStyles,
     customization.selectedAccessories,
     customization.selectedAddons,
+    customization.selectedFabric,
     customization.selectedNeckline,
     customization.selectedSleeve,
     customization.selectedCollar,
@@ -491,9 +503,28 @@ export default function ProductDetailsPage() {
 
     if (product.kind === 'clothing' && product.clothing) {
       const clothing = product.clothing;
+      const hasFabrics = (clothing.fabrics?.length ?? 0) > 0;
 
-      // Color variant selection
-      if (selectedColor) {
+      // Fabric priced by yardage (customize garments with embedded fabrics).
+      if (hasFabrics && customization.selectedFabric) {
+        const fab = clothing.fabrics?.find(
+          (f: { _id?: string }) => f._id === customization.selectedFabric,
+        ) as { _id?: string; min_cut?: number; variants?: Array<{ size?: string; yard_per_order?: number }> } | undefined;
+        if (fab?._id) {
+          const variant = (fab.variants || []).find((v) => v.size === selectedSize);
+          const yardage = variant?.yard_per_order || fab.min_cut || 1;
+          selections.fabric_selections = [{
+            fabric_id: fab._id,
+            yardage,
+            size: selectedSize || undefined,
+            quantity: 1,
+          }];
+        }
+      }
+
+      // Color variant selection — only when NOT pricing via fabric yardage,
+      // otherwise the backend would double-count (fabric + color variant).
+      if (!(hasFabrics && customization.selectedFabric) && selectedColor) {
         const cv = clothing.color_variants?.find(
           (c: any) => (c.name || c.color_name) === selectedColor
         );

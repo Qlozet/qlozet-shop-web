@@ -56,7 +56,9 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
         }
         
         return {
-          id: f.name,
+          // Use the real fabric sub-doc _id so the selection maps to the
+          // product's fabric (priced by yardage in customizationExtra / order).
+          id: (f as { _id?: string })._id ?? f.name,
           name: f.name,
           image: f.images?.[0]?.url || '',
           extraCost: extraCost,
@@ -72,23 +74,15 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
     return '';
   };
 
-  // Handle material selection: sync with color if it matches
+  // Material and color are independent: fabric (selectedFabric = fabric _id) is
+  // priced by yardage; color variants are a separate dimension. Do NOT cross-sync
+  // by name — that would overwrite selectedFabric with a name and break pricing.
   const handleSelectFabric = (fabricId: string) => {
     onSelectFabric(fabricId);
-    if (colorVariants.some(cv => (cv.name || cv.color_name) === fabricId)) {
-      onSelectColor(fabricId);
-    }
   };
 
-  // Handle color selection: sync with material if it matches
   const handleSelectColor = (colorName: string) => {
     onSelectColor(colorName);
-    if (fabricOptions.some(f => f.name === colorName)) {
-      onSelectFabric(colorName);
-    } else {
-      // If they pick a color that ISN'T a material, maybe clear the material selection?
-      // For now we just don't force a deselect, as they might want a specific material in a solid color.
-    }
   };
 
   return (
