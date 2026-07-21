@@ -62,8 +62,8 @@ export async function pollJobStatus(
       // or { suggested_prompt, matched_styles, metadata } from analysis
       const raw = jobStatus.result;
       return {
-        image_url: raw.fileUrl || raw.image_url || raw.imageUrl || '',
-        filePublicId: raw.filePublicId || raw.publicId,
+        image_url: raw.fileUrl || raw.image_url || raw.imageUrl || raw.secure_url || raw.url || '',
+        filePublicId: raw.filePublicId || raw.publicId || raw.public_id,
         suggested_prompt: raw.suggested_prompt,
         matched_styles: raw.matched_styles,
         metadata: raw.metadata,

@@ -31,6 +31,19 @@ export interface UseCustomizationOptions {
   initialGender?: DesignGender;
 }
 
+export interface EditGarmentPayload {
+  base_image_url: string;
+  fabric_image_url?: string;
+  accessory_image_url?: string;
+  addon_image_url?: string;
+  garment_type?: string;
+  base_color?: string;
+  pattern?: string;
+  fit?: string;
+  style_notes?: string;
+  metadata_json?: unknown;
+}
+
 export interface CustomizationState {
   // Design setup
   designName: string;
@@ -90,6 +103,9 @@ export interface CustomizationState {
   setActiveImageIndex: (index: number) => void;
   isGenerating: boolean;
   handleGenerate: () => Promise<void>;
+  // Product mode: generate a preview of the configured garment via the
+  // edit-garment image API (distinct from studio's generate-outfit).
+  generateProductPreview: (payload: EditGarmentPayload) => Promise<void>;
   currentImage: string | null;
   tokenBalance: number;
   generationError: string | null;
@@ -427,6 +443,69 @@ export function useCustomization({
     referenceImages, styleLibrary, deductTokens,
   ]);
 
+  // Product-mode preview via the edit-garment image API. The caller (product
+  // page / customize panel) builds the payload from the product + selections.
+  const generateProductPreview = useCallback(async (payload: EditGarmentPayload) => {
+    if (isGenerating) return;
+    setGenerationError(null);
+
+    if (!payload.base_image_url) {
+      setGenerationError('No base image to customize.');
+      return;
+    }
+
+    // Token check (edit-garment is token-gated)
+    try {
+      const [balanceRes, settingsRes] = await Promise.all([
+        api.get('/token/balance'),
+        api.get('/users/platform-settings'),
+      ]);
+      const balance = balanceRes.data?.data?.tokens ?? balanceRes.data?.tokens ?? 0;
+      const cost =
+        settingsRes.data?.data?.edit_garment_token_price ??
+        settingsRes.data?.edit_garment_token_price ??
+        25;
+      if (balance < cost) {
+        setInsufficientTokensInfo({ show: true, balance, cost });
+        return;
+      }
+    } catch {
+      // If the check fails (e.g. not logged in) continue — the API will 400.
+    }
+
+    setIsGenerating(true);
+    try {
+      const res = await api.post('/measurements/edit-garment-image', payload);
+      const jobId = res.data?.data?.jobId ?? res.data?.jobId;
+      if (!jobId) throw new Error('No job ID returned from edit-garment');
+
+      const result = await pollJobStatus(jobId);
+      if (result.image_url) {
+        setGeneratedImages((prev) => {
+          const updated = [...prev, result.image_url];
+          setActiveImageIndex(updated.length - 1);
+          return updated;
+        });
+      } else {
+        throw new Error('Preview generated but no image was returned.');
+      }
+
+      // Refresh token balance after the spend
+      api.get('/token/balance').then((r) => {
+        const bal = r.data?.data?.tokens ?? r.data?.tokens ?? 0;
+        setTokenBalance(bal);
+      }).catch(() => {});
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Preview generation failed. Please try again.';
+      setGenerationError(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [isGenerating]);
+
   const currentImage = generatedImages[activeImageIndex] ?? null;
 
   return {
@@ -451,7 +530,7 @@ export function useCustomization({
     userPrompt, setUserPrompt, suggestedPrompt, isAnalyzing,
     expandedSection, setExpandedSection, toggleSection,
     generatedImages, setGeneratedImages, activeImageIndex, setActiveImageIndex,
-    isGenerating, handleGenerate, currentImage, tokenBalance,
+    isGenerating, handleGenerate, generateProductPreview, currentImage, tokenBalance,
     generationError,
     insufficientTokensInfo,
     dismissInsufficientTokens: useCallback(() => setInsufficientTokensInfo({ show: false, balance: 0, cost: 0 }), []),

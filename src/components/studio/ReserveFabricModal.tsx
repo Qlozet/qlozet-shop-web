@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, CalendarDays, Users, Copy, Check, Minus, Plus } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 
 // ═══════════════════════════════════════════════════════════════
 //  ReserveFabricModal
@@ -32,13 +32,14 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   fabricImage,
   fabricPrice,
 }) => {
-  const { user, createReservation } = useApp();
   const [step, setStep] = useState<Step>('form');
   const [eventName, setEventName] = useState('');
   const [yards, setYards] = useState(12);
   const [deadline, setDeadline] = useState('');
   const [reservationId, setReservationId] = useState('');
   const [copied, setCopied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const reservationFee = Math.round(fabricPrice * yards * 0.1);
   const totalFabricCost = fabricPrice * yards;
@@ -52,20 +53,40 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
     onClose();
   };
 
-  const handleConfirm = () => {
-    if (!eventName.trim() || !deadline || yards < 6) return;
-    const id = createReservation({
-      fabricId,
-      fabricName,
-      fabricImage,
-      fabricPrice,
-      eventName: eventName.trim(),
-      totalYards: yards,
-      deadline: new Date(deadline).toISOString(),
-      organizerName: user?.name || 'Guest',
-    });
-    setReservationId(id);
-    setStep('confirmed');
+  const handleConfirm = async () => {
+    if (!eventName.trim() || !deadline || yards < 6 || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await api.post('/reservations', {
+        fabricId,
+        eventName: eventName.trim(),
+        totalYards: yards,
+        deadline: new Date(deadline).toISOString(),
+      });
+      const data = res.data?.data ?? res.data;
+      const paymentUrl =
+        data?.payment?.authorization_url ??
+        data?.authorization_url ??
+        data?.paymentUrl;
+      if (paymentUrl) {
+        // Pay the reservation fee via Paystack; the webhook activates the
+        // reservation on success, then the share link is available.
+        window.location.href = paymentUrl;
+        return;
+      }
+      // No payment URL — go straight to the share/confirmation step.
+      setReservationId(data?.reservation?._id ?? data?._id ?? '');
+      setStep('confirmed');
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Could not create reservation. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const shareUrl = typeof window !== 'undefined'
@@ -263,22 +284,28 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
 
       {/* Footer CTA */}
       {step === 'form' && (
-        <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px' }}>
-          <button
-            onClick={handleClose}
-            className="flex-1 transition-colors hover:bg-gray-200"
-            style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={!eventName.trim() || !deadline || yards < 6}
-            className="flex-1 transition-colors hover:opacity-90 disabled:opacity-40"
-            style={{ padding: '14px', borderRadius: '14px', background: '#064E3B', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-          >
-            Reserve · ₦{reservationFee.toLocaleString()}
-          </button>
+        <div className="shrink-0" style={{ padding: '16px 24px 24px' }}>
+          {error && (
+            <p style={{ fontSize: '12px', color: '#DC2626', marginBottom: '10px', textAlign: 'center' }}>{error}</p>
+          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleClose}
+              disabled={submitting}
+              className="flex-1 transition-colors hover:bg-gray-200 disabled:opacity-40"
+              style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={!eventName.trim() || !deadline || yards < 6 || submitting}
+              className="flex-1 transition-colors hover:opacity-90 disabled:opacity-40"
+              style={{ padding: '14px', borderRadius: '14px', background: '#064E3B', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: submitting ? 'wait' : 'pointer' }}
+            >
+              {submitting ? 'Processing…' : `Reserve · ₦${reservationFee.toLocaleString()}`}
+            </button>
+          </div>
         </div>
       )}
 

@@ -20,7 +20,7 @@ import { AddonsPanel } from './AddonsPanel';
 //  Follows the same UX pattern as SizeGuideModal.
 // ═══════════════════════════════════════════════════════════════
 
-import { type ApiProduct } from '@/lib/api-types';
+import { type ApiProduct, getProductImage, getProductName } from '@/lib/api-types';
 
 interface ProductCustomizePanelProps {
   isOpen: boolean;
@@ -37,6 +37,46 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
 }) => {
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
+
+  // Build the edit-garment payload from the product + current selections and
+  // generate an AI preview of the configured garment.
+  const handleApply = async () => {
+    if (!product || customization.isGenerating) return;
+
+    const baseImage = getProductImage(product);
+    if (!baseImage) return;
+
+    const styleIds = [
+      customization.selectedSilhouette,
+      customization.selectedNeckline,
+      customization.selectedSleeve,
+      customization.selectedCollar,
+      customization.selectedSkirt,
+      customization.selectedTrouser,
+      customization.selectedFullBody,
+    ].filter(Boolean) as string[];
+
+    const styleNames = (product.clothing?.styles ?? [])
+      .filter((s: { _id?: string }) => s._id && styleIds.includes(s._id))
+      .map((s: { name?: string }) => s.name)
+      .filter(Boolean) as string[];
+
+    // Resolve the selected embedded fabric's image, if any
+    const selFabric = product.clothing?.fabrics?.find(
+      (f: { _id?: string }) => f._id === customization.selectedFabric,
+    ) as { images?: Array<string | { url?: string }> } | undefined;
+    const rawFabricImg = selFabric?.images?.[0];
+    const fabricImage =
+      typeof rawFabricImg === 'string' ? rawFabricImg : rawFabricImg?.url;
+
+    await customization.generateProductPreview({
+      base_image_url: baseImage,
+      garment_type: getProductName(product),
+      ...(customization.selectedColor ? { base_color: customization.selectedColor } : {}),
+      ...(fabricImage ? { fabric_image_url: fabricImage } : {}),
+      ...(styleNames.length ? { style_notes: styleNames.join(', ') } : {}),
+    });
+  };
 
   const panelContent = (
     <>
@@ -186,8 +226,9 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
             Cancel
           </button>
           <button
-            onClick={onClose}
-            className="flex-1 flex items-center justify-center transition-colors hover:opacity-90"
+            onClick={handleApply}
+            disabled={customization.isGenerating}
+            className="flex-1 flex items-center justify-center transition-colors hover:opacity-90 disabled:opacity-60"
             style={{
               padding: '14px',
               borderRadius: '14px',
@@ -196,15 +237,21 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
               fontSize: '13px',
               fontWeight: 700,
               border: 'none',
-              cursor: 'pointer',
+              cursor: customization.isGenerating ? 'wait' : 'pointer',
               gap: '8px',
             }}
           >
-            <span>Apply</span>
-            <div className="flex items-center" style={{ gap: '4px', opacity: 0.85 }}>
-              <TokenIcon size={14} color="#D4AF37" />
-              <span style={{ fontSize: '12px', fontWeight: 800 }}>25</span>
-            </div>
+            {customization.isGenerating ? (
+              <span>Generating preview…</span>
+            ) : (
+              <>
+                <span>Apply</span>
+                <div className="flex items-center" style={{ gap: '4px', opacity: 0.85 }}>
+                  <TokenIcon size={14} color="#D4AF37" />
+                  <span style={{ fontSize: '12px', fontWeight: 800 }}>25</span>
+                </div>
+              </>
+            )}
           </button>
         </div>
       )}

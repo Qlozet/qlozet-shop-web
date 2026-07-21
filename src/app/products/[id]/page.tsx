@@ -656,7 +656,8 @@ export default function ProductDetailsPage() {
         : 'Accessories';
 
   // Current gallery image (with fallback)
-  const currentImage = gallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
+  // Prefer the AI-generated customization preview (from the Apply button) when present.
+  const currentImage = customization.currentImage || gallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
 
   // Color hex map from API colors
   const colorHexMap = useMemo(() => {
