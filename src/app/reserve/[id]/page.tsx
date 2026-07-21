@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 import {
   ArrowLeft,
   CalendarDays,
@@ -15,19 +15,74 @@ import {
   ShoppingCart,
   Check,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 export default function ReservationPage() {
   const params = useParams();
   const reservationId = params.id as string;
-  const { reservations, claimReservation, addToCart } = useApp();
+
+  const [raw, setRaw] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [selectedYards, setSelectedYards] = useState(6);
   const [claimed, setClaimed] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState('');
 
-  const reservation = reservations.find((r) => r.id === reservationId);
+  // Fetch reservation details (public guest link)
+  useEffect(() => {
+    if (!reservationId) return;
+    let cancelled = false;
+    setLoading(true);
+    api
+      .get(`/reservations/${reservationId}`)
+      .then((res) => {
+        if (!cancelled) setRaw(res.data?.data ?? res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reservationId]);
+
+  // Normalize the backend shape into the fields the UI uses
+  const rsv = raw?.reservation;
+  const progress = raw?.progress;
+  const fabricProduct = rsv?.fabric;
+  const fabricSub = fabricProduct?.fabric;
+  const pickUrl = (imgs: any): string | undefined => {
+    const first = imgs?.[0];
+    return typeof first === 'string' ? first : first?.url;
+  };
+  const reservation = rsv
+    ? {
+        id: rsv._id as string,
+        fabricId: (fabricProduct?._id as string) ?? '',
+        fabricName: fabricSub?.name ?? 'Fabric',
+        fabricPrice: fabricSub?.price_per_yard ?? fabricProduct?.base_price ?? 0,
+        fabricImage:
+          pickUrl(fabricSub?.images) ??
+          pickUrl(fabricProduct?.images) ??
+          '/image/bespoke-agbada-orange.webp',
+        eventName: rsv.event_name ?? 'Event',
+        organizerName:
+          [rsv.organizer?.firstName, rsv.organizer?.lastName].filter(Boolean).join(' ') ||
+          'Organizer',
+        totalYards: progress?.total_yards ?? rsv.total_yards ?? 0,
+        claimedYards: progress?.claimed_yards ?? rsv.claimed_yards ?? 0,
+        deadline: rsv.deadline,
+        status: rsv.status as string,
+      }
+    : null;
 
   // Countdown timer
-  const [timeLeft, setTimeLeft] = useState('');
   useEffect(() => {
     if (!reservation) return;
     const update = () => {
@@ -49,31 +104,45 @@ export default function ReservationPage() {
   }, [reservation]);
 
   const isExpired = reservation
-    ? new Date(reservation.deadline).getTime() < Date.now() || reservation.status === 'expired'
+    ? raw?.is_expired || new Date(reservation.deadline).getTime() < Date.now() || reservation.status === 'expired'
     : false;
-  const isCompleted = reservation?.status === 'completed';
+  const isCompleted = raw?.is_sold_out || reservation?.status === 'completed';
   const remainingYards = reservation ? reservation.totalYards - reservation.claimedYards : 0;
   const progressPercent = reservation ? (reservation.claimedYards / reservation.totalYards) * 100 : 0;
 
-  const handleClaim = () => {
-    if (!reservation || selectedYards > remainingYards) return;
-    const success = claimReservation(reservation.id, selectedYards);
-    if (success) {
-      addToCart({
-        id: reservation.fabricId + '_res_' + Date.now(),
-        title: reservation.fabricName,
-        price: reservation.fabricPrice * selectedYards,
-        image: reservation.fabricImage,
-        kind: 'fabric',
-        size: `${selectedYards} Yards`,
-        color: reservation.eventName,
-      });
+  const handleClaim = async () => {
+    if (!reservation || selectedYards > remainingYards || claiming) return;
+    setClaiming(true);
+    setClaimError(null);
+    try {
+      const res = await api.post(`/reservations/${reservation.id}/claim`, { yards: selectedYards });
+      const d = res.data?.data ?? res.data;
+      const paymentUrl = d?.payment?.authorization_url ?? d?.authorization_url ?? d?.paymentUrl;
+      if (paymentUrl) {
+        // Guest pays the fabric price via Paystack; the claim is confirmed on webhook.
+        window.location.href = paymentUrl;
+        return;
+      }
       setClaimed(true);
+    } catch (err: any) {
+      setClaimError(err?.response?.data?.message || err?.message || 'Could not claim. Please try again.');
+    } finally {
+      setClaiming(false);
     }
   };
 
+  // ── Loading State ──
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '16px' }}>
+        <Loader2 size={40} color="#4C1D95" className="animate-spin" />
+        <p style={{ fontSize: '14px', color: '#888' }}>Loading reservation…</p>
+      </div>
+    );
+  }
+
   // ── Not Found State ──
-  if (!reservation) {
+  if (notFound || !reservation) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '16px' }}>
         <AlertTriangle size={48} color="#999" />
@@ -218,10 +287,13 @@ export default function ReservationPage() {
               </span>
             </div>
 
+            {claimError && (
+              <p style={{ fontSize: '12px', color: '#DC2626', marginBottom: '10px', textAlign: 'center' }}>{claimError}</p>
+            )}
             {/* Claim Button */}
             <button
               onClick={handleClaim}
-              disabled={selectedYards > remainingYards}
+              disabled={selectedYards > remainingYards || claiming}
               className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
               style={{
                 padding: '16px',
@@ -233,12 +305,18 @@ export default function ReservationPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: claiming ? 'wait' : 'pointer',
                 gap: '8px',
               }}
             >
-              <ShoppingCart size={16} />
-              Claim & Add to Cart
+              {claiming ? (
+                'Processing…'
+              ) : (
+                <>
+                  <ShoppingCart size={16} />
+                  Claim &amp; Pay
+                </>
+              )}
             </button>
           </div>
         )}
