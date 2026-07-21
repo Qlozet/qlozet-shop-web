@@ -35,7 +35,9 @@ export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
   // Use product accessories if available, otherwise fall back to hardcoded (studio mode)
   const accessoryOptions = productAccessories.length > 0
     ? productAccessories.map((a) => ({
-        id: a.name,
+        // Use the real sub-doc _id so selections map to the product's accessory
+        // (customizationExtra and handleAddToCart both look these up by _id).
+        id: (a as { _id?: string })._id ?? a.name,
         name: a.name,
         emoji: '✨',
         imageUrl: a.images?.[0]?.url,

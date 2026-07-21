@@ -1230,7 +1230,14 @@ export default function ProductDetailsPage() {
 
                   {/* Selected Accessories */}
                   {customization.selectedAccessories.map((accId) => {
-                    const acc = ACCESSORIES.find((a) => a.id === accId);
+                    // Prefer the product's real accessory (selections are keyed
+                    // by _id now); fall back to static studio options.
+                    const prodAcc = product?.clothing?.accessories?.find(
+                      (a: { _id?: string }) => a._id === accId,
+                    ) as { name?: string } | undefined;
+                    const acc = prodAcc
+                      ? { id: accId, name: prodAcc.name ?? 'Accessory', emoji: '✨' }
+                      : ACCESSORIES.find((a) => a.id === accId);
                     return acc ? (
                       <div key={accId} className="flex flex-col items-center" style={{ gap: '4px' }}>
                         <div className="flex items-center justify-center" style={{ width: '52px', height: '52px', borderRadius: '12px', background: '#F0EDFF', border: '2px solid #7C3AED' }}>
