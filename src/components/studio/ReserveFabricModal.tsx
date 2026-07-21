@@ -65,18 +65,22 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
         deadline: new Date(deadline).toISOString(),
       });
       const data = res.data?.data ?? res.data;
+      const newReservationId = data?.reservation?._id ?? data?._id ?? '';
       const paymentUrl =
         data?.payment?.authorization_url ??
         data?.authorization_url ??
         data?.paymentUrl;
       if (paymentUrl) {
-        // Pay the reservation fee via Paystack; the webhook activates the
-        // reservation on success, then the share link is available.
+        // Stash the id so /payment/verify can route the organizer to their
+        // reservation share link once the fee is paid.
+        if (newReservationId && typeof window !== 'undefined') {
+          sessionStorage.setItem('pending_reservation_id', newReservationId);
+        }
         window.location.href = paymentUrl;
         return;
       }
       // No payment URL — go straight to the share/confirmation step.
-      setReservationId(data?.reservation?._id ?? data?._id ?? '');
+      setReservationId(newReservationId);
       setStep('confirmed');
     } catch (err: any) {
       setError(
