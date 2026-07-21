@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
@@ -91,8 +91,40 @@ export default function ProductDetailsPage() {
 
   const productId = params.id as string;
 
+  // ── External fabric applied via the "Use Fabric" flow ──────────
+  // UseFabricModal navigates to /products/:id?fabric=<fabricProductId>&customize=true.
+  // This is the cross-vendor fabric that must ship to the tailor (FABRIC_TRANSFER),
+  // so it goes to /cart/add as appliedFabricId + appliedFabricYards.
+  const searchParams = useSearchParams();
+  const appliedFabricId = searchParams.get('fabric') || undefined;
+  const [appliedFabricMinCut, setAppliedFabricMinCut] = useState<number>(1);
+  const [appliedFabricYards, setAppliedFabricYards] = useState<number | undefined>(undefined);
+
   // ── Fetch product from API ─────────────────────────────────────
   const { product, loading: productLoading, error: productError } = useProduct(productId);
+
+  // Load the applied fabric's min_cut so the yardage defaults to a valid amount
+  // (the backend rejects appliedFabricYards < fabric.min_cut).
+  useEffect(() => {
+    if (!appliedFabricId) return;
+    let cancelled = false;
+    api
+      .get(`/products/${appliedFabricId}`)
+      .then((res) => {
+        const fab = res.data?.data ?? res.data;
+        const minCut = Number(fab?.fabric?.min_cut) || 1;
+        if (!cancelled) {
+          setAppliedFabricMinCut(minCut);
+          setAppliedFabricYards((y) => (y == null ? minCut : y));
+        }
+      })
+      .catch(() => {
+        /* non-fatal: keep the default minimum */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appliedFabricId]);
 
   // ── Derived display values ─────────────────────────────────────
   const productName = product ? getProductName(product) : '';
@@ -546,6 +578,14 @@ export default function ProductDetailsPage() {
       size: selectedSize,
       color: selectedColor,
       selections,
+      // External fabric applied to this garment (cross-vendor) — only meaningful
+      // for clothing; the backend ships it to the tailor via a fabric transfer.
+      ...(appliedFabricId && product.kind === 'clothing'
+        ? {
+            applied_fabric_id: appliedFabricId,
+            applied_fabric_yards: appliedFabricYards ?? appliedFabricMinCut,
+          }
+        : {}),
     });
   };
 
@@ -616,7 +656,8 @@ export default function ProductDetailsPage() {
         : 'Accessories';
 
   // Current gallery image (with fallback)
-  const currentImage = gallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
+  // Prefer the AI-generated customization preview (from the Apply button) when present.
+  const currentImage = customization.currentImage || gallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
 
   // Color hex map from API colors
   const colorHexMap = useMemo(() => {
@@ -1387,6 +1428,36 @@ export default function ProductDetailsPage() {
                   <Pen size={15} />
                   {showCustomize ? 'Hide Customization' : 'Customize Outfit'}
                 </button>
+              )}
+
+              {appliedFabricId && product?.kind === 'clothing' && (
+                <div
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: '6px',
+                    padding: '12px 14px', borderRadius: '12px',
+                    background: '#F5F3FF', border: '1px solid #DDD6FE',
+                  }}
+                >
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#4C1D95', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Applied fabric
+                  </span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#3B0764' }}>
+                    Yards
+                    <input
+                      type="number"
+                      min={appliedFabricMinCut}
+                      step={0.5}
+                      value={appliedFabricYards ?? appliedFabricMinCut}
+                      onChange={(e) =>
+                        setAppliedFabricYards(
+                          Math.max(appliedFabricMinCut, Number(e.target.value) || appliedFabricMinCut)
+                        )
+                      }
+                      style={{ width: '90px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #C4B5FD', fontSize: '13px' }}
+                    />
+                    <span style={{ fontSize: '12px', color: '#7C6BA0' }}>min {appliedFabricMinCut} yd</span>
+                  </label>
+                </div>
               )}
 
               <button

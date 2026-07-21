@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { X, ArrowLeft, Scissors, Pen, Sparkles } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
-import { useProducts } from '@/hooks/useProducts';
-import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
+import { X, ArrowLeft, Scissors, Pen, Sparkles, Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { getProductName, getProductImage, getProductPrice, type ApiProduct } from '@/lib/api-types';
 import { OUTFIT_POOL } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
@@ -35,15 +34,33 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
   fabricId,
 }) => {
   const router = useRouter();
-  const { wishlist } = useApp();
   const [step, setStep] = useState<Step>('choose');
 
-  const { products: allProducts } = useProducts({ size: 20 });
+  // Customizable clothing from the user's wishlist — server-filtered via the
+  // dedicated endpoint (kind: clothing, type: customize, status: active).
+  const [customizableWishlistItems, setCustomizableWishlistItems] = useState<ApiProduct[]>([]);
+  const [loadingCustom, setLoadingCustom] = useState(false);
 
-  // Get CUSTOMIZABLE items from the user's wishlist
-  const customizableWishlistItems = allProducts.filter(
-    (p) => wishlist.includes(p._id) && getProductTag(p) === 'CUSTOMIZABLE'
-  );
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setLoadingCustom(true);
+    api
+      .get('/products/wishlist/customizable')
+      .then((res) => {
+        const items = res.data?.data ?? res.data ?? [];
+        if (!cancelled) setCustomizableWishlistItems(Array.isArray(items) ? items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setCustomizableWishlistItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCustom(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const handleBack = () => {
     if (step === 'choose') {
@@ -209,7 +226,12 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
         {/* ── Step 2b: Custom Clothing Grid ── */}
         {step === 'custom' && (
           <div>
-            {customizableWishlistItems.length === 0 ? (
+            {loadingCustom ? (
+              <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
+                <Loader2 size={32} color="#4C1D95" className="animate-spin" />
+                <p style={{ fontSize: '13px', color: '#999' }}>Loading your customizable items…</p>
+              </div>
+            ) : customizableWishlistItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
                 <Pen size={40} color="#CCC" />
                 <p style={{ fontSize: '15px', fontWeight: 700, color: '#999', textAlign: 'center' }}>No customizable items in your wishlist</p>
