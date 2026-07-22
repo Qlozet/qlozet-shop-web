@@ -115,7 +115,9 @@ export default function ProductDetailsPage() {
         const minCut = Number(fab?.fabric?.min_cut) || 1;
         if (!cancelled) {
           setAppliedFabricMinCut(minCut);
-          setAppliedFabricYards((y) => (y == null ? minCut : y));
+          // Leave appliedFabricYards unset so it defaults to the garment's
+          // requirement (resolveGarmentYards) at use time; the input still lets
+          // the customer override.
         }
       })
       .catch(() => {
@@ -397,19 +399,41 @@ export default function ProductDetailsPage() {
   const { all: apiStyles } = useStyleLibrary();
 
   // ── Dynamic price: base price + all extras ──────────────────────
+  // Garment fabric requirement (yards) for a given size — the bill of materials
+  // that drives fabric pricing (embedded + external) and the yardage sent to cart.
+  const resolveGarmentYards = useCallback((size: string | null): number | undefined => {
+    const list = (product?.clothing as { yardage_per_size?: Array<{ size?: string; yards?: number }> } | undefined)?.yardage_per_size;
+    const gy = list?.find((y) => (y.size ?? '').toLowerCase() === (size ?? '').toLowerCase());
+    return gy?.yards;
+  }, [product]);
+
   const customizationExtra = useMemo(() => {
     if (!product || product.kind !== 'clothing') return 0;
     const clothing = product.clothing;
     if (!clothing) return 0;
 
     let extras = 0;
+    const hasFabrics = (clothing.fabrics?.length ?? 0) > 0;
 
-    // Color variant price difference from base (can be positive or negative)
-    if (selectedColor && selectedSize) {
+    // Ready-to-wear / no embedded fabrics: price the chosen color variant.
+    // Customize garments with embedded fabrics price the FABRIC by yardage
+    // instead (below), so skip the color-variant price to avoid double-count.
+    if (!hasFabrics && selectedColor && selectedSize) {
       const cv = clothing.color_variants?.find(c => (c.name || c.color_name) === selectedColor);
       if (cv?.variants) {
         const variant = cv.variants.find(v => v.size === selectedSize);
         if (variant?.price) extras += variant.price;
+      }
+    }
+
+    // Fabric priced by yardage (yards × price_per_yard) for customize garments.
+    // Yards come from the GARMENT's per-size requirement (bill of materials),
+    // falling back to the fabric's min_cut.
+    if (hasFabrics && customization.selectedFabric) {
+      const fab = clothing.fabrics?.find((f: { _id?: string }) => f._id === customization.selectedFabric);
+      if (fab?.price_per_yard) {
+        const yards = resolveGarmentYards(selectedSize) || fab.min_cut || 1;
+        extras += fab.price_per_yard * yards;
       }
     }
 
@@ -445,13 +469,11 @@ export default function ProductDetailsPage() {
       if (acc?.price) extras += acc.price;
     }
 
-    // Sum prices of selected add-on variants
-    for (const [addonId, variantId] of Object.entries(customization.selectedAddons)) {
-      const addon = clothing.addons?.find(a => a._id === addonId);
-      if (addon) {
-        const variant = addon.variants?.find(v => v._id === variantId);
-        if (variant?.price) extras += variant.price;
-      }
+    // Sum prices of selected add-on variants (selectedAddons is keyed by NAME → variant NAME)
+    for (const [addonName, variantName] of Object.entries(customization.selectedAddons)) {
+      const addon = clothing.addons?.find(a => a.name === addonName);
+      const variant = addon?.variants?.find(v => v.name === variantName);
+      if (variant?.price) extras += variant.price;
     }
 
     return extras;
@@ -459,6 +481,7 @@ export default function ProductDetailsPage() {
     product, productPrice, selectedColor, selectedSize, apiStyles,
     customization.selectedAccessories,
     customization.selectedAddons,
+    customization.selectedFabric,
     customization.selectedNeckline,
     customization.selectedSleeve,
     customization.selectedCollar,
@@ -491,9 +514,28 @@ export default function ProductDetailsPage() {
 
     if (product.kind === 'clothing' && product.clothing) {
       const clothing = product.clothing;
+      const hasFabrics = (clothing.fabrics?.length ?? 0) > 0;
 
-      // Color variant selection
-      if (selectedColor) {
+      // Fabric priced by yardage (customize garments with embedded fabrics).
+      // Yards = the garment's per-size requirement, else the fabric's min_cut.
+      if (hasFabrics && customization.selectedFabric) {
+        const fab = clothing.fabrics?.find(
+          (f: { _id?: string }) => f._id === customization.selectedFabric,
+        ) as { _id?: string; min_cut?: number } | undefined;
+        if (fab?._id) {
+          const yardage = resolveGarmentYards(selectedSize) || fab.min_cut || 1;
+          selections.fabric_selections = [{
+            fabric_id: fab._id,
+            yardage,
+            size: selectedSize || undefined,
+            quantity: 1,
+          }];
+        }
+      }
+
+      // Color variant selection — only when NOT pricing via fabric yardage,
+      // otherwise the backend would double-count (fabric + color variant).
+      if (!(hasFabrics && customization.selectedFabric) && selectedColor) {
         const cv = clothing.color_variants?.find(
           (c: any) => (c.name || c.color_name) === selectedColor
         );
@@ -583,7 +625,10 @@ export default function ProductDetailsPage() {
       ...(appliedFabricId && product.kind === 'clothing'
         ? {
             applied_fabric_id: appliedFabricId,
-            applied_fabric_yards: appliedFabricYards ?? appliedFabricMinCut,
+            // How many yards of the external fabric this garment needs (its
+            // bill of materials), unless the customer overrode it.
+            applied_fabric_yards:
+              appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut,
           }
         : {}),
     });
@@ -1230,7 +1275,14 @@ export default function ProductDetailsPage() {
 
                   {/* Selected Accessories */}
                   {customization.selectedAccessories.map((accId) => {
-                    const acc = ACCESSORIES.find((a) => a.id === accId);
+                    // Prefer the product's real accessory (selections are keyed
+                    // by _id now); fall back to static studio options.
+                    const prodAcc = product?.clothing?.accessories?.find(
+                      (a: { _id?: string }) => a._id === accId,
+                    ) as { name?: string } | undefined;
+                    const acc = prodAcc
+                      ? { id: accId, name: prodAcc.name ?? 'Accessory', emoji: '✨' }
+                      : ACCESSORIES.find((a) => a.id === accId);
                     return acc ? (
                       <div key={accId} className="flex flex-col items-center" style={{ gap: '4px' }}>
                         <div className="flex items-center justify-center" style={{ width: '52px', height: '52px', borderRadius: '12px', background: '#F0EDFF', border: '2px solid #7C3AED' }}>
@@ -1447,7 +1499,7 @@ export default function ProductDetailsPage() {
                       type="number"
                       min={appliedFabricMinCut}
                       step={0.5}
-                      value={appliedFabricYards ?? appliedFabricMinCut}
+                      value={appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut}
                       onChange={(e) =>
                         setAppliedFabricYards(
                           Math.max(appliedFabricMinCut, Number(e.target.value) || appliedFabricMinCut)
