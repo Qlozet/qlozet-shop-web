@@ -491,8 +491,10 @@ export default function ProductDetailsPage() {
     customization.selectedFullBody,
   ]);
 
-  // Base price + all extras (color variant diff, styles, accessories, addons)
-  const displayPrice = productPrice + customizationExtra;
+  // Authoritative price from the server (same math as cart/order). The local
+  // productPrice + customizationExtra is only a fallback while it loads / for guests.
+  const [serverPrice, setServerPrice] = useState<number | null>(null);
+  const displayPrice = serverPrice ?? productPrice + customizationExtra;
 
   // Look up selected styles from hardcoded fallback
   const findApiStyle = (id: string | null) => {
@@ -506,63 +508,47 @@ export default function ProductDetailsPage() {
 
   const isWish = product ? wishlist.includes(product._id) : false;
 
-  const handleAddToCart = () => {
-    if (!product) return;
-
-    // Build selections based on product kind
+  // Build the selections payload from the current configuration. Shared by
+  // add-to-cart and the server price preview so both send the exact same thing.
+  const buildSelections = useCallback((): CartSelections => {
     const selections: CartSelections = {};
+    if (!product) return selections;
 
     if (product.kind === 'clothing' && product.clothing) {
       const clothing = product.clothing;
       const hasFabrics = (clothing.fabrics?.length ?? 0) > 0;
 
       // Fabric priced by yardage (customize garments with embedded fabrics).
-      // Yards = the garment's per-size requirement, else the fabric's min_cut.
       if (hasFabrics && customization.selectedFabric) {
         const fab = clothing.fabrics?.find(
           (f: { _id?: string }) => f._id === customization.selectedFabric,
         ) as { _id?: string; min_cut?: number } | undefined;
         if (fab?._id) {
           const yardage = resolveGarmentYards(selectedSize) || fab.min_cut || 1;
-          selections.fabric_selections = [{
-            fabric_id: fab._id,
-            yardage,
-            size: selectedSize || undefined,
-            quantity: 1,
-          }];
+          selections.fabric_selections = [{ fabric_id: fab._id, yardage, size: selectedSize || undefined, quantity: 1 }];
         }
       }
 
-      // Color variant selection — only when NOT pricing via fabric yardage,
-      // otherwise the backend would double-count (fabric + color variant).
+      // Color variant — only when NOT pricing via fabric yardage (avoid double-count).
       if (!(hasFabrics && customization.selectedFabric) && selectedColor) {
         const cv = clothing.color_variants?.find(
-          (c: any) => (c.name || c.color_name) === selectedColor
+          (c: any) => (c.name || c.color_name) === selectedColor,
         );
         if (cv?._id) {
-          selections.color_variant_selections = [{
-            color_variant_id: cv._id,
-            size: selectedSize || undefined,
-            quantity: 1,
-          }];
+          selections.color_variant_selections = [{ color_variant_id: cv._id, size: selectedSize || undefined, quantity: 1 }];
         }
       }
 
-      // Style selections (from customization hook)
       const styleIds = [
-        customization.selectedSilhouette,
-        customization.selectedNeckline,
-        customization.selectedSleeve,
-        customization.selectedCollar,
-        customization.selectedSkirt,
-        customization.selectedTrouser,
+        customization.selectedSilhouette, customization.selectedNeckline,
+        customization.selectedSleeve, customization.selectedCollar,
+        customization.selectedSkirt, customization.selectedTrouser,
         customization.selectedFullBody,
       ].filter(Boolean) as string[];
       if (styleIds.length > 0) {
         selections.style_selections = styleIds.map((id) => ({ style_id: id }));
       }
 
-      // Accessory selections
       if (customization.selectedAccessories.length > 0 && clothing.accessories) {
         selections.accessory_selections = customization.selectedAccessories
           .map((accId) => {
@@ -575,26 +561,18 @@ export default function ProductDetailsPage() {
           .filter(Boolean) as CartSelections['accessory_selections'];
       }
 
-      // Addon selections
       if (Object.keys(customization.selectedAddons).length > 0) {
         selections.addon_selections = Object.entries(customization.selectedAddons)
           .map(([addonName, variantName]) => {
             const addonObj = product.clothing?.addons?.find(a => a.name === addonName);
             const variantObj = addonObj?.variants?.find(v => v.name === variantName);
-            
-            if (addonObj?._id && variantObj?._id) {
-              return {
-                addon_id: addonObj._id,
-                variant_id: variantObj._id,
-                quantity: 1,
-              };
-            }
-            return null;
+            return addonObj?._id && variantObj?._id
+              ? { addon_id: addonObj._id, variant_id: variantObj._id, quantity: 1 }
+              : null;
           })
           .filter(Boolean) as any;
       }
     } else if (product.kind === 'fabric') {
-      // Fabric product — send fabric selection with the product ID
       selections.fabric_selections = [{
         fabric_id: product._id,
         yardage: product.fabric?.min_cut || 1,
@@ -602,7 +580,6 @@ export default function ProductDetailsPage() {
         quantity: 1,
       }];
     } else if (product.kind === 'accessory' && product.accessory) {
-      // Accessory product — send accessory selection with the product accessory ID
       const firstVariant = product.accessory.variants?.[0];
       selections.accessory_selections = [{
         accessory_id: product.accessory._id,
@@ -610,11 +587,69 @@ export default function ProductDetailsPage() {
         quantity: 1,
       }];
     }
+    return selections;
+  }, [product, selectedColor, selectedSize, resolveGarmentYards,
+    customization.selectedFabric, customization.selectedSilhouette,
+    customization.selectedNeckline, customization.selectedSleeve,
+    customization.selectedCollar, customization.selectedSkirt,
+    customization.selectedTrouser, customization.selectedFullBody,
+    customization.selectedAccessories, customization.selectedAddons]);
+
+  // Debounced authoritative price preview from the server (one pricing brain).
+  useEffect(() => {
+    if (!product) return;
+    const selections = buildSelections();
+    const hasSelections = Object.values(selections).some(
+      (arr) => Array.isArray(arr) && arr.length > 0,
+    );
+    if (!hasSelections && !appliedFabricId) {
+      setServerPrice(null);
+      return;
+    }
+    const controller = new AbortController();
+    const t = setTimeout(() => {
+      api
+        .post(
+          '/orders/price-item',
+          {
+            product_id: product._id,
+            quantity: 1,
+            selections,
+            ...(appliedFabricId
+              ? {
+                  applied_fabric_id: appliedFabricId,
+                  applied_fabric_yards:
+                    appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut,
+                }
+              : {}),
+          },
+          { signal: controller.signal },
+        )
+        .then((res) => {
+          const p = res.data?.data?.price ?? res.data?.price;
+          if (typeof p === 'number') setServerPrice(p);
+        })
+        .catch(() => {
+          /* keep the local estimate on failure / for guests */
+        });
+    }, 400);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [
+    product, buildSelections, appliedFabricId, appliedFabricYards,
+    appliedFabricMinCut, resolveGarmentYards, selectedSize,
+  ]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    const selections = buildSelections();
 
     addToCart({
       id: product._id,
       title: productName,
-      price: productPrice + customizationExtra,
+      price: displayPrice,
       image: productImage,
       kind: product.kind,
       size: selectedSize,
