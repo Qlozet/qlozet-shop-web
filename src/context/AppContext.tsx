@@ -448,6 +448,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...(newItem.applied_fabric_id ? { appliedFabricId: newItem.applied_fabric_id } : {}),
         ...(newItem.applied_fabric_yards ? { appliedFabricYards: newItem.applied_fabric_yards } : {}),
         ...(newItem.note ? { note: newItem.note } : {}),
+      }).then((res) => {
+        // Adopt the backend's authoritative unit_price (base + components,
+        // discount applied) so the displayed line price = what's charged,
+        // instead of the client-side customization estimate.
+        const backendCart = res.data?.data ?? res.data;
+        const backendItem = backendCart?.items?.find((it: any) => {
+          const pid = typeof it.product_id === 'object' ? it.product_id?._id : it.product_id;
+          return pid === newItem.id;
+        });
+        if (backendItem && typeof backendItem.unit_price === 'number') {
+          setCart((prev) => {
+            const updated = prev.map((i) =>
+              i.id === newItem.id ? { ...i, price: backendItem.unit_price } : i,
+            );
+            saveState('qlozet_cart', updated);
+            return updated;
+          });
+        }
       }).catch((error) => {
         const msg = error.response?.data?.message || error.message;
         alert(`Failed to add item to cart on server: ${msg}`);
