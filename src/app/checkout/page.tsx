@@ -140,6 +140,38 @@ export default function CheckoutPage() {
   const shipping = checkout.totalShipping;
   const total = subtotal - discount + shipping;
 
+  // Per-item breakdowns → total item-level discount savings (§11, informational;
+  // the subtotal is already the discounted final).
+  const [breakdowns, setBreakdowns] = useState<Record<string, any>>({});
+  useEffect(() => {
+    let cancelled = false;
+    cart.forEach((item) => {
+      const hasSel =
+        item.selections &&
+        Object.values(item.selections).some((a: any) => Array.isArray(a) && a.length > 0);
+      if (!hasSel && !item.applied_fabric_id) return;
+      api
+        .post('/orders/price-item', {
+          product_id: item.id,
+          selections: item.selections,
+          ...(item.applied_fabric_id ? { applied_fabric_id: item.applied_fabric_id } : {}),
+          ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
+        })
+        .then((res) => {
+          const b = res.data?.data?.breakdown;
+          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
+        })
+        .catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cart]);
+  const itemSavings = cart.reduce(
+    (acc, item) => acc + (breakdowns[item.id]?.discount ?? 0) * item.quantity,
+    0,
+  );
+
   const handleApplyPromo = () => {
     setPromoError('');
     if (promoCode.toUpperCase() === '2773672') {
@@ -915,6 +947,12 @@ export default function CheckoutPage() {
                 <span style={{ fontSize: '12px', color: '#777' }}>Sub-total</span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A' }}>₦{subtotal.toLocaleString()}</span>
               </div>
+              {itemSavings > 0 && (
+                <div className="flex items-center justify-between">
+                  <span style={{ fontSize: '12px', color: '#2D6A4F' }}>Item savings</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-₦{itemSavings.toLocaleString()}</span>
+                </div>
+              )}
               {discount > 0 && (
                 <div className="flex items-center justify-between">
                   <span style={{ fontSize: '12px', color: '#2D6A4F' }}>Discount</span>
