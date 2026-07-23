@@ -128,21 +128,30 @@ export default function CheckoutPage() {
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
+  const [payError, setPayError] = useState('');
 
   // Processing
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderRef, setOrderRef] = useState('');
 
-  // Computations — use real values from preview when available
-  const subtotal = checkout.preview?.subtotal ?? cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  // Per-item breakdowns → total item-level discount savings (§11, informational;
+  // the subtotal is already the discounted final).
+  const [breakdowns, setBreakdowns] = useState<Record<string, any>>({});
+
+  // Authoritative per-unit price: the server breakdown final (exactly what the
+  // order will charge) when loaded, else the price stored at add-to-cart time.
+  const effectivePrice = (item: { id: string; price: number }) =>
+    breakdowns[item.id]?.final ?? item.price;
+
+  // Computations — sum the authoritative per-item finals so the displayed
+  // subtotal matches what createOrder will actually charge (the checkout preview
+  // could be stale after a re-configuration).
+  const subtotal = cart.reduce((acc, item) => acc + effectivePrice(item) * item.quantity, 0);
   const discount = promoApplied ? Math.round(subtotal * 0.15) : 0;
   const shipping = checkout.totalShipping;
   const total = subtotal - discount + shipping;
 
-  // Per-item breakdowns → total item-level discount savings (§11, informational;
-  // the subtotal is already the discounted final).
-  const [breakdowns, setBreakdowns] = useState<Record<string, any>>({});
   useEffect(() => {
     let cancelled = false;
     cart.forEach((item) => {
@@ -183,6 +192,15 @@ export default function CheckoutPage() {
 
   const handleBuyNow = async () => {
     if (cart.length === 0) return;
+
+    // Require an explicit payment choice. Without this, a null selection
+    // silently defaulted to Paystack and returned a confusing "unable to
+    // initialize payment" error when no card had been added.
+    if (!paymentMethod) {
+      setPayError('Please choose how you want to pay — add a card or select Pay with Wallet.');
+      return;
+    }
+    setPayError('');
     setIsProcessing(true);
 
     const method = paymentMethod === 'wallet' ? 'wallet' : 'paystack';
@@ -787,7 +805,7 @@ export default function CheckoutPage() {
 
             {/* Card Button */}
             <button
-              onClick={() => setPaymentMethod('card')}
+              onClick={() => { setPaymentMethod('card'); setPayError(''); }}
               className="w-full flex items-center justify-center gap-3 transition-all hover:bg-gray-50"
               style={{
                 padding: '14px',
@@ -811,7 +829,7 @@ export default function CheckoutPage() {
 
             {/* Wallet Button */}
             <button
-              onClick={() => setPaymentMethod('wallet')}
+              onClick={() => { setPaymentMethod('wallet'); setPayError(''); }}
               className="w-full flex items-center justify-center gap-2 transition-all hover:opacity-90"
               style={{
                 padding: '14px',
@@ -853,10 +871,10 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── BUY NOW BUTTON ─────────────────────────────────── */}
-          {checkout.error && !checkout.loading && (
+          {(payError || (checkout.error && !checkout.loading)) && (
             <div className="flex items-start gap-2" style={{ padding: '10px 14px', borderRadius: '10px', background: '#FEF2F2', marginBottom: '12px' }}>
               <AlertCircle size={14} color="#DC2626" className="flex-shrink-0" style={{ marginTop: '2px' }} />
-              <p style={{ fontSize: '11px', color: '#DC2626', lineHeight: 1.6, margin: 0 }}>{checkout.error}</p>
+              <p style={{ fontSize: '11px', color: '#DC2626', lineHeight: 1.6, margin: 0 }}>{payError || checkout.error}</p>
             </div>
           )}
           <button
@@ -923,7 +941,7 @@ export default function CheckoutPage() {
                         <p className="truncate" style={{ fontSize: '10px', color: '#AAA', marginTop: '2px' }}>Qty: {item.quantity}</p>
                       </div>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', flexShrink: 0 }}>
-                        ₦{(item.price * item.quantity).toLocaleString()}
+                        ₦{(effectivePrice(item) * item.quantity).toLocaleString()}
                       </span>
                     </div>
                     {/* Discount tags */}

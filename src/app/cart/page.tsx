@@ -67,8 +67,15 @@ export default function CartPage() {
     0,
   );
 
+  // Authoritative per-unit price: prefer the server breakdown (what the order
+  // will actually charge) over the price captured at add-to-cart time, which can
+  // be stale if the configuration changed. Falls back to item.price until the
+  // breakdown loads.
+  const effectivePrice = (item: { id: string; price: number }) =>
+    breakdowns[item.id]?.final ?? item.price;
+
   // Computations
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const subtotal = cart.reduce((acc, item) => acc + effectivePrice(item) * item.quantity, 0);
   const shipping = subtotal > 100000 || subtotal === 0 ? 0 : 5000;
 
   const { products: allProducts } = useProducts({ size: 20 });
@@ -239,11 +246,11 @@ export default function CartPage() {
 
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
-                        ₦{(item.price * item.quantity).toLocaleString()}
+                        ₦{(effectivePrice(item) * item.quantity).toLocaleString()}
                       </span>
                       {item.quantity > 1 && (
                         <span style={{ fontSize: '11px', color: '#888', fontWeight: 500 }}>
-                          (₦{item.price.toLocaleString()} each)
+                          (₦{effectivePrice(item).toLocaleString()} each)
                         </span>
                       )}
                     </div>
