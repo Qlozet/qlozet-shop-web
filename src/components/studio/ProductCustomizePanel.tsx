@@ -27,6 +27,7 @@ interface ProductCustomizePanelProps {
   customization: CustomizationState;
   onClose: () => void;
   product?: ApiProduct;
+  selectedSize?: string | null;
 }
 
 export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
@@ -34,6 +35,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
   customization,
   onClose,
   product,
+  selectedSize,
 }) => {
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
@@ -178,7 +180,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
             product={product}
           />
         ) : (
-          <SectionContent customization={customization} product={product} />
+          <SectionContent customization={customization} product={product} selectedSize={selectedSize} />
         )}
       </div>
 

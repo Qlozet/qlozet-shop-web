@@ -1601,6 +1601,7 @@ export default function ProductDetailsPage() {
                 customization={customization}
                 onClose={() => setShowCustomize(false)}
                 product={product}
+                selectedSize={selectedSize}
               />
             )}
 
