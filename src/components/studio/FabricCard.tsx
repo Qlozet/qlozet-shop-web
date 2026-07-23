@@ -16,7 +16,7 @@ const FABRIC_DESC: Record<string, string> = {
 };
 
 interface FabricCardProps {
-  fabric: FabricOption;
+  fabric: FabricOption & { pricePerYard?: number; yards?: number };
   isSelected: boolean;
   onSelect: (id: string) => void;
 }
@@ -64,11 +64,21 @@ export const FabricCard: React.FC<FabricCardProps> = ({
           }}>
             {fabric.name}
           </p>
-          {fabric.extraCost !== undefined && (
+          {fabric.pricePerYard ? (
+            <p style={{ fontSize: '9px', fontWeight: 700, color: '#1A1A1A', marginTop: '2px' }}>
+              ₦{fabric.pricePerYard.toLocaleString()}/yd
+              {fabric.extraCost ? (
+                <span style={{ color: '#059669' }}>
+                  {' '}· ≈ ₦{fabric.extraCost.toLocaleString()}
+                  {fabric.yards ? ` (${fabric.yards} yd)` : ''}
+                </span>
+              ) : null}
+            </p>
+          ) : fabric.extraCost !== undefined ? (
             <p style={{ fontSize: '9px', fontWeight: 700, color: fabric.extraCost > 0 ? '#1A1A1A' : '#059669', marginTop: '2px' }}>
               {fabric.extraCost > 0 ? `+₦${fabric.extraCost.toLocaleString()}` : 'Included'}
             </p>
-          )}
+          ) : null}
         </div>
         <div
           style={{

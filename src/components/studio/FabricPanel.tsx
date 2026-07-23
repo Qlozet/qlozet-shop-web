@@ -12,6 +12,7 @@ interface FabricPanelProps {
   onSelectFabric: (id: string) => void;
   selectedColor: string | null;
   onSelectColor: (color: string) => void;
+  selectedSize?: string | null;
   product?: ApiProduct;
 }
 
@@ -20,6 +21,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
   onSelectFabric,
   selectedColor,
   onSelectColor,
+  selectedSize,
   product,
 }) => {
   const productFabrics = product?.clothing?.fabrics || [];
@@ -42,26 +44,26 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
     );
   }
 
-  // Build fabric options from product fabrics (if any)
+  // Garment fabric requirement (yards) for the chosen size — bill of materials.
+  const garmentYards = (() => {
+    const list = (product?.clothing as { yardage_per_size?: Array<{ size?: string; yards?: number }> } | undefined)?.yardage_per_size;
+    const gy = list?.find((y) => (y.size ?? '').toLowerCase() === (selectedSize ?? '').toLowerCase());
+    return gy?.yards;
+  })();
+
+  // Build fabric options from product fabrics — priced by the yard.
   const fabricOptions = hasFabrics
     ? productFabrics.map((f) => {
-        // Find matching color variant to get the actual garment price for this fabric
-        const matchingColor = colorVariants.find(cv => (cv.name || cv.color_name) === f.name);
-        let extraCost = 0;
-        if (matchingColor && matchingColor.variants) {
-          const variantPrices = matchingColor.variants.map(v => v.price || 0).filter(p => p > 0);
-          if (variantPrices.length > 0) {
-            extraCost = Math.min(...variantPrices);
-          }
-        }
-        
+        const pricePerYard = (f as { price_per_yard?: number }).price_per_yard || 0;
+        const yards = garmentYards || (f as { min_cut?: number }).min_cut || 1;
         return {
-          // Use the real fabric sub-doc _id so the selection maps to the
-          // product's fabric (priced by yardage in customizationExtra / order).
+          // Real fabric sub-doc _id so the selection maps to the product's fabric.
           id: (f as { _id?: string })._id ?? f.name,
           name: f.name,
           image: f.images?.[0]?.url || '',
-          extraCost: extraCost,
+          extraCost: Math.round(pricePerYard * yards), // amount for this garment/size
+          pricePerYard,
+          yards,
         };
       })
     : !hasColorVariants ? FABRICS : [];

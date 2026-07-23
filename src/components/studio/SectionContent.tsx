@@ -18,9 +18,10 @@ import { type ApiProduct } from '@/lib/api-types';
 interface SectionContentProps {
   customization: CustomizationState;
   product?: ApiProduct;
+  selectedSize?: string | null;
 }
 
-export const SectionContent: React.FC<SectionContentProps> = ({ customization, product }) => {
+export const SectionContent: React.FC<SectionContentProps> = ({ customization, product, selectedSize }) => {
   const { expandedSection } = customization;
 
   if (expandedSection === 'styles') {
@@ -54,6 +55,7 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         onSelectFabric={(id) => customization.setSelectedFabric(id)}
         selectedColor={customization.selectedColor}
         onSelectColor={(color) => customization.setSelectedColor(color)}
+        selectedSize={selectedSize}
         product={product}
       />
     );
