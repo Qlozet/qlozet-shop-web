@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
 import { useCompleteTheLook } from '@/hooks/useRecommendations';
@@ -32,6 +33,39 @@ export default function CartPage() {
   const [showPremiere, setShowPremiere] = useState(false);
   const [showLooking, setShowLooking] = useState(false);
   const [showSuggested, setShowSuggested] = useState(false);
+
+  // Per-item pricing breakdown (authoritative, from the server) for the §8 ladder.
+  const [breakdowns, setBreakdowns] = useState<Record<string, any>>({});
+  useEffect(() => {
+    let cancelled = false;
+    cart.forEach((item) => {
+      const hasSel =
+        item.selections &&
+        Object.values(item.selections).some((a: any) => Array.isArray(a) && a.length > 0);
+      if (!hasSel && !item.applied_fabric_id) return;
+      api
+        .post('/orders/price-item', {
+          product_id: item.id,
+          selections: item.selections,
+          ...(item.applied_fabric_id ? { applied_fabric_id: item.applied_fabric_id } : {}),
+          ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
+        })
+        .then((res) => {
+          const b = res.data?.data?.breakdown;
+          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
+        })
+        .catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cart]);
+
+  // Total discount savings across the cart (§11).
+  const totalDiscount = cart.reduce(
+    (acc, item) => acc + (breakdowns[item.id]?.discount ?? 0) * item.quantity,
+    0,
+  );
 
   // Computations
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -213,6 +247,44 @@ export default function CartPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Pricing breakdown (§8) */}
+                    {breakdowns[item.id] && (
+                      <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '10px', background: '#FAFAFA', border: '1px solid #F0F0F0', fontSize: '11px' }}>
+                        {(
+                          [
+                            ['Base', breakdowns[item.id].base],
+                            ['Styles', breakdowns[item.id].styles_total],
+                            ['Fabric', breakdowns[item.id].fabric_total],
+                            ['Variant', breakdowns[item.id].variant_total],
+                            ['Accessories', breakdowns[item.id].accessories_total],
+                            ['Add-ons', breakdowns[item.id].addons_total],
+                            ['Applied fabric', breakdowns[item.id].external_fabric],
+                          ] as [string, number][]
+                        )
+                          .filter(([label, v]) => label === 'Base' || v > 0)
+                          .map(([label, v]) => (
+                            <div key={label} className="flex items-center justify-between" style={{ color: '#666' }}>
+                              <span>{label}</span>
+                              <span>₦{v.toLocaleString()}</span>
+                            </div>
+                          ))}
+                        <div className="flex items-center justify-between" style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #EEE', color: '#333', fontWeight: 600 }}>
+                          <span>Before discount</span>
+                          <span>₦{breakdowns[item.id].before_discount.toLocaleString()}</span>
+                        </div>
+                        {breakdowns[item.id].discount > 0 && (
+                          <div className="flex items-center justify-between" style={{ color: '#059669' }}>
+                            <span>Discount</span>
+                            <span>-₦{breakdowns[item.id].discount.toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between" style={{ marginTop: '2px', color: '#1A1A1A', fontWeight: 700 }}>
+                          <span>Final</span>
+                          <span>₦{breakdowns[item.id].final.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Customization tag */}
                     {item.kind === 'clothing' && (
@@ -397,6 +469,14 @@ export default function CartPage() {
               <span style={{ fontSize: '13px', color: '#666' }}>Sub-total</span>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>₦{subtotal.toLocaleString()}</span>
             </div>
+
+            {/* Discount savings (§11) */}
+            {totalDiscount > 0 && (
+              <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#059669' }}>Discount savings</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#059669' }}>−₦{totalDiscount.toLocaleString()}</span>
+              </div>
+            )}
 
             {/* Delivery */}
             <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
