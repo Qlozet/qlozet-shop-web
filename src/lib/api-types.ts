@@ -631,7 +631,9 @@ export interface CartStyleSelection {
 
 export interface CartAccessorySelection {
   accessory_id: string;
-  variant_id: string;
+  // Optional: the variant only pins stock. Accessories are priced at their base
+  // price, so an accessory without a variant is still a valid selection.
+  variant_id?: string;
   quantity?: number;
 }
 

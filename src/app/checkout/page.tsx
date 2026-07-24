@@ -134,6 +134,9 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderRef, setOrderRef] = useState('');
+  // Snapshot of the amount charged, captured BEFORE clearCart() empties the cart
+  // (otherwise the confirmation total collapses to just the shipping fee).
+  const [paidTotal, setPaidTotal] = useState(0);
 
   // Per-item breakdowns → total item-level discount savings (§11, informational;
   // the subtotal is already the discounted final).
@@ -210,6 +213,7 @@ export default function CheckoutPage() {
       // Paystack redirect is handled inside placeOrder
       if (method === 'wallet' || !result.authorization_url) {
         setOrderRef(result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
+        setPaidTotal(total); // capture before clearCart() zeroes the cart-derived total
         setIsProcessing(false);
         setOrderComplete(true);
         clearCart();
@@ -375,7 +379,7 @@ export default function CheckoutPage() {
           {/* Total Paid */}
           <div className="flex items-center justify-between">
             <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Paid</span>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A' }}>₦{total.toLocaleString()}</span>
+            <span style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A' }}>₦{(paidTotal || total).toLocaleString()}</span>
           </div>
         </div>
 
