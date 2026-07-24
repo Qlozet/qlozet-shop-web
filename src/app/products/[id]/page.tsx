@@ -494,7 +494,14 @@ export default function ProductDetailsPage() {
   // Authoritative price from the server (same math as cart/order). The local
   // productPrice + customizationExtra is only a fallback while it loads / for guests.
   const [serverPrice, setServerPrice] = useState<number | null>(null);
+  const [serverBreakdown, setServerBreakdown] = useState<{ base: number; before_discount: number; discount: number; final: number } | null>(null);
   const displayPrice = serverPrice ?? productPrice + customizationExtra;
+  // Cost of the customizations shown next to the price. Prefer the server
+  // breakdown (before-discount extras = everything above base) so it stays
+  // consistent with the discounted final; fall back to the local estimate.
+  const extrasCost = serverBreakdown
+    ? Math.max(0, serverBreakdown.before_discount - serverBreakdown.base)
+    : customizationExtra;
 
   // Look up selected styles from hardcoded fallback
   const findApiStyle = (id: string | null) => {
@@ -553,10 +560,14 @@ export default function ProductDetailsPage() {
         selections.accessory_selections = customization.selectedAccessories
           .map((accId) => {
             const acc = clothing.accessories?.find((a: any) => a._id === accId);
-            const firstVariant = acc?.variants?.[0];
-            return acc && firstVariant?._id
-              ? { accessory_id: accId, variant_id: firstVariant._id, quantity: 1 }
-              : null;
+            if (!acc?._id) return null;
+            const firstVariant = acc.variants?.[0];
+            // Send the variant when one exists (it pins stock), but never drop
+            // the accessory for lacking one — that made the PDP price an
+            // accessory that then never reached the cart/order.
+            return firstVariant?._id
+              ? { accessory_id: acc._id, variant_id: firstVariant._id, quantity: 1 }
+              : { accessory_id: acc._id, quantity: 1 };
           })
           .filter(Boolean) as CartSelections['accessory_selections'];
       }
@@ -604,6 +615,7 @@ export default function ProductDetailsPage() {
     );
     if (!hasSelections && !appliedFabricId) {
       setServerPrice(null);
+      setServerBreakdown(null);
       return;
     }
     const controller = new AbortController();
@@ -628,6 +640,8 @@ export default function ProductDetailsPage() {
         .then((res) => {
           const p = res.data?.data?.price ?? res.data?.price;
           if (typeof p === 'number') setServerPrice(p);
+          const b = res.data?.data?.breakdown;
+          if (b) setServerBreakdown(b);
         })
         .catch(() => {
           /* keep the local estimate on failure / for guests */
@@ -1209,12 +1223,12 @@ export default function ProductDetailsPage() {
               <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
                 ₦{displayPrice.toLocaleString()}
               </span>
-              {customizationExtra > 0 && (
+              {extrasCost > 0 && (
                 <span style={{
                   fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
                   background: '#EDE9FE', color: '#6D28D9',
                 }}>
-                  +₦{customizationExtra.toLocaleString()} styling
+                  +₦{extrasCost.toLocaleString()} styling
                 </span>
               )}
               {hasDiscount(product) && (
