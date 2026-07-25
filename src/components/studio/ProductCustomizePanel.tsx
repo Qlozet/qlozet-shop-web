@@ -59,26 +59,35 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       return typeof raw === 'string' ? raw : raw?.url;
     };
 
-    // ── Styles: name + description for each selected garment part ──
-    const selectedStyleIds = [
-      customization.selectedSilhouette,
-      customization.selectedNeckline,
-      customization.selectedSleeve,
-      customization.selectedCollar,
-      customization.selectedSkirt,
-      customization.selectedTrouser,
-      customization.selectedFullBody,
-    ].filter(Boolean) as string[];
+    // ── Styles: keyed by garment part (mirrors bespoke studio's
+    //    constructionSelections) so the model knows WHICH part each style is,
+    //    e.g. { neckline: "V-neck", sleeve_style: "puff sleeves" } ──
+    const stylePartMap: Array<[string, string | null]> = [
+      ['silhouette', customization.selectedSilhouette],
+      ['neckline', customization.selectedNeckline],
+      ['sleeve_style', customization.selectedSleeve],
+      ['collar', customization.selectedCollar],
+      ['skirt_style', customization.selectedSkirt],
+      ['trouser_style', customization.selectedTrouser],
+      ['full_body_style', customization.selectedFullBody],
+    ];
 
-    const styleDescriptions = selectedStyleIds
-      .map((id) => {
-        const s = (clothing?.styles ?? []).find(
-          (st: { _id?: string }) => st._id === id,
-        ) as { name?: string; description?: string } | undefined;
-        if (!s?.name) return null;
-        return s.description ? `${s.name} (${s.description})` : s.name;
-      })
-      .filter(Boolean) as string[];
+    const constructionSelections: Record<string, string> = {};
+    for (const [part, id] of stylePartMap) {
+      if (!id) continue;
+      const s = (clothing?.styles ?? []).find(
+        (st: { _id?: string }) => st._id === id,
+      ) as { name?: string; description?: string } | undefined;
+      if (!s?.name) continue;
+      constructionSelections[part] = s.description
+        ? `${s.name} — ${s.description}`
+        : s.name;
+    }
+
+    // Readable form of the same, for the free-text notes.
+    const styleDescriptions = Object.entries(constructionSelections).map(
+      ([part, val]) => `${part.replace(/_/g, ' ')}: ${val}`,
+    );
 
     // ── Fabric: image + name ──
     const selFabric = (clothing?.fabrics ?? []).find(
@@ -124,13 +133,14 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
     if (fitLabel) noteParts.push(`Fit: ${fitLabel}`);
     if (selectedSize) noteParts.push(`Size: ${selectedSize}`);
 
-    // ── Structured spec for the image editor ──
+    // ── Structured spec for the image editor (mirrors bespoke studio's config:
+    //    styles keyed by garment part under constructionSelections) ──
     const metadata = {
       garment: getProductName(product),
       size: selectedSize || undefined,
       color: colorName,
       fabric: fabricName,
-      styles: styleDescriptions,
+      constructionSelections,
       accessories: accessoryNames,
       addons: addonNames,
       fit: fitLabel,
