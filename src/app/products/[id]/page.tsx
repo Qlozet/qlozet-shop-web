@@ -682,7 +682,11 @@ export default function ProductDetailsPage() {
       id: product._id,
       title: productName,
       price: displayPrice,
-      image: productImage,
+      // Show the customer's AI preview on the cart when they generated one; the
+      // real product photo otherwise. This is customer-facing only — the order
+      // sends selections, not this image, so the vendor still sees the actual
+      // product photo (an AI approximation would mislead the tailor).
+      image: customization.currentImage || productImage,
       kind: product.kind,
       size: selectedSize,
       color: selectedColor,
