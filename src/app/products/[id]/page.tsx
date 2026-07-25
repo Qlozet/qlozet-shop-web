@@ -503,6 +503,23 @@ export default function ProductDetailsPage() {
     ? Math.max(0, serverBreakdown.before_discount - serverBreakdown.base)
     : customizationExtra;
 
+  // Two prices shown on the PDP, both reflecting the chosen customizations:
+  //  • discountedPrice — the final price the customer pays (after discount).
+  //  • originalPrice   — base + customizations BEFORE discount (struck through).
+  // Both come from the server breakdown so the discount is applied to the
+  // customization costs too; the local estimate is only a pre-load fallback.
+  const discountedPrice = displayPrice;
+  const originalPrice = serverBreakdown
+    ? serverBreakdown.before_discount
+    : (product && hasDiscount(product)
+        ? getProductOriginalPrice(product)
+        : productPrice) + customizationExtra;
+  const showOriginalPrice = serverBreakdown
+    ? serverBreakdown.discount > 0
+    : product
+      ? hasDiscount(product)
+      : false;
+
   // Look up selected styles from hardcoded fallback
   const findApiStyle = (id: string | null) => {
     if (!id) return null;
@@ -638,9 +655,12 @@ export default function ProductDetailsPage() {
           { signal: controller.signal },
         )
         .then((res) => {
-          const p = res.data?.data?.price ?? res.data?.price;
+          // The API response wrapper nests the service's { data: {...} } under
+          // its own `data`, so the real payload is res.data.data.data.
+          const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
+          const p = payload?.price;
           if (typeof p === 'number') setServerPrice(p);
-          const b = res.data?.data?.breakdown;
+          const b = payload?.breakdown;
           if (b) setServerBreakdown(b);
         })
         .catch(() => {
@@ -1218,22 +1238,23 @@ export default function ProductDetailsPage() {
               {productName}
             </p>
 
-            {/* Price */}
+            {/* Price — discounted (paid) + original (before discount), both
+                reflecting the chosen customizations. */}
             <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
               <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
-                ₦{displayPrice.toLocaleString()}
+                ₦{discountedPrice.toLocaleString()}
               </span>
+              {showOriginalPrice && originalPrice > discountedPrice + 0.5 && (
+                <span style={{ fontSize: '15px', fontWeight: 500, color: '#AAA', textDecoration: 'line-through' }}>
+                  ₦{originalPrice.toLocaleString()}
+                </span>
+              )}
               {extrasCost > 0 && (
                 <span style={{
                   fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
                   background: '#EDE9FE', color: '#6D28D9',
                 }}>
                   +₦{extrasCost.toLocaleString()} styling
-                </span>
-              )}
-              {hasDiscount(product) && (
-                <span style={{ fontSize: '15px', fontWeight: 500, color: '#AAA', textDecoration: 'line-through' }}>
-                  ₦{getProductOriginalPrice(product).toLocaleString()}
                 </span>
               )}
             </div>

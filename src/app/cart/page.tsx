@@ -51,7 +51,9 @@ export default function CartPage() {
           ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
         })
         .then((res) => {
-          const b = res.data?.data?.breakdown;
+          // API wrapper double-nests the service's { data } under its own data.
+          const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
+          const b = payload?.breakdown;
           if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
         })
         .catch(() => {});
