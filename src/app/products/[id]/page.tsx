@@ -185,6 +185,8 @@ export default function ProductDetailsPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  // Whether the hero shows the AI preview (true) or the original product photo.
+  const [showAiPreview, setShowAiPreview] = useState(false);
 
   const [sizeGuideData, setSizeGuideData] = useState<ApiSizeGuide | null>(null);
   const [sizeGuideLoading, setSizeGuideLoading] = useState(true);
@@ -759,16 +761,10 @@ export default function ProductDetailsPage() {
     }
   };
 
-  // Product photos + any AI previews generated this session (from the Apply
-  // button). The generated previews become extra thumbnails the user can flip
-  // between, alongside the real product photos.
-  const combinedGallery = [...gallery, ...customization.generatedImages];
-  const firstGeneratedIdx = gallery.length;
-
   const prevImage = () =>
-    setActiveImageIdx((i) => (i === 0 ? Math.max(combinedGallery.length - 1, 0) : i - 1));
+    setActiveImageIdx((i) => (i === 0 ? Math.max(gallery.length - 1, 0) : i - 1));
   const nextImage = () =>
-    setActiveImageIdx((i) => (i === combinedGallery.length - 1 ? 0 : i + 1));
+    setActiveImageIdx((i) => (i === gallery.length - 1 ? 0 : i + 1));
 
   const kindLabel =
     product?.kind === 'clothing'
@@ -777,23 +773,22 @@ export default function ProductDetailsPage() {
         ? 'Fabrics'
         : 'Accessories';
 
-  // Current gallery image (with fallback). Follows the selected thumbnail across
-  // both product photos and AI previews.
-  const currentImage = combinedGallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
+  // Latest AI preview (from the Apply button). When present we replace the hero
+  // with it and offer a "View Original / View AI" toggle. Latest-only by design.
+  const aiPreview = customization.currentImage;
+  const hasAiPreview = !!aiPreview;
+  const viewingAi = hasAiPreview && showAiPreview;
 
-  // When a new AI preview finishes, jump the viewer to it; also clamp the index
-  // if the gallery shrinks (e.g. a colour change removes photos).
+  const originalImage = gallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
+  const currentImage = viewingAi ? aiPreview! : originalImage;
+
+  // Auto-show the newest AI preview the moment a generation finishes.
   const prevGenCountRef = useRef(0);
   useEffect(() => {
     const genCount = customization.generatedImages.length;
-    if (genCount > prevGenCountRef.current) {
-      setActiveImageIdx(gallery.length + genCount - 1);
-    } else if (combinedGallery.length > 0 && activeImageIdx >= combinedGallery.length) {
-      setActiveImageIdx(combinedGallery.length - 1);
-    }
+    if (genCount > prevGenCountRef.current) setShowAiPreview(true);
     prevGenCountRef.current = genCount;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customization.generatedImages.length, gallery.length, combinedGallery.length]);
+  }, [customization.generatedImages.length]);
 
   // Color hex map from API colors
   const colorHexMap = useMemo(() => {
@@ -891,6 +886,42 @@ export default function ProductDetailsPage() {
                   sizes="(max-width: 768px) 100vw, 50vw"
                   draggable={false}
                 />
+              )}
+
+              {/* AI ↔ Original toggle (only when an AI preview exists) */}
+              {hasAiPreview && !isZoomed && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowAiPreview((v) => !v); }}
+                  className="absolute flex items-center transition-all hover:opacity-90"
+                  style={{
+                    top: '14px', right: '14px', zIndex: 25,
+                    padding: '7px 12px', borderRadius: '20px', gap: '6px',
+                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+                    border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  <Sparkles size={13} color="#D4AF37" />
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#FFF', letterSpacing: '0.03em' }}>
+                    {viewingAi ? 'View Original' : 'View AI'}
+                  </span>
+                </button>
+              )}
+
+              {/* "AI preview" badge while showing the generated image */}
+              {viewingAi && !isZoomed && (
+                <div
+                  className="absolute flex items-center"
+                  style={{
+                    top: '14px', left: '14px', zIndex: 20,
+                    padding: '5px 10px', borderRadius: '16px', gap: '5px',
+                    background: '#4C1D95',
+                  }}
+                >
+                  <Sparkles size={11} color="#FFF" />
+                  <span style={{ fontSize: '9px', fontWeight: 800, color: '#FFF', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    AI Preview
+                  </span>
+                </div>
               )}
 
               {/* Zoomed Image Layer */}
@@ -1081,42 +1112,25 @@ export default function ProductDetailsPage() {
               )}
             </div>
 
-            {/* Thumbnail Strip — product photos + AI previews from this session */}
-            {combinedGallery.length > 1 && (
+            {/* Thumbnail Strip — product photos. Selecting one returns to the
+                original view (the AI toggle sits on the hero image). */}
+            {gallery.length > 1 && (
               <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '10px' }}>
-                {combinedGallery.map((img, idx) => {
-                  const isGenerated = idx >= firstGeneratedIdx;
-                  return (
-                    <button
-                      key={`${idx}-${img}`}
-                      onClick={() => setActiveImageIdx(idx)}
-                      className="relative overflow-hidden transition-all"
-                      style={{
-                        width: '72px', height: '72px', borderRadius: '12px',
-                        border: idx === activeImageIdx
-                          ? '2px solid #1A1A1A'
-                          : isGenerated ? '2px solid #C4B5FD' : '2px solid #E5E5E5',
-                        background: '#F5F5F5', cursor: 'pointer',
-                        opacity: idx === activeImageIdx ? 1 : 0.7, flexShrink: 0,
-                      }}
-                    >
-                      <Image src={img} alt={`${productName} view ${idx + 1}`} fill style={{ objectFit: 'cover' }} sizes="72px" />
-                      {isGenerated && (
-                        <span
-                          className="absolute"
-                          style={{
-                            top: '3px', left: '3px',
-                            padding: '1px 5px', borderRadius: '5px',
-                            background: '#4C1D95', color: '#FFF',
-                            fontSize: '8px', fontWeight: 800, letterSpacing: '0.04em',
-                          }}
-                        >
-                          AI
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {gallery.map((img, idx) => (
+                  <button
+                    key={`${idx}-${img}`}
+                    onClick={() => { setActiveImageIdx(idx); setShowAiPreview(false); }}
+                    className="relative overflow-hidden transition-all"
+                    style={{
+                      width: '72px', height: '72px', borderRadius: '12px',
+                      border: idx === activeImageIdx && !viewingAi ? '2px solid #1A1A1A' : '2px solid #E5E5E5',
+                      background: '#F5F5F5', cursor: 'pointer',
+                      opacity: idx === activeImageIdx && !viewingAi ? 1 : 0.7, flexShrink: 0,
+                    }}
+                  >
+                    <Image src={img} alt={`${productName} view ${idx + 1}`} fill style={{ objectFit: 'cover' }} sizes="72px" />
+                  </button>
+                ))}
               </div>
             )}
 
