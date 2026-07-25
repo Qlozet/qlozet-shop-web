@@ -6,11 +6,12 @@ import Link from 'next/link';
 import { X } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { TokenIcon } from '../icons/TokenIcon';
-import { type SectionTab } from '@/data/studio-options';
+import { type SectionTab, FIT_OPTIONS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { AccessoriesPanel } from './AccessoriesPanel';
 import { AddonsPanel } from './AddonsPanel';
+import { InsufficientTokensModal } from './InsufficientTokensModal';
 
 // ═══════════════════════════════════════════════════════════════
 //  ProductCustomizePanel
@@ -40,15 +41,26 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
 
-  // Build the edit-garment payload from the product + current selections and
-  // generate an AI preview of the configured garment.
+  // Build the edit-garment payload from the product + ALL current selections
+  // (styles + descriptions, fabric, colour, accessories, add-ons, fit) and
+  // generate an AI preview of the configured garment. The richer the notes, the
+  // closer the generated image matches what the customer actually chose.
   const handleApply = async () => {
     if (!product || customization.isGenerating) return;
 
     const baseImage = getProductImage(product);
     if (!baseImage) return;
 
-    const styleIds = [
+    const clothing = product.clothing;
+    const firstImg = (
+      imgs?: Array<string | { url?: string }>,
+    ): string | undefined => {
+      const raw = imgs?.[0];
+      return typeof raw === 'string' ? raw : raw?.url;
+    };
+
+    // ── Styles: name + description for each selected garment part ──
+    const selectedStyleIds = [
       customization.selectedSilhouette,
       customization.selectedNeckline,
       customization.selectedSleeve,
@@ -58,25 +70,81 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       customization.selectedFullBody,
     ].filter(Boolean) as string[];
 
-    const styleNames = (product.clothing?.styles ?? [])
-      .filter((s: { _id?: string }) => s._id && styleIds.includes(s._id))
-      .map((s: { name?: string }) => s.name)
+    const styleDescriptions = selectedStyleIds
+      .map((id) => {
+        const s = (clothing?.styles ?? []).find(
+          (st: { _id?: string }) => st._id === id,
+        ) as { name?: string; description?: string } | undefined;
+        if (!s?.name) return null;
+        return s.description ? `${s.name} (${s.description})` : s.name;
+      })
       .filter(Boolean) as string[];
 
-    // Resolve the selected embedded fabric's image, if any
-    const selFabric = product.clothing?.fabrics?.find(
+    // ── Fabric: image + name ──
+    const selFabric = (clothing?.fabrics ?? []).find(
       (f: { _id?: string }) => f._id === customization.selectedFabric,
-    ) as { images?: Array<string | { url?: string }> } | undefined;
-    const rawFabricImg = selFabric?.images?.[0];
-    const fabricImage =
-      typeof rawFabricImg === 'string' ? rawFabricImg : rawFabricImg?.url;
+    ) as { name?: string; images?: Array<string | { url?: string }> } | undefined;
+    const fabricImage = firstImg(selFabric?.images);
+    const fabricName = selFabric?.name;
+
+    // ── Accessories: names + first accessory image ──
+    const accessoryNames: string[] = [];
+    let accessoryImage: string | undefined;
+    for (const accId of customization.selectedAccessories) {
+      const acc = (clothing?.accessories ?? []).find(
+        (a: { _id?: string }) => a._id === accId,
+      ) as { name?: string; images?: Array<string | { url?: string }> } | undefined;
+      if (acc?.name) accessoryNames.push(acc.name);
+      if (!accessoryImage) accessoryImage = firstImg(acc?.images);
+    }
+
+    // ── Add-ons: "Add-on: variant" ──
+    const addonNames: string[] = Object.entries(customization.selectedAddons).map(
+      ([addonName, variantName]) =>
+        variantName ? `${addonName}: ${variantName}` : addonName,
+    );
+
+    // ── Fit + colour ──
+    const fitLabel = FIT_OPTIONS.find(
+      (f) => f.id === customization.selectedFit,
+    )?.label;
+    // The PDP feeds a colour NAME (e.g. "Teal") into the hook; ignore the raw
+    // hex default so we never send "#1B2A4A" as a colour to the image editor.
+    const colorName =
+      customization.selectedColor && !customization.selectedColor.startsWith('#')
+        ? customization.selectedColor
+        : undefined;
+
+    // ── Human-readable notes that drive the prompt ──
+    const noteParts: string[] = [];
+    if (styleDescriptions.length) noteParts.push(`Styles: ${styleDescriptions.join('; ')}`);
+    if (fabricName) noteParts.push(`Fabric: ${fabricName}`);
+    if (accessoryNames.length) noteParts.push(`Accessories: ${accessoryNames.join(', ')}`);
+    if (addonNames.length) noteParts.push(`Add-ons: ${addonNames.join(', ')}`);
+    if (fitLabel) noteParts.push(`Fit: ${fitLabel}`);
+    if (selectedSize) noteParts.push(`Size: ${selectedSize}`);
+
+    // ── Structured spec for the image editor ──
+    const metadata = {
+      garment: getProductName(product),
+      size: selectedSize || undefined,
+      color: colorName,
+      fabric: fabricName,
+      styles: styleDescriptions,
+      accessories: accessoryNames,
+      addons: addonNames,
+      fit: fitLabel,
+    };
 
     await customization.generateProductPreview({
       base_image_url: baseImage,
       garment_type: getProductName(product),
-      ...(customization.selectedColor ? { base_color: customization.selectedColor } : {}),
+      ...(colorName ? { base_color: colorName } : {}),
       ...(fabricImage ? { fabric_image_url: fabricImage } : {}),
-      ...(styleNames.length ? { style_notes: styleNames.join(', ') } : {}),
+      ...(accessoryImage ? { accessory_image_url: accessoryImage } : {}),
+      ...(fitLabel ? { fit: fitLabel } : {}),
+      ...(noteParts.length ? { style_notes: noteParts.join(' | ') } : {}),
+      metadata_json: metadata,
     });
   };
 
@@ -210,7 +278,16 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           </Link>
         </div>
       ) : (
-        <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px' }}>
+        <div className="shrink-0" style={{ padding: '0 24px' }}>
+          {customization.generationError && (
+            <p style={{ fontSize: '11.5px', color: '#DC2626', fontWeight: 600, lineHeight: 1.4, margin: '0 0 10px', textAlign: 'center' }}>
+              {customization.generationError}
+            </p>
+          )}
+        </div>
+      )}
+      {user && (
+        <div className="shrink-0 flex items-center gap-3" style={{ padding: '4px 24px 24px' }}>
           <button
             onClick={onClose}
             className="flex-1 transition-colors hover:bg-gray-200"
@@ -250,7 +327,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
                 <span>Apply</span>
                 <div className="flex items-center" style={{ gap: '4px', opacity: 0.85 }}>
                   <TokenIcon size={14} color="#D4AF37" />
-                  <span style={{ fontSize: '12px', fontWeight: 800 }}>25</span>
+                  <span style={{ fontSize: '12px', fontWeight: 800 }}>{customization.editTokenCost}</span>
                 </div>
               </>
             )}
@@ -301,6 +378,18 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         </div>,
         document.body
       )}
+
+      {/* Not enough tokens → offer a quick top-up, then retry the generation. */}
+      <InsufficientTokensModal
+        isOpen={customization.insufficientTokensInfo.show}
+        balance={customization.insufficientTokensInfo.balance}
+        cost={customization.insufficientTokensInfo.cost}
+        onClose={customization.dismissInsufficientTokens}
+        onPurchaseComplete={() => {
+          customization.dismissInsufficientTokens();
+          handleApply();
+        }}
+      />
     </>
   );
 };

@@ -248,10 +248,8 @@ export default function ProductDetailsPage() {
     }
   }
 
-  // Ensure activeImageIdx is valid
-  if (gallery.length > 0 && activeImageIdx >= gallery.length) {
-    setActiveImageIdx(0);
-  }
+  // (activeImageIdx is clamped in an effect below, against the combined gallery
+  // that also includes AI-generated previews.)
 
   const [showDetails, setShowDetails] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
@@ -684,7 +682,11 @@ export default function ProductDetailsPage() {
       id: product._id,
       title: productName,
       price: displayPrice,
-      image: productImage,
+      // Show the customer's AI preview on the cart when they generated one; the
+      // real product photo otherwise. This is customer-facing only — the order
+      // sends selections, not this image, so the vendor still sees the actual
+      // product photo (an AI approximation would mislead the tailor).
+      image: customization.currentImage || productImage,
       kind: product.kind,
       size: selectedSize,
       color: selectedColor,
@@ -757,10 +759,16 @@ export default function ProductDetailsPage() {
     }
   };
 
+  // Product photos + any AI previews generated this session (from the Apply
+  // button). The generated previews become extra thumbnails the user can flip
+  // between, alongside the real product photos.
+  const combinedGallery = [...gallery, ...customization.generatedImages];
+  const firstGeneratedIdx = gallery.length;
+
   const prevImage = () =>
-    setActiveImageIdx((i) => (i === 0 ? Math.max(gallery.length - 1, 0) : i - 1));
+    setActiveImageIdx((i) => (i === 0 ? Math.max(combinedGallery.length - 1, 0) : i - 1));
   const nextImage = () =>
-    setActiveImageIdx((i) => (i === gallery.length - 1 ? 0 : i + 1));
+    setActiveImageIdx((i) => (i === combinedGallery.length - 1 ? 0 : i + 1));
 
   const kindLabel =
     product?.kind === 'clothing'
@@ -769,9 +777,23 @@ export default function ProductDetailsPage() {
         ? 'Fabrics'
         : 'Accessories';
 
-  // Current gallery image (with fallback)
-  // Prefer the AI-generated customization preview (from the Apply button) when present.
-  const currentImage = customization.currentImage || gallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
+  // Current gallery image (with fallback). Follows the selected thumbnail across
+  // both product photos and AI previews.
+  const currentImage = combinedGallery[activeImageIdx] || productImage || '/image/bespoke-agbada-orange.webp';
+
+  // When a new AI preview finishes, jump the viewer to it; also clamp the index
+  // if the gallery shrinks (e.g. a colour change removes photos).
+  const prevGenCountRef = useRef(0);
+  useEffect(() => {
+    const genCount = customization.generatedImages.length;
+    if (genCount > prevGenCountRef.current) {
+      setActiveImageIdx(gallery.length + genCount - 1);
+    } else if (combinedGallery.length > 0 && activeImageIdx >= combinedGallery.length) {
+      setActiveImageIdx(combinedGallery.length - 1);
+    }
+    prevGenCountRef.current = genCount;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customization.generatedImages.length, gallery.length, combinedGallery.length]);
 
   // Color hex map from API colors
   const colorHexMap = useMemo(() => {
@@ -1059,24 +1081,42 @@ export default function ProductDetailsPage() {
               )}
             </div>
 
-            {/* Thumbnail Strip */}
-            {gallery.length > 1 && (
-              <div className="flex" style={{ gap: '10px' }}>
-                {gallery.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIdx(idx)}
-                    className="relative overflow-hidden transition-all"
-                    style={{
-                      width: '72px', height: '72px', borderRadius: '12px',
-                      border: idx === activeImageIdx ? '2px solid #1A1A1A' : '2px solid #E5E5E5',
-                      background: '#F5F5F5', cursor: 'pointer',
-                      opacity: idx === activeImageIdx ? 1 : 0.7, flexShrink: 0,
-                    }}
-                  >
-                    <Image src={img} alt={`${productName} view ${idx + 1}`} fill style={{ objectFit: 'cover' }} sizes="72px" />
-                  </button>
-                ))}
+            {/* Thumbnail Strip — product photos + AI previews from this session */}
+            {combinedGallery.length > 1 && (
+              <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '10px' }}>
+                {combinedGallery.map((img, idx) => {
+                  const isGenerated = idx >= firstGeneratedIdx;
+                  return (
+                    <button
+                      key={`${idx}-${img}`}
+                      onClick={() => setActiveImageIdx(idx)}
+                      className="relative overflow-hidden transition-all"
+                      style={{
+                        width: '72px', height: '72px', borderRadius: '12px',
+                        border: idx === activeImageIdx
+                          ? '2px solid #1A1A1A'
+                          : isGenerated ? '2px solid #C4B5FD' : '2px solid #E5E5E5',
+                        background: '#F5F5F5', cursor: 'pointer',
+                        opacity: idx === activeImageIdx ? 1 : 0.7, flexShrink: 0,
+                      }}
+                    >
+                      <Image src={img} alt={`${productName} view ${idx + 1}`} fill style={{ objectFit: 'cover' }} sizes="72px" />
+                      {isGenerated && (
+                        <span
+                          className="absolute"
+                          style={{
+                            top: '3px', left: '3px',
+                            padding: '1px 5px', borderRadius: '5px',
+                            background: '#4C1D95', color: '#FFF',
+                            fontSize: '8px', fontWeight: 800, letterSpacing: '0.04em',
+                          }}
+                        >
+                          AI
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
