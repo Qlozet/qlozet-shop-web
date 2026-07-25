@@ -124,11 +124,16 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         ? customization.selectedColor
         : undefined;
 
-    // ── Human-readable notes that drive the prompt ──
+    // ── Notes that drive the prompt. Lead with the styles as an explicit edit
+    //    instruction (style_notes is the editor's dedicated "structural notes"
+    //    field), then the supporting details. ──
     const noteParts: string[] = [];
-    if (styleDescriptions.length) noteParts.push(`Styles: ${styleDescriptions.join('; ')}`);
+    if (styleDescriptions.length)
+      noteParts.push(
+        `Restyle the garment so it has ${styleDescriptions.join('; ')}`,
+      );
     if (fabricName) noteParts.push(`Fabric: ${fabricName}`);
-    if (accessoryNames.length) noteParts.push(`Accessories: ${accessoryNames.join(', ')}`);
+    if (accessoryNames.length) noteParts.push(`Add these accessories: ${accessoryNames.join(', ')}`);
     if (addonNames.length) noteParts.push(`Add-ons: ${addonNames.join(', ')}`);
     if (fitLabel) noteParts.push(`Fit: ${fitLabel}`);
     if (selectedSize) noteParts.push(`Size: ${selectedSize}`);
@@ -146,7 +151,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       fit: fitLabel,
     };
 
-    await customization.generateProductPreview({
+    const editPayload = {
       base_image_url: baseImage,
       garment_type: getProductName(product),
       ...(colorName ? { base_color: colorName } : {}),
@@ -155,7 +160,14 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       ...(fitLabel ? { fit: fitLabel } : {}),
       ...(noteParts.length ? { style_notes: noteParts.join(' | ') } : {}),
       metadata_json: metadata,
-    });
+    };
+
+    // Log exactly what we send so you can verify the chosen styles are present
+    // and meaningfully named (empty/generic names => nothing for the model to do).
+    console.log('[EditPreview] style_notes:', editPayload.style_notes);
+    console.log('[EditPreview] metadata_json:', JSON.stringify(metadata, null, 2));
+
+    await customization.generateProductPreview(editPayload);
   };
 
   const panelContent = (
