@@ -108,6 +108,7 @@ export interface CustomizationState {
   generateProductPreview: (payload: EditGarmentPayload) => Promise<void>;
   currentImage: string | null;
   tokenBalance: number;
+  editTokenCost: number; // real edit_garment_token_price from platform settings
   generationError: string | null;
   insufficientTokensInfo: { show: boolean; balance: number; cost: number };
   dismissInsufficientTokens: () => void;
@@ -169,11 +170,17 @@ export function useCustomization({
 
   // ── Live token balance from API ──────────────────────────────
   const [tokenBalance, setTokenBalance] = useState(user?.tokenBalance ?? 0);
+  // Real edit-garment cost (default matches backend edit_garment_token_price).
+  const [editTokenCost, setEditTokenCost] = useState(45);
 
   useEffect(() => {
     api.get('/token/balance').then((res) => {
       const bal = res.data?.data?.tokens ?? res.data?.tokens ?? 0;
       setTokenBalance(bal);
+    }).catch(() => {});
+    api.get('/users/platform-settings').then((res) => {
+      const c = res.data?.data?.edit_garment_token_price ?? res.data?.edit_garment_token_price;
+      if (typeof c === 'number' && c > 0) setEditTokenCost(c);
     }).catch(() => {});
   }, []);
 
@@ -464,7 +471,7 @@ export function useCustomization({
       const cost =
         settingsRes.data?.data?.edit_garment_token_price ??
         settingsRes.data?.edit_garment_token_price ??
-        25;
+        editTokenCost;
       if (balance < cost) {
         setInsufficientTokensInfo({ show: true, balance, cost });
         return;
@@ -504,7 +511,7 @@ export function useCustomization({
     } finally {
       setIsGenerating(false);
     }
-  }, [isGenerating]);
+  }, [isGenerating, editTokenCost]);
 
   const currentImage = generatedImages[activeImageIndex] ?? null;
 
@@ -531,6 +538,7 @@ export function useCustomization({
     expandedSection, setExpandedSection, toggleSection,
     generatedImages, setGeneratedImages, activeImageIndex, setActiveImageIndex,
     isGenerating, handleGenerate, generateProductPreview, currentImage, tokenBalance,
+    editTokenCost,
     generationError,
     insufficientTokensInfo,
     dismissInsufficientTokens: useCallback(() => setInsufficientTokensInfo({ show: false, balance: 0, cost: 0 }), []),
