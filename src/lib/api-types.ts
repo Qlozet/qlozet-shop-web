@@ -380,6 +380,7 @@ export interface ProductQueryParams {
 export interface VendorQueryParams {
   page?: number;
   limit?: number;
+  search?: string;
 }
 
 // ─── Vendor Collection Pagination ─────────────────────────────

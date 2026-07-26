@@ -67,7 +67,9 @@ function SearchContent() {
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { products: allProducts, loading: productsLoading } = useProducts({ search: query || undefined, size: 50 });
-  const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 6 });
+  // Vendors reflect the same search as the items: matched by their own fields
+  // or by having products that match the query.
+  const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 6, search: query || undefined });
 
   // Map vendors for display
   const DEMO_VENDORS = allVendors.slice(0, 6).map((v) => ({
@@ -88,7 +90,8 @@ function SearchContent() {
   // ═══════════════════════════════════════════════════════════
   const renderSearchResults = () => (
     <div className="animate-fade-in flex flex-col" style={{ gap: '32px' }}>
-      {/* Vendor Results */}
+      {/* Vendor Results — only shown when the search matches vendors */}
+      {(vendorsLoading || DEMO_VENDORS.length > 0) && (
       <div>
         <h2 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
           Vendors Results
@@ -205,6 +208,7 @@ function SearchContent() {
           })}
         </div>
       </div>
+      )}
 
       {/* Item Results */}
       <div>
