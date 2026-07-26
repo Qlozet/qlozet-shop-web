@@ -757,3 +757,98 @@ export interface OrderResponse {
   authorization_url?: string; // Paystack redirect URL
   access_code?: string;
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Customer Orders (GET /orders/customer)
+//  Paginated list of the logged-in customer's orders. The product is
+//  populated with just the fields the profile needs to render.
+// ═══════════════════════════════════════════════════════════════
+
+export type ApiOrderStatus =
+  | 'pending'
+  | 'in_review'
+  | 'processing'
+  | 'in_transit'
+  | 'completed'
+  | 'cancelled'
+  | 'returned';
+
+/** Product as populated on an order item (subset of ApiProduct). */
+export interface ApiOrderProduct {
+  _id: string;
+  kind?: 'clothing' | 'fabric' | 'accessory';
+  base_price?: number;
+  clothing?: { name?: string; type?: 'customize' | 'non_customize'; images?: ApiProductImage[] };
+  accessory?: { name?: string; images?: ApiProductImage[] };
+  fabric?: { name?: string; images?: ApiProductImage[] };
+}
+
+export interface ApiOrderItemPricing {
+  base: number;
+  styles_total: number;
+  fabric_total: number;
+  variant_total: number;
+  accessories_total: number;
+  addons_total: number;
+  before_discount: number;
+  discount: number;
+  final: number;
+}
+
+export interface ApiOrderVariantSelection {
+  size?: string;
+  quantity?: number;
+  price?: number;
+  total_amount?: number;
+}
+
+export interface ApiOrderFabricSelection {
+  yardage?: number;
+  quantity?: number;
+  price?: number;
+  total_amount?: number;
+}
+
+export interface ApiOrderItem {
+  product: ApiOrderProduct | string | null;
+  business?: { _id: string; business_name?: string; business_logo_url?: string } | string | null;
+  color_variant_selections?: ApiOrderVariantSelection[];
+  fabric_selections?: ApiOrderFabricSelection[];
+  style_selections?: { quantity?: number; price?: number; total_amount?: number }[];
+  accessory_selections?: { quantity?: number; price?: number; total_amount?: number }[];
+  addon_selections?: { quantity?: number; price?: number; total_amount?: number }[];
+  note?: string;
+  total_price?: number;
+  pricing?: ApiOrderItemPricing;
+}
+
+export interface ApiOrderShipment {
+  courier_name?: string;
+  tracking_number?: string;
+  status?: string;
+  shipment_type?: string;
+}
+
+export interface ApiCustomerOrder {
+  _id: string;
+  reference?: string;
+  status: ApiOrderStatus;
+  type?: 'standard' | 'bespoke';
+  subtotal: number;
+  shipping_fee: number;
+  total: number;
+  items: ApiOrderItem[];
+  shipments?: ApiOrderShipment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiCustomerOrdersPaginated {
+  data: ApiCustomerOrder[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  has_next_page: boolean;
+  has_previous_page: boolean;
+  page_size: number;
+}

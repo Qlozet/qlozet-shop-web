@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Package, ChevronRight, ChevronDown, ArrowLeft, Scissors, User, MessageCircle, Ruler, Truck, RotateCcw } from 'lucide-react';
+import { Package, ChevronRight, ChevronDown, ArrowLeft, Scissors, User, MessageCircle, Ruler, Truck, RotateCcw, Loader2 } from 'lucide-react';
 import { cardStyle, statusColors } from '../styles';
-import { demoOrders } from '../data';
+import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 
 interface OrdersSectionProps {
@@ -23,7 +23,9 @@ export default function OrdersSection({
   const [orderFilter, setOrderFilter] = useState<'All' | OrderStatus>('All');
   const [showFilterDrop, setShowFilterDrop] = useState(false);
 
-  const filteredOrders = orderFilter === 'All' ? demoOrders : demoOrders.filter(o => o.status === orderFilter);
+  // Real orders for the logged-in customer.
+  const { orders, loading: ordersLoading, error: ordersError } = useCustomerOrders();
+  const filteredOrders = orderFilter === 'All' ? orders : orders.filter(o => o.status === orderFilter);
 
   // ─── Order Item Detail ───
   if (activeSection === 'order-item-detail') {
@@ -50,13 +52,30 @@ export default function OrdersSection({
       'bespoke': { title: 'Schedule fitting appointment', desc: 'Your bespoke piece requires an in-person or virtual fitting. Book your session to confirm measurements and fabric draping.', cta: 'Book Fitting' },
     };
     const nextStep = nextStepConfig[t];
-    const paymentBreakdown: Record<ProductType, [string, string][]> = {
+    const demoPaymentBreakdown: Record<ProductType, [string, string][]> = {
       'custom': [['Base Tailoring', '₦250,000'], ['Fabric', '₦18,500'], ['Accessories', '₦3,600'], ['Add-ons', '₦3,500'], ['Delivery fees:', '₦4,500']],
       'bespoke': [['Design & Consultation', '₦120,000'], ['Premium Fabric', '₦85,000'], ['Master Tailoring', '₦150,000'], ['Embroidery', '₦15,000'], ['Delivery fees:', '₦10,000']],
       'ready-to-wear': [['Item price', `₦${item.price.toLocaleString()}`], ['Delivery fees:', '₦3,500']],
       'fabric': [['Fabric (6 yards)', `₦${item.price.toLocaleString()}`], ['Cutting fee:', '₦1,500'], ['Delivery fees:', '₦2,000']],
       'accessories': [['Item price', `₦${item.price.toLocaleString()}`], ['Gift wrapping:', '₦500'], ['Delivery fees:', '₦1,500']],
     };
+    // Prefer the real frozen pricing snapshot; fall back to the demo layout only
+    // when an order predates the snapshot.
+    const ngn = (n: number) => `₦${Math.round(n).toLocaleString()}`;
+    const p = item.pricing;
+    const realBreakdown: [string, string][] | null = p
+      ? ([
+          p.base ? ['Base', ngn(p.base)] : null,
+          p.variant_total ? ['Item', ngn(p.variant_total)] : null,
+          p.fabric_total ? ['Fabric', ngn(p.fabric_total)] : null,
+          p.styles_total ? ['Styles', ngn(p.styles_total)] : null,
+          p.accessories_total ? ['Accessories', ngn(p.accessories_total)] : null,
+          p.addons_total ? ['Add-ons', ngn(p.addons_total)] : null,
+          p.discount ? ['Discount', `-${ngn(p.discount)}`] : null,
+        ].filter(Boolean) as [string, string][])
+      : null;
+    const breakdownRows =
+      realBreakdown && realBreakdown.length > 0 ? realBreakdown : demoPaymentBreakdown[t];
 
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '20px' }}>
@@ -82,24 +101,31 @@ export default function OrdersSection({
             <div className="flex flex-col" style={{ padding: '20px', gap: '14px' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Shipping Tracker</span>
               <div className="flex items-center" style={{ gap: '0' }}>
-                {['Ordered', 'Processing', 'Shipped', 'Delivered'].map((step, si) => {
-                  const done = si <= 2;
-                  return (
-                    <React.Fragment key={step}>
-                      <div className="flex flex-col items-center" style={{ gap: '4px', flex: 1 }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: done ? '#22C55E' : '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {done && <span style={{ color: '#FFF', fontSize: '10px', fontWeight: 800 }}>✓</span>}
+                {(() => {
+                  // Furthest step reached, from the real order status.
+                  const reachedIdx =
+                    order.status === 'Delivered' ? 3 :
+                    order.status === 'Shipped' ? 2 :
+                    order.status === 'Refused' ? 0 : 1;
+                  return ['Ordered', 'Processing', 'Shipped', 'Delivered'].map((step, si) => {
+                    const done = si <= reachedIdx;
+                    return (
+                      <React.Fragment key={step}>
+                        <div className="flex flex-col items-center" style={{ gap: '4px', flex: 1 }}>
+                          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: done ? '#22C55E' : '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {done && <span style={{ color: '#FFF', fontSize: '10px', fontWeight: 800 }}>✓</span>}
+                          </div>
+                          <span style={{ fontSize: '9px', fontWeight: done ? 700 : 500, color: done ? '#1A1A1A' : '#BBB', textAlign: 'center' }}>{step}</span>
                         </div>
-                        <span style={{ fontSize: '9px', fontWeight: done ? 700 : 500, color: done ? '#1A1A1A' : '#BBB', textAlign: 'center' }}>{step}</span>
-                      </div>
-                      {si < 3 && <div style={{ flex: 1, height: '2px', background: si < 2 ? '#22C55E' : '#E5E5E5', marginBottom: '18px' }} />}
-                    </React.Fragment>
-                  );
-                })}
+                        {si < 3 && <div style={{ flex: 1, height: '2px', background: si < reachedIdx ? '#22C55E' : '#E5E5E5', marginBottom: '18px' }} />}
+                      </React.Fragment>
+                    );
+                  });
+                })()}
               </div>
               <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '10px' }}>
                 <span style={{ fontSize: '11px', color: '#999' }}>Tracking ID:</span>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#462814' }}>QL-TRK-2025-0115</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#462814' }}>{order.tracking || 'Pending'}</span>
               </div>
             </div>
           </div>
@@ -293,7 +319,7 @@ export default function OrdersSection({
               <div style={cardStyle}>
                 <div className="flex flex-col" style={{ padding: '16px 20px', gap: '10px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Delivery Information</span>
-                  {[['Carrier:', 'GIG Logistics'], ['Estimated Delivery:', 'Jan 20, 2025'], ['Shipping Address:', '13c Hallen estate, Abuja']].map(([l, v]) => (
+                  {[['Carrier:', order.courier || 'To be assigned'], ['Tracking:', order.tracking || 'Pending']].map(([l, v]) => (
                     <div key={l} className="flex items-center justify-between">
                       <span style={{ fontSize: '11px', color: '#999' }}>{l}</span>
                       <span style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{v}</span>
@@ -326,7 +352,7 @@ export default function OrdersSection({
                   <MessageCircle size={14} color="#999" />
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#888' }}>Summary</span>
-                {paymentBreakdown[t].map(([l, v]) => (
+                {breakdownRows.map(([l, v]) => (
                   <div key={l} className="flex items-center justify-between">
                     <span style={{ fontSize: '11px', color: '#888' }}>{l}</span>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{v}</span>
@@ -369,7 +395,7 @@ export default function OrdersSection({
 
         <div style={cardStyle}>
           <div className="flex flex-col" style={{ padding: '20px', gap: '10px' }}>
-            {[['Order:', order.orderNumber], ['Placed on:', '12 Oct, 2023'], ['No of Items:', String(order.items.length)]].map(([label, val]) => (
+            {[['Order:', order.orderNumber], ['Placed on:', order.date], ['No of Items:', String(order.items.length)]].map(([label, val]) => (
               <div key={label} className="flex items-center justify-between">
                 <span style={{ fontSize: '12px', color: '#999' }}>{label}</span>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>{val}</span>
@@ -377,7 +403,7 @@ export default function OrdersSection({
             ))}
             <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '10px', marginTop: '4px' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase' }}>Total Cost:</span>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A' }}>₦{(order.total * 5).toLocaleString()}</span>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A' }}>₦{order.total.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -437,7 +463,10 @@ export default function OrdersSection({
         <div style={cardStyle}>
           <div className="flex flex-col" style={{ padding: '16px 20px', gap: '8px' }}>
             <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase' }}>Payment Details</span>
-            {[['Items total:', `₦${(order.total * 5).toLocaleString()}`], ['Delivery fees:', '₦5,000'], ['Discount:', '-₦0']].map(([label, val]) => (
+            {[
+              ['Items total:', `₦${(order.subtotal ?? order.total).toLocaleString()}`],
+              ['Delivery fees:', `₦${(order.shippingFee ?? 0).toLocaleString()}`],
+            ].map(([label, val]) => (
               <div key={label} className="flex items-center justify-between">
                 <span style={{ fontSize: '12px', color: '#888' }}>{label}</span>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>{val}</span>
@@ -445,7 +474,7 @@ export default function OrdersSection({
             ))}
             <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '8px', marginTop: '4px' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A' }}>TOTAL:</span>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A' }}>₦{((order.total * 5) + 5000).toLocaleString()}</span>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A' }}>₦{order.total.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -487,7 +516,32 @@ export default function OrdersSection({
         <span style={{ fontSize: '13px', fontWeight: 600, color: '#999' }}>{filteredOrders.length} Items</span>
       </div>
 
-      {filteredOrders.map((order) => (
+      {ordersLoading && (
+        <div className="flex items-center justify-center" style={{ padding: '48px 0', gap: '10px' }}>
+          <Loader2 size={20} color="#462814" className="animate-spin" />
+          <span style={{ fontSize: '13px', color: '#999' }}>Loading your orders…</span>
+        </div>
+      )}
+
+      {!ordersLoading && ordersError && (
+        <div style={{ ...cardStyle, padding: '32px', textAlign: 'center' }}>
+          <p style={{ fontSize: '13px', color: '#EF4444', fontWeight: 600 }}>{ordersError}</p>
+        </div>
+      )}
+
+      {!ordersLoading && !ordersError && filteredOrders.length === 0 && (
+        <div style={{ ...cardStyle, padding: '48px 28px', textAlign: 'center' }}>
+          <Package size={28} color="#CCC" strokeWidth={1.5} style={{ margin: '0 auto 12px' }} />
+          <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>
+            {orderFilter === 'All' ? 'No orders yet' : `No ${orderFilter.toLowerCase()} orders`}
+          </p>
+          <p style={{ fontSize: '12px', color: '#999' }}>
+            {orderFilter === 'All' ? 'Your orders will appear here once you make a purchase.' : 'Try a different filter.'}
+          </p>
+        </div>
+      )}
+
+      {!ordersLoading && !ordersError && filteredOrders.map((order) => (
         <button key={order.id} onClick={() => { setSelectedOrder(order); setActiveSection('order-detail'); }} className="w-full flex items-center justify-between hover:bg-gray-50/50 transition-colors" style={{ ...cardStyle, padding: '18px 20px', cursor: 'pointer', textAlign: 'left', border: '1px solid rgba(0,0,0,0.06)' }}>
           <div className="flex flex-col" style={{ gap: '8px', flex: 1, minWidth: 0 }}>
             <div className="flex flex-wrap items-center" style={{ gap: '12px' }}>
