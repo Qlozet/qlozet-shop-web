@@ -84,6 +84,18 @@ export interface MeasurementProfile {
 
 export type ProductType = 'custom' | 'ready-to-wear' | 'fabric' | 'accessories' | 'bespoke';
 
+export interface OrderItemPricing {
+  base: number;
+  styles_total: number;
+  fabric_total: number;
+  variant_total: number;
+  accessories_total: number;
+  addons_total: number;
+  before_discount: number;
+  discount: number;
+  final: number;
+}
+
 export interface OrderItem {
   name: string;
   image: string;
@@ -95,6 +107,8 @@ export interface OrderItem {
   vendor?: string;
   vendorLogo?: string;
   vendorRating?: string;
+  /** Frozen itemized pricing snapshot from the backend (real numbers). */
+  pricing?: OrderItemPricing;
 }
 
 export interface Order {
@@ -105,6 +119,11 @@ export interface Order {
   status: OrderStatus;
   images: string[];
   items: OrderItem[];
+  /** Real order-level figures (present for API-backed orders). */
+  subtotal?: number;
+  shippingFee?: number;
+  tracking?: string;
+  courier?: string;
 }
 
 export interface Transaction {
