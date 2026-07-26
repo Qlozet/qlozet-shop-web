@@ -59,35 +59,36 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       return typeof raw === 'string' ? raw : raw?.url;
     };
 
-    // ── Styles: keyed by garment part (mirrors bespoke studio's
-    //    constructionSelections) so the model knows WHICH part each style is,
-    //    e.g. { neckline: "V-neck", sleeve_style: "puff sleeves" } ──
+    // ── Styles keyed by garment part, in the image editor's expected metadata
+    //    schema: parts = { neckline: { style, detail }, sleeve: { style }, … }.
+    //    The Space reads `parts` (NOT constructionSelections), so this is what
+    //    actually drives the structural edits. ──
     const stylePartMap: Array<[string, string | null]> = [
       ['silhouette', customization.selectedSilhouette],
       ['neckline', customization.selectedNeckline],
-      ['sleeve_style', customization.selectedSleeve],
+      ['sleeve', customization.selectedSleeve],
       ['collar', customization.selectedCollar],
-      ['skirt_style', customization.selectedSkirt],
-      ['trouser_style', customization.selectedTrouser],
-      ['full_body_style', customization.selectedFullBody],
+      ['skirt', customization.selectedSkirt],
+      ['trouser', customization.selectedTrouser],
+      ['full_body', customization.selectedFullBody],
     ];
 
-    const constructionSelections: Record<string, string> = {};
+    const parts: Record<string, Record<string, string>> = {};
+    const styleDescriptions: string[] = [];
     for (const [part, id] of stylePartMap) {
       if (!id) continue;
       const s = (clothing?.styles ?? []).find(
         (st: { _id?: string }) => st._id === id,
       ) as { name?: string; description?: string } | undefined;
       if (!s?.name) continue;
-      constructionSelections[part] = s.description
-        ? `${s.name} — ${s.description}`
-        : s.name;
+      parts[part] = {
+        style: s.name,
+        ...(s.description ? { detail: s.description } : {}),
+      };
+      styleDescriptions.push(
+        s.description ? `${part}: ${s.name} (${s.description})` : `${part}: ${s.name}`,
+      );
     }
-
-    // Readable form of the same, for the free-text notes.
-    const styleDescriptions = Object.entries(constructionSelections).map(
-      ([part, val]) => `${part.replace(/_/g, ' ')}: ${val}`,
-    );
 
     // ── Fabric: image + name ──
     const selFabric = (clothing?.fabrics ?? []).find(
@@ -138,17 +139,23 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
     if (fitLabel) noteParts.push(`Fit: ${fitLabel}`);
     if (selectedSize) noteParts.push(`Size: ${selectedSize}`);
 
-    // ── Structured spec for the image editor (mirrors bespoke studio's config:
-    //    styles keyed by garment part under constructionSelections) ──
+    // ── Non-structural extras go in `notes` (the editor's metadata schema has
+    //    no colour/accessory fields, and it takes fabric/colour ONLY from the
+    //    fabric reference image, ignoring colour text by design). ──
+    const notesBits: string[] = [];
+    if (fitLabel) notesBits.push(`overall fit should read as ${fitLabel}`);
+    if (accessoryNames.length) notesBits.push(`include these accessories: ${accessoryNames.join(', ')}`);
+    if (addonNames.length) notesBits.push(`include these add-ons: ${addonNames.join(', ')}`);
+    if (selectedSize) notesBits.push(`intended size ${selectedSize}`);
+
+    // Metadata in the image editor's ACTUAL schema: it reads garment_type,
+    // parts and notes. (The previous keys — garment, constructionSelections,
+    // accessories… — were silently ignored, so the styles never reached the
+    // prompt.) Fabric/colour come from the fabric reference image separately.
     const metadata = {
-      garment: getProductName(product),
-      size: selectedSize || undefined,
-      color: colorName,
-      fabric: fabricName,
-      constructionSelections,
-      accessories: accessoryNames,
-      addons: addonNames,
-      fit: fitLabel,
+      garment_type: getProductName(product),
+      parts,
+      ...(notesBits.length ? { notes: notesBits.join('; ') } : {}),
     };
 
     const editPayload = {
