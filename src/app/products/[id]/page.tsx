@@ -1312,26 +1312,36 @@ export default function ProductDetailsPage() {
               {productName}
             </p>
 
-            {/* Price — discounted (paid) + original (before discount), both
-                reflecting the chosen customizations. */}
-            <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
-              <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
-                ₦{discountedPrice.toLocaleString()}
-              </span>
-              {showOriginalPrice && originalPrice > discountedPrice + 0.5 && (
-                <span style={{ fontSize: '15px', fontWeight: 500, color: '#AAA', textDecoration: 'line-through' }}>
-                  ₦{originalPrice.toLocaleString()}
+            {/* Price. Fabric is priced per yard (clearer for the customer), so
+                the headline shows the unit price and the total moves next to the
+                yards selector. Other kinds show the (discounted) item price. */}
+            {isFabric ? (
+              <div className="flex items-baseline flex-wrap" style={{ gap: '4px' }}>
+                <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
+                  ₦{fabricPricePerYard.toLocaleString()}
                 </span>
-              )}
-              {extrasCost > 0 && (
-                <span style={{
-                  fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
-                  background: '#EDE9FE', color: '#6D28D9',
-                }}>
-                  +₦{extrasCost.toLocaleString()} styling
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#888' }}>/ yard</span>
+              </div>
+            ) : (
+              <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
+                <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
+                  ₦{discountedPrice.toLocaleString()}
                 </span>
-              )}
-            </div>
+                {showOriginalPrice && originalPrice > discountedPrice + 0.5 && (
+                  <span style={{ fontSize: '15px', fontWeight: 500, color: '#AAA', textDecoration: 'line-through' }}>
+                    ₦{originalPrice.toLocaleString()}
+                  </span>
+                )}
+                {extrasCost > 0 && (
+                  <span style={{
+                    fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
+                    background: '#EDE9FE', color: '#6D28D9',
+                  }}>
+                    +₦{extrasCost.toLocaleString()} styling
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Delivery Estimate */}
             <div
@@ -1705,7 +1715,12 @@ export default function ProductDetailsPage() {
                       +
                     </button>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#AAA' }}>Minimum cut: {fabricMinCut} yd</span>
+                  <div className="flex items-center justify-between" style={{ borderTop: '1px solid #EDE7DF', paddingTop: '10px' }}>
+                    <span style={{ fontSize: '11px', color: '#AAA' }}>Minimum cut: {fabricMinCut} yd</span>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A' }}>
+                      Total: ₦{displayPrice.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               )}
 
