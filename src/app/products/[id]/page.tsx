@@ -138,6 +138,10 @@ export default function ProductDetailsPage() {
   const turnaroundDays = product ? getTurnaroundDays(product) : null;
   const isCustomizable = tag === 'CUSTOMIZABLE';
   const isFabric = product?.kind === 'fabric';
+  // Fabric-PDP yardage: how many yards the customer wants to buy. Priced at
+  // price_per_yard × yards, with the vendor's min cut as the floor/default.
+  const fabricMinCut = Math.max(0.5, Number(product?.fabric?.min_cut) || 1);
+  const fabricPricePerYard = Number(product?.fabric?.price_per_yard) || 0;
   const rating = product?.average_rating ?? 0;
   const totalReviews = product?.total_ratings ?? 0;
 
@@ -184,6 +188,8 @@ export default function ProductDetailsPage() {
   // UI States
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
+  // Yards of fabric the customer wants (fabric PDP only). Defaults to min cut.
+  const [fabricYards, setFabricYards] = useState<number>(1);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   // Whether the hero shows the AI preview (true) or the original product photo.
   const [showAiPreview, setShowAiPreview] = useState(false);
@@ -277,6 +283,11 @@ export default function ProductDetailsPage() {
       setSelectedSize(sizes[0]);
     }
   }, [sizes, colors, selectedColor, selectedSize]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Default the fabric yardage to the vendor's min cut when a fabric loads.
+  useEffect(() => {
+    if (isFabric) setFabricYards(fabricMinCut);
+  }, [isFabric, fabricMinCut]);
 
   // Zoom state
   const [isZoomed, setIsZoomed] = useState(false);
@@ -495,7 +506,14 @@ export default function ProductDetailsPage() {
   // productPrice + customizationExtra is only a fallback while it loads / for guests.
   const [serverPrice, setServerPrice] = useState<number | null>(null);
   const [serverBreakdown, setServerBreakdown] = useState<{ base: number; before_discount: number; discount: number; final: number } | null>(null);
-  const displayPrice = serverPrice ?? productPrice + customizationExtra;
+  // Local estimate. For fabric it's price_per_yard × chosen yards so the price
+  // tracks the yardage slider immediately; the server value overrides once it
+  // returns. Other kinds use base price + customization extras.
+  const localEstimate =
+    isFabric && fabricPricePerYard > 0
+      ? fabricPricePerYard * Math.max(fabricMinCut, fabricYards || fabricMinCut)
+      : productPrice + customizationExtra;
+  const displayPrice = serverPrice ?? localEstimate;
   // Cost of the customizations shown next to the price. Prefer the server
   // breakdown (before-discount extras = everything above base) so it stays
   // consistent with the discounted final; fall back to the local estimate.
@@ -603,7 +621,8 @@ export default function ProductDetailsPage() {
     } else if (product.kind === 'fabric') {
       selections.fabric_selections = [{
         fabric_id: product._id,
-        yardage: product.fabric?.min_cut || 1,
+        // Customer-chosen yardage (defaults to / floored at the min cut).
+        yardage: Math.max(fabricMinCut, fabricYards || fabricMinCut),
         size: selectedSize || undefined,
         quantity: 1,
       }];
@@ -617,6 +636,7 @@ export default function ProductDetailsPage() {
     }
     return selections;
   }, [product, selectedColor, selectedSize, resolveGarmentYards,
+    fabricMinCut, fabricYards,
     customization.selectedFabric, customization.selectedSilhouette,
     customization.selectedNeckline, customization.selectedSleeve,
     customization.selectedCollar, customization.selectedSkirt,
@@ -1633,6 +1653,59 @@ export default function ProductDetailsPage() {
                     />
                     <span style={{ fontSize: '12px', color: '#7C6BA0' }}>min {appliedFabricMinCut} yd</span>
                   </label>
+                </div>
+              )}
+
+              {/* Fabric yardage selector — how many yards to buy. */}
+              {isFabric && (
+                <div
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: '10px',
+                    padding: '14px 16px', borderRadius: '14px',
+                    background: '#FAF8F5', border: '1px solid #EDE7DF',
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Yards
+                    </span>
+                    {fabricPricePerYard > 0 && (
+                      <span style={{ fontSize: '12px', color: '#888' }}>
+                        ₦{fabricPricePerYard.toLocaleString()}/yd
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center" style={{ gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFabricYards((y) => Math.max(fabricMinCut, Math.round(((y || fabricMinCut) - 0.5) * 2) / 2))}
+                      aria-label="Decrease yards"
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5"
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#FFF', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={fabricMinCut}
+                      step={0.5}
+                      value={fabricYards}
+                      onChange={(e) => setFabricYards(Number(e.target.value) || fabricMinCut)}
+                      onBlur={(e) => setFabricYards(Math.max(fabricMinCut, Number(e.target.value) || fabricMinCut))}
+                      className="text-center"
+                      style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1px solid #E0E0E0', fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFabricYards((y) => Math.round(((y || fabricMinCut) + 0.5) * 2) / 2)}
+                      aria-label="Increase yards"
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5"
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#FFF', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#AAA' }}>Minimum cut: {fabricMinCut} yd</span>
                 </div>
               )}
 
