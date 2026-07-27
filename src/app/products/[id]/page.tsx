@@ -1312,15 +1312,17 @@ export default function ProductDetailsPage() {
               {productName}
             </p>
 
-            {/* Price. Fabric is priced per yard (clearer for the customer), so
-                the headline shows the unit price and the total moves next to the
-                yards selector. Other kinds show the (discounted) item price. */}
+            {/* Price. Fabric shows the TOTAL for the chosen yards (updates with
+                the yards selector); the per-yard rate is shown as context (and in
+                the selector). Other kinds show the (discounted) item price. */}
             {isFabric ? (
-              <div className="flex items-baseline flex-wrap" style={{ gap: '4px' }}>
+              <div className="flex items-baseline flex-wrap" style={{ gap: '8px' }}>
                 <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
-                  ₦{fabricPricePerYard.toLocaleString()}
+                  ₦{displayPrice.toLocaleString()}
                 </span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#888' }}>/ yard</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#888' }}>
+                  for {fabricYards} yd{fabricPricePerYard > 0 ? ` · ₦${fabricPricePerYard.toLocaleString()}/yd` : ''}
+                </span>
               </div>
             ) : (
               <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
@@ -1715,12 +1717,7 @@ export default function ProductDetailsPage() {
                       +
                     </button>
                   </div>
-                  <div className="flex items-center justify-between" style={{ borderTop: '1px solid #EDE7DF', paddingTop: '10px' }}>
-                    <span style={{ fontSize: '11px', color: '#AAA' }}>Minimum cut: {fabricMinCut} yd</span>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A' }}>
-                      Total: ₦{displayPrice.toLocaleString()}
-                    </span>
-                  </div>
+                  <span style={{ fontSize: '11px', color: '#AAA' }}>Minimum cut: {fabricMinCut} yd</span>
                 </div>
               )}
 
