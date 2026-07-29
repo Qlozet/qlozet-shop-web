@@ -377,7 +377,7 @@ export default function VendorPage() {
 
         {/* Deal filter banner — shows which offer the grid is filtered to */}
         {isDealFilter && (
-          <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '16px' }}>
+          <div className="flex items-center justify-between gap-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', padding: '14px 18px', marginBottom: '16px' }}>
             <div className="flex items-center gap-2 min-w-0">
               <Tag size={14} className="text-white flex-shrink-0" />
               <span className="text-white text-xs font-bold truncate">
