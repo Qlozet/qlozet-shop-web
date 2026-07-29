@@ -19,6 +19,19 @@ import {
   Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag
 } from 'lucide-react';
 
+// Solid card colours per discount type — matched to the vendor app's discount
+// badge hues (percentage=blue, fixed=green, store_wide=purple, flash=orange,
+// category_specific=teal) so a discount reads the same colour everywhere.
+const DISCOUNT_TYPE_COLORS: Record<string, string> = {
+  percentage: '#1D4ED8',        // blue
+  fixed: '#15803D',             // green
+  store_wide: '#7E22CE',        // purple
+  flash_percentage: '#C2410C',  // orange
+  flash_fixed: '#C2410C',       // orange
+  category_specific: '#0F766E', // teal
+};
+const DEFAULT_DISCOUNT_COLOR = '#4B5563'; // slate — unknown/legacy types
+
 function darkenHex(hex: string, amount: number = 0.65): string {
   const clean = hex.replace('#', '');
   const r = parseInt(clean.substring(0, 2), 16);
@@ -46,8 +59,7 @@ export default function VendorPage() {
   // Build the promotions shown in the deal sheet: one card per distinct active
   // discount, with a human "X% off" / "₦X off" subtitle and the item count.
   const promotions = useMemo(() => {
-    const PALETTE = ['#7C3AED', '#DB2777', '#EA580C', '#0891B2', '#16A34A', '#4F46E5'];
-    const map = new Map<string, { title: string; label: string; count: number }>();
+    const map = new Map<string, { title: string; label: string; type: string; count: number }>();
     for (const p of discountedProducts) {
       const d = (p as unknown as { applied_discount?: any }).applied_discount;
       if (!d || typeof d !== 'object' || !d._id) continue;
@@ -56,18 +68,20 @@ export default function VendorPage() {
         existing.count += 1;
         continue;
       }
+      const type = String(d.type ?? '');
+      // % when the type is percentage-based, or a store-wide/category discount
+      // configured as a percentage.
       const isPercent =
-        String(d.type ?? '').includes('percentage') || d.value_type === 'percentage';
+        type.includes('percentage') || d.value_type === 'percentage';
       const value = Number(d.value) || 0;
-      const label = isPercent
-        ? `${value}% off`
-        : `₦${value.toLocaleString()} off`;
-      map.set(String(d._id), { title: d.title || 'Special offer', label, count: 1 });
+      const label = isPercent ? `${value}% off` : `₦${value.toLocaleString()} off`;
+      map.set(String(d._id), { title: d.title || 'Special offer', label, type, count: 1 });
     }
-    return Array.from(map.values()).map((v, i) => ({
+    return Array.from(map.values()).map((v) => ({
       title: v.title,
       subtitle: `${v.label} · ${v.count} item${v.count === 1 ? '' : 's'}`,
-      color: PALETTE[i % PALETTE.length],
+      // Colour by discount type, so each type is visually distinct + consistent.
+      color: DISCOUNT_TYPE_COLORS[v.type] ?? DEFAULT_DISCOUNT_COLOR,
     }));
   }, [discountedProducts]);
   const hasDeals = promotions.length > 0;
