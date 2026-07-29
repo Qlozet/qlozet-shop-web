@@ -26,7 +26,9 @@ export function DealCarousel({ title, vendors, allProducts }: DealCarouselProps)
     return map;
   }, [allProducts]);
 
-  if (vendors.length === 0) return null;
+  // A deals section should only show vendors that actually have active deals.
+  const dealVendors = vendors.filter((v) => v.has_active_discount);
+  if (dealVendors.length === 0) return null;
 
   const scrollRight = () => {
     if (scrollRef.current) {
@@ -51,7 +53,7 @@ export function DealCarousel({ title, vendors, allProducts }: DealCarouselProps)
           className="flex overflow-x-auto hide-scrollbar snap-x"
           style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {vendors.map((vendor) => {
+          {dealVendors.map((vendor) => {
             const vendorProducts = vendorProductMap.get(vendor._id) ?? [];
             return (
               <VendorDealCard
@@ -64,7 +66,7 @@ export function DealCarousel({ title, vendors, allProducts }: DealCarouselProps)
         </div>
 
         {/* Scroll right button */}
-        {vendors.length > 4 && (
+        {dealVendors.length > 4 && (
           <button
             onClick={scrollRight}
             className="absolute z-10 hidden lg:flex items-center justify-center transition-opacity opacity-0 group-hover/row:opacity-100"

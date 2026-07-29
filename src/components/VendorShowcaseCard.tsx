@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Tag } from 'lucide-react';
 import type { ApiBusinessPublic } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
 import { getProductImage, getProductName } from '@/lib/api-types';
@@ -186,6 +187,17 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
           {isFollowing ? 'FOLLOWING' : 'FOLLOW'}
         </button>
       </div>
+
+      {/* ── Deals indicator — vendor has active discounts ── */}
+      {vendor.has_active_discount && (
+        <div
+          className="absolute z-10 flex items-center"
+          style={{ top: '72px', left: '15px', gap: '4px', padding: '4px 9px', borderRadius: '20px', background: 'rgba(220,38,38,0.95)', backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
+        >
+          <Tag size={10} color="#FFF" />
+          <span style={{ fontSize: '8px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Deals</span>
+        </div>
+      )}
 
       {/* ── Centered Brand Name or Logo on Cover ── */}
       <div
