@@ -6,6 +6,8 @@ import { X } from 'lucide-react';
 
 /** Promotion display data — decoupled from backend shape */
 interface VendorPromotion {
+  /** Discount id — used to filter the storefront to this offer's items. */
+  id?: string;
   title: string;
   subtitle?: string;
   color: string;
@@ -15,12 +17,15 @@ interface VendorPromotionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   promotions: VendorPromotion[];
+  /** Called when a promotion (or "View items") is clicked. */
+  onSelectPromotion?: (discountId?: string) => void;
 }
 
 export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
   isOpen,
   onClose,
   promotions,
+  onSelectPromotion,
 }) => {
   const content = (
     <>
@@ -41,13 +46,18 @@ export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
           {promotions.map((promo, idx) => (
             <div
               key={idx}
-              className="relative overflow-hidden"
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectPromotion?.(promo.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectPromotion?.(promo.id); }}
+              className="relative overflow-hidden transition-transform hover:scale-[1.01] active:scale-[0.99]"
               style={{
                 padding: '20px',
                 borderRadius: '16px',
                 background: promo.color,
                 color: '#FFF',
                 minHeight: '90px',
+                cursor: 'pointer',
               }}
             >
               {/* Watermark % */}
@@ -75,6 +85,7 @@ export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
               {/* Last card: VIEW ITEMS button */}
               {idx === promotions.length - 1 && promotions.length > 1 && (
                 <button
+                  onClick={(e) => { e.stopPropagation(); onSelectPromotion?.(promo.id); }}
                   className="w-full flex items-center justify-center transition-all hover:opacity-90"
                   style={{
                     marginTop: '14px',
