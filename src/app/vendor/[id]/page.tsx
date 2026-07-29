@@ -77,7 +77,8 @@ export default function VendorPage() {
       const label = isPercent ? `${value}% off` : `₦${value.toLocaleString()} off`;
       map.set(String(d._id), { title: d.title || 'Special offer', label, type, count: 1 });
     }
-    return Array.from(map.values()).map((v) => ({
+    return Array.from(map.entries()).map(([id, v]) => ({
+      id, // the discount id — used to filter the grid to this offer's items
       title: v.title,
       subtitle: `${v.label} · ${v.count} item${v.count === 1 ? '' : 's'}`,
       // Colour by discount type, so each type is visually distinct + consistent.
@@ -100,13 +101,24 @@ export default function VendorPage() {
   const [showReviews, setShowReviews] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
 
-  // Filters
+  // Filters. `activeFilter` is 'All', a collection id, or a deal sentinel
+  // '__deal__:<discountId>' (or '__deal__:all') when filtering by an offer.
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const isDealFilter = activeFilter.startsWith('__deal__');
 
-  // Fetch collection specific products
-  const collectionIdFilter = activeFilter === 'All' ? undefined : activeFilter;
+  // Fetch collection specific products (skip while in All / deal mode)
+  const collectionIdFilter =
+    activeFilter === 'All' || isDealFilter ? undefined : activeFilter;
   const { products: collectionProducts, loading: colProductsLoading } = useCollectionProducts(collectionIdFilter);
+
+  // Clicking a promotion filters the grid to that offer's discounted items and
+  // closes the sheet.
+  const handleSelectPromotion = (discountId?: string) => {
+    setActiveFilter(`__deal__:${discountId ?? 'all'}`);
+    setShowPromo(false);
+  };
+  const clearDealFilter = () => setActiveFilter('All');
 
   // ── Loading state ───────────────────────────────────────────
   if (vendorLoading || productsLoading) {
@@ -161,9 +173,24 @@ export default function VendorPage() {
     ...collections.map((c) => ({ id: c._id, name: c.title || c.name || '' })).filter((c) => c.name)
   ];
 
-  // Filter products by collection ID or 'All'
-  const activeProductsList = activeFilter === 'All' ? vendorProducts : collectionProducts;
-  
+  // Products shown in the grid: a specific offer's items (deal mode), a
+  // collection, or all of the vendor's products.
+  const dealFilterId = isDealFilter ? activeFilter.slice('__deal__:'.length) : null;
+  const activeDeal = dealFilterId && dealFilterId !== 'all'
+    ? promotions.find((p) => p.id === dealFilterId)
+    : null;
+  const activeProductsList = isDealFilter
+    ? (dealFilterId === 'all'
+        ? discountedProducts
+        : discountedProducts.filter((p) => {
+            const d = (p as unknown as { applied_discount?: any }).applied_discount;
+            const id = d && typeof d === 'object' ? String(d._id) : String(d);
+            return id === dealFilterId;
+          }))
+    : activeFilter === 'All'
+      ? vendorProducts
+      : collectionProducts;
+
   const filteredProducts = activeProductsList.filter((p) => {
     const name = getProductName(p);
     return name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -320,12 +347,20 @@ export default function VendorPage() {
             <button onClick={() => setShowFilter(true)} className="flex items-center justify-center text-white/70 hover:text-white flex-shrink-0 border border-white/10 transition-colors" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.06)' }}>
               <SlidersHorizontal size={16} />
             </button>
-            {['Sort by', 'On sale', 'Price', 'In-stock'].map((filter, i) => (
-              <button key={i} className="flex items-center gap-1.5 text-white/70 rounded-full text-[11px] font-bold hover:text-white flex-shrink-0 border border-white/10 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '10px 18px' }}>
-                {filter}
-                {(filter === 'Sort by' || filter === 'Price') && <ChevronDown size={12} />}
-              </button>
-            ))}
+            {['Sort by', 'On sale', 'Price', 'In-stock'].map((filter, i) => {
+              const onSaleActive = filter === 'On sale' && dealFilterId === 'all';
+              return (
+                <button
+                  key={i}
+                  onClick={filter === 'On sale' ? () => handleSelectPromotion(undefined) : undefined}
+                  className="flex items-center gap-1.5 text-white/70 rounded-full text-[11px] font-bold hover:text-white flex-shrink-0 border border-white/10 transition-colors"
+                  style={{ backgroundColor: onSaleActive ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.06)', color: onSaleActive ? '#FFF' : undefined, padding: '10px 18px' }}
+                >
+                  {filter}
+                  {(filter === 'Sort by' || filter === 'Price') && <ChevronDown size={12} />}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-2 rounded-full px-4 py-2 border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', marginTop: '16px', paddingLeft: '20px' }}>
@@ -339,6 +374,21 @@ export default function VendorPage() {
             />
           </div>
         </div>
+
+        {/* Deal filter banner — shows which offer the grid is filtered to */}
+        {isDealFilter && (
+          <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '16px' }}>
+            <div className="flex items-center gap-2 min-w-0">
+              <Tag size={14} className="text-white flex-shrink-0" />
+              <span className="text-white text-xs font-bold truncate">
+                {activeDeal ? `${activeDeal.title} · ${activeDeal.subtitle}` : 'On sale items'}
+              </span>
+            </div>
+            <button onClick={clearDealFilter} className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-bold flex-shrink-0">
+              Clear <X size={12} />
+            </button>
+          </div>
+        )}
 
         {/* Product Grid */}
         {colProductsLoading ? (
@@ -408,6 +458,7 @@ export default function VendorPage() {
       <VendorPromotionsModal
         isOpen={showPromo}
         onClose={() => setShowPromo(false)}
+        onSelectPromotion={handleSelectPromotion}
         promotions={promotions}
       />
 
