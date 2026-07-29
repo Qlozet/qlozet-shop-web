@@ -8,6 +8,7 @@ import { HERO_BANNERS, BROWSE_CATEGORIES } from '@/data/taxonomy';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid';
 import { VendorShowcaseCarousel } from '@/components/discover/VendorShowcaseCarousel';
+import { DealCarousel } from '@/components/discover/DealCarousel';
 import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
 import type { ApiBusinessPublic } from '@/lib/api-types';
@@ -201,6 +202,9 @@ export default function DiscoverPage() {
       {/* Live data sections — only show after loading */}
       {!isLoading && (
         <>
+          {/* Vendor Deals — self-hides when no vendor has an active discount */}
+          <DealCarousel title="Vendor Deals" vendors={allVendors} allProducts={allProducts} />
+
           {/* Top Shops — showcase cards */}
           <VendorShowcaseCarousel title="Top Shops" vendors={topShops} allProducts={allProducts} />
 

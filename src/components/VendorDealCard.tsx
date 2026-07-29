@@ -102,11 +102,12 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
 
       {/* ─── Bottom: Solid info bar ─── */}
       <div className="flex flex-col" style={{ padding: '12px 16px 14px', gap: '3px', backgroundColor: darkBg }}>
-        {/* Deal Badge */}
-        {dealLabel && (
+        {/* Deal Badge — explicit label, or a default "Deals" tag when the
+            vendor has active discounts. */}
+        {(dealLabel || vendor.has_active_discount) && (
           <div>
-            <span style={{ display: 'inline-block', background: dealColor || themeColor, color: '#FFFFFF', fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', lineHeight: '14px', whiteSpace: 'nowrap' }}>
-              {dealLabel}
+            <span style={{ display: 'inline-block', background: dealColor || (vendor.has_active_discount ? '#DC2626' : themeColor), color: '#FFFFFF', fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', lineHeight: '14px', whiteSpace: 'nowrap' }}>
+              {dealLabel || 'Deals'}
             </span>
           </div>
         )}

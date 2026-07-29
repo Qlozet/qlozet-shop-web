@@ -310,11 +310,18 @@ export function useVendorDiscountedProducts(
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const res = await api.get(`/discounts/public/${businessId}/products`);
-      const payload: ApiProduct[] = Array.isArray(res.data?.data)
-        ? res.data.data
-        : Array.isArray(res.data)
-          ? res.data
-          : [];
+      // The endpoint returns a paginated { data: rows, ... } which the global
+      // response wrapper nests again, so the rows live at res.data.data.data.
+      // Fall back through the shallower shapes for safety.
+      const nested = res.data?.data?.data;
+      const mid = res.data?.data;
+      const payload: ApiProduct[] = Array.isArray(nested)
+        ? nested
+        : Array.isArray(mid)
+          ? mid
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
       setState({ data: payload, loading: false, error: null });
     } catch (err: unknown) {
       const message =

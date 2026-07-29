@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { useVendor, useVendorProducts } from '@/hooks/useVendors';
+import { useVendor, useVendorProducts, useVendorDiscountedProducts } from '@/hooks/useVendors';
 import { useVendorCollections, useCollectionProducts } from '@/hooks/useCollections';
 import { VendorSidebarModal } from '@/components/VendorSidebarModal';
 import { VendorPromotionsModal } from '@/components/VendorPromotionsModal';
@@ -18,6 +18,19 @@ import type { ApiProduct } from '@/lib/api-types';
 import {
   Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag
 } from 'lucide-react';
+
+// Solid card colours per discount type — matched to the vendor app's discount
+// badge hues (percentage=blue, fixed=green, store_wide=purple, flash=orange,
+// category_specific=teal) so a discount reads the same colour everywhere.
+const DISCOUNT_TYPE_COLORS: Record<string, string> = {
+  percentage: '#1D4ED8',        // blue
+  fixed: '#15803D',             // green
+  store_wide: '#7E22CE',        // purple
+  flash_percentage: '#C2410C',  // orange
+  flash_fixed: '#C2410C',       // orange
+  category_specific: '#0F766E', // teal
+};
+const DEFAULT_DISCOUNT_COLOR = '#4B5563'; // slate — unknown/legacy types
 
 function darkenHex(hex: string, amount: number = 0.65): string {
   const clean = hex.replace('#', '');
@@ -39,6 +52,39 @@ export default function VendorPage() {
   const { vendor, loading: vendorLoading } = useVendor(vendorId);
   const { products: vendorProducts, loading: productsLoading } = useVendorProducts(vendorId);
   const { collections } = useVendorCollections(vendorId);
+  // Products this vendor currently has an active discount on — each carries its
+  // populated `applied_discount` (title, type, value).
+  const { products: discountedProducts } = useVendorDiscountedProducts(vendorId);
+
+  // Build the promotions shown in the deal sheet: one card per distinct active
+  // discount, with a human "X% off" / "₦X off" subtitle and the item count.
+  const promotions = useMemo(() => {
+    const map = new Map<string, { title: string; label: string; type: string; count: number }>();
+    for (const p of discountedProducts) {
+      const d = (p as unknown as { applied_discount?: any }).applied_discount;
+      if (!d || typeof d !== 'object' || !d._id) continue;
+      const existing = map.get(String(d._id));
+      if (existing) {
+        existing.count += 1;
+        continue;
+      }
+      const type = String(d.type ?? '');
+      // % when the type is percentage-based, or a store-wide/category discount
+      // configured as a percentage.
+      const isPercent =
+        type.includes('percentage') || d.value_type === 'percentage';
+      const value = Number(d.value) || 0;
+      const label = isPercent ? `${value}% off` : `₦${value.toLocaleString()} off`;
+      map.set(String(d._id), { title: d.title || 'Special offer', label, type, count: 1 });
+    }
+    return Array.from(map.values()).map((v) => ({
+      title: v.title,
+      subtitle: `${v.label} · ${v.count} item${v.count === 1 ? '' : 's'}`,
+      // Colour by discount type, so each type is visually distinct + consistent.
+      color: DISCOUNT_TYPE_COLORS[v.type] ?? DEFAULT_DISCOUNT_COLOR,
+    }));
+  }, [discountedProducts]);
+  const hasDeals = promotions.length > 0;
 
   // Track recently viewed
   useEffect(() => {
@@ -198,6 +244,19 @@ export default function VendorPage() {
 
           {/* Floating Action Pills */}
           <div className="flex items-center justify-center gap-3 pointer-events-auto flex-wrap px-6" style={{ marginTop: '40px' }}>
+            {/* Deals pill — only when this vendor has active discounts */}
+            {hasDeals && (
+              <button
+                onClick={() => setShowPromo(true)}
+                className="flex items-center gap-2 backdrop-blur-md rounded-full transition-colors border shadow-lg hover:opacity-90"
+                style={{ padding: '9px 16px', backgroundColor: 'rgba(220,38,38,0.92)', borderColor: 'rgba(255,255,255,0.25)' }}
+              >
+                <Tag size={13} color="#FFF" />
+                <span className="text-white text-xs font-bold">
+                  {promotions.length} {promotions.length === 1 ? 'Deal' : 'Deals'}
+                </span>
+              </button>
+            )}
             <button onClick={() => setActiveFilter('All')} className="flex items-center gap-2 backdrop-blur-md rounded-full hover:bg-white/25 transition-colors border border-white/15 shadow-lg" style={{ padding: '5px 16px 5px 5px', backgroundColor: activeFilter === 'All' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)' }}>
               <div className="w-7 h-7 rounded-full overflow-hidden relative flex-shrink-0 bg-white/20 flex items-center justify-center text-xs font-bold text-white">
                 {vendorProducts[0] ? <Image src={getProductImage(vendorProducts[0])} alt="Shop All" fill className="object-cover" /> : 'All'}
@@ -349,7 +408,7 @@ export default function VendorPage() {
       <VendorPromotionsModal
         isOpen={showPromo}
         onClose={() => setShowPromo(false)}
-        promotions={[]}
+        promotions={promotions}
       />
 
       {/* ══════ FILTER BOTTOM SHEET ══════ */}

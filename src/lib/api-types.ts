@@ -247,6 +247,8 @@ export interface ApiBusinessPublic {
   success_rate?: number;
   is_featured?: boolean;
   year_founded?: string;
+  /** True when the vendor currently has at least one active discounted product. */
+  has_active_discount?: boolean;
   createdAt: string;
 }
 
