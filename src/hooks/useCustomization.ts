@@ -336,9 +336,14 @@ export function useCustomization({
     }
 
     // ── 4. Resolve fabric + accessory images for references ─────
+    // Only real, fetchable URLs may be sent as references — the studio's
+    // placeholder FABRICS use local /image/* paths the backend/Space can't load,
+    // which made the generator hallucinate a fabric. Drop those.
+    const isRemoteUrl = (u?: string) =>
+      !!u && (/^https?:\/\//i.test(u) || u.startsWith('data:'));
     const configReferences: string[] = [];
     const selFabric = FABRICS.find((f) => f.id === selectedFabric);
-    if (selFabric?.image) configReferences.push(selFabric.image);
+    if (selFabric?.image && isRemoteUrl(selFabric.image)) configReferences.push(selFabric.image);
     const selAccs = selectedAccessories
       .map((id) => ACCESSORIES.find((a) => a.id === id))
       .filter(Boolean);
@@ -377,9 +382,9 @@ export function useCustomization({
       if (selFit.desc) config.fitNotes = selFit.desc;
     }
 
-    // Fabric + accessory image URLs as inspiration
+    // Fabric + accessory image URLs as inspiration (real URLs only)
     const inspirationUrls: string[] = [];
-    if (selFabric?.image) {
+    if (selFabric?.image && isRemoteUrl(selFabric.image)) {
       config.fabricRefId = selFabric.image;
       inspirationUrls.push(selFabric.image);
     }
