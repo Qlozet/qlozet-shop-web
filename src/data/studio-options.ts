@@ -39,6 +39,8 @@ export interface FabricOption {
   name: string;
   image: string;
   extraCost?: number;
+  /** Colours this fabric comes in — used to filter/sort the picker. */
+  colors?: { name?: string; hex?: string }[];
 }
 
 export interface AccessoryOption {

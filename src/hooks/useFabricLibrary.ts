@@ -42,6 +42,7 @@ async function fetchFabricLibrary(): Promise<FabricOption[]> {
         name: getProductName(p),
         image: getProductImage(p), // real Cloudinary URL
         extraCost: pricePerYard,
+        colors: (p.fabric?.colors ?? []).filter((c) => c?.name || c?.hex),
       };
     })
     // Only usable, fetchable fabrics (a real remote image URL).

@@ -409,11 +409,18 @@ export function useCustomization({
     console.log('[Generate] Reference images:', referenceImages);
     console.log('[Generate] User prompt:', userPrompt);
 
+    // Send the picked fabric (and any config reference images) as ACTUAL
+    // reference images too — otherwise the generator only sees the customer's
+    // uploaded references and ignores the fabric.
+    const combinedReferenceUrls = Array.from(
+      new Set([...referenceImages, ...configReferences]),
+    ).filter(isRemoteUrl);
+
     try {
       const genRes = await api.post('/measurements/generate-outfit', {
         config,
         userPrompt: userPrompt.trim() || undefined,
-        reference_image_urls: referenceImages.length > 0 ? referenceImages : undefined,
+        reference_image_urls: combinedReferenceUrls.length > 0 ? combinedReferenceUrls : undefined,
       });
 
       const jobId = genRes.data?.data?.jobId ?? genRes.data?.jobId;
