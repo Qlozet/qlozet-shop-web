@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { FABRICS, FABRIC_COLORS } from '@/data/studio-options';
+import { FABRIC_COLORS } from '@/data/studio-options';
 import { FabricCard } from './FabricCard';
 import { ColorPicker } from './ColorPicker';
+import { useFabricLibrary } from '@/hooks/useFabricLibrary';
 
 import { type ApiProduct } from '@/lib/api-types';
 
@@ -26,6 +27,9 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
 }) => {
   const productFabrics = product?.clothing?.fabrics || [];
   const colorVariants = product?.clothing?.color_variants || [];
+  // Real fabrics vendors have for sale — used in studio mode (no product) so
+  // "generate" applies an actual, fetchable fabric instead of placeholders.
+  const { fabrics: libraryFabrics } = useFabricLibrary();
 
   // For customizable products, color_variants represent the fabric/color choices
   const hasColorVariants = colorVariants.length > 0;
@@ -66,7 +70,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
           yards,
         };
       })
-    : !hasColorVariants ? FABRICS : [];
+    : !hasColorVariants ? libraryFabrics : [];
 
   // Get the first image for each color variant (from any size variant)
   const getColorVariantImage = (cv: typeof colorVariants[0]) => {

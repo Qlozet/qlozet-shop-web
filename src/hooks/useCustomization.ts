@@ -4,11 +4,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useUpload } from '@/hooks/useUpload';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
+import { useFabricLibrary } from '@/hooks/useFabricLibrary';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
 import {
   GENERATION_COST,
-  FABRICS,
   ACCESSORIES,
   FIT_OPTIONS,
   type SectionId,
@@ -131,6 +131,9 @@ export function useCustomization({
   const { user, deductTokens } = useApp();
   const { uploadOutfitImages, isUploading, uploadStatus, uploadError } = useUpload();
   const { all: styleLibrary } = useStyleLibrary();
+  // Real fabrics vendors have for sale — the studio picks from these so
+  // generation applies an actual, fetchable fabric.
+  const { fabrics: fabricLibrary } = useFabricLibrary();
 
   // ── Design setup ────────────────────────────────────────────
   const [designName, setDesignName] = useState(initialDesignName);
@@ -336,9 +339,14 @@ export function useCustomization({
     }
 
     // ── 4. Resolve fabric + accessory images for references ─────
+    // Only real, fetchable URLs may be sent as references — the studio's
+    // placeholder FABRICS use local /image/* paths the backend/Space can't load,
+    // which made the generator hallucinate a fabric. Drop those.
+    const isRemoteUrl = (u?: string) =>
+      !!u && (/^https?:\/\//i.test(u) || u.startsWith('data:'));
     const configReferences: string[] = [];
-    const selFabric = FABRICS.find((f) => f.id === selectedFabric);
-    if (selFabric?.image) configReferences.push(selFabric.image);
+    const selFabric = fabricLibrary.find((f) => f.id === selectedFabric);
+    if (selFabric?.image && isRemoteUrl(selFabric.image)) configReferences.push(selFabric.image);
     const selAccs = selectedAccessories
       .map((id) => ACCESSORIES.find((a) => a.id === id))
       .filter(Boolean);
@@ -377,9 +385,9 @@ export function useCustomization({
       if (selFit.desc) config.fitNotes = selFit.desc;
     }
 
-    // Fabric + accessory image URLs as inspiration
+    // Fabric + accessory image URLs as inspiration (real URLs only)
     const inspirationUrls: string[] = [];
-    if (selFabric?.image) {
+    if (selFabric?.image && isRemoteUrl(selFabric.image)) {
       config.fabricRefId = selFabric.image;
       inspirationUrls.push(selFabric.image);
     }
@@ -447,7 +455,7 @@ export function useCustomization({
     selectedSilhouette, selectedNeckline, selectedSleeve, selectedCollar,
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedFabric, selectedColor, selectedAccessories, selectedFit,
-    referenceImages, styleLibrary, deductTokens,
+    referenceImages, styleLibrary, fabricLibrary, deductTokens,
   ]);
 
   // Product-mode preview via the edit-garment image API. The caller (product
