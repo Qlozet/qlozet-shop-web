@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { FABRIC_COLORS } from '@/data/studio-options';
 import { FabricCard } from './FabricCard';
 import { ColorPicker } from './ColorPicker';
@@ -30,6 +30,8 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
   // Real fabrics vendors have for sale — used in studio mode (no product) so
   // "generate" applies an actual, fetchable fabric instead of placeholders.
   const { fabrics: libraryFabrics } = useFabricLibrary();
+  // Colour filter for the fabric picker (keyed by hex or name, lowercased).
+  const [colorFilter, setColorFilter] = useState<string | null>(null);
 
   // For customizable products, color_variants represent the fabric/color choices
   const hasColorVariants = colorVariants.length > 0;
@@ -68,9 +70,34 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
           extraCost: Math.round(pricePerYard * yards), // amount for this garment/size
           pricePerYard,
           yards,
+          colors: ((f as { colors?: { name?: string; hex?: string }[] }).colors ?? []).filter((c) => c?.name || c?.hex),
         };
       })
     : !hasColorVariants ? libraryFabrics : [];
+
+  // ── Colour filter: distinct colours across the available fabrics ──
+  const colorKey = (c?: { name?: string; hex?: string }) =>
+    (c?.hex || c?.name || '').toLowerCase();
+  const colorChips: { key: string; name?: string; hex?: string }[] = [];
+  {
+    const seen = new Set<string>();
+    for (const fab of fabricOptions) {
+      for (const c of (fab as { colors?: { name?: string; hex?: string }[] }).colors ?? []) {
+        const key = colorKey(c);
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          colorChips.push({ key, name: c.name, hex: c.hex });
+        }
+      }
+    }
+  }
+  const filteredFabricOptions = colorFilter
+    ? fabricOptions.filter((fab) =>
+        ((fab as { colors?: { name?: string; hex?: string }[] }).colors ?? []).some(
+          (c) => colorKey(c) === colorFilter,
+        ),
+      )
+    : fabricOptions;
 
   // Get the first image for each color variant (from any size variant)
   const getColorVariantImage = (cv: typeof colorVariants[0]) => {
@@ -101,15 +128,61 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
               Material
             </span>
           </div>
+
+          {/* Colour filter chips — sort fabrics by colour */}
+          {colorChips.length > 1 && (
+            <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '6px', marginBottom: '12px', paddingBottom: '2px' }}>
+              <button
+                onClick={() => setColorFilter(null)}
+                className="flex items-center flex-shrink-0 transition-all"
+                style={{
+                  padding: '5px 12px', borderRadius: '9999px',
+                  border: colorFilter === null ? '1.5px solid #2C1810' : '1px solid #E0E0E0',
+                  background: colorFilter === null ? '#FAF6F1' : '#FFF',
+                  fontSize: '11px', fontWeight: 700, color: '#1A1A1A', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                All
+              </button>
+              {colorChips.map((c) => {
+                const active = colorFilter === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    onClick={() => setColorFilter(active ? null : c.key)}
+                    title={c.name || c.hex}
+                    className="flex items-center flex-shrink-0 transition-all"
+                    style={{
+                      padding: '5px 12px 5px 6px', borderRadius: '9999px', gap: '6px',
+                      border: active ? '1.5px solid #2C1810' : '1px solid #E0E0E0',
+                      background: active ? '#FAF6F1' : '#FFF', cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{ width: '14px', height: '14px', borderRadius: '50%', flexShrink: 0, background: c.hex || '#CCC', border: '1px solid rgba(0,0,0,0.1)' }} />
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#1A1A1A', whiteSpace: 'nowrap' }}>
+                      {c.name || c.hex}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="grid grid-cols-2" style={{ gap: '8px', marginBottom: '20px' }}>
-            {fabricOptions.map((fab) => (
-              <FabricCard
-                key={fab.id}
-                fabric={fab}
-                isSelected={selectedFabric === fab.id}
-                onSelect={handleSelectFabric}
-              />
-            ))}
+            {filteredFabricOptions.length > 0 ? (
+              filteredFabricOptions.map((fab) => (
+                <FabricCard
+                  key={fab.id}
+                  fabric={fab}
+                  isSelected={selectedFabric === fab.id}
+                  onSelect={handleSelectFabric}
+                />
+              ))
+            ) : (
+              <p className="col-span-2 text-center" style={{ fontSize: '12px', color: '#999', padding: '16px 0' }}>
+                No fabrics in this colour.
+              </p>
+            )}
           </div>
         </>
       ) : null}
