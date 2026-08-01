@@ -12,20 +12,24 @@ import type {
 import type { Order, OrderItem, OrderStatus, ProductType } from './types';
 
 // ─── Status mapping ───────────────────────────────────────────
-// The profile UI only distinguishes four states; collapse the backend's
-// seven order statuses onto them.
+// Collapse the backend's seven order statuses onto the profile UI states.
+// `pending` = not yet paid; once paid (in_review) or the vendor has confirmed
+// (processing) it's "Processing" — so a confirmed order no longer reads as
+// "Pending". `in_transit` = shipped (the vendor fulfilled or the courier picked
+// it up).
 function mapStatus(status: ApiOrderStatus): OrderStatus {
   switch (status) {
     case 'completed':
       return 'Delivered';
     case 'in_transit':
       return 'Shipped';
+    case 'in_review':
+    case 'processing':
+      return 'Processing';
     case 'cancelled':
     case 'returned':
       return 'Refused';
     case 'pending':
-    case 'in_review':
-    case 'processing':
     default:
       return 'Pending';
   }

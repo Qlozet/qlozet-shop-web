@@ -103,10 +103,12 @@ export default function OrdersSection({
               <div className="flex items-center" style={{ gap: '0' }}>
                 {(() => {
                   // Furthest step reached, from the real order status.
+                  // Steps: 0 Ordered · 1 Processing · 2 Shipped · 3 Delivered.
                   const reachedIdx =
                     order.status === 'Delivered' ? 3 :
                     order.status === 'Shipped' ? 2 :
-                    order.status === 'Refused' ? 0 : 1;
+                    order.status === 'Processing' ? 1 :
+                    0;
                   return ['Ordered', 'Processing', 'Shipped', 'Delivered'].map((step, si) => {
                     const done = si <= reachedIdx;
                     return (
@@ -505,7 +507,7 @@ export default function OrdersSection({
           </button>
           {showFilterDrop && (
             <div className="absolute top-full left-0" style={{ marginTop: '4px', zIndex: 10, background: '#FFF', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', overflow: 'hidden', minWidth: '140px' }}>
-              {(['All', 'Shipped', 'Refused', 'Delivered', 'Pending'] as const).map((f) => (
+              {(['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Refused'] as const).map((f) => (
                 <button key={f} onClick={() => { setOrderFilter(f); setShowFilterDrop(false); }} className="w-full text-left hover:bg-gray-50 transition-colors" style={{ padding: '10px 16px', fontSize: '13px', fontWeight: f === orderFilter ? 700 : 500, color: f === orderFilter ? '#462814' : '#666', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
                   {f}
                 </button>
