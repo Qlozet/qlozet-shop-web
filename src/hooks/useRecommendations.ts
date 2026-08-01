@@ -392,22 +392,27 @@ export function useAskFashion(): UseAskFashionReturn {
         return null;
       }
       setState((prev) => ({ ...prev, loading: true, error: null }));
+
+      // Show the user's message immediately (optimistic), before the request —
+      // otherwise it only appears once the AI reply lands. `history` sent to the
+      // backend is the closure value (prior turns), so context stays correct.
+      setHistory((prev) => [...prev, { role: 'user' as const, content: query }]);
+
       try {
         const res = await api.post('/recommendations/ask', {
           query,
-          history, // Send conversation history for context
+          history, // Send conversation history for context (prior turns)
           ...(filters ? { filters } : {}),
         });
         const payload: ApiAskResponse = res.data?.data ?? res.data;
 
-        // Append user query and assistant reply to history
-        setHistory((prev) => [
-          ...prev,
-          { role: 'user' as const, content: query },
-          ...(payload.reply
-            ? [{ role: 'assistant' as const, content: payload.reply }]
-            : []),
-        ]);
+        // Append only the assistant reply — the user turn is already shown.
+        if (payload.reply) {
+          setHistory((prev) => [
+            ...prev,
+            { role: 'assistant' as const, content: payload.reply },
+          ]);
+        }
 
         setState({ data: payload, loading: false, error: null });
         return payload;
