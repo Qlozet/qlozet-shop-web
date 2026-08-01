@@ -30,7 +30,12 @@ export type ActiveSection =
   | 'following'
   | 'reserved-fabric';
 
-export type OrderStatus = 'Shipped' | 'Refused' | 'Delivered' | 'Pending';
+export type OrderStatus =
+  | 'Pending'
+  | 'Processing'
+  | 'Shipped'
+  | 'Delivered'
+  | 'Refused';
 
 // ─── Measurement Types (aligned with backend MeasurementInputDto) ──
 export interface MeasurementValues {

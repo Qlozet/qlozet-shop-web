@@ -36,6 +36,7 @@ function getActiveStep(status: string, isReturn: boolean): number {
   }
   if (status === 'Delivered') return 5;
   if (status === 'Shipped') return 4;
+  if (status === 'Processing') return 2; // Order Processed (paid / vendor confirmed)
   if (status === 'Pending') return 0;
   return 1; // Confirmed by default
 }

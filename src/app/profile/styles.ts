@@ -42,8 +42,9 @@ export const fieldInput: React.CSSProperties = {
 };
 
 export const statusColors: Record<string, { bg: string; text: string }> = {
-  'Shipped': { bg: 'rgba(234,179,8,0.1)', text: '#CA8A04' },
-  'Refused': { bg: 'rgba(239,68,68,0.1)', text: '#EF4444' },
-  'Delivered': { bg: 'rgba(34,197,94,0.1)', text: '#22C55E' },
   'Pending': { bg: 'rgba(249,115,22,0.1)', text: '#F97316' },
+  'Processing': { bg: 'rgba(59,130,246,0.1)', text: '#3B82F6' },
+  'Shipped': { bg: 'rgba(234,179,8,0.1)', text: '#CA8A04' },
+  'Delivered': { bg: 'rgba(34,197,94,0.1)', text: '#22C55E' },
+  'Refused': { bg: 'rgba(239,68,68,0.1)', text: '#EF4444' },
 };
