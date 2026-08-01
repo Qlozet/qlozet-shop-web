@@ -10,6 +10,7 @@ import { getProductName, getProductImage, getProductPrice, getProductOriginalPri
 import type { ApiProduct } from '@/lib/api-types';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useAskFashion } from '@/hooks/useRecommendations';
+import { Markdown } from '@/components/Markdown';
 import {
   Search,
   List,
@@ -316,7 +317,7 @@ function SearchContent() {
                       color: '#444',
                       border: '1px solid rgba(0,0,0,0.04)',
                     }}>
-                      {msg.content}
+                      <Markdown content={msg.content} />
                     </div>
                   )}
                 </div>
