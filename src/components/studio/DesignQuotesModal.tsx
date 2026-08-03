@@ -60,7 +60,18 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
 
   if (!isOpen || !mounted) return null;
 
-  const quotes = ((design as any)?.quotes ?? []) as BespokeQuote[];
+  // GET /bespoke/designs/:id returns { data: { design, quotes } }, which the
+  // global interceptor wraps again — so the hook gives us { data: {...} } or a
+  // flat shape. Unwrap defensively.
+  const raw: any = design;
+  const detail: any =
+    raw?.data && (raw.data.design || Array.isArray(raw.data.quotes))
+      ? raw.data
+      : raw;
+  const designObj: any = detail?.design ?? detail;
+  const quotes = ((detail?.quotes ??
+    designObj?.quotes ??
+    []) as BespokeQuote[]);
   const accept = async (quoteId: string) => {
     setAcceptingId(quoteId);
     setErr(null);
@@ -106,7 +117,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
             Quotes
           </h3>
           <p style={{ fontSize: '13px', color: '#888', marginTop: '6px' }}>
-            {design?.name ? design.name : 'Your design'} · choose the tailor you like
+            {designObj?.name ? designObj.name : 'Your design'} · choose the tailor you like
           </p>
         </div>
 
@@ -140,9 +151,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           className='flex items-center justify-center overflow-hidden'
                           style={{ width: '36px', height: '36px', borderRadius: '9px', background: '#F2F2F2' }}
                         >
-                          {q.vendor?.logo_url ? (
+                          {(q.vendor as any)?.business_logo_url || q.vendor?.logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={q.vendor.logo_url} alt={q.vendor?.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={(q.vendor as any)?.business_logo_url || q.vendor?.logo_url} alt={q.vendor?.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
                             <Store size={15} color='#999' />
                           )}
