@@ -7,6 +7,7 @@ import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
 import { SaveDesignModal } from './SaveDesignModal';
+import { RequestQuotesModal } from './RequestQuotesModal';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 
 interface DesktopConfigPanelProps {
@@ -16,6 +17,8 @@ interface DesktopConfigPanelProps {
 
 export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customization, designId }) => {
   const { expandedSection, tokenBalance, isGenerating, handleGenerate, generatedImages, showSaveModal, setShowSaveModal } = customization;
+
+  const [showOrderModal, setShowOrderModal] = React.useState(false);
 
   const hasGeneratedImages = generatedImages.length > 0;
 
@@ -102,6 +105,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
               <span>Save Design</span>
             </button>
             <button
+              onClick={() => setShowOrderModal(true)}
               className="flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-md"
               style={{
                 padding: '16px 20px', borderRadius: '16px', background: '#064E3B',
@@ -116,6 +120,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         ) : (
           <button
             disabled={!hasGeneratedImages}
+            onClick={() => hasGeneratedImages && setShowOrderModal(true)}
             className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-md"
             style={{
               padding: '16px', borderRadius: '16px', background: '#064E3B',
@@ -138,6 +143,27 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
       <SaveDesignModal
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
+        designName={customization.designName}
+        category={designCategory}
+        gender={designGender}
+        designImages={generatedImages}
+        referenceImages={customization.referenceImages}
+        selections={{
+          neckline: customization.selectedNeckline,
+          sleeve: customization.selectedSleeve,
+          silhouette: customization.selectedSilhouette,
+          collar: customization.selectedCollar,
+          fabric: customization.selectedFabric,
+          color: customization.selectedColor,
+          fit: customization.selectedFit,
+          userPrompt: customization.userPrompt,
+        }}
+        designId={designId}
+      />
+      {/* Request Quotes (Order Now) Modal */}
+      <RequestQuotesModal
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
         designName={customization.designName}
         category={designCategory}
         gender={designGender}
