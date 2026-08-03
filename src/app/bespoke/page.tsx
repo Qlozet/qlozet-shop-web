@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
+import { DesignQuotesModal } from '@/components/studio/DesignQuotesModal';
 import {
   Plus,
   Search,
@@ -382,6 +383,7 @@ function BespokeContent() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [modalStep, setModalStep] = useState<ModalStep>(null);
+  const [quotesDesignId, setQuotesDesignId] = useState<string | null>(null);
 
   // Map backend designs to display format
   const STATUS_MAP: Record<string, DesignStatus> = {
@@ -842,67 +844,104 @@ function BespokeContent() {
             </div>
           ) : (
             <>
-              {/* Quotes header */}
-              <div
-                className="flex items-center justify-between"
-                style={{ padding: '24px 20px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
-              >
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Your Quotes
-                  </h3>
-                  <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
-                    {DEMO_QUOTES.length} quote{DEMO_QUOTES.length !== 1 ? 's' : ''} from vendors
-                  </p>
-                </div>
-                <div className="flex items-center justify-center" style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
-                  <Quote size={18} color="#D4AF37" />
-                </div>
-              </div>
-
-              {/* Quote list */}
-              <div className="flex flex-col" style={{ gap: '0' }}>
-                {DEMO_QUOTES.map((q, idx) => {
-                  const status = QUOTE_STATUS_MAP[q.status];
-                  const isFirst = idx === 0;
-                  const isLast = idx === DEMO_QUOTES.length - 1;
-                  return (
+              {(() => {
+                // Designs that have been sent out for quotes.
+                const quotedDesigns = backendDesigns.filter((d) =>
+                  ['quoting', 'requesting_quotes', 'quoted', 'accepted', 'in_progress', 'in_production', 'completed'].includes(
+                    (d.status as string) || '',
+                  ),
+                );
+                const statusLabel: Record<string, { text: string; bg: string; color: string }> = {
+                  requesting_quotes: { text: 'Awaiting quotes', bg: 'rgba(245,158,11,0.1)', color: '#D97706' },
+                  quoting: { text: 'Awaiting quotes', bg: 'rgba(245,158,11,0.1)', color: '#D97706' },
+                  quoted: { text: 'Quotes ready', bg: 'rgba(16,185,129,0.1)', color: '#059669' },
+                  accepted: { text: 'Accepted', bg: 'rgba(59,130,246,0.1)', color: '#2563EB' },
+                  in_progress: { text: 'In production', bg: 'rgba(59,130,246,0.1)', color: '#2563EB' },
+                  in_production: { text: 'In production', bg: 'rgba(59,130,246,0.1)', color: '#2563EB' },
+                  completed: { text: 'Completed', bg: 'rgba(16,185,129,0.1)', color: '#059669' },
+                };
+                return (
+                  <>
+                    {/* Quotes header */}
                     <div
-                      key={q.id}
-                      className="flex items-center justify-between transition-all hover:bg-gray-50"
-                      style={{
-                        padding: '18px 20px',
-                        borderRadius: isFirst ? '16px 16px 0 0' : isLast ? '0 0 16px 16px' : '0',
-                        border: '1px solid rgba(0,0,0,0.06)',
-                        borderTop: isFirst ? undefined : 'none',
-                        background: '#FFFFFF',
-                        cursor: 'pointer',
-                      }}
+                      className="flex items-center justify-between"
+                      style={{ padding: '24px 20px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
                     >
                       <div>
-                        <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>{q.vendor}</p>
-                        <div className="flex items-center" style={{ gap: '8px' }}>
-                          <span style={{ fontSize: '11px', color: '#888' }}>{q.items} item{q.items > 1 ? 's' : ''}</span>
-                          <span style={{ fontSize: '11px', color: '#888' }}>·</span>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#1A1A1A' }}>{q.total}</span>
-                          <span style={{ fontSize: '11px', color: '#888' }}>·</span>
-                          <span style={{ fontSize: '11px', color: '#888' }}>{q.date}</span>
-                        </div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Your Quotes
+                        </h3>
+                        <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                          {quotedDesigns.length} design{quotedDesigns.length !== 1 ? 's' : ''} out for quotes
+                        </p>
                       </div>
-                      <div className="flex items-center" style={{ gap: '10px' }}>
-                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: status.bg, color: status.text, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          {status.label}
-                        </span>
-                        <ChevronRight size={16} color="#CCC" />
+                      <div className="flex items-center justify-center" style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
+                        <Quote size={18} color="#D4AF37" />
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {quotedDesigns.length === 0 ? (
+                      <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+                        <p style={{ fontSize: '13px', color: '#888' }}>
+                          No quote requests yet. Design an outfit and tap “Order Now” to request quotes from tailors.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col" style={{ gap: '0' }}>
+                        {quotedDesigns.map((d, idx) => {
+                          const s = statusLabel[(d.status as string) || ''] ?? { text: d.status, bg: 'rgba(0,0,0,0.05)', color: '#666' };
+                          const isFirst = idx === 0;
+                          const isLast = idx === quotedDesigns.length - 1;
+                          return (
+                            <button
+                              key={d._id}
+                              onClick={() => setQuotesDesignId(d._id)}
+                              className="flex items-center justify-between transition-all hover:bg-gray-50"
+                              style={{
+                                padding: '16px 20px', textAlign: 'left',
+                                borderRadius: isFirst ? '16px 16px 0 0' : isLast ? '0 0 16px 16px' : '0',
+                                border: '1px solid rgba(0,0,0,0.06)',
+                                borderTop: isFirst ? undefined : 'none',
+                                background: '#FFFFFF', cursor: 'pointer', width: '100%',
+                              }}
+                            >
+                              <div className="flex items-center" style={{ gap: '12px' }}>
+                                <div className="overflow-hidden" style={{ width: '44px', height: '52px', borderRadius: '10px', background: '#F5F5F5', flexShrink: 0 }}>
+                                  {d.design_images?.[0] && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={d.design_images[0]} alt={d.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  )}
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>{d.name}</p>
+                                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: s.bg, color: s.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    {s.text}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center" style={{ gap: '8px' }}>
+                                <span style={{ fontSize: '11px', color: '#888' }}>View quotes</span>
+                                <ChevronRight size={16} color="#CCC" />
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </>
           )}
         </div>
       )}
+
+      {/* Design quotes modal (view + accept) */}
+      <DesignQuotesModal
+        isOpen={!!quotesDesignId}
+        onClose={() => setQuotesDesignId(null)}
+        designId={quotesDesignId}
+      />
 
       {/* ─── Modal ─── */}
       <NewDesignModal step={modalStep} setStep={setModalStep} />

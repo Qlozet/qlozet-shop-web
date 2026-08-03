@@ -52,6 +52,18 @@ export interface QuoteLineItem {
   total: number;
 }
 
+// Shape returned by POST /bespoke/quotes/{id}/accept
+export interface AcceptQuoteResult {
+  order?: { _id?: string; reference?: string; total?: number };
+  transaction?: { reference?: string; amount?: number; status?: string };
+  payment?: {
+    authorization_url?: string;
+    paymentUrl?: string;
+    access_code?: string;
+    reference?: string;
+  };
+}
+
 export interface CreateDesignPayload {
   name: string;
   category: string;
@@ -208,15 +220,18 @@ export function useBespokeDesigns() {
   }, [fetchDesigns]);
 
   // ─── Accept a quote ───────────────────────────────────────
-  const acceptQuote = useCallback(async (quoteId: string): Promise<boolean> => {
+  // Returns the accept payload (order + payment) so the caller can redirect to
+  // Paystack, or null on failure.
+  const acceptQuote = useCallback(async (quoteId: string): Promise<AcceptQuoteResult | null> => {
     try {
-      await api.post(`/bespoke/quotes/${quoteId}/accept`);
+      const res = await api.post(`/bespoke/quotes/${quoteId}/accept`);
+      const payload = res?.data?.data ?? res?.data;
       await fetchDesigns();
-      return true;
+      return payload as AcceptQuoteResult;
     } catch (err: any) {
       console.error('[BespokeDesigns] acceptQuote error:', err);
       setError(err?.response?.data?.message || 'Failed to accept quote');
-      return false;
+      return null;
     }
   }, [fetchDesigns]);
 
