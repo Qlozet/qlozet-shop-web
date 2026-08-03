@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2, Check, Store } from 'lucide-react';
 import {
   useBespokeDesigns,
@@ -37,6 +38,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!isOpen || !designId) return;
@@ -54,7 +58,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     };
   }, [isOpen, designId, getDesignDetail]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const quotes = ((design as any)?.quotes ?? []) as BespokeQuote[];
   const accept = async (quoteId: string) => {
@@ -73,10 +77,10 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center'
-      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+      className='fixed inset-0 flex items-center justify-center'
+      style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
     >
       <div
         className='relative w-full animate-fade-in'
@@ -207,6 +211,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

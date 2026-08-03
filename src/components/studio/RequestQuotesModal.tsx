@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { X, Loader2, CheckCircle2, Check, Store } from 'lucide-react';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
@@ -40,8 +41,11 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => setMounted(true), []);
+
+  if (!isOpen || !mounted) return null;
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -97,10 +101,10 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center'
-      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+      className='fixed inset-0 flex items-center justify-center'
+      style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
     >
       <div
         className='relative w-full animate-fade-in'
@@ -238,6 +242,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
