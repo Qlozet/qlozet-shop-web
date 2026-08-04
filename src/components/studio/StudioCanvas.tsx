@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Loader2, ShoppingCart } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface StudioCanvasProps {
   currentImage: string | null;
@@ -14,22 +14,11 @@ interface StudioCanvasProps {
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   currentImage,
   isGenerating,
-  referenceImages,
   isLoading = false,
 }) => (
   <div className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pt-[72px] pb-4 px-4 lg:pt-0 lg:pb-0 lg:px-0">
     {/* Card Wrapper */}
     <div className="relative w-full h-full lg:w-full lg:h-full lg:max-w-none lg:max-h-none max-w-[500px] max-h-[800px] flex items-center justify-center lg:bg-transparent rounded-[32px] lg:rounded-none">
-
-      {/* Mobile Order Now (Cart Icon) */}
-      {(currentImage || referenceImages.length > 0) && !isGenerating && !isLoading && (
-        <button
-          className="absolute top-4 right-4 z-10 lg:hidden flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md"
-          style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#064E3B', border: 'none', cursor: 'pointer' }}
-        >
-          <ShoppingCart size={18} color="#FFF" />
-        </button>
-      )}
 
       {/* Canvas content */}
       {isLoading ? (

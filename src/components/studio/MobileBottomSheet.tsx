@@ -7,13 +7,28 @@ import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
+import { RequestQuotesModal } from './RequestQuotesModal';
 
 interface MobileBottomSheetProps {
   customization: CustomizationState;
+  designId?: string | null;
 }
 
-export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization }) => {
+export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId }) => {
   const { expandedSection, setExpandedSection, isGenerating, handleGenerate } = customization;
+
+  const [showOrderModal, setShowOrderModal] = useState(false);
+
+  const hasGeneratedImages = customization.generatedImages.length > 0;
+
+  // Map clothingType back to category name for the order payload (mirrors desktop)
+  const categoryMap: Record<string, string> = {
+    top: 'Tops', full_body: 'Dresses', bottom: 'Pants',
+  };
+  const designCategory = customization.clothingType
+    ? (categoryMap[customization.clothingType] || customization.clothingType)
+    : 'Design';
+  const designGender = customization.designGender === 'male' ? 'men' as const : 'women' as const;
 
   // Disable generate if nothing meaningful is selected or entered
   const hasAnySelection =
@@ -141,7 +156,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
               <div className="flex items-center gap-3 pointer-events-auto">
                 <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} className="flex-[3]" />
                 <button
-                  disabled={customization.generatedImages.length === 0}
+                  disabled={!hasGeneratedImages}
+                  onClick={() => hasGeneratedImages && setShowOrderModal(true)}
                   className="flex-[2] flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-lg"
                   style={{
                     padding: '16px',
@@ -153,9 +169,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                     border: 'none',
-                    cursor: customization.generatedImages.length > 0 ? 'pointer' : 'not-allowed',
-                    opacity: customization.generatedImages.length > 0 ? 1 : 0.4,
-                    pointerEvents: customization.generatedImages.length > 0 ? 'auto' : 'none',
+                    cursor: hasGeneratedImages ? 'pointer' : 'not-allowed',
+                    opacity: hasGeneratedImages ? 1 : 0.4,
                   }}
                 >
                   Order Now
@@ -172,6 +187,28 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         cost={customization.insufficientTokensInfo.cost}
         onClose={customization.dismissInsufficientTokens}
         onPurchaseComplete={handleGenerate}
+      />
+
+      {/* Request Quotes (Order Now) Modal */}
+      <RequestQuotesModal
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        designName={customization.designName}
+        category={designCategory}
+        gender={designGender}
+        designImages={customization.generatedImages}
+        referenceImages={customization.referenceImages}
+        selections={{
+          neckline: customization.selectedNeckline,
+          sleeve: customization.selectedSleeve,
+          silhouette: customization.selectedSilhouette,
+          collar: customization.selectedCollar,
+          fabric: customization.selectedFabric,
+          color: customization.selectedColor,
+          fit: customization.selectedFit,
+          userPrompt: customization.userPrompt,
+        }}
+        designId={designId}
       />
     </>
   );
