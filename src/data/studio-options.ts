@@ -173,3 +173,49 @@ export const PRODUCT_TABS: SectionTab[] = [
   { id: 'fit', label: 'FIT' },
   { id: 'addons', label: 'ADD-ONS' },
 ];
+
+// ── Selection enrichment ────────────────────────────────────────
+// The studio stores only option IDs (e.g. "s2"). Resolve those to a
+// { id, name, image, emoji } shape so a saved design carries human-readable
+// names + thumbnails that the vendor (or anyone) can render without this
+// catalog. Unknown ids pass through unchanged.
+
+export interface ResolvedSelection {
+  id: string;
+  name: string;
+  image?: string;
+  emoji?: string;
+}
+
+const SELECTION_CATALOG: Record<string, { id: string; label?: string; name?: string; imageUrl?: string; image?: string; emoji?: string }[]> = {
+  silhouette: SILHOUETTES,
+  neckline: NECKLINES,
+  sleeve: SLEEVES,
+  fit: FIT_OPTIONS as any,
+};
+
+function resolveSelection(kind: string, id: unknown): ResolvedSelection | unknown {
+  if (typeof id !== 'string' || !id) return id;
+  const arr = SELECTION_CATALOG[kind];
+  const opt = arr?.find((o) => o.id === id);
+  if (!opt) return id;
+  return {
+    id,
+    name: opt.label ?? opt.name ?? id,
+    image: opt.imageUrl ?? opt.image,
+    emoji: opt.emoji,
+  };
+}
+
+/** Enrich a studio selections object, resolving style ids to {name, image}. */
+export function enrichSelections(
+  // Loose on purpose — callers pass typed selection objects without an index sig.
+  selections: any,
+): Record<string, unknown> {
+  if (!selections) return {};
+  const out: Record<string, unknown> = { ...(selections as Record<string, unknown>) };
+  for (const kind of Object.keys(SELECTION_CATALOG)) {
+    if (selections[kind]) out[kind] = resolveSelection(kind, selections[kind]);
+  }
+  return out;
+}

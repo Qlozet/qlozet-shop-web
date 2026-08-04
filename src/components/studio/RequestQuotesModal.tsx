@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { X, Loader2, CheckCircle2, Check, Store } from 'lucide-react';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { useVendors } from '@/hooks/useVendors';
+import { enrichSelections } from '@/data/studio-options';
 import type { DesignSelections } from './SaveDesignModal';
 
 interface RequestQuotesModalProps {
@@ -75,7 +76,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
         gender,
         design_images: [...designImages].reverse(),
         reference_images: referenceImages.length ? referenceImages : undefined,
-        description: JSON.stringify({ notes: '', selections: selections || {} }),
+        description: JSON.stringify({ notes: '', selections: enrichSelections(selections) }),
       };
       const saved = await saveDesign(payload, null);
       if (!saved?._id) {
