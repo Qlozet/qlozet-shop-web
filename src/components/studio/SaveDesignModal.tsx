@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Save, Loader2, CheckCircle2 } from 'lucide-react';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { enrichSelections } from '@/data/studio-options';
 
 export interface DesignSelections {
   neckline?: string | null;
@@ -61,7 +62,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
     // Serialize selections + user notes into description as structured JSON
     const descriptionPayload = JSON.stringify({
       notes: description.trim() || '',
-      selections: selections || {},
+      selections: enrichSelections(selections),
     });
 
     const payload: CreateDesignPayload = {
