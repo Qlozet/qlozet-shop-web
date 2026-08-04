@@ -222,16 +222,21 @@ export function useBespokeDesigns() {
   // ─── Accept a quote ───────────────────────────────────────
   // Returns the accept payload (order + payment) so the caller can redirect to
   // Paystack, or null on failure.
-  const acceptQuote = useCallback(async (quoteId: string): Promise<AcceptQuoteResult | null> => {
+  const acceptQuote = useCallback(async (
+    quoteId: string,
+    paymentMethod: 'wallet' | 'paystack' = 'paystack',
+  ): Promise<AcceptQuoteResult | null> => {
     try {
-      const res = await api.post(`/bespoke/quotes/${quoteId}/accept`);
+      const res = await api.post(`/bespoke/quotes/${quoteId}/accept`, {
+        payment_method: paymentMethod,
+      });
       const payload = res?.data?.data ?? res?.data;
       await fetchDesigns();
       return payload as AcceptQuoteResult;
     } catch (err: any) {
       console.error('[BespokeDesigns] acceptQuote error:', err);
-      setError(err?.response?.data?.message || 'Failed to accept quote');
-      return null;
+      // Surface the backend message (e.g. insufficient wallet balance).
+      throw new Error(err?.response?.data?.message || 'Failed to accept quote');
     }
   }, [fetchDesigns]);
 

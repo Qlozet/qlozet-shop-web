@@ -8,6 +8,7 @@ import {
   type BespokeDesign,
   type BespokeQuote,
 } from '@/hooks/useBespokeDesigns';
+import { useWallet } from '@/hooks/useWallet';
 
 interface DesignQuotesModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   designId,
 }) => {
   const { getDesignDetail, acceptQuote } = useBespokeDesigns();
+  const { walletBalance } = useWallet();
   const [design, setDesign] = useState<BespokeDesign | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -72,19 +74,22 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const quotes = ((detail?.quotes ??
     designObj?.quotes ??
     []) as BespokeQuote[]);
-  const accept = async (quoteId: string) => {
+  const accept = async (quoteId: string, method: 'wallet' | 'paystack') => {
     setAcceptingId(quoteId);
     setErr(null);
-    const res = await acceptQuote(quoteId);
-    setAcceptingId(null);
-    const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
-    if (res && url) {
-      window.location.href = url;
-    } else if (res) {
-      // Accepted but no payment URL — close and let them see order status.
+    try {
+      const res = await acceptQuote(quoteId, method);
+      const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
+      if (method === 'paystack' && url) {
+        window.location.href = url; // redirect to Paystack
+        return;
+      }
+      // Wallet payment is instant — the order is already confirmed.
       onClose();
-    } else {
-      setErr('Could not accept the quote. Please try again.');
+    } catch (e: any) {
+      setErr(e?.message || 'Could not accept the quote. Please try again.');
+    } finally {
+      setAcceptingId(null);
     }
   };
 
@@ -190,23 +195,46 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         <Check size={14} /> Accepted
                       </div>
                     ) : submitted ? (
-                      <button
-                        onClick={() => accept(q._id)}
-                        disabled={acceptingId === q._id}
-                        className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
-                        style={{
-                          padding: '12px', borderRadius: '12px', background: '#064E3B',
-                          color: '#FFF', fontSize: '12px', fontWeight: 800,
-                          textTransform: 'uppercase', letterSpacing: '0.08em',
-                          border: 'none', cursor: 'pointer', gap: '8px',
-                        }}
-                      >
-                        {acceptingId === q._id ? (
-                          <><Loader2 size={14} className='animate-spin' /> Processing...</>
-                        ) : (
-                          'Accept & pay'
+                      <div className='flex flex-col' style={{ gap: '8px' }}>
+                        <button
+                          onClick={() => accept(q._id, 'wallet')}
+                          disabled={acceptingId === q._id || walletBalance < total}
+                          className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
+                          style={{
+                            padding: '12px', borderRadius: '12px',
+                            background: walletBalance < total ? '#CFCFCF' : '#064E3B',
+                            color: '#FFF', fontSize: '12px', fontWeight: 800,
+                            textTransform: 'uppercase', letterSpacing: '0.06em',
+                            border: 'none',
+                            cursor: walletBalance < total ? 'not-allowed' : 'pointer',
+                            gap: '8px',
+                          }}
+                        >
+                          {acceptingId === q._id ? (
+                            <><Loader2 size={14} className='animate-spin' /> Processing...</>
+                          ) : (
+                            `Pay with wallet (₦${walletBalance.toLocaleString()})`
+                          )}
+                        </button>
+                        {walletBalance < total && (
+                          <p style={{ fontSize: '10px', color: '#999', textAlign: 'center' }}>
+                            Insufficient wallet balance — top up or pay with card.
+                          </p>
                         )}
-                      </button>
+                        <button
+                          onClick={() => accept(q._id, 'paystack')}
+                          disabled={acceptingId === q._id}
+                          className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
+                          style={{
+                            padding: '12px', borderRadius: '12px', background: '#FFF',
+                            color: '#064E3B', fontSize: '12px', fontWeight: 800,
+                            textTransform: 'uppercase', letterSpacing: '0.06em',
+                            border: '1.5px solid #064E3B', cursor: 'pointer', gap: '8px',
+                          }}
+                        >
+                          Pay with card
+                        </button>
+                      </div>
                     ) : (
                       <p style={{ fontSize: '11px', color: '#999', textAlign: 'center' }}>
                         {q.status === 'pending' ? 'Awaiting the tailor’s quote' : q.status}
