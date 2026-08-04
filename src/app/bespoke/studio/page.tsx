@@ -251,7 +251,7 @@ function StudioContent() {
 
       {/* Mobile Bottom Sheet */}
       <div style={!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : undefined}>
-        <MobileBottomSheet customization={customization} />
+        <MobileBottomSheet customization={customization} designId={designId} />
       </div>
 
       {/* Desktop Config Panel & CTAs */}
