@@ -225,10 +225,12 @@ export function useBespokeDesigns() {
   const acceptQuote = useCallback(async (
     quoteId: string,
     paymentMethod: 'wallet' | 'paystack' = 'paystack',
+    addressId?: string,
   ): Promise<AcceptQuoteResult | null> => {
     try {
       const res = await api.post(`/bespoke/quotes/${quoteId}/accept`, {
         payment_method: paymentMethod,
+        ...(addressId ? { address_id: addressId } : {}),
       });
       const payload = res?.data?.data ?? res?.data;
       await fetchDesigns();

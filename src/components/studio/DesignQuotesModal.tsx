@@ -9,6 +9,7 @@ import {
   type BespokeQuote,
 } from '@/hooks/useBespokeDesigns';
 import { useWallet } from '@/hooks/useWallet';
+import { api } from '@/lib/api';
 
 interface DesignQuotesModalProps {
   isOpen: boolean;
@@ -41,8 +42,37 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [addressId, setAddressId] = useState<string | null>(null);
+  const [addressChecked, setAddressChecked] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Load the customer's shipping address so acceptance can pass it explicitly
+  // (the tailor needs somewhere to deliver). Prefer the default address.
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    setAddressChecked(false);
+    api
+      .get('/users/customer/addresses')
+      .then((res) => {
+        if (!active) return;
+        const data = res.data?.data ?? res.data;
+        const list: any[] = Array.isArray(data) ? data : data ? [data] : [];
+        const chosen =
+          list.find((a) => a.is_default) ?? list[0] ?? null;
+        setAddressId(chosen ? chosen._id ?? chosen.id ?? null : null);
+      })
+      .catch(() => {
+        if (active) setAddressId(null);
+      })
+      .finally(() => {
+        if (active) setAddressChecked(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !designId) return;
@@ -78,7 +108,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     setAcceptingId(quoteId);
     setErr(null);
     try {
-      const res = await acceptQuote(quoteId, method);
+      const res = await acceptQuote(quoteId, method, addressId ?? undefined);
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
       if (method === 'paystack' && url) {
         window.location.href = url; // redirect to Paystack
@@ -194,6 +224,19 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       >
                         <Check size={14} /> Accepted
                       </div>
+                    ) : submitted && addressChecked && !addressId ? (
+                      <a
+                        href='/profile'
+                        className='w-full flex items-center justify-center transition-all hover:opacity-90'
+                        style={{
+                          padding: '12px', borderRadius: '12px', background: '#FEF3C7',
+                          color: '#92400E', fontSize: '11px', fontWeight: 700,
+                          textAlign: 'center', textDecoration: 'none', lineHeight: 1.4,
+                          border: '1px solid #FDE68A',
+                        }}
+                      >
+                        Add a shipping address to place this order →
+                      </a>
                     ) : submitted ? (
                       <div className='flex flex-col' style={{ gap: '8px' }}>
                         <button
