@@ -129,6 +129,16 @@ export interface Order {
   shippingFee?: number;
   tracking?: string;
   courier?: string;
+  paymentStatus?: 'unpaid' | 'paid';
+  refundStatus?: 'none' | 'partial' | 'refunded';
+  /** Bespoke design attached to a custom outfit order (real data). */
+  bespoke?: {
+    name?: string;
+    description?: string;
+    category?: string;
+    gender?: string;
+    images: string[];
+  };
 }
 
 export interface Transaction {

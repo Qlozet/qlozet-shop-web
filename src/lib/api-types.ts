@@ -831,6 +831,16 @@ export interface ApiOrderShipment {
   shipment_type?: string;
 }
 
+export interface ApiBespokeDesign {
+  _id?: string;
+  name?: string;
+  category?: string;
+  gender?: string;
+  design_images?: string[];
+  reference_images?: string[];
+  description?: string;
+}
+
 export interface ApiCustomerOrder {
   _id: string;
   reference?: string;
@@ -841,6 +851,9 @@ export interface ApiCustomerOrder {
   total: number;
   items: ApiOrderItem[];
   shipments?: ApiOrderShipment[];
+  bespoke_design?: ApiBespokeDesign | string | null;
+  payment_status?: 'unpaid' | 'paid';
+  refund_status?: 'none' | 'partial' | 'refunded';
   createdAt: string;
   updatedAt: string;
 }
