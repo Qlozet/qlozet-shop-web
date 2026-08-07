@@ -92,14 +92,26 @@ function resolveQty(item: ApiOrderItem): number {
   return qty > 0 ? qty : 1;
 }
 
-function mapItem(item: ApiOrderItem, orderType?: string): OrderItem {
+function mapItem(
+  item: ApiOrderItem,
+  orderType?: string,
+  design?: { name?: string; design_images?: string[] },
+): OrderItem {
   const vendor =
     item.business && typeof item.business === 'object'
       ? item.business
       : undefined;
+  const isBespoke = orderType === 'bespoke';
+  // Bespoke items have no catalog product — the name/image come from the design.
+  const name = isBespoke
+    ? design?.name || 'Custom outfit'
+    : resolveName(item.product);
+  const image = isBespoke
+    ? design?.design_images?.[0] || resolveImage(item.product)
+    : resolveImage(item.product);
   return {
-    name: resolveName(item.product),
-    image: resolveImage(item.product),
+    name,
+    image,
     // No stored colour on the order — use a neutral swatch placeholder.
     fabric: '#EAEAEA',
     size: resolveSize(item),
@@ -124,21 +136,40 @@ function formatDate(iso: string): string {
 
 /** Map a backend order to the profile display shape. */
 export function mapApiOrder(o: ApiCustomerOrder): Order {
-  const items = (o.items ?? []).map((it) => mapItem(it, o.type));
+  const design =
+    o.bespoke_design && typeof o.bespoke_design === 'object'
+      ? o.bespoke_design
+      : undefined;
+  const items = (o.items ?? []).map((it) => mapItem(it, o.type, design));
   const activeShipment =
     o.shipments?.find((s) => s.tracking_number) ?? o.shipments?.[0];
+  const designImages = (design?.design_images ?? []).filter(Boolean);
   return {
     id: o._id,
     orderNumber: o.reference || `#${o._id.slice(-8).toUpperCase()}`,
     date: formatDate(o.createdAt),
     total: o.total ?? 0,
     status: mapStatus(o.status),
-    images: items.map((i) => i.image).filter(Boolean).slice(0, 3),
+    images:
+      o.type === 'bespoke' && designImages.length
+        ? designImages.slice(0, 3)
+        : items.map((i) => i.image).filter(Boolean).slice(0, 3),
     items,
     subtotal: o.subtotal,
     shippingFee: o.shipping_fee,
     tracking: activeShipment?.tracking_number,
     courier: activeShipment?.courier_name,
+    paymentStatus: o.payment_status,
+    refundStatus: o.refund_status,
+    bespoke: design
+      ? {
+          name: design.name,
+          description: design.description,
+          category: design.category,
+          gender: design.gender,
+          images: designImages,
+        }
+      : undefined,
   };
 }
 

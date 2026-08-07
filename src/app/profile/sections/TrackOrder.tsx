@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Package, ClipboardCheck, Settings, Truck, PackageCheck, MapPin, Clock, Phone, RotateCcw, CheckCircle2, Box, RefreshCw, Wrench } from 'lucide-react';
+import { ArrowLeft, Package, ClipboardCheck, Settings, Truck, PackageCheck, Clock, Phone, RotateCcw, CheckCircle2, Box, RefreshCw, Wrench } from 'lucide-react';
 import { cardStyle } from '../styles';
 import type { ActiveSection, Order } from '../types';
 
@@ -75,64 +75,47 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
         {isReturn ? 'Track Return' : 'Track Order'} {orderNum}
       </h3>
 
-      {/* ─── Map Placeholder ─── */}
-      <div style={{ ...cardStyle, overflow: 'hidden' }}>
-        <div className="relative" style={{ height: '220px', background: '#F0EDE8' }}>
-          {/* Stylized map background */}
-          <div className="absolute inset-0" style={{ background: 'url("data:image/svg+xml,%3Csvg width=\'400\' height=\'220\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Crect fill=\'%23F0EDE8\' width=\'400\' height=\'220\'/%3E%3Cpath d=\'M0 110 Q100 80 200 120 T400 100\' stroke=\'%23E0D8D0\' fill=\'none\' stroke-width=\'1.5\'/%3E%3Cpath d=\'M0 140 Q150 100 300 150 T400 130\' stroke=\'%23E0D8D0\' fill=\'none\' stroke-width=\'1\'/%3E%3Cpath d=\'M50 0 Q60 80 50 220\' stroke=\'%23E0D8D0\' fill=\'none\' stroke-width=\'1\'/%3E%3Cpath d=\'M150 0 Q140 100 160 220\' stroke=\'%23E0D8D0\' fill=\'none\' stroke-width=\'1\'/%3E%3Cpath d=\'M250 0 Q260 60 240 220\' stroke=\'%23E0D8D0\' fill=\'none\' stroke-width=\'1\'/%3E%3Cpath d=\'M350 0 Q340 120 360 220\' stroke=\'%23E0D8D0\' fill=\'none\' stroke-width=\'1\'/%3E%3C/svg%3E")', backgroundSize: 'cover' }} />
-
-          {/* Route line */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 220" preserveAspectRatio="none">
-            <path
-              d="M120 170 Q200 130 280 80 T340 55"
-              stroke="#8B7355"
-              strokeWidth="2"
-              fill="none"
-              strokeDasharray="6,4"
-              opacity="0.5"
-            />
-          </svg>
-
-          {/* Delivery pin */}
-          <div className="absolute flex items-center" style={{ top: '35px', right: '60px', gap: '8px' }}>
-            <div className="flex items-center" style={{ background: 'rgba(255,255,255,0.95)', borderRadius: '100px', padding: '6px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>Arrival ( 2 mins )</span>
+      {/* ─── Shipment summary (real) ─── */}
+      <div style={cardStyle}>
+        <div className="flex flex-col" style={{ padding: '20px', gap: '14px' }}>
+          <div className="flex items-center" style={{ gap: '12px' }}>
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#2C1810' }}>
+              <Truck size={20} color="#FFF" />
             </div>
-            <div className="flex items-center justify-center" style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#8B7355', border: '2px solid #FFF', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
-          </div>
-
-          {/* Current location indicator */}
-          <div className="absolute flex items-center justify-center" style={{ bottom: '45px', left: '100px', width: '32px', height: '32px', borderRadius: '50%', background: '#2C1810' }}>
-            <MapPin size={16} color="#FFF" fill="#FFF" style={{ transform: 'rotate(-30deg)' }} />
-          </div>
-
-          {/* Location target button */}
-          <button className="absolute flex items-center justify-center" style={{ top: '12px', right: '12px', width: '32px', height: '32px', borderRadius: '50%', background: '#FFF', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
-            <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid #1A1A1A', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '4px', height: '4px', borderRadius: '50%', background: '#1A1A1A' }} />
+            <div className="flex flex-col" style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>
+                {isReturn ? 'Return in progress' : steps[activeStepIdx]?.label ?? 'Order Placed'}
+              </span>
+              <span style={{ fontSize: '12px', color: '#999' }}>
+                {order.courier ? `Courier: ${order.courier}` : 'Awaiting courier assignment'}
+              </span>
             </div>
-          </button>
+          </div>
+          <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: '#999' }}>Tracking number</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#2C1810', fontFamily: 'monospace', textAlign: 'right', wordBreak: 'break-all' }}>{order.tracking || 'Pending'}</span>
+          </div>
         </div>
       </div>
 
-      {/* ─── Order Info Bar ─── */}
+      {/* ─── Order Info Bar (real) ─── */}
       <div className="flex" style={{ gap: '12px' }}>
-        <div className="flex-1 flex items-center" style={{ ...cardStyle, padding: '14px 16px', gap: '12px' }}>
+        <div className="flex-1 flex items-center min-w-0" style={{ ...cardStyle, padding: '14px 16px', gap: '12px' }}>
           <div className="flex items-center justify-center flex-shrink-0" style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(44,24,16,0.06)' }}>
             <Package size={16} color="#2C1810" />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <span style={{ fontSize: '10px', color: '#999' }}>Order ID</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{orderNum}</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orderNum}</span>
           </div>
         </div>
-        <div className="flex-1 flex items-center" style={{ ...cardStyle, padding: '14px 16px', gap: '12px' }}>
+        <div className="flex-1 flex items-center min-w-0" style={{ ...cardStyle, padding: '14px 16px', gap: '12px' }}>
           <div className="flex items-center justify-center flex-shrink-0" style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(44,24,16,0.06)' }}>
             <Clock size={16} color="#2C1810" />
           </div>
           <div className="flex flex-col">
-            <span style={{ fontSize: '10px', color: '#999' }}>Est. timeline</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>3-5 days</span>
+            <span style={{ fontSize: '10px', color: '#999' }}>Status</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{order.status}</span>
           </div>
         </div>
       </div>
@@ -186,8 +169,8 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
                     {step.label}
                   </span>
                   {isActive && (
-                    <span style={{ fontSize: '12px', fontWeight: 500, color: '#888' }}>
-                      Feb 23, 10:30pm
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#8B7355', background: 'rgba(139,115,85,0.1)', padding: '3px 10px', borderRadius: '100px' }}>
+                      In progress
                     </span>
                   )}
                 </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Package, ChevronRight, ChevronDown, ArrowLeft, Scissors, User, MessageCircle, Ruler, Truck, RotateCcw, Loader2 } from 'lucide-react';
+import { Package, ChevronRight, ChevronDown, ArrowLeft, MessageCircle, Ruler, Truck, RotateCcw, Loader2 } from 'lucide-react';
 import { cardStyle, statusColors } from '../styles';
 import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
@@ -47,20 +47,8 @@ export default function OrdersSection({
       'custom': { bg: 'rgba(249,115,22,0.1)', text: '#F97316' }, 'ready-to-wear': { bg: 'rgba(34,197,94,0.1)', text: '#22C55E' },
       'fabric': { bg: 'rgba(139,69,19,0.1)', text: '#8B4513' }, 'accessories': { bg: 'rgba(212,175,55,0.1)', text: '#B8941F' }, 'bespoke': { bg: 'rgba(99,102,241,0.1)', text: '#6366F1' },
     };
-    const nextStepConfig: Partial<Record<ProductType, { title: string; desc: string; cta: string }>> = {
-      'custom': { title: 'Approve the vendor quote', desc: 'Your vendor is preparing a quote based on your design + measurements. Approving locks the timeline and starts production.', cta: 'Review & Approve' },
-      'bespoke': { title: 'Schedule fitting appointment', desc: 'Your bespoke piece requires an in-person or virtual fitting. Book your session to confirm measurements and fabric draping.', cta: 'Book Fitting' },
-    };
-    const nextStep = nextStepConfig[t];
-    const demoPaymentBreakdown: Record<ProductType, [string, string][]> = {
-      'custom': [['Base Tailoring', '₦250,000'], ['Fabric', '₦18,500'], ['Accessories', '₦3,600'], ['Add-ons', '₦3,500'], ['Delivery fees:', '₦4,500']],
-      'bespoke': [['Design & Consultation', '₦120,000'], ['Premium Fabric', '₦85,000'], ['Master Tailoring', '₦150,000'], ['Embroidery', '₦15,000'], ['Delivery fees:', '₦10,000']],
-      'ready-to-wear': [['Item price', `₦${item.price.toLocaleString()}`], ['Delivery fees:', '₦3,500']],
-      'fabric': [['Fabric (6 yards)', `₦${item.price.toLocaleString()}`], ['Cutting fee:', '₦1,500'], ['Delivery fees:', '₦2,000']],
-      'accessories': [['Item price', `₦${item.price.toLocaleString()}`], ['Gift wrapping:', '₦500'], ['Delivery fees:', '₦1,500']],
-    };
-    // Prefer the real frozen pricing snapshot; fall back to the demo layout only
-    // when an order predates the snapshot.
+    // Payment breakdown from the REAL frozen pricing snapshot; if an order
+    // predates the snapshot, show only the real item total — never fabricated lines.
     const ngn = (n: number) => `₦${Math.round(n).toLocaleString()}`;
     const p = item.pricing;
     const realBreakdown: [string, string][] | null = p
@@ -74,8 +62,10 @@ export default function OrdersSection({
           p.discount ? ['Discount', `-${ngn(p.discount)}`] : null,
         ].filter(Boolean) as [string, string][])
       : null;
-    const breakdownRows =
-      realBreakdown && realBreakdown.length > 0 ? realBreakdown : demoPaymentBreakdown[t];
+    const breakdownRows: [string, string][] =
+      realBreakdown && realBreakdown.length > 0
+        ? realBreakdown
+        : [['Item total', ngn(item.price)]];
 
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '20px' }}>
@@ -85,21 +75,10 @@ export default function OrdersSection({
         <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Order {order.orderNumber}</h3>
         <span style={{ fontSize: '10px', fontWeight: 700, color: typeBadgeColors[t].text, background: typeBadgeColors[t].bg, padding: '4px 12px', borderRadius: '6px', alignSelf: 'flex-start', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{typeLabel[t]}</span>
 
-        {nextStep && (
-          <div style={{ background: '#FAFAF8', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.05)', padding: '20px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Next Step</h4>
-            <p style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '4px' }}>{nextStep.title}</p>
-            <p style={{ fontSize: '11px', color: '#AAA', lineHeight: 1.6, marginBottom: '14px' }}>{nextStep.desc}</p>
-            <button className="flex items-center transition-all hover:opacity-90 active:scale-95" style={{ gap: '8px', padding: '10px 20px', borderRadius: '8px', background: '#462814', color: '#FFF', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
-              {nextStep.cta} <ChevronRight size={14} />
-            </button>
-          </div>
-        )}
-
-        {isRTW && (
+        {(isRTW || hasTailoring) && (
           <div style={cardStyle}>
             <div className="flex flex-col" style={{ padding: '20px', gap: '14px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Shipping Tracker</span>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Order Progress</span>
               <div className="flex items-center" style={{ gap: '0' }}>
                 {(() => {
                   // Furthest step reached, from the real order status.
@@ -135,29 +114,27 @@ export default function OrdersSection({
 
         {/* Product Card */}
         <div style={cardStyle}>
-          <div className="flex" style={{ padding: '20px', gap: '16px' }}>
-            <div className="flex-shrink-0 overflow-hidden" style={{ width: '120px', height: '140px', borderRadius: '12px', background: '#F5F5F5' }}>
-              <Image src={item.image} alt={item.name} width={120} height={140} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+          <div className="flex" style={{ padding: '16px', gap: '14px' }}>
+            <div className="flex-shrink-0 overflow-hidden" style={{ width: '104px', height: '124px', borderRadius: '12px', background: '#F5F5F5' }}>
+              {item.image ? (
+                <Image src={item.image} alt={item.name} width={104} height={124} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"><Package size={22} color="#CCC" /></div>
+              )}
             </div>
-            <div className="flex-1 flex flex-col" style={{ gap: '12px' }}>
-              <div className="flex items-start justify-between">
-                <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>{item.name}</span>
-                <span style={{ fontSize: '9px', fontWeight: 700, color: statusColors[order.status].text, background: statusColors[order.status].bg, padding: '3px 10px', borderRadius: '4px', textTransform: 'uppercase' }}>{order.status}</span>
+            <div className="flex-1 min-w-0 flex flex-col" style={{ gap: '12px' }}>
+              <div className="flex items-start justify-between" style={{ gap: '10px' }}>
+                <span className="min-w-0" style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>{item.name}</span>
+                <span className="flex-shrink-0" style={{ fontSize: '9px', fontWeight: 700, color: statusColors[order.status].text, background: statusColors[order.status].bg, padding: '3px 10px', borderRadius: '4px', textTransform: 'uppercase' }}>{order.status}</span>
               </div>
 
-              {hasTailoring && (
-                <div className="flex flex-col lg:flex-row" style={{ gap: '12px' }}>
-                  {(isBespoke ? ['Design', 'Embroidery', 'Finishing'] : ['Styles', 'Add-ons', 'Accessories']).map((cat, ci) => (
-                    <div key={cat} className="flex-1 flex flex-col" style={{ gap: '8px', padding: ci > 0 ? '12px 0 0 0' : '0', borderTop: ci > 0 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{cat}</span>
-                      <div className="flex flex-wrap" style={{ gap: '4px' }}>
-                        {[Package, Scissors, User, Package, Scissors, User].slice(0, ci === 2 ? 4 : 6).map((Ic, j) => (
-                          <div key={j} className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '5px', background: '#F5F5F5' }}>
-                            <Ic size={11} color="#888" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+              {isBespoke && order.bespoke?.description && (
+                <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>{order.bespoke.description}</p>
+              )}
+              {isBespoke && (order.bespoke?.category || order.bespoke?.gender) && (
+                <div className="flex flex-wrap" style={{ gap: '6px' }}>
+                  {[order.bespoke?.category, order.bespoke?.gender].filter(Boolean).map((c) => (
+                    <span key={c as string} style={{ fontSize: '10px', fontWeight: 600, color: '#666', background: '#F5F5F5', padding: '4px 10px', borderRadius: '6px', textTransform: 'capitalize' }}>{c}</span>
                   ))}
                 </div>
               )}
@@ -213,15 +190,16 @@ export default function OrdersSection({
           <div style={cardStyle}>
             <div className="flex items-center justify-between" style={{ padding: '14px 20px' }}>
               <div className="flex items-center" style={{ gap: '10px' }}>
-                <div className="overflow-hidden" style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
-                  <Image src={item.vendorLogo || item.image} alt={item.vendor || ''} width={32} height={32} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                <div className="overflow-hidden flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
+                  {(item.vendorLogo || item.image) ? (
+                    <Image src={item.vendorLogo || item.image} alt={item.vendor || ''} width={32} height={32} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                  ) : (
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#999' }}>{(item.vendor || 'V').charAt(0)}</span>
+                  )}
                 </div>
                 <div className="flex flex-col">
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', textTransform: 'uppercase' }}>{item.vendor}</span>
-                  <div className="flex items-center" style={{ gap: '4px' }}>
-                    <span style={{ fontSize: '10px', color: '#D4AF37' }}>★</span>
-                    <span style={{ fontSize: '10px', color: '#999' }}>{item.vendorRating}</span>
-                  </div>
+                  <span style={{ fontSize: '10px', color: '#999' }}>Vendor</span>
                 </div>
               </div>
               <button className="flex items-center transition-all hover:opacity-80" style={{ gap: '6px', padding: '6px 14px', borderRadius: '100px', border: '1px solid rgba(0,0,0,0.1)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>
@@ -253,28 +231,21 @@ export default function OrdersSection({
 
         <div className="flex flex-col lg:flex-row" style={{ gap: '16px' }}>
           <div className="flex-1 flex flex-col" style={{ gap: '16px' }}>
-            {(isCustom || isBespoke || isFabric) && (
+            {isFabric && (
               <div style={cardStyle}>
                 <div className="flex flex-col" style={{ padding: '16px 20px', gap: '12px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fabric</span>
                   <div className="flex items-start" style={{ gap: '12px' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: item.fabric, flexShrink: 0, border: '1px solid rgba(0,0,0,0.06)' }} />
                     <div className="flex flex-col" style={{ gap: '2px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{isFabric ? '6 yards' : '6.25 yards'} <span style={{ fontWeight: 500, color: '#999' }}>({isFabric ? '5.49m' : '5.75m'})</span></span>
-                      <span style={{ fontSize: '10px', color: '#AAA', lineHeight: 1.4 }}>Includes shrinkage & cutting allowances</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{item.size}</span>
+                      <span style={{ fontSize: '10px', color: '#AAA', lineHeight: 1.4 }}>Includes cutting allowance</span>
                     </div>
                   </div>
-                  {[['Fabric Source:', isFabric ? 'Direct from weaver' : 'Marketplace - Grass Field'], ['ETA:', isFabric ? '5-7 days' : '3 days']].map(([l, v]) => (
-                    <div key={l} className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#999' }}>{l}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{v}</span>
-                    </div>
-                  ))}
                   <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '8px' }}>
                     <span style={{ fontSize: '11px', color: '#999' }}>Status:</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: order.status === 'Delivered' ? '#22C55E' : '#F97316' }}>{order.status === 'Delivered' ? 'Delivered' : 'Waiting'}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: order.status === 'Delivered' ? '#22C55E' : '#F97316' }}>{order.status}</span>
                   </div>
-                  <button className="w-full transition-all hover:opacity-90" style={{ marginTop: '4px', padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>View Fabric</button>
                 </div>
               </div>
             )}
@@ -282,37 +253,14 @@ export default function OrdersSection({
             {hasTailoring && (
               <div style={cardStyle}>
                 <div className="flex flex-col" style={{ padding: '16px 20px', gap: '12px' }}>
-                  <div className="flex items-center justify-between">
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Measurements</span>
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: '#1A1A1A', background: '#F0F0F0', padding: '3px 10px', borderRadius: '4px', textTransform: 'uppercase' }}>Locked</span>
-                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Measurements</span>
                   <div className="flex items-center" style={{ gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#462814', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#462814', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Ruler size={16} color="#FFF" />
                     </div>
-                    <div className="flex flex-col">
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>Chioma&apos;s measur...</span>
-                      <span style={{ fontSize: '10px', color: '#999' }}>Updated Feb 12, 2026</span>
-                    </div>
+                    <span style={{ fontSize: '11px', color: '#888', lineHeight: 1.5 }}>The measurements saved to your profile are used to tailor this order.</span>
                   </div>
-                  <button className="w-full transition-all hover:opacity-90" style={{ padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>View Measurements</button>
-                </div>
-              </div>
-            )}
-
-            {isBespoke && (
-              <div style={cardStyle}>
-                <div className="flex flex-col" style={{ padding: '16px 20px', gap: '10px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Production Timeline</span>
-                  {[['Consultation', 'Completed', true], ['Fabric Sourcing', 'In Progress', false], ['Cutting & Sewing', 'Pending', false], ['Fitting', 'Pending', false], ['Final Delivery', 'Pending', false]].map(([step, status, done]) => (
-                    <div key={step as string} className="flex items-center justify-between" style={{ padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
-                      <div className="flex items-center" style={{ gap: '8px' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: done ? '#22C55E' : status === 'In Progress' ? '#F97316' : '#E5E5E5' }} />
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{step as string}</span>
-                      </div>
-                      <span style={{ fontSize: '10px', fontWeight: 600, color: done ? '#22C55E' : status === 'In Progress' ? '#F97316' : '#BBB' }}>{status as string}</span>
-                    </div>
-                  ))}
+                  <button onClick={() => setActiveSection('measurements')} className="w-full transition-all hover:opacity-90" style={{ padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>View Measurements</button>
                 </div>
               </div>
             )}
@@ -331,19 +279,6 @@ export default function OrdersSection({
               </div>
             )}
 
-            {isAccessory && (
-              <div style={cardStyle}>
-                <div className="flex flex-col" style={{ padding: '16px 20px', gap: '10px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Product Specifications</span>
-                  {[['Material:', 'Gold-plated brass'], ['Weight:', '12g per piece'], ['Care:', 'Avoid water contact'], ['Warranty:', '6 months']].map(([l, v]) => (
-                    <div key={l} className="flex items-center justify-between">
-                      <span style={{ fontSize: '11px', color: '#999' }}>{l}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex-1 flex flex-col" style={{ gap: '16px' }}>
@@ -415,8 +350,12 @@ export default function OrdersSection({
         {order.items.map((item, i) => (
           <div key={i} style={cardStyle}>
             <div className="flex items-start" style={{ padding: '16px', gap: '14px' }}>
-              <div className="flex-shrink-0 overflow-hidden" style={{ width: '60px', height: '72px', borderRadius: '10px', background: '#F5F5F5' }}>
-                <Image src={item.image} alt={item.name} width={60} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+              <div className="flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ width: '60px', height: '72px', borderRadius: '10px', background: '#F5F5F5' }}>
+                {item.image ? (
+                  <Image src={item.image} alt={item.name} width={60} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                ) : (
+                  <Package size={18} color="#CCC" />
+                )}
               </div>
               <div className="flex-1 min-w-0 flex flex-col" style={{ gap: '8px' }}>
                 <div className="flex items-start justify-between">
@@ -424,27 +363,19 @@ export default function OrdersSection({
                   <button onClick={(e) => { e.stopPropagation(); setSelectedItemIdx(i); setActiveSection('order-item-detail'); }} style={{ fontSize: '10px', fontWeight: 600, color: '#462814', cursor: 'pointer', whiteSpace: 'nowrap', marginLeft: '8px', background: 'none', border: 'none', padding: 0 }}>See details &gt;</button>
                 </div>
                 <div className="flex items-center flex-wrap" style={{ gap: '16px' }}>
-                  <div className="flex flex-col" style={{ gap: '4px' }}>
-                    <span style={{ fontSize: '10px', color: '#AAA' }}>Fabric</span>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: item.fabric, border: '1px solid rgba(0,0,0,0.08)' }} />
-                  </div>
-                  <div className="flex flex-col" style={{ gap: '4px' }}>
-                    <span style={{ fontSize: '10px', color: '#AAA' }}>Size</span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', padding: '4px 10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '6px' }}>{item.size}</span>
-                  </div>
-                  <div className="flex flex-col" style={{ gap: '4px' }}>
-                    <span style={{ fontSize: '10px', color: '#AAA' }}>Styles</span>
-                    <div className="flex items-center" style={{ gap: '4px' }}>
-                      {[Package, Scissors, User].map((Ic, j) => (
-                        <div key={j} className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#F5F5F5' }}>
-                          <Ic size={14} color="#888" />
-                        </div>
-                      ))}
+                  {item.size !== '—' && (
+                    <div className="flex flex-col" style={{ gap: '4px' }}>
+                      <span style={{ fontSize: '10px', color: '#AAA' }}>Size</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', padding: '4px 10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '6px' }}>{item.size}</span>
                     </div>
+                  )}
+                  <div className="flex flex-col" style={{ gap: '4px' }}>
+                    <span style={{ fontSize: '10px', color: '#AAA' }}>Qty</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A' }}>{item.qty}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between" style={{ marginTop: '4px' }}>
-                  <span style={{ fontSize: '11px', color: '#AAA' }}>{item.qty} Item</span>
+                  <span style={{ fontSize: '11px', color: '#AAA' }}>{item.qty} Item{item.qty === 1 ? '' : 's'}</span>
                   <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>₦{item.price.toLocaleString()}</span>
                 </div>
               </div>
@@ -452,15 +383,25 @@ export default function OrdersSection({
           </div>
         ))}
 
-        <div style={cardStyle}>
-          <div className="flex items-center justify-between" style={{ padding: '16px 20px' }}>
-            <div className="flex flex-col" style={{ gap: '2px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase' }}>Payment Method</span>
-              <span style={{ fontSize: '12px', color: '#888' }}>Bank card</span>
+        {(() => {
+          const refunded = order.refundStatus === 'refunded';
+          const partial = order.refundStatus === 'partial';
+          const paid = order.paymentStatus === 'paid';
+          const label = refunded ? 'Refunded' : partial ? 'Partially refunded' : paid ? 'Paid' : 'Unpaid';
+          const colors = refunded || partial
+            ? { bg: 'rgba(239,68,68,0.08)', text: '#EF4444' }
+            : paid
+              ? { bg: 'rgba(34,197,94,0.1)', text: '#22C55E' }
+              : { bg: 'rgba(249,115,22,0.1)', text: '#F97316' };
+          return (
+            <div style={cardStyle}>
+              <div className="flex items-center justify-between" style={{ padding: '16px 20px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase' }}>Payment Status</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text, background: colors.bg, padding: '4px 12px', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-center" style={{ width: '40px', height: '26px', borderRadius: '6px', background: 'linear-gradient(135deg, #EB001B 50%, #F79E1B 50%)', opacity: 0.8 }} />
-          </div>
-        </div>
+          );
+        })()}
 
         <div style={cardStyle}>
           <div className="flex flex-col" style={{ padding: '16px 20px', gap: '8px' }}>
