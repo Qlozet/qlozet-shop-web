@@ -114,14 +114,18 @@ export default function OrdersSection({
 
         {/* Product Card */}
         <div style={cardStyle}>
-          <div className="flex" style={{ padding: '20px', gap: '16px' }}>
-            <div className="flex-shrink-0 overflow-hidden" style={{ width: '120px', height: '140px', borderRadius: '12px', background: '#F5F5F5' }}>
-              <Image src={item.image} alt={item.name} width={120} height={140} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+          <div className="flex" style={{ padding: '16px', gap: '14px' }}>
+            <div className="flex-shrink-0 overflow-hidden" style={{ width: '104px', height: '124px', borderRadius: '12px', background: '#F5F5F5' }}>
+              {item.image ? (
+                <Image src={item.image} alt={item.name} width={104} height={124} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"><Package size={22} color="#CCC" /></div>
+              )}
             </div>
-            <div className="flex-1 flex flex-col" style={{ gap: '12px' }}>
-              <div className="flex items-start justify-between">
-                <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>{item.name}</span>
-                <span style={{ fontSize: '9px', fontWeight: 700, color: statusColors[order.status].text, background: statusColors[order.status].bg, padding: '3px 10px', borderRadius: '4px', textTransform: 'uppercase' }}>{order.status}</span>
+            <div className="flex-1 min-w-0 flex flex-col" style={{ gap: '12px' }}>
+              <div className="flex items-start justify-between" style={{ gap: '10px' }}>
+                <span className="min-w-0" style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>{item.name}</span>
+                <span className="flex-shrink-0" style={{ fontSize: '9px', fontWeight: 700, color: statusColors[order.status].text, background: statusColors[order.status].bg, padding: '3px 10px', borderRadius: '4px', textTransform: 'uppercase' }}>{order.status}</span>
               </div>
 
               {isBespoke && order.bespoke?.description && (
@@ -186,8 +190,12 @@ export default function OrdersSection({
           <div style={cardStyle}>
             <div className="flex items-center justify-between" style={{ padding: '14px 20px' }}>
               <div className="flex items-center" style={{ gap: '10px' }}>
-                <div className="overflow-hidden" style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
-                  <Image src={item.vendorLogo || item.image} alt={item.vendor || ''} width={32} height={32} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                <div className="overflow-hidden flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
+                  {(item.vendorLogo || item.image) ? (
+                    <Image src={item.vendorLogo || item.image} alt={item.vendor || ''} width={32} height={32} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                  ) : (
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#999' }}>{(item.vendor || 'V').charAt(0)}</span>
+                  )}
                 </div>
                 <div className="flex flex-col">
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A', textTransform: 'uppercase' }}>{item.vendor}</span>
@@ -342,8 +350,12 @@ export default function OrdersSection({
         {order.items.map((item, i) => (
           <div key={i} style={cardStyle}>
             <div className="flex items-start" style={{ padding: '16px', gap: '14px' }}>
-              <div className="flex-shrink-0 overflow-hidden" style={{ width: '60px', height: '72px', borderRadius: '10px', background: '#F5F5F5' }}>
-                <Image src={item.image} alt={item.name} width={60} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+              <div className="flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ width: '60px', height: '72px', borderRadius: '10px', background: '#F5F5F5' }}>
+                {item.image ? (
+                  <Image src={item.image} alt={item.name} width={60} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                ) : (
+                  <Package size={18} color="#CCC" />
+                )}
               </div>
               <div className="flex-1 min-w-0 flex flex-col" style={{ gap: '8px' }}>
                 <div className="flex items-start justify-between">
