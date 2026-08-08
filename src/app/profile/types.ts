@@ -134,12 +134,24 @@ export interface Order {
   /** Bespoke design attached to a custom outfit order (real data). */
   bespoke?: {
     name?: string;
-    description?: string;
+    /** Free-text note the customer left (parsed out of the design payload). */
+    notes?: string;
     category?: string;
     gender?: string;
     images: string[];
     referenceImages: string[];
+    /** Structured design selections (styles, fabric, colour…) with name/image. */
+    choices: DesignChoice[];
   };
+}
+
+export interface DesignChoice {
+  kind: string;
+  label: string;
+  name: string;
+  image?: string;
+  emoji?: string;
+  swatch?: string;
 }
 
 export interface Transaction {

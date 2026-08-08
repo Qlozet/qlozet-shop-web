@@ -9,7 +9,56 @@ import type {
   ApiOrderProduct,
   ApiOrderStatus,
 } from '@/lib/api-types';
-import type { Order, OrderItem, OrderStatus, ProductType } from './types';
+import type { DesignChoice, Order, OrderItem, OrderStatus, ProductType } from './types';
+
+// ─── Bespoke design payload ───────────────────────────────────
+// A design's `description` is a JSON string: { notes, selections: {...} } where
+// each selection is either a resolved { name, image, emoji } or a raw value.
+const KIND_LABEL: Record<string, string> = {
+  silhouette: 'Silhouette', neckline: 'Neckline', sleeve: 'Sleeve', collar: 'Collar',
+  fit: 'Fit', fabric: 'Fabric', color: 'Colour', accessories: 'Accessories', style: 'Style',
+};
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function parseDesign(desc?: string): { notes?: string; choices: DesignChoice[] } {
+  if (!desc || typeof desc !== 'string') return { choices: [] };
+  let parsed: any;
+  try {
+    parsed = JSON.parse(desc);
+  } catch {
+    const s = desc.trim();
+    return { notes: s || undefined, choices: [] };
+  }
+  const sel = parsed?.selections ?? {};
+  const notes =
+    typeof parsed?.notes === 'string' && parsed.notes.trim()
+      ? parsed.notes.trim()
+      : undefined;
+  const choices: DesignChoice[] = [];
+  const add = (kind: string, v: any) => {
+    if (v == null) return;
+    if (Array.isArray(v)) return v.forEach((x) => add(kind, x));
+    const label = KIND_LABEL[kind] ?? cap(kind);
+    if (typeof v === 'object') {
+      const name = v.name ?? v.label;
+      if (name) choices.push({ kind, label, name, image: v.image ?? v.imageUrl, emoji: v.emoji });
+      return;
+    }
+    if (typeof v === 'string') {
+      const s = v.trim();
+      if (!s || kind === 'userPrompt') return;
+      if (/^[0-9a-fA-F]{24}$/.test(s)) return; // unresolved id — skip
+      if (kind === 'color') {
+        const hex = /^#?[0-9a-fA-F]{3,8}$/.test(s) ? (s.startsWith('#') ? s : `#${s}`) : undefined;
+        choices.push({ kind, label, name: hex ?? s, swatch: hex });
+        return;
+      }
+      choices.push({ kind, label, name: s });
+    }
+  };
+  for (const [k, v] of Object.entries(sel)) add(k, v);
+  return { notes, choices };
+}
 
 // ─── Status mapping ───────────────────────────────────────────
 // Collapse the backend's seven order statuses onto the profile UI states.
@@ -144,6 +193,7 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
   const activeShipment =
     o.shipments?.find((s) => s.tracking_number) ?? o.shipments?.[0];
   const designImages = (design?.design_images ?? []).filter(Boolean);
+  const parsedDesign = parseDesign(design?.description);
   return {
     id: o._id,
     orderNumber: o.reference || `#${o._id.slice(-8).toUpperCase()}`,
@@ -164,11 +214,12 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
     bespoke: design
       ? {
           name: design.name,
-          description: design.description,
+          notes: parsedDesign.notes,
           category: design.category,
           gender: design.gender,
           images: designImages,
           referenceImages: (design.reference_images ?? []).filter(Boolean),
+          choices: parsedDesign.choices,
         }
       : undefined,
   };
