@@ -60,20 +60,38 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
   const item = order.items[0];
 
   return (
-    <div className="animate-fade-in flex flex-col" style={{ gap: '20px' }}>
+    <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
       {/* Back Button (desktop) */}
       <button
         onClick={() => setActiveSection('order-item-detail')}
         className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90"
-        style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}
+        style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F4F1ED', border: 'none', cursor: 'pointer' }}
       >
-        <ArrowLeft size={20} color="#1A1A1A" />
+        <ArrowLeft size={18} color="#1A1A1A" />
       </button>
 
       {/* Title */}
       <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-        {isReturn ? 'Track Return' : 'Track Order'} {orderNum}
+        {isReturn ? 'Track Return' : 'Track Order'}
       </h3>
+
+      {/* ─── What you're tracking ─── */}
+      {item && (
+        <div style={cardStyle}>
+          <div className="flex items-center" style={{ padding: '12px 14px', gap: '12px' }}>
+            <div className="flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ width: '48px', height: '58px', borderRadius: '10px', background: '#F4F1ED' }}>
+              {item.image
+                ? <Image src={item.image} alt={item.name} width={48} height={58} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                : <Package size={18} color="#C9BEB2" />}
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col" style={{ gap: '3px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+              <span style={{ fontSize: '11px', color: '#8A7A6C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orderNum}</span>
+            </div>
+            <span style={{ fontSize: '9px', fontWeight: 800, color: '#8A7A6C', flexShrink: 0 }}>{order.items.length > 1 ? `+${order.items.length - 1} more` : ''}</span>
+          </div>
+        </div>
+      )}
 
       {/* ─── Shipment summary (real) ─── */}
       <div style={cardStyle}>
