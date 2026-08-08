@@ -172,7 +172,6 @@ export default function OrdersSection({
     const t = item.productType;
     const isBespoke = t === 'bespoke';
     const isCustom = t === 'custom';
-    const isRTW = t === 'ready-to-wear';
     const isFabric = t === 'fabric';
     const hasTailoring = isCustom || isBespoke;
 
@@ -488,10 +487,9 @@ export default function OrdersSection({
                   {more > 0 && <span style={{ fontSize: '11px', color: FAINT, flexShrink: 0 }}>+{more}</span>}
                 </div>
                 <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
-                  {first && <TypePill type={first.productType} />}
+                  <StatusPill status={order.status} />
                   <span style={{ fontSize: '11px', color: MUTE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.orderNumber} · {order.date}</span>
                 </div>
-                <StatusPill status={order.status} />
               </div>
               <div className="flex flex-col items-end flex-shrink-0" style={{ gap: '10px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: INK }}>{ngn(order.total)}</span>
