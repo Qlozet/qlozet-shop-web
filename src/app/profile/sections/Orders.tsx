@@ -242,11 +242,38 @@ export default function OrdersSection({
         <div className="flex flex-col lg:flex-row" style={{ gap: '16px' }}>
           <div className="flex-1 flex flex-col min-w-0" style={{ gap: '16px' }}>
             {/* Bespoke design details */}
-            {isBespoke && order.bespoke && (order.bespoke.images.length > 0 || order.bespoke.referenceImages.length > 0 || order.bespoke.description) && (
+            {isBespoke && order.bespoke && (order.bespoke.choices.length > 0 || order.bespoke.images.length > 0 || order.bespoke.referenceImages.length > 0 || order.bespoke.notes) && (
               <Section title="Design Details">
-                {order.bespoke.description && (
-                  <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6 }}>{order.bespoke.description}</p>
+                {/* Selected design choices (styles, fabric, colour…) */}
+                {order.bespoke.choices.length > 0 && (
+                  <div className="flex flex-col" style={{ gap: '2px' }}>
+                    {order.bespoke.choices.map((c, i) => (
+                      <div key={`${c.kind}-${i}`} className="flex items-center" style={{ gap: '11px', padding: '7px 0', borderTop: i > 0 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
+                        {c.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.image} alt={c.name} style={{ width: 42, height: 42, borderRadius: 9, objectFit: 'cover', background: '#F4F1ED', flexShrink: 0 }} />
+                        ) : c.swatch ? (
+                          <div style={{ width: 42, height: 42, borderRadius: 9, background: c.swatch, border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }} />
+                        ) : (
+                          <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 9, background: '#F4F1ED', flexShrink: 0, fontSize: 18 }}>
+                            {c.emoji || <Package size={16} color="#C9BEB2" />}
+                          </div>
+                        )}
+                        <div className="flex flex-col min-w-0">
+                          <span style={{ fontSize: '9px', fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{c.label}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: INK, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
+
+                {/* Customer note */}
+                {order.bespoke.notes && (
+                  <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6, borderTop: order.bespoke.choices.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none', paddingTop: order.bespoke.choices.length > 0 ? '10px' : 0 }}>{order.bespoke.notes}</p>
+                )}
+
+                {/* Design + reference image galleries */}
                 {([['Design', order.bespoke.images], ['References', order.bespoke.referenceImages]] as const)
                   .filter(([, imgs]) => imgs.length > 0)
                   .map(([label, imgs]) => (
