@@ -231,6 +231,30 @@ export default function OrdersSection({
 
         <div className="flex flex-col lg:flex-row" style={{ gap: '16px' }}>
           <div className="flex-1 flex flex-col" style={{ gap: '16px' }}>
+            {isBespoke && order.bespoke && (order.bespoke.images.length > 0 || order.bespoke.referenceImages.length > 0) && (
+              <div style={cardStyle}>
+                <div className="flex flex-col" style={{ padding: '16px 20px', gap: '14px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Design Details</span>
+                  {order.bespoke.description && (
+                    <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>{order.bespoke.description}</p>
+                  )}
+                  {([['Design', order.bespoke.images], ['References', order.bespoke.referenceImages]] as const)
+                    .filter(([, imgs]) => imgs.length > 0)
+                    .map(([label, imgs]) => (
+                      <div key={label} className="flex flex-col" style={{ gap: '6px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+                        <div className="flex flex-wrap" style={{ gap: '8px' }}>
+                          {imgs.map((img, i) => (
+                            <div key={i} className="overflow-hidden" style={{ width: '68px', height: '84px', borderRadius: '8px', background: '#F5F5F5', flexShrink: 0 }}>
+                              <Image src={img} alt={`${label} ${i + 1}`} width={68} height={84} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
             {isFabric && (
               <div style={cardStyle}>
                 <div className="flex flex-col" style={{ padding: '16px 20px', gap: '12px' }}>

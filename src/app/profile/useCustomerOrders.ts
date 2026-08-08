@@ -168,6 +168,7 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
           category: design.category,
           gender: design.gender,
           images: designImages,
+          referenceImages: (design.reference_images ?? []).filter(Boolean),
         }
       : undefined,
   };

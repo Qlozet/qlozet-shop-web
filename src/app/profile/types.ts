@@ -138,6 +138,7 @@ export interface Order {
     category?: string;
     gender?: string;
     images: string[];
+    referenceImages: string[];
   };
 }
 
