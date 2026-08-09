@@ -212,9 +212,13 @@ export default function CheckoutPage() {
     const result = await checkout.placeOrder(method);
 
     if (result) {
-      // Paystack redirect is handled inside placeOrder
-      if (method === 'wallet' || !result.authorization_url) {
-        setOrderRef(result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
+      // Card payments hand off to Paystack inside placeOrder (a full-page
+      // redirect), so success is only shown in-place for wallet payments. A
+      // card order that reaches here without redirecting means no payment URL
+      // came back — placeOrder returns null in that case, so we never show a
+      // false "payment successful" for an unpaid card order.
+      if (method === 'wallet') {
+        setOrderRef(result.order?.reference || result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
         setPaidTotal(total); // capture before clearCart() zeroes the cart-derived total
         setIsProcessing(false);
         setOrderComplete(true);
