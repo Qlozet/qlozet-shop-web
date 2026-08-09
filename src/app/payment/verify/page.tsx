@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
 
 // ═══════════════════════════════════════════════════════════════
 //  Payment return page — Paystack redirects here after any payment
@@ -17,6 +18,7 @@ type Status = 'verifying' | 'success' | 'failed';
 
 function PaymentVerifyInner() {
   const params = useSearchParams();
+  const { clearCart } = useApp();
   const reference = params.get('reference') || params.get('trxref') || '';
   const [status, setStatus] = useState<Status>('verifying');
 
@@ -69,12 +71,19 @@ function PaymentVerifyInner() {
     };
   }, [reference]);
 
-  // Clear the stashed reservation id once we've shown success
+  // On confirmed payment: clear the stashed reservation id, and — for a
+  // checkout payment (not a reservation) — clear the cart that survived the
+  // Paystack round-trip in localStorage, so the customer isn't left with the
+  // just-paid items still in their cart.
   useEffect(() => {
     if (status === 'success' && typeof window !== 'undefined') {
       sessionStorage.removeItem('pending_reservation_id');
+      if (!reservationId) {
+        clearCart();
+        sessionStorage.removeItem('qlozet_checkout_preview');
+      }
     }
-  }, [status]);
+  }, [status, reservationId, clearCart]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '18px', background: '#F8F9FA' }}>

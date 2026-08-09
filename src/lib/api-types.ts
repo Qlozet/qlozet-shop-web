@@ -749,15 +749,39 @@ export interface CreateOrderPayload {
 //  Returned from POST /orders
 // ═══════════════════════════════════════════════════════════════
 
+// POST /orders returns { order, transaction, payment }. For a card order the
+// Paystack authorization URL is `payment.paymentUrl` (NOT a top-level
+// authorization_url); for a wallet order `payment` carries the wallet result.
 export interface OrderResponse {
-  _id: string;
-  reference: string;
-  status: string;
-  total: number;
-  subtotal: number;
-  shipping_fee: number;
-  authorization_url?: string; // Paystack redirect URL
-  access_code?: string;
+  order?: {
+    _id?: string;
+    reference?: string;
+    status?: string;
+    total?: number;
+    subtotal?: number;
+    shipping_fee?: number;
+    type?: string;
+  };
+  transaction?: {
+    reference?: string;
+    amount?: number;
+    status?: string;
+    metadata?: Record<string, unknown>;
+  };
+  payment?: {
+    // Paystack (card) branch
+    paymentUrl?: string; // authorization URL to redirect to
+    reference?: string;
+    access_code?: string;
+    amount?: number;
+    // Wallet branch
+    method?: string;
+    paid?: boolean;
+    wallet_balance_after?: number;
+  };
+  // Legacy top-level fields — kept optional for backward-compat only.
+  reference?: string;
+  authorization_url?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
