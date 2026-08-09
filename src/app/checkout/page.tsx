@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useCheckout } from '@/hooks/useCheckout';
 import { api } from '@/lib/api';
+import { openPaystackModal } from '@/lib/paystack';
 import type { CheckoutPreviewResponse } from '@/lib/api-types';
 import {
   ChevronUp,
@@ -211,29 +212,57 @@ export default function CheckoutPage() {
     const method = paymentMethod === 'wallet' ? 'wallet' : 'paystack';
     const result = await checkout.placeOrder(method);
 
-    if (result) {
-      // Card payments hand off to Paystack inside placeOrder (a full-page
-      // redirect), so success is only shown in-place for wallet payments. A
-      // card order that reaches here without redirecting means no payment URL
-      // came back — placeOrder returns null in that case, so we never show a
-      // false "payment successful" for an unpaid card order.
-      if (method === 'wallet') {
-        setOrderRef(result.order?.reference || result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
-        setPaidTotal(total); // capture before clearCart() zeroes the cart-derived total
-        setIsProcessing(false);
-        setOrderComplete(true);
-        clearCart();
-        sessionStorage.removeItem('qlozet_checkout_preview');
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#FF2E63', '#FF6B8B', '#D4AF37', '#4A2306', '#FFFFFF'],
-        });
-      }
-    } else {
+    if (!result) {
       setIsProcessing(false);
+      return;
     }
+
+    // Wallet: charged immediately — show success in place.
+    if (method === 'wallet') {
+      setOrderRef(result.order?.reference || result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
+      setPaidTotal(total); // capture before clearCart() zeroes the cart-derived total
+      setIsProcessing(false);
+      setOrderComplete(true);
+      clearCart();
+      sessionStorage.removeItem('qlozet_checkout_preview');
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#FF2E63', '#FF6B8B', '#D4AF37', '#4A2306', '#FFFFFF'],
+      });
+      return;
+    }
+
+    // Card: open the Paystack modal ON this page (no redirect). The order was
+    // created UNPAID; only a successful popup means it was charged. On success
+    // we hand off to /payment/verify which polls the transaction, records the
+    // outcome and clears the cart.
+    const accessCode = result.payment?.access_code;
+    const reference = result.transaction?.reference || result.payment?.reference;
+
+    if (!accessCode) {
+      setPayError('We could not start the card payment. Your order was not charged — please try again.');
+      setIsProcessing(false);
+      return;
+    }
+
+    await openPaystackModal({
+      accessCode,
+      onSuccess: (ref) => {
+        const r = ref || reference;
+        router.push(r ? `/payment/verify?reference=${encodeURIComponent(r)}` : '/payment/verify');
+      },
+      onClose: () => {
+        // Customer dismissed the popup without paying — keep the cart/order.
+        setIsProcessing(false);
+        setPayError('Payment was not completed. You can try again when ready.');
+      },
+      onError: (msg) => {
+        setIsProcessing(false);
+        setPayError(msg || 'Card payment failed. Please try again.');
+      },
+    });
   };
 
   // Card style
