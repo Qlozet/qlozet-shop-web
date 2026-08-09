@@ -5,9 +5,11 @@ import { api } from '@/lib/api';
 import type {
   ApiCustomerOrder,
   ApiCustomerOrdersPaginated,
+  ApiOrderEmbeddedOption,
   ApiOrderItem,
   ApiOrderProduct,
   ApiOrderStatus,
+  ApiProductImage,
 } from '@/lib/api-types';
 import type { DesignChoice, Order, OrderItem, OrderStatus, ProductType } from './types';
 
@@ -141,32 +143,56 @@ function resolveQty(item: ApiOrderItem): number {
   return qty > 0 ? qty : 1;
 }
 
-// A populated selection ref → a design choice (name + primary image).
-function refChoice(kind: string, label: string, ref: any): DesignChoice | null {
-  if (!ref || typeof ref === 'string' || !ref.name) return null;
-  const imgs = ref.images ?? [];
-  const img = imgs.find((i: any) => i?.is_primary)?.url ?? imgs[0]?.url;
-  return { kind, label, name: ref.name, image: img };
+function pickImg(imgs?: ApiProductImage[]): string | undefined {
+  if (!imgs?.length) return undefined;
+  return (imgs.find((i) => i.is_primary) ?? imgs[0])?.url || undefined;
 }
 
-// Custom (customize) item design choices, from the populated selections.
+// Resolve a selection id against an embedded option catalog → design choice.
+function optionChoice(
+  kind: string,
+  label: string,
+  id: string | undefined,
+  catalog: ApiOrderEmbeddedOption[] | undefined,
+  suffix?: string,
+): DesignChoice | null {
+  if (!id) return null;
+  const opt = (catalog ?? []).find((o) => String(o._id) === String(id));
+  if (!opt?.name) return null;
+  return {
+    kind,
+    label,
+    name: suffix ? `${opt.name} · ${suffix}` : opt.name,
+    image: pickImg(opt.images),
+  };
+}
+
+// Custom (customize) item design choices. The selection ids point INTO the
+// product's own embedded clothing.styles / .fabrics / .accessories arrays, so
+// we resolve each id against those to get the real name + image.
 function itemChoices(item: ApiOrderItem): DesignChoice[] {
   const out: DesignChoice[] = [];
+  const clothing =
+    item.product && typeof item.product === 'object'
+      ? item.product.clothing
+      : undefined;
+
   const cv = item.color_variant_selections?.[0];
   if (cv?.size) out.push({ kind: 'size', label: 'Size', name: cv.size });
+
   for (const s of item.style_selections ?? []) {
-    const c = refChoice('style', 'Style', s.style_id);
+    const c = optionChoice('style', 'Style', s.style_id, clothing?.styles);
     if (c) out.push(c);
   }
   for (const f of item.fabric_selections ?? []) {
-    const c = refChoice('fabric', 'Fabric', f.fabric_id);
-    if (c) {
-      if (f.yardage) c.name = `${c.name} · ${f.yardage} yd`;
-      out.push(c);
-    }
+    const c = optionChoice(
+      'fabric', 'Fabric', f.fabric_id, clothing?.fabrics,
+      f.yardage ? `${f.yardage} yd` : undefined,
+    );
+    if (c) out.push(c);
   }
   for (const a of item.accessory_selections ?? []) {
-    const c = refChoice('accessories', 'Accessory', a.accessory_id);
+    const c = optionChoice('accessories', 'Accessory', a.accessory_id, clothing?.accessories);
     if (c) out.push(c);
   }
   return out;
