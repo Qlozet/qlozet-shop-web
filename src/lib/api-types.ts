@@ -780,9 +780,25 @@ export interface ApiOrderProduct {
   _id: string;
   kind?: 'clothing' | 'fabric' | 'accessory';
   base_price?: number;
-  clothing?: { name?: string; type?: 'customize' | 'non_customize'; images?: ApiProductImage[] };
+  clothing?: {
+    name?: string;
+    type?: 'customize' | 'non_customize';
+    images?: ApiProductImage[];
+    // Embedded catalogs a customize item's selections point into (by _id).
+    styles?: ApiOrderEmbeddedOption[];
+    fabrics?: ApiOrderEmbeddedOption[];
+    accessories?: ApiOrderEmbeddedOption[];
+  };
   accessory?: { name?: string; images?: ApiProductImage[] };
   fabric?: { name?: string; images?: ApiProductImage[] };
+}
+
+// A style/fabric/accessory embedded on a clothing product (the target of a
+// customize item's selection ids).
+export interface ApiOrderEmbeddedOption {
+  _id?: string;
+  name?: string;
+  images?: ApiProductImage[];
 }
 
 export interface ApiOrderItemPricing {
@@ -797,12 +813,6 @@ export interface ApiOrderItemPricing {
   final: number;
 }
 
-// A selection ref is a populated { _id, name, images } (or the bare id string).
-export type ApiSelectedRef =
-  | { _id?: string; name?: string; images?: ApiProductImage[] }
-  | string
-  | null;
-
 export interface ApiOrderVariantSelection {
   size?: string;
   quantity?: number;
@@ -815,7 +825,8 @@ export interface ApiOrderFabricSelection {
   quantity?: number;
   price?: number;
   total_amount?: number;
-  fabric_id?: ApiSelectedRef;
+  // Id into the product's embedded clothing.fabrics (not a standalone Fabric).
+  fabric_id?: string;
 }
 
 export interface ApiOrderItem {
@@ -823,8 +834,8 @@ export interface ApiOrderItem {
   business?: { _id: string; business_name?: string; business_logo_url?: string } | string | null;
   color_variant_selections?: ApiOrderVariantSelection[];
   fabric_selections?: ApiOrderFabricSelection[];
-  style_selections?: { quantity?: number; price?: number; total_amount?: number; style_id?: ApiSelectedRef }[];
-  accessory_selections?: { quantity?: number; price?: number; total_amount?: number; accessory_id?: ApiSelectedRef }[];
+  style_selections?: { quantity?: number; price?: number; total_amount?: number; style_id?: string }[];
+  accessory_selections?: { quantity?: number; price?: number; total_amount?: number; accessory_id?: string }[];
   addon_selections?: { quantity?: number; price?: number; total_amount?: number }[];
   note?: string;
   total_price?: number;
