@@ -141,11 +141,43 @@ function resolveQty(item: ApiOrderItem): number {
   return qty > 0 ? qty : 1;
 }
 
+// A populated selection ref → a design choice (name + primary image).
+function refChoice(kind: string, label: string, ref: any): DesignChoice | null {
+  if (!ref || typeof ref === 'string' || !ref.name) return null;
+  const imgs = ref.images ?? [];
+  const img = imgs.find((i: any) => i?.is_primary)?.url ?? imgs[0]?.url;
+  return { kind, label, name: ref.name, image: img };
+}
+
+// Custom (customize) item design choices, from the populated selections.
+function itemChoices(item: ApiOrderItem): DesignChoice[] {
+  const out: DesignChoice[] = [];
+  const cv = item.color_variant_selections?.[0];
+  if (cv?.size) out.push({ kind: 'size', label: 'Size', name: cv.size });
+  for (const s of item.style_selections ?? []) {
+    const c = refChoice('style', 'Style', s.style_id);
+    if (c) out.push(c);
+  }
+  for (const f of item.fabric_selections ?? []) {
+    const c = refChoice('fabric', 'Fabric', f.fabric_id);
+    if (c) {
+      if (f.yardage) c.name = `${c.name} · ${f.yardage} yd`;
+      out.push(c);
+    }
+  }
+  for (const a of item.accessory_selections ?? []) {
+    const c = refChoice('accessories', 'Accessory', a.accessory_id);
+    if (c) out.push(c);
+  }
+  return out;
+}
+
 function mapItem(
   item: ApiOrderItem,
   orderType?: string,
   design?: { name?: string; design_images?: string[] },
 ): OrderItem {
+  const productType = resolveProductType(item.product, orderType);
   const vendor =
     item.business && typeof item.business === 'object'
       ? item.business
@@ -166,10 +198,11 @@ function mapItem(
     size: resolveSize(item),
     qty: resolveQty(item),
     price: item.total_price ?? item.pricing?.final ?? 0,
-    productType: resolveProductType(item.product, orderType),
+    productType,
     vendor: vendor?.business_name,
     vendorLogo: vendor?.business_logo_url,
     pricing: item.pricing,
+    choices: productType === 'custom' ? itemChoices(item) : undefined,
   };
 }
 

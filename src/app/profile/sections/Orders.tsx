@@ -174,6 +174,8 @@ export default function OrdersSection({
     const isCustom = t === 'custom';
     const isFabric = t === 'fabric';
     const hasTailoring = isCustom || isBespoke;
+    // Bespoke choices live on the design; custom choices live on the item.
+    const designChoices = isBespoke ? (order.bespoke?.choices ?? []) : (item.choices ?? []);
 
     // Real payment breakdown from the frozen snapshot; else just the item total.
     const p = item.pricing;
@@ -242,12 +244,12 @@ export default function OrdersSection({
         <div className="flex flex-col lg:flex-row" style={{ gap: '16px' }}>
           <div className="flex-1 flex flex-col min-w-0" style={{ gap: '16px' }}>
             {/* Bespoke design details */}
-            {isBespoke && order.bespoke && (order.bespoke.choices.length > 0 || order.bespoke.images.length > 0 || order.bespoke.referenceImages.length > 0 || order.bespoke.notes) && (
+            {hasTailoring && (designChoices.length > 0 || (isBespoke && order.bespoke && (order.bespoke.images.length > 0 || order.bespoke.referenceImages.length > 0 || order.bespoke.notes))) && (
               <Section title="Design Details">
                 {/* Selected design choices (styles, fabric, colour…) */}
-                {order.bespoke.choices.length > 0 && (
+                {designChoices.length > 0 && (
                   <div className="flex flex-col" style={{ gap: '2px' }}>
-                    {order.bespoke.choices.map((c, i) => (
+                    {designChoices.map((c, i) => (
                       <div key={`${c.kind}-${i}`} className="flex items-center" style={{ gap: '11px', padding: '7px 0', borderTop: i > 0 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
                         {c.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -268,13 +270,13 @@ export default function OrdersSection({
                   </div>
                 )}
 
-                {/* Customer note */}
-                {order.bespoke.notes && (
-                  <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6, borderTop: order.bespoke.choices.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none', paddingTop: order.bespoke.choices.length > 0 ? '10px' : 0 }}>{order.bespoke.notes}</p>
+                {/* Customer note (bespoke) */}
+                {isBespoke && order.bespoke?.notes && (
+                  <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6, borderTop: designChoices.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none', paddingTop: designChoices.length > 0 ? '10px' : 0 }}>{order.bespoke.notes}</p>
                 )}
 
-                {/* Design + reference image galleries */}
-                {([['Design', order.bespoke.images], ['References', order.bespoke.referenceImages]] as const)
+                {/* Design + reference image galleries (bespoke) */}
+                {isBespoke && order.bespoke && ([['Design', order.bespoke.images], ['References', order.bespoke.referenceImages]] as const)
                   .filter(([, imgs]) => imgs.length > 0)
                   .map(([label, imgs]) => (
                     <div key={label} className="flex flex-col" style={{ gap: '6px' }}>

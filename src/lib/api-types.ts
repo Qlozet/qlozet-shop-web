@@ -797,6 +797,12 @@ export interface ApiOrderItemPricing {
   final: number;
 }
 
+// A selection ref is a populated { _id, name, images } (or the bare id string).
+export type ApiSelectedRef =
+  | { _id?: string; name?: string; images?: ApiProductImage[] }
+  | string
+  | null;
+
 export interface ApiOrderVariantSelection {
   size?: string;
   quantity?: number;
@@ -809,6 +815,7 @@ export interface ApiOrderFabricSelection {
   quantity?: number;
   price?: number;
   total_amount?: number;
+  fabric_id?: ApiSelectedRef;
 }
 
 export interface ApiOrderItem {
@@ -816,8 +823,8 @@ export interface ApiOrderItem {
   business?: { _id: string; business_name?: string; business_logo_url?: string } | string | null;
   color_variant_selections?: ApiOrderVariantSelection[];
   fabric_selections?: ApiOrderFabricSelection[];
-  style_selections?: { quantity?: number; price?: number; total_amount?: number }[];
-  accessory_selections?: { quantity?: number; price?: number; total_amount?: number }[];
+  style_selections?: { quantity?: number; price?: number; total_amount?: number; style_id?: ApiSelectedRef }[];
+  accessory_selections?: { quantity?: number; price?: number; total_amount?: number; accessory_id?: ApiSelectedRef }[];
   addon_selections?: { quantity?: number; price?: number; total_amount?: number }[];
   note?: string;
   total_price?: number;
