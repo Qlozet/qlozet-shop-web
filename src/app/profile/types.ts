@@ -114,6 +114,8 @@ export interface OrderItem {
   vendorRating?: string;
   /** Frozen itemized pricing snapshot from the backend (real numbers). */
   pricing?: OrderItemPricing;
+  /** Custom (customize) item's design choices — populated styles/fabric/etc. */
+  choices?: DesignChoice[];
 }
 
 export interface Order {
