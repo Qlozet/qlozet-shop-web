@@ -239,9 +239,15 @@ export default function CheckoutPage() {
     // we hand off to /payment/verify which polls the transaction, records the
     // outcome and clears the cart.
     const accessCode = result.payment?.access_code;
+    const paymentUrl = result.payment?.paymentUrl || result.authorization_url;
     const reference = result.transaction?.reference || result.payment?.reference;
 
     if (!accessCode) {
+      // No inline access code — fall back to Paystack's hosted checkout page.
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+        return;
+      }
       setPayError('We could not start the card payment. Your order was not charged — please try again.');
       setIsProcessing(false);
       return;
@@ -259,6 +265,11 @@ export default function CheckoutPage() {
         setPayError('Payment was not completed. You can try again when ready.');
       },
       onError: (msg) => {
+        // Inline script failed to load — fall back to hosted checkout if we can.
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+          return;
+        }
         setIsProcessing(false);
         setPayError(msg || 'Card payment failed. Please try again.');
       },
