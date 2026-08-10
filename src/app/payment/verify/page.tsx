@@ -29,7 +29,10 @@ function PaymentVerifyInner() {
   const { clearCart } = useApp();
   const reference = params.get('reference') || params.get('trxref') || '';
   const [status, setStatus] = useState<Status>('verifying');
-  const celebrated = useRef(false);
+  // Runs the success cleanup (clear cart, confetti) EXACTLY once. clearCart is
+  // not a stable reference and mutates cart state, so without this guard the
+  // effect re-fires on every render and spams DELETE /cart/clear (→ 429s).
+  const handled = useRef(false);
 
   // A reservation the organizer just paid the fee for (stashed before redirect)
   const [reservationId, setReservationId] = useState<string | null>(null);
@@ -88,21 +91,19 @@ function PaymentVerifyInner() {
   // — for a checkout payment (not a reservation) — clear the cart that survived
   // the payment round-trip so the customer isn't left with the just-paid items.
   useEffect(() => {
-    if (status !== 'success' || typeof window === 'undefined') return;
+    if (status !== 'success' || handled.current || typeof window === 'undefined') return;
+    handled.current = true;
     sessionStorage.removeItem('pending_reservation_id');
     if (!reservationId) {
       clearCart();
       sessionStorage.removeItem('qlozet_checkout_preview');
     }
-    if (!celebrated.current) {
-      celebrated.current = true;
-      confetti({
-        particleCount: 130,
-        spread: 75,
-        origin: { y: 0.55 },
-        colors: [BROWN, '#8A5A2B', '#D4AF37', GOOD, '#FFFFFF'],
-      });
-    }
+    confetti({
+      particleCount: 130,
+      spread: 75,
+      origin: { y: 0.55 },
+      colors: [BROWN, '#8A5A2B', '#D4AF37', GOOD, '#FFFFFF'],
+    });
   }, [status, reservationId, clearCart]);
 
   return (
