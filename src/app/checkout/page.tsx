@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   Truck,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 type PromoTab = 'promo' | 'voucher' | 'rewards';
 
@@ -133,11 +132,6 @@ export default function CheckoutPage() {
 
   // Processing
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
-  const [orderRef, setOrderRef] = useState('');
-  // Snapshot of the amount charged, captured BEFORE clearCart() empties the cart
-  // (otherwise the confirmation total collapses to just the shipping fee).
-  const [paidTotal, setPaidTotal] = useState(0);
 
   // Per-item breakdowns → total item-level discount savings (§11, informational;
   // the subtotal is already the discounted final).
@@ -217,20 +211,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Wallet: charged immediately — show success in place.
+    // Wallet: charged immediately — hand off to the single confirmation page
+    // (same one card uses). It resolves instantly since the wallet transaction
+    // is already successful, and clears the cart there.
     if (method === 'wallet') {
-      setOrderRef(result.order?.reference || result.reference || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`);
-      setPaidTotal(total); // capture before clearCart() zeroes the cart-derived total
-      setIsProcessing(false);
-      setOrderComplete(true);
-      clearCart();
-      sessionStorage.removeItem('qlozet_checkout_preview');
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#FF2E63', '#FF6B8B', '#D4AF37', '#4A2306', '#FFFFFF'],
-      });
+      const ref = result.transaction?.reference || result.order?.reference;
+      router.push(ref ? `/payment/verify?reference=${encodeURIComponent(ref)}` : '/payment/verify');
       return;
     }
 
@@ -293,203 +279,8 @@ export default function CheckoutPage() {
     letterSpacing: '0.06em',
   };
 
-  // ─── Order Complete ─────────────────────────────────────────
-  if (orderComplete) {
-    const orderNumber = orderRef || `QL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-    const deliveryDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-    const formattedDate = deliveryDate.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-    return (
-      <div className="flex flex-col items-center gap-8 py-8 lg:py-12 animate-fade-in w-full" style={{ maxWidth: '560px', margin: '0 auto', padding: '0 20px' }}>
-
-        {/* ── Animated Checkmark ─────────────────────────────── */}
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="flex items-center justify-center animate-slide-up"
-            style={{
-              width: '96px',
-              height: '96px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)',
-              boxShadow: '0 8px 32px rgba(45,106,79,0.3), 0 0 0 8px rgba(45,106,79,0.08)',
-            }}
-          >
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          </div>
-
-          <div className="text-center" style={{ marginTop: '4px' }}>
-            <h2
-              className="font-display"
-              style={{ fontSize: '26px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.01em', marginBottom: '6px' }}
-            >
-              Payment Confirmed
-            </h2>
-            <p style={{ fontSize: '14px', color: '#999' }}>
-              Thank you for shopping with Qlozet!
-            </p>
-          </div>
-        </div>
-
-        {/* ── Order Info Card ───────────────────────────────── */}
-        <div
-          style={{
-            width: '100%',
-            background: '#FFFFFF',
-            borderRadius: '20px',
-            border: '1px solid rgba(0,0,0,0.04)',
-            padding: '28px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          }}
-        >
-          {/* Order number & date */}
-          <div className="flex items-center justify-between" style={{ marginBottom: '20px' }}>
-            <div>
-              <p style={{ fontSize: '10px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Order Number</p>
-              <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'monospace', letterSpacing: '0.04em' }}>{orderNumber}</p>
-            </div>
-            <div
-              style={{
-                padding: '6px 14px',
-                borderRadius: '100px',
-                background: 'rgba(45,106,79,0.08)',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: '#2D6A4F',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              Confirmed
-            </div>
-          </div>
-
-          <div style={{ height: '1px', background: '#F0F0F0', margin: '0 0 20px' }} />
-
-          {/* Estimated Delivery */}
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ fontSize: '10px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Estimated Delivery</p>
-            <p style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>{formattedDate}</p>
-          </div>
-
-          {/* Order Timeline */}
-          <div className="flex items-center gap-0" style={{ marginBottom: '24px' }}>
-            {['Confirmed', 'Processing', 'Shipped', 'Delivered'].map((step, i) => (
-              <React.Fragment key={step}>
-                <div className="flex flex-col items-center gap-1.5" style={{ flex: i === 0 ? '0 0 auto' : undefined }}>
-                  <div
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: i === 0 ? '#2D6A4F' : '#F0F0F0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {i === 0 && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '8px', fontWeight: 700, color: i === 0 ? '#2D6A4F' : '#CCC', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
-                    {step}
-                  </span>
-                </div>
-                {i < 3 && (
-                  <div style={{ flex: 1, height: '2px', background: i === 0 ? '#2D6A4F' : '#F0F0F0', marginBottom: '18px' }} />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-
-          <div style={{ height: '1px', background: '#F0F0F0', margin: '0 0 20px' }} />
-
-          {/* Delivery Address */}
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ fontSize: '10px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Delivering to</p>
-            <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D4AF37' }} />
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{deliveryName}</span>
-            </div>
-            <p style={{ fontSize: '12px', color: '#999', lineHeight: 1.6, paddingLeft: '14px', margin: 0 }}>
-              {deliveryAddress.line1}, {deliveryAddress.area}, {deliveryAddress.state} {deliveryAddress.zip}, {deliveryAddress.country}
-            </p>
-          </div>
-
-          <div style={{ height: '1px', background: '#F0F0F0', margin: '0 0 20px' }} />
-
-          {/* Total Paid */}
-          <div className="flex items-center justify-between">
-            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Paid</span>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A' }}>₦{(paidTotal || total).toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* ── Confirmation Message ──────────────────────────── */}
-        <div
-          className="text-center"
-          style={{
-            padding: '20px 24px',
-            borderRadius: '14px',
-            background: 'rgba(45,106,79,0.04)',
-            border: '1px solid rgba(45,106,79,0.1)',
-            width: '100%',
-          }}
-        >
-          <p style={{ fontSize: '13px', color: '#555', lineHeight: 1.7, margin: 0 }}>
-            A confirmation email has been sent to <strong style={{ color: '#1A1A1A' }}>{user?.email || 'your email'}</strong>.
-            You can track your order status from your profile.
-          </p>
-        </div>
-
-        {/* ── Action Buttons ────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full">
-          <Link
-            href="/"
-            className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{
-              padding: '14px 28px',
-              borderRadius: '12px',
-              background: '#462814',
-              color: '#FFFFFF',
-              fontSize: '12px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              textDecoration: 'none',
-              boxShadow: '0 4px 16px rgba(70,40,20,0.2)',
-            }}
-          >
-            Back to Home
-          </Link>
-          <Link
-            href="/products"
-            className="flex-1 flex items-center justify-center transition-all hover:bg-gray-50 active:scale-[0.98]"
-            style={{
-              padding: '14px 28px',
-              borderRadius: '12px',
-              border: '1px solid #E0E0E0',
-              color: '#1A1A1A',
-              fontSize: '12px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              textDecoration: 'none',
-            }}
-          >
-            Continue Shopping
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // ─── Empty Cart Redirect ────────────────────────────────────
-  if (cart.length === 0 && !orderComplete) {
+  if (cart.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center animate-fade-in" style={{ padding: '80px 24px', gap: '16px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1A1A1A' }}>No items to checkout</h2>

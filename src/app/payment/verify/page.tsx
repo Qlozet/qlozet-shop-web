@@ -1,26 +1,35 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { api } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
 
 // ═══════════════════════════════════════════════════════════════
-//  Payment return page — Paystack redirects here after any payment
-//  (checkout, reservation fee, guest claim). Polls the transaction
-//  by reference and shows the result. The webhook is what actually
-//  finalizes the payment server-side; this just reads the outcome.
+//  Single payment confirmation page.
+//  Every payment — card (Paystack popup) and wallet — lands here with
+//  a ?reference=. It polls the transaction until the outcome is known
+//  (the webhook finalizes card payments server-side; wallet ones are
+//  already successful), then shows a clean result. No order timeline.
 // ═══════════════════════════════════════════════════════════════
 
 type Status = 'verifying' | 'success' | 'failed';
+
+// Brand tokens (shared with the profile / orders redesign).
+const INK = '#1A1A1A';
+const BROWN = '#462814';
+const MUTE = '#8A7A6C';
+const GOOD = '#0F6E4F';
 
 function PaymentVerifyInner() {
   const params = useSearchParams();
   const { clearCart } = useApp();
   const reference = params.get('reference') || params.get('trxref') || '';
   const [status, setStatus] = useState<Status>('verifying');
+  const celebrated = useRef(false);
 
   // A reservation the organizer just paid the fee for (stashed before redirect)
   const [reservationId, setReservationId] = useState<string | null>(null);
@@ -42,11 +51,15 @@ function PaymentVerifyInner() {
 
     const poll = async () => {
       try {
-        const res = await api.get(`/transactions/reference/${reference}`);
+        // Actively verify + finalize (confirms the charge with Paystack and
+        // records the order server-side) rather than waiting on the webhook.
+        // Idempotent, and safe for wallet refs too (it reports their status
+        // without hitting Paystack).
+        const res = await api.post(`/webhook/verify/${reference}`);
         const data = res.data?.data ?? res.data;
         const s = data?.status;
         if (cancelled) return;
-        if (s === 'success') {
+        if (data?.success === true || s === 'success') {
           setStatus('success');
           return;
         }
@@ -55,13 +68,13 @@ function PaymentVerifyInner() {
           return;
         }
       } catch {
-        /* keep polling — the webhook may still be processing */
+        /* keep trying — Paystack settlement may lag a moment */
       }
       if (cancelled) return;
       if (attempts++ < maxAttempts) {
         setTimeout(poll, 3000);
       } else {
-        // Timed out while still pending — the webhook will still process it.
+        // Still not settled — the webhook will finalize it if it lands later.
         setStatus('failed');
       }
     };
@@ -71,81 +84,204 @@ function PaymentVerifyInner() {
     };
   }, [reference]);
 
-  // On confirmed payment: clear the stashed reservation id, and — for a
-  // checkout payment (not a reservation) — clear the cart that survived the
-  // Paystack round-trip in localStorage, so the customer isn't left with the
-  // just-paid items still in their cart.
+  // On confirmed payment: clear the stashed reservation id, celebrate once, and
+  // — for a checkout payment (not a reservation) — clear the cart that survived
+  // the payment round-trip so the customer isn't left with the just-paid items.
   useEffect(() => {
-    if (status === 'success' && typeof window !== 'undefined') {
-      sessionStorage.removeItem('pending_reservation_id');
-      if (!reservationId) {
-        clearCart();
-        sessionStorage.removeItem('qlozet_checkout_preview');
-      }
+    if (status !== 'success' || typeof window === 'undefined') return;
+    sessionStorage.removeItem('pending_reservation_id');
+    if (!reservationId) {
+      clearCart();
+      sessionStorage.removeItem('qlozet_checkout_preview');
+    }
+    if (!celebrated.current) {
+      celebrated.current = true;
+      confetti({
+        particleCount: 130,
+        spread: 75,
+        origin: { y: 0.55 },
+        colors: [BROWN, '#8A5A2B', '#D4AF37', GOOD, '#FFFFFF'],
+      });
     }
   }, [status, reservationId, clearCart]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '18px', background: '#F8F9FA' }}>
-      {status === 'verifying' && (
-        <>
-          <Loader2 size={44} color="#4C1D95" className="animate-spin" />
-          <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A' }}>Verifying payment…</h2>
-          <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', maxWidth: '320px' }}>
-            Hang tight — we&apos;re confirming your payment. This usually takes a few seconds.
-          </p>
-        </>
-      )}
+    <div
+      className="min-h-screen flex flex-col items-center justify-center"
+      style={{ padding: '48px 20px', background: '#FBF9F7' }}
+    >
+      <div
+        className="w-full flex flex-col items-center text-center"
+        style={{
+          maxWidth: '400px',
+          gap: '20px',
+          background: '#FFFFFF',
+          border: '1px solid rgba(0,0,0,0.05)',
+          borderRadius: '24px',
+          padding: '40px 28px',
+          boxShadow: '0 8px 40px rgba(70,40,20,0.06)',
+        }}
+      >
+        {status === 'verifying' && (
+          <>
+            <Spinner />
+            <Heading>Confirming payment…</Heading>
+            <Body>Hang tight — this usually takes a few seconds.</Body>
+          </>
+        )}
 
-      {status === 'success' && (
-        <>
-          <div className="flex items-center justify-center rounded-full" style={{ width: '72px', height: '72px', background: '#ECFDF5' }}>
-            <CheckCircle2 size={40} color="#065F46" />
-          </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A' }}>Payment confirmed</h2>
-          <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', maxWidth: '320px' }}>
-            {reservationId
-              ? 'Your fabric reservation is active. Share the link with your guests.'
-              : 'Thank you! Your payment was successful.'}
-          </p>
-          <div className="flex items-center" style={{ gap: '10px', marginTop: '4px' }}>
-            {reservationId ? (
-              <Link href={`/reserve/${reservationId}`} style={{ padding: '12px 24px', borderRadius: '14px', background: '#064E3B', color: '#FFF', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                View reservation
-              </Link>
-            ) : (
-              <Link href="/orders" style={{ padding: '12px 24px', borderRadius: '14px', background: '#1A1A1A', color: '#FFF', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                View orders
-              </Link>
-            )}
-            <Link href="/" style={{ padding: '12px 24px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-              Continue shopping
-            </Link>
-          </div>
-        </>
-      )}
+        {status === 'success' && (
+          <>
+            <Badge tone="good">
+              <Check size={34} color="#FFFFFF" strokeWidth={3} />
+            </Badge>
+            <Heading>Payment confirmed</Heading>
+            <Body>
+              {reservationId
+                ? 'Your fabric reservation is active — share the link with your guests.'
+                : 'Thank you! Your payment was successful and your order is on its way to the vendor.'}
+            </Body>
+            {reference && <Ref value={reference} />}
+            <Actions>
+              {reservationId ? (
+                <PrimaryLink href={`/reserve/${reservationId}`}>View reservation</PrimaryLink>
+              ) : (
+                <PrimaryLink href="/orders">View orders</PrimaryLink>
+              )}
+              <GhostLink href="/products">Continue shopping</GhostLink>
+            </Actions>
+          </>
+        )}
 
-      {status === 'failed' && (
-        <>
-          <div className="flex items-center justify-center rounded-full" style={{ width: '72px', height: '72px', background: '#FEF2F2' }}>
-            <XCircle size={40} color="#DC2626" />
-          </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A' }}>Payment not confirmed</h2>
-          <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', maxWidth: '340px' }}>
-            We couldn&apos;t confirm your payment yet. If you were charged, it may still be processing —
-            check your orders shortly. Otherwise you can try again.
-          </p>
-          <div className="flex items-center" style={{ gap: '10px', marginTop: '4px' }}>
-            <Link href="/cart" style={{ padding: '12px 24px', borderRadius: '14px', background: '#1A1A1A', color: '#FFF', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-              Back to cart
-            </Link>
-            <Link href="/" style={{ padding: '12px 24px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-              Home
-            </Link>
-          </div>
-        </>
-      )}
+        {status === 'failed' && (
+          <>
+            <Badge tone="bad">
+              <X size={34} color="#FFFFFF" strokeWidth={3} />
+            </Badge>
+            <Heading>Payment not confirmed</Heading>
+            <Body>
+              We couldn&apos;t confirm your payment yet. If you were charged it may still be
+              processing — check your orders shortly. Otherwise you can try again.
+            </Body>
+            {reference && <Ref value={reference} />}
+            <Actions>
+              <PrimaryLink href="/cart">Back to cart</PrimaryLink>
+              <GhostLink href="/">Home</GhostLink>
+            </Actions>
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+// ─── Presentational atoms ─────────────────────────────────────
+function Spinner() {
+  return (
+    <div
+      className="flex items-center justify-center rounded-full"
+      style={{ width: '68px', height: '68px', background: 'rgba(70,40,20,0.06)' }}
+    >
+      <Loader2 size={34} color={BROWN} className="animate-spin" />
+    </div>
+  );
+}
+
+function Badge({ tone, children }: { tone: 'good' | 'bad'; children: React.ReactNode }) {
+  const bg = tone === 'good' ? GOOD : '#C0362C';
+  const halo = tone === 'good' ? 'rgba(15,110,79,0.14)' : 'rgba(192,54,44,0.14)';
+  return (
+    <div
+      className="flex items-center justify-center rounded-full"
+      style={{ width: '72px', height: '72px', background: bg, boxShadow: `0 0 0 8px ${halo}` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Heading({ children }: { children: React.ReactNode }) {
+  return (
+    <h1 style={{ fontSize: '22px', fontWeight: 800, color: INK, letterSpacing: '-0.01em', margin: 0 }}>
+      {children}
+    </h1>
+  );
+}
+
+function Body({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontSize: '13.5px', color: MUTE, lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
+      {children}
+    </p>
+  );
+}
+
+function Ref({ value }: { value: string }) {
+  return (
+    <div
+      className="flex items-center justify-center"
+      style={{
+        gap: '6px',
+        padding: '8px 14px',
+        borderRadius: '100px',
+        background: '#F5F1ED',
+        fontSize: '11px',
+        fontWeight: 700,
+        color: MUTE,
+        letterSpacing: '0.04em',
+      }}
+    >
+      <span style={{ textTransform: 'uppercase' }}>Ref</span>
+      <span style={{ fontFamily: 'monospace', color: INK }}>{value}</span>
+    </div>
+  );
+}
+
+function Actions({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex w-full" style={{ gap: '10px', marginTop: '4px' }}>
+      {children}
+    </div>
+  );
+}
+
+function PrimaryLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90"
+      style={{
+        padding: '13px 20px',
+        borderRadius: '14px',
+        background: BROWN,
+        color: '#FFFFFF',
+        fontSize: '13px',
+        fontWeight: 700,
+        textDecoration: 'none',
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function GhostLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="flex-1 flex items-center justify-center transition-colors hover:bg-black/[0.03]"
+      style={{
+        padding: '13px 20px',
+        borderRadius: '14px',
+        border: '1px solid rgba(0,0,0,0.1)',
+        color: INK,
+        fontSize: '13px',
+        fontWeight: 700,
+        textDecoration: 'none',
+      }}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -153,8 +289,8 @@ export default function PaymentVerifyPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 size={40} className="animate-spin" color="#4C1D95" />
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#FBF9F7' }}>
+          <Loader2 size={38} className="animate-spin" color={BROWN} />
         </div>
       }
     >
