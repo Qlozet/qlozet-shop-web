@@ -203,27 +203,13 @@ export function useCheckout() {
       const data: OrderResponse = res.data?.data ?? res.data;
       setOrderResult(data);
 
-      // Card (Paystack): the order is created UNPAID and must hand off to
-      // Paystack. The authorization URL is nested under `payment.paymentUrl`
-      // (older shapes used a top-level authorization_url). If it's missing the
-      // payment never started — do NOT clear the cart or report success.
-      if (paymentMethod === 'paystack') {
-        const paymentUrl =
-          data.payment?.paymentUrl ||
-          data.authorization_url ||
-          (data.payment as { authorization_url?: string } | undefined)?.authorization_url;
-        if (paymentUrl) {
-          window.location.href = paymentUrl;
-          return data;
-        }
-        setError(
-          'We could not start the card payment. Your order was not charged — please try again.',
-        );
-        return null;
+      // Card (Paystack): the order is created UNPAID. The caller opens the
+      // Paystack modal with `payment.access_code` and only completes once the
+      // popup reports success — so we DON'T clear the cart here. Wallet
+      // payments are charged immediately, so their order is already complete.
+      if (paymentMethod === 'wallet') {
+        clearCart();
       }
-
-      // Wallet payment — charged immediately, order is complete.
-      clearCart();
       return data;
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to place order';
