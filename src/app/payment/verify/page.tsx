@@ -51,11 +51,15 @@ function PaymentVerifyInner() {
 
     const poll = async () => {
       try {
-        const res = await api.get(`/transactions/reference/${reference}`);
+        // Actively verify + finalize (confirms the charge with Paystack and
+        // records the order server-side) rather than waiting on the webhook.
+        // Idempotent, and safe for wallet refs too (it reports their status
+        // without hitting Paystack).
+        const res = await api.post(`/webhook/verify/${reference}`);
         const data = res.data?.data ?? res.data;
         const s = data?.status;
         if (cancelled) return;
-        if (s === 'success') {
+        if (data?.success === true || s === 'success') {
           setStatus('success');
           return;
         }
@@ -64,13 +68,13 @@ function PaymentVerifyInner() {
           return;
         }
       } catch {
-        /* keep polling — the webhook may still be processing */
+        /* keep trying — Paystack settlement may lag a moment */
       }
       if (cancelled) return;
       if (attempts++ < maxAttempts) {
         setTimeout(poll, 3000);
       } else {
-        // Timed out while still pending — the webhook will still process it.
+        // Still not settled — the webhook will finalize it if it lands later.
         setStatus('failed');
       }
     };
