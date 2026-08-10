@@ -243,7 +243,13 @@ export default function CheckoutPage() {
       accessCode,
       onSuccess: (ref) => {
         const r = ref || reference;
-        router.push(r ? `/payment/verify?reference=${encodeURIComponent(r)}` : '/payment/verify');
+        // Full-page navigation (NOT router.push): an SPA transition leaves the
+        // Paystack popup's full-screen overlay mounted in the DOM on the next
+        // page, which silently blocks every click. A hard navigation tears it
+        // down — this is what the vendor platform does too.
+        window.location.href = r
+          ? `/payment/verify?reference=${encodeURIComponent(r)}`
+          : '/payment/verify';
       },
       onClose: () => {
         // Customer dismissed the popup without paying — keep the cart/order.
