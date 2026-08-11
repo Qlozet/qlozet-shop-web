@@ -129,8 +129,16 @@ export function useCheckout() {
     return (preview?.subtotal ?? 0) + totalShipping;
   }, [preview, totalShipping]);
 
+  // Cart lines that went out of stock since being added (from the preview).
+  const unavailableItems = useMemo(
+    () => preview?.unavailable_items ?? [],
+    [preview],
+  );
+
   const isReady = useMemo(() => {
     if (!preview) return false;
+    // Nothing in the cart may be out of stock.
+    if (unavailableItems.length > 0) return false;
     // Every vendor must have a courier selected
     const allVendorsSelected = preview.vendor_shipping.every((vs) =>
       selectedCouriers.some((s) => s.business_id === vs.business_id)
@@ -142,13 +150,17 @@ export function useCheckout() {
       )
     );
     return allVendorsSelected && allFabricSelected;
-  }, [preview, selectedCouriers, selectedFabricCouriers]);
+  }, [preview, unavailableItems, selectedCouriers, selectedFabricCouriers]);
 
   // ── Place order ────────────────────────────────────────────
   const placeOrder = useCallback(async (
     paymentMethod: 'paystack' | 'wallet' = 'paystack',
     addressId?: string,
   ) => {
+    if (unavailableItems.length > 0) {
+      setError('Some items are no longer available. Please remove them before checking out.');
+      return null;
+    }
     if (!preview || !isReady) {
       setError('Please select shipping for all vendors before placing your order.');
       return null;
@@ -218,7 +230,7 @@ export function useCheckout() {
     } finally {
       setPlacing(false);
     }
-  }, [preview, isReady, cart, selectedCouriers, selectedFabricCouriers, clearCart]);
+  }, [preview, isReady, unavailableItems, cart, selectedCouriers, selectedFabricCouriers, clearCart]);
 
   // ── Reset ──────────────────────────────────────────────────
   const reset = useCallback(() => {
@@ -247,6 +259,7 @@ export function useCheckout() {
     totalShipping,
     total,
     isReady,
+    unavailableItems,
 
     // Actions
     fetchPreview,

@@ -725,12 +725,20 @@ export interface FabricTransferRate {
   fastest_rate: number;
 }
 
+export interface UnavailableItem {
+  product_id: string;
+  product_name: string;
+  reason: string;
+}
+
 export interface CheckoutPreviewResponse {
   vendor_shipping: VendorShippingRate[];
   fabric_transfers: FabricTransferRate[];
   total_shipping_fee: number;
   subtotal: number;
   total: number;
+  /** Cart lines no longer purchasable — block checkout when non-empty. */
+  unavailable_items?: UnavailableItem[];
 }
 
 // ═══════════════════════════════════════════════════════════════
