@@ -86,6 +86,7 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
                 price={getProductPrice(product)}
                 originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
                 tag={getProductTag(product)}
+                stockState={product.availability?.state}
                 isFavorite={wishlist.includes(product._id)}
                 onFavoriteToggle={() => toggleWishlist(product._id)}
               />

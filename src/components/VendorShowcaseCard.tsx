@@ -7,6 +7,7 @@ import { Tag } from 'lucide-react';
 import type { ApiBusinessPublic } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
 import { getProductImage, getProductName } from '@/lib/api-types';
+import { StockBadge, soldOutImageStyle } from '@/components/StockBadge';
 
 interface VendorShowcaseCardProps {
   vendor: ApiBusinessPublic;
@@ -275,10 +276,12 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                     quality={90}
                     className="object-cover group-hover/thumb:scale-110 transition-transform duration-300"
                     sizes="200px"
+                    style={product.availability?.state === 'out_of_stock' ? soldOutImageStyle : undefined}
                   />
                 ) : (
                   <div className="w-full h-full bg-[#E8E0D8]" />
                 )}
+                <StockBadge state={product.availability?.state} size="sm" />
               </Link>
             );
           })

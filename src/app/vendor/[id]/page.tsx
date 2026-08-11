@@ -15,6 +15,7 @@ import {
   getProductTag, hasDiscount,
 } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
+import { ProductThumb } from '@/components/ProductThumb';
 import {
   Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag
 } from 'lucide-react';
@@ -413,17 +414,20 @@ export default function VendorPage() {
 
               return (
                 <Link href={`/products/${product._id}`} key={product._id} className="flex flex-col group cursor-pointer w-full">
-                  <div className="relative w-full rounded-[14px] lg:rounded-[20px] overflow-hidden" style={{ backgroundColor: midBg, aspectRatio: '214/264', marginBottom: '14px' }}>
-                    <Image src={prodImage} alt={prodName} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
-                    {prodTag === 'CUSTOMIZABLE' && (
-                      <div style={{ position: 'absolute', bottom: '10px', left: '10px', backgroundColor: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#2D2D2D', fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 12px', borderRadius: '6px', lineHeight: 1, pointerEvents: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                        CUSTOMIZABLE
-                      </div>
-                    )}
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product._id); }} className="absolute bottom-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border border-white/15" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                  <ProductThumb
+                    imageUrl={prodImage}
+                    alt={prodName}
+                    aspectRatio="214/264"
+                    bg={midBg}
+                    containerClassName="rounded-[14px] lg:rounded-[20px] mb-[14px]"
+                    imageClassName="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    stockState={product.availability?.state}
+                    customizable={prodTag === 'CUSTOMIZABLE'}
+                  >
+                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product._id); }} className="absolute bottom-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border border-white/15" style={{ backgroundColor: 'rgba(255,255,255,0.15)', zIndex: 3 }}>
                       <Heart size={14} className={isFav ? "fill-white text-white" : "text-white"} />
                     </button>
-                  </div>
+                  </ProductThumb>
 
                   <div className="flex flex-col gap-1 px-1">
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
