@@ -15,6 +15,7 @@ import {
   getProductTag, hasDiscount,
 } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
+import { StockBadge, soldOutImageStyle } from '@/components/StockBadge';
 import {
   Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag
 } from 'lucide-react';
@@ -414,7 +415,8 @@ export default function VendorPage() {
               return (
                 <Link href={`/products/${product._id}`} key={product._id} className="flex flex-col group cursor-pointer w-full">
                   <div className="relative w-full rounded-[14px] lg:rounded-[20px] overflow-hidden" style={{ backgroundColor: midBg, aspectRatio: '214/264', marginBottom: '14px' }}>
-                    <Image src={prodImage} alt={prodName} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                    <Image src={prodImage} alt={prodName} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" style={product.availability?.state === 'out_of_stock' ? soldOutImageStyle : undefined} />
+                    <StockBadge state={product.availability?.state} />
                     {prodTag === 'CUSTOMIZABLE' && (
                       <div style={{ position: 'absolute', bottom: '10px', left: '10px', backgroundColor: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#2D2D2D', fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 12px', borderRadius: '6px', lineHeight: 1, pointerEvents: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                         CUSTOMIZABLE
