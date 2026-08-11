@@ -717,6 +717,28 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* ── OUT-OF-STOCK NOTICE ────────────────────────────── */}
+          {checkout.unavailableItems.length > 0 && (
+            <div style={{ padding: '12px 14px', borderRadius: '12px', background: '#FEF2F2', border: '1px solid rgba(180,35,42,0.18)', marginBottom: '12px' }}>
+              <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
+                <AlertCircle size={14} color="#B4232A" className="flex-shrink-0" />
+                <p style={{ fontSize: '12px', fontWeight: 800, color: '#B4232A', margin: 0 }}>
+                  Some items are no longer available
+                </p>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '22px' }}>
+                {checkout.unavailableItems.map((it) => (
+                  <li key={it.product_id} style={{ fontSize: '11.5px', color: '#8A1E24', lineHeight: 1.7 }}>
+                    <strong>{it.product_name}</strong> — {it.reason}
+                  </li>
+                ))}
+              </ul>
+              <p style={{ fontSize: '11px', color: '#8A1E24', margin: '6px 0 0' }}>
+                Remove them from your cart to continue.
+              </p>
+            </div>
+          )}
+
           {/* ── BUY NOW BUTTON ─────────────────────────────────── */}
           {(payError || (checkout.error && !checkout.loading)) && (
             <div className="flex items-start gap-2" style={{ padding: '10px 14px', borderRadius: '10px', background: '#FEF2F2', marginBottom: '12px' }}>
