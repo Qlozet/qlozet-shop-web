@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import type { StockState } from '@/lib/api-types';
 import { StockBadge, soldOutImageStyle } from '@/components/StockBadge';
+import { CustomizableBadge } from '@/components/ProductThumb';
 
 export interface ProductCardProps {
   id: string | number;
@@ -82,31 +83,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Stock badge (top-left) */}
           <StockBadge state={stockState} />
 
-          {/* Customizable Tag Badge */}
-          {tag === 'CUSTOMIZABLE' && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '10px',
-                left: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.75)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                color: '#2D2D2D',
-                fontSize: '9px',
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '5px 12px',
-                borderRadius: '6px',
-                lineHeight: 1,
-                pointerEvents: 'none',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              }}
-            >
-              CUSTOMIZABLE
-            </div>
-          )}
+          {/* Customizable Tag Badge (bottom-left) */}
+          {tag === 'CUSTOMIZABLE' && <CustomizableBadge />}
         </div>
         
         {/* Favorite Button */}
