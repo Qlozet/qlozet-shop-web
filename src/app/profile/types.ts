@@ -116,6 +116,8 @@ export interface OrderItem {
   pricing?: OrderItemPricing;
   /** Custom (customize) item's design choices — populated styles/fabric/etc. */
   choices?: DesignChoice[];
+  /** Catalog product id — used to review the item after delivery. */
+  productId?: string;
 }
 
 export interface Order {
