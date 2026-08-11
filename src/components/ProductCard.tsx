@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
+import type { StockState } from '@/lib/api-types';
 
 export interface ProductCardProps {
   id: string | number;
@@ -15,6 +16,8 @@ export interface ProductCardProps {
   tag?: string;
   isFavorite?: boolean;
   onFavoriteToggle?: (id: string | number) => void;
+  /** Computed stock state — badges + dims the card when sold out. */
+  stockState?: StockState;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -27,7 +30,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   tag,
   isFavorite = false,
   onFavoriteToggle,
+  stockState,
 }) => {
+  const soldOut = stockState === 'out_of_stock';
+  const lowStock = stockState === 'low_stock';
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent link navigation when clicking the favorite button
     e.stopPropagation();
@@ -70,7 +76,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            style={soldOut ? { opacity: 0.55, filter: 'grayscale(0.4)' } : undefined}
           />
+
+          {/* Stock badge (top-left) */}
+          {(soldOut || lowStock) && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                backgroundColor: soldOut ? 'rgba(26,26,26,0.82)' : 'rgba(180,83,9,0.92)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                color: '#FFFFFF',
+                fontSize: '9px',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                padding: '5px 10px',
+                borderRadius: '6px',
+                lineHeight: 1,
+                pointerEvents: 'none',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              }}
+            >
+              {soldOut ? 'Sold out' : 'Low stock'}
+            </div>
+          )}
 
           {/* Customizable Tag Badge */}
           {tag === 'CUSTOMIZABLE' && (

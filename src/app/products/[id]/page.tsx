@@ -143,7 +143,7 @@ export default function ProductDetailsPage() {
   const fabricMinCut = Math.max(0.5, Number(product?.fabric?.min_cut) || 1);
   const fabricPricePerYard = Number(product?.fabric?.price_per_yard) || 0;
   const rating = product?.average_rating ?? 0;
-  const totalReviews = product?.total_ratings ?? 0;
+  const totalReviews = product?.total_ratings ?? 0; 
 
   // Vendor info from populated business field
   const vendorName = typeof product?.business === 'object' ? product.business?.business_name ?? '' : '';
@@ -696,8 +696,27 @@ export default function ProductDetailsPage() {
     appliedFabricMinCut, resolveGarmentYards, selectedSize,
   ]);
 
+  // ── Stock availability (computed server-side) ─────────────────
+  const availability = product?.availability;
+  const isCustomizeGarment = product?.clothing?.type === 'customize';
+  // Fabric: yards remaining (cap the yardage picker at this).
+  const fabricYardsLeft =
+    availability?.fabric?.yard_length ?? Number(product?.fabric?.yard_length) ?? 0;
+  // The specific clothing variant the customer picked, and whether it's out.
+  const selectedVariant =
+    product?.kind === 'clothing' && !isCustomizeGarment && availability?.variants
+      ? availability.variants.find(
+          (v) => v.color === selectedColor && v.size === selectedSize,
+        )
+      : undefined;
+  const selectedVariantOut = selectedVariant ? selectedVariant.stock <= 0 : false;
+  const productOutOfStock =
+    !isCustomizeGarment && availability?.state === 'out_of_stock';
+  const lowStock = availability?.state === 'low_stock';
+  const canAddToCart = !productOutOfStock && !selectedVariantOut;
+
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || !canAddToCart) return;
     const selections = buildSelections();
 
     addToCart({
@@ -1700,39 +1719,72 @@ export default function ProductDetailsPage() {
                     <input
                       type="number"
                       min={fabricMinCut}
+                      max={fabricYardsLeft || undefined}
                       step={0.5}
                       value={fabricYards}
                       onChange={(e) => setFabricYards(Number(e.target.value) || fabricMinCut)}
-                      onBlur={(e) => setFabricYards(Math.max(fabricMinCut, Number(e.target.value) || fabricMinCut))}
+                      onBlur={(e) => {
+                        const v = Math.max(fabricMinCut, Number(e.target.value) || fabricMinCut);
+                        setFabricYards(fabricYardsLeft > 0 ? Math.min(v, fabricYardsLeft) : v);
+                      }}
                       className="text-center"
                       style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1px solid #E0E0E0', fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}
                     />
                     <button
                       type="button"
-                      onClick={() => setFabricYards((y) => Math.round(((y || fabricMinCut) + 0.5) * 2) / 2)}
+                      onClick={() => setFabricYards((y) => {
+                        const next = Math.round(((y || fabricMinCut) + 0.5) * 2) / 2;
+                        return fabricYardsLeft > 0 ? Math.min(next, fabricYardsLeft) : next;
+                      })}
                       aria-label="Increase yards"
-                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5"
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                      disabled={fabricYardsLeft > 0 && fabricYards >= fabricYardsLeft}
                       style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#FFF', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}
                     >
                       +
                     </button>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#AAA' }}>Minimum cut: {fabricMinCut} yd</span>
+                  <span style={{ fontSize: '11px', color: '#AAA' }}>
+                    Minimum cut: {fabricMinCut} yd
+                    {lowStock && fabricYardsLeft > 0 ? ` · only ${fabricYardsLeft} yd left` : ''}
+                  </span>
+                </div>
+              )}
+
+              {/* Stock notice */}
+              {(productOutOfStock || selectedVariantOut || lowStock) && (
+                <div
+                  style={{
+                    fontSize: '12px', fontWeight: 700,
+                    color: productOutOfStock || selectedVariantOut ? '#B4232A' : '#B4530A',
+                    background: productOutOfStock || selectedVariantOut ? 'rgba(180,35,42,0.06)' : 'rgba(180,83,10,0.07)',
+                    border: `1px solid ${productOutOfStock || selectedVariantOut ? 'rgba(180,35,42,0.15)' : 'rgba(180,83,10,0.15)'}`,
+                    borderRadius: '10px', padding: '10px 12px', textAlign: 'center',
+                  }}
+                >
+                  {productOutOfStock
+                    ? 'Sold out — currently unavailable'
+                    : selectedVariantOut
+                      ? `${selectedColor || 'This option'}${selectedSize ? ` / ${selectedSize}` : ''} is out of stock — pick another`
+                      : selectedVariant?.stock
+                        ? `Almost gone — only ${selectedVariant.stock} left`
+                        : 'Low stock — order soon'}
                 </div>
               )}
 
               <button
                 onClick={handleAddToCart}
-                className="w-full flex items-center justify-center transition-all hover:opacity-90"
+                disabled={!canAddToCart}
+                className="w-full flex items-center justify-center transition-all hover:opacity-90 disabled:cursor-not-allowed"
                 style={{
                   padding: '15px', borderRadius: '14px',
-                  background: '#064E3B', color: '#FFFFFF', border: 'none',
+                  background: canAddToCart ? '#064E3B' : '#9CA3AF', color: '#FFFFFF', border: 'none',
                   fontSize: '13px', fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.08em', cursor: 'pointer', gap: '8px',
+                  letterSpacing: '0.08em', cursor: canAddToCart ? 'pointer' : 'not-allowed', gap: '8px',
                 }}
               >
                 <ShoppingCart size={15} />
-                Add to Cart
+                {productOutOfStock || selectedVariantOut ? 'Sold out' : 'Add to Cart'}
               </button>
 
               {isFabric && (
