@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
   Package, ChevronRight, ArrowLeft, MessageCircle, Ruler, Truck,
-  RotateCcw, Loader2, Store, ShoppingBag,
+  RotateCcw, Loader2, Store, ShoppingBag, Star,
 } from 'lucide-react';
 import { cardStyle, statusColors } from '../styles';
 import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
+import { WriteReviewModal } from '@/components/WriteReviewModal';
 
 // ─── Tokens ──────────────────────────────────────────────────
 const INK = '#1A1A1A';
@@ -154,6 +155,7 @@ export default function OrdersSection({
   selectedItemIdx, setSelectedItemIdx, onRequestReturn,
 }: OrdersSectionProps) {
   const [orderFilter, setOrderFilter] = useState<'All' | OrderStatus>('All');
+  const [reviewFor, setReviewFor] = useState<{ productId: string; name: string; image: string } | null>(null);
   const { orders, loading, error } = useCustomerOrders();
   const filtered = orderFilter === 'All' ? orders : orders.filter((o) => o.status === orderFilter);
 
@@ -350,6 +352,19 @@ export default function OrdersSection({
               </div>
             </Section>
 
+            {/* Review — only for delivered catalog products (bespoke has none) */}
+            {order.status === 'Delivered' && item.productId && !isBespoke && (
+              <Section title="Rate your purchase">
+                <button
+                  onClick={() => setReviewFor({ productId: item.productId!, name: item.name, image: item.image })}
+                  className="w-full flex items-center justify-center transition-opacity hover:opacity-90"
+                  style={{ gap: '8px', padding: '12px', borderRadius: '12px', background: BROWN, color: '#FFF', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                >
+                  <Star size={15} fill="#FFF" /> Write a review
+                </button>
+              </Section>
+            )}
+
             <Section title="Support">
               <button className="w-full transition-all hover:opacity-90"
                 style={{ padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -371,6 +386,16 @@ export default function OrdersSection({
           style={{ gap: '8px', padding: '14px', borderRadius: '14px', background: ESPRESSO, color: '#FFF', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
           <Truck size={16} /> Track Order
         </button>
+
+        {reviewFor && (
+          <WriteReviewModal
+            isOpen
+            onClose={() => setReviewFor(null)}
+            productId={reviewFor.productId}
+            productName={reviewFor.name}
+            productImage={reviewFor.image}
+          />
+        )}
       </div>
     );
   }

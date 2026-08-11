@@ -16,6 +16,20 @@ import {
 } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
 import { ProductThumb } from '@/components/ProductThumb';
+import { api } from '@/lib/api';
+
+// Relative date from a Mongo ObjectId's embedded timestamp.
+function reviewDate(id?: string): string {
+  if (!id || id.length < 8) return '';
+  const secs = parseInt(id.substring(0, 8), 16);
+  if (!secs) return '';
+  const diff = Date.now() - secs * 1000;
+  const day = 86400000;
+  if (diff < day) return 'Today';
+  if (diff < 2 * day) return 'Yesterday';
+  if (diff < 7 * day) return `${Math.floor(diff / day)} days ago`;
+  return new Date(secs * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 import {
   Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag
 } from 'lucide-react';
@@ -101,6 +115,29 @@ export default function VendorPage() {
   const [showFilter, setShowFilter] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
+
+  // Vendor reviews (aggregated across the vendor's products) — fetched on open.
+  const [vendorReviews, setVendorReviews] = useState<any[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<any>(null);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!showReviews || reviewsLoaded || !vendorId) return;
+    (async () => {
+      try {
+        const res = await api.get('/products/ratings/vendor', {
+          params: { business_id: vendorId, size: 50 },
+        });
+        const data = res.data?.data ?? res.data;
+        setReviewSummary(data?.summary ?? null);
+        setVendorReviews(Array.isArray(data?.reviews) ? data.reviews : []);
+      } catch {
+        setVendorReviews([]);
+      } finally {
+        setReviewsLoaded(true);
+      }
+    })();
+  }, [showReviews, reviewsLoaded, vendorId]);
 
   // Filters. `activeFilter` is 'All', a collection id, or a deal sentinel
   // '__deal__:<discountId>' (or '__deal__:all') when filtering by an offer.
@@ -544,7 +581,12 @@ export default function VendorPage() {
                 </div>
                 <div className="flex-1 flex flex-col gap-1.5">
                   {[5, 4, 3, 2, 1].map((star) => {
-                    const pct = star === 5 ? 68 : star === 4 ? 22 : star === 3 ? 7 : star === 2 ? 2 : 1;
+                    const starCount =
+                      reviewSummary?.[
+                        star === 5 ? 'five_star' : star === 4 ? 'four_star' : star === 3 ? 'three_star' : star === 2 ? 'two_star' : 'one_star'
+                      ] ?? 0;
+                    const totalR = reviewSummary?.total_reviews ?? 0;
+                    const pct = totalR > 0 ? Math.round((starCount / totalR) * 100) : 0;
                     return (
                       <div key={star} className="flex items-center gap-2">
                         <span style={{ color: sheetMuted, fontSize: '10px', fontWeight: 700, width: '12px' }}>{star}</span>
@@ -558,47 +600,56 @@ export default function VendorPage() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '20px 24px' }}>
-              <div className="flex flex-col gap-4">
-                {[
-                  { name: 'Kerry', initial: 'K', rating: 5, text: 'Nice and heavy, well made material. I bought a size bigger in the zippy and shorts and they fit so comfortably.', date: 'Today', productIdx: 0 },
-                  { name: 'Adaeze', initial: 'A', rating: 5, text: 'Absolutely stunning craftsmanship. The embroidery detail is exquisite and the fabric quality is top tier.', date: '2 days ago', productIdx: 1 },
-                  { name: 'Tunde', initial: 'T', rating: 4, text: 'Great quality agbada. Delivery was fast. Would have loved more color options though.', date: '1 week ago', productIdx: 2 },
-                ].map((review, idx) => {
-                  const reviewProduct = vendorProducts[review.productIdx % vendorProducts.length];
-                  return (
-                    <div key={idx} style={{ backgroundColor: sheetSubtle, borderRadius: '16px', padding: '16px' }}>
-                      {reviewProduct && (
-                        <div className="flex items-center gap-3" style={{ marginBottom: '12px', padding: '8px', borderRadius: '12px', backgroundColor: sheetSubtle }}>
-                          <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '40px', height: '40px', borderRadius: '10px' }}>
-                            <Image src={getProductImage(reviewProduct)} alt={getProductName(reviewProduct)} fill className="object-cover" />
+              {!reviewsLoaded ? (
+                <p style={{ color: sheetMuted, fontSize: '13px' }}>Loading reviews…</p>
+              ) : vendorReviews.length === 0 ? (
+                <p style={{ color: sheetMuted, fontSize: '13px' }}>This vendor has no reviews yet.</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {vendorReviews.map((review, idx) => {
+                    const name = review.reviewer?.name || review.reviewer?.email?.split('@')[0] || 'Verified buyer';
+                    const rating = review.rating || 0;
+                    const reviewProduct = vendorProducts.find(
+                      (p) => String(p._id) === String(review.product_id),
+                    );
+                    return (
+                      <div key={idx} style={{ backgroundColor: sheetSubtle, borderRadius: '16px', padding: '16px' }}>
+                        {(reviewProduct || review.product_name) && (
+                          <div className="flex items-center gap-3" style={{ marginBottom: '12px', padding: '8px', borderRadius: '12px', backgroundColor: sheetSubtle }}>
+                            {reviewProduct && (
+                              <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '40px', height: '40px', borderRadius: '10px' }}>
+                                <Image src={getProductImage(reviewProduct)} alt={getProductName(reviewProduct)} fill className="object-cover" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p style={{ color: sheetText, fontSize: '12px', fontWeight: 700 }} className="truncate">{reviewProduct ? getProductName(reviewProduct) : review.product_name}</p>
+                              {reviewProduct && <p style={{ color: sheetMuted, fontSize: '10px' }}>₦{getProductPrice(reviewProduct).toLocaleString()}</p>}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p style={{ color: sheetText, fontSize: '12px', fontWeight: 700 }} className="truncate">{getProductName(reviewProduct)}</p>
-                            <p style={{ color: sheetMuted, fontSize: '10px' }}>₦{getProductPrice(reviewProduct).toLocaleString()}</p>
+                        )}
+                        <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center text-[11px] font-bold" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: sheetSubtle, color: sheetText }}>
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ color: sheetText, fontSize: '14px', fontWeight: 700 }}>{name}</span>
+                          </div>
+                          <div className="flex text-[10px] text-amber-400">
+                            {Array.from({ length: rating }).map((_, i) => <span key={i}>★</span>)}
+                            {Array.from({ length: 5 - rating }).map((_, i) => <span key={i} style={{ color: sheetBorder }}>★</span>)}
                           </div>
                         </div>
-                      )}
-                      <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center text-[11px] font-bold" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: sheetSubtle, color: sheetText }}>
-                            {review.initial}
-                          </div>
-                          <span style={{ color: sheetText, fontSize: '14px', fontWeight: 700 }}>{review.name}</span>
-                        </div>
-                        <div className="flex text-[10px] text-amber-400">
-                          {Array.from({ length: review.rating }).map((_, i) => <span key={i}>★</span>)}
-                          {Array.from({ length: 5 - review.rating }).map((_, i) => <span key={i} style={{ color: sheetBorder }}>★</span>)}
+                        {review.comment && (
+                          <p style={{ color: isLightTheme ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', fontSize: '12px', lineHeight: 1.6, marginBottom: '10px' }}>{review.comment}</p>
+                        )}
+                        <div className="flex items-center justify-between text-[10px]" style={{ color: sheetMuted }}>
+                          <span>{reviewDate(typeof review.created_at === 'string' ? review.created_at : undefined)}</span>
                         </div>
                       </div>
-                      <p style={{ color: isLightTheme ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', fontSize: '12px', lineHeight: 1.6, marginBottom: '10px' }}>{review.text}</p>
-                      <div className="flex items-center justify-between text-[10px]" style={{ color: sheetMuted }}>
-                        <span>{review.date}</span>
-                        <button className="transition-colors" style={{ color: sheetMuted }}>Helpful</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </>,

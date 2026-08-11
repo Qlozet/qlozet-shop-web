@@ -229,6 +229,12 @@ function mapItem(
     vendorLogo: vendor?.business_logo_url,
     pricing: item.pricing,
     choices: productType === 'custom' ? itemChoices(item) : undefined,
+    productId:
+      item.product && typeof item.product === 'object'
+        ? item.product._id
+        : typeof item.product === 'string'
+          ? item.product
+          : undefined,
   };
 }
 
