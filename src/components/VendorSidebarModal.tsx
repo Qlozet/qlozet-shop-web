@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import type { ApiBusinessPublic, ApiCollection } from '@/lib/api-types';
-import { 
+import { api } from '@/lib/api';
+import {
   X, Share, ChevronRight, Info, DollarSign, Calendar,
   Camera as Instagram, PlayCircle as Youtube, Link as LinkIcon, Mail, AlertCircle
 } from 'lucide-react';
@@ -18,11 +19,52 @@ interface VendorSidebarModalProps {
   isLightTheme?: boolean;
 }
 
+function reviewDate(id?: string): string {
+  if (!id || id.length < 8) return '';
+  const secs = parseInt(id.substring(0, 8), 16);
+  if (!secs) return '';
+  const diff = Date.now() - secs * 1000;
+  const day = 86400000;
+  if (diff < day) return 'Today';
+  if (diff < 2 * day) return 'Yesterday';
+  if (diff < 7 * day) return `${Math.floor(diff / day)} days ago`;
+  return new Date(secs * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
 export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], onShowReviews, isLightTheme = false }: VendorSidebarModalProps) {
   const vendorName = vendor.business_name;
   const vendorLogo = vendor.business_logo_url;
-  const vendorRating = vendor.average_rating ?? 0;
-  const vendorReviewCount = vendor.total_ratings ?? 0;
+
+  // Prefer the live aggregate (from the reviews API) over the possibly-stale
+  // fields on the vendor object, so the score always reflects real ratings.
+  const [liveAvg, setLiveAvg] = useState<number | null>(null);
+  const [liveTotal, setLiveTotal] = useState<number | null>(null);
+  const [latestReview, setLatestReview] = useState<any | null>(null);
+  const [loadedReviews, setLoadedReviews] = useState(false);
+
+  const vendorRating = liveAvg ?? vendor.average_rating ?? 0;
+  const vendorReviewCount = liveTotal ?? vendor.total_ratings ?? 0;
+
+  useEffect(() => {
+    if (!isOpen || loadedReviews || !vendor._id) return;
+    (async () => {
+      try {
+        const res = await api.get('/products/ratings/vendor', {
+          params: { business_id: vendor._id, size: 1, sortBy: 'recent' },
+        });
+        const data = res.data?.data ?? res.data;
+        if (data?.summary) {
+          setLiveAvg(data.summary.average_rating ?? null);
+          setLiveTotal(data.summary.total_reviews ?? null);
+        }
+        setLatestReview(Array.isArray(data?.reviews) ? data.reviews[0] ?? null : null);
+      } catch {
+        setLatestReview(null);
+      } finally {
+        setLoadedReviews(true);
+      }
+    })();
+  }, [isOpen, loadedReviews, vendor._id]);
   const coverImage = vendor.cover_image_url || '/image/bespoke-agbada-orange.webp';
   const logoInitials = vendorName.slice(0, 2).toUpperCase();
 
@@ -95,33 +137,44 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
             </div>
             <div>
               <div className="flex items-baseline gap-2" style={{ color: sText, fontSize: '30px', fontWeight: 700 }}>
-                {vendorRating.toFixed(1)}
+                {Number(vendorRating || 0).toFixed(1)}
                 <div className="flex text-[10px]">
-                  <span>★</span><span>★</span><span>★</span><span>★</span><span style={{ color: sMuted }}>★</span>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <span key={s} style={{ color: s <= Math.round(vendorRating) ? undefined : sMuted }}>★</span>
+                  ))}
                 </div>
               </div>
-              <p style={{ color: sMuted, fontSize: '12px' }}>{vendorReviewCount} ratings</p>
+              <p style={{ color: sMuted, fontSize: '12px' }}>{vendorReviewCount} rating{vendorReviewCount === 1 ? '' : 's'}</p>
             </div>
 
-            {/* Mock Review */}
-            <div style={{ backgroundColor: sSubtle, borderRadius: '16px', padding: '16px' }}>
-              <div className="flex items-center" style={{ gap: '8px', marginBottom: '8px', fontSize: '10px', color: sText }}>
-                <div className="bg-gray-200" style={{ width: '24px', height: '24px', borderRadius: '6px' }}></div>
-                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-              </div>
-              <p style={{ color: sMuted, fontSize: '12px', lineHeight: 1.6, marginBottom: '12px' }}>
-                Nice and heavy, well made material. I bought a size bigger in the zippy and shorts and they fit so comfortably.
-              </p>
-              <div className="flex items-center justify-between text-[10px]" style={{ color: sMuted }}>
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center text-[8px] text-white">K</div>
-                  <span>Kerry • Today</span>
+            {/* Latest review (real) */}
+            {latestReview ? (
+              <div style={{ backgroundColor: sSubtle, borderRadius: '16px', padding: '16px' }}>
+                <div className="flex items-center" style={{ gap: '8px', marginBottom: '8px', fontSize: '10px', color: sText }}>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <span key={s} style={{ color: s <= (latestReview.rating || 0) ? undefined : sMuted }}>★</span>
+                  ))}
                 </div>
-                <button className="flex items-center gap-1" style={{ color: sMuted }}>
-                  <span>Helpful</span>
-                </button>
+                {latestReview.comment && (
+                  <p style={{ color: sMuted, fontSize: '12px', lineHeight: 1.6, marginBottom: '12px' }}>
+                    {latestReview.comment}
+                  </p>
+                )}
+                <div className="flex items-center justify-between text-[10px]" style={{ color: sMuted }}>
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center text-[8px] text-white">
+                      {(latestReview.reviewer?.name || latestReview.reviewer?.email || 'B').charAt(0).toUpperCase()}
+                    </div>
+                    <span>
+                      {(latestReview.reviewer?.name || latestReview.reviewer?.email?.split('@')[0] || 'Verified buyer')}
+                      {reviewDate(typeof latestReview.created_at === 'string' ? latestReview.created_at : undefined) ? ` • ${reviewDate(latestReview.created_at)}` : ''}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : loadedReviews ? (
+              <p style={{ color: sMuted, fontSize: '12px' }}>No reviews yet.</p>
+            ) : null}
           </div>
 
           {/* Policies Block */}
