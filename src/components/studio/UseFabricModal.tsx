@@ -24,6 +24,8 @@ interface UseFabricModalProps {
   fabricImage: string;
   fabricName: string;
   fabricId: string;
+  /** Fabric is out of stock — block applying it to an outfit. */
+  soldOut?: boolean;
 }
 
 export const UseFabricModal: React.FC<UseFabricModalProps> = ({
@@ -32,6 +34,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
   fabricImage,
   fabricName,
   fabricId,
+  soldOut = false,
 }) => {
   const router = useRouter();
   const [step, setStep] = useState<Step>('choose');
@@ -138,14 +141,21 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               </div>
             </div>
 
-            <p style={{ fontSize: '14px', fontWeight: 600, color: '#555', textAlign: 'center', margin: '8px 0' }}>
-              What would you like to use your fabric for?
-            </p>
+            {soldOut ? (
+              <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#B4232A', background: 'rgba(180,35,42,0.06)', border: '1px solid rgba(180,35,42,0.15)', borderRadius: '12px', padding: '12px 14px', textAlign: 'center', margin: '4px 0' }}>
+                This fabric is sold out, so it can&apos;t be applied to an outfit right now. Check back after it&apos;s restocked.
+              </div>
+            ) : (
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#555', textAlign: 'center', margin: '8px 0' }}>
+                What would you like to use your fabric for?
+              </p>
+            )}
 
             {/* Bespoke Card */}
             <button
               onClick={() => setStep('bespoke')}
-              className="w-full flex items-center transition-all hover:scale-[1.01] active:scale-[0.99]"
+              disabled={soldOut}
+              className="w-full flex items-center transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
                 padding: '20px',
                 borderRadius: '20px',
@@ -167,7 +177,8 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
             {/* Custom Card */}
             <button
               onClick={() => setStep('custom')}
-              className="w-full flex items-center transition-all hover:scale-[1.01] active:scale-[0.99]"
+              disabled={soldOut}
+              className="w-full flex items-center transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
                 padding: '16px',
                 borderRadius: '14px',
