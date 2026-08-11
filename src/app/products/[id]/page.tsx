@@ -1839,6 +1839,7 @@ export default function ProductDetailsPage() {
                 fabricImage={productImage}
                 fabricName={productName}
                 fabricId={product._id}
+                soldOut={productOutOfStock}
               />
             )}
 
@@ -1851,6 +1852,9 @@ export default function ProductDetailsPage() {
                 fabricName={productName}
                 fabricImage={productImage}
                 fabricPrice={productPrice}
+                yardsAvailable={fabricYardsLeft}
+                minCut={fabricMinCut}
+                soldOut={productOutOfStock}
               />
             )}
 

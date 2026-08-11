@@ -22,7 +22,16 @@ interface ReserveFabricModalProps {
   fabricName: string;
   fabricImage: string;
   fabricPrice: number;
+  /** Yards currently available (already net of active reservations). */
+  yardsAvailable?: number;
+  /** Vendor's minimum cut for this fabric. */
+  minCut?: number;
+  /** Fabric is out of stock (below min cut). */
+  soldOut?: boolean;
 }
+
+// Bulk reservations start at 6 yards, but never below the fabric's min cut.
+const RESERVE_MIN = 6;
 
 export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   isOpen,
@@ -31,10 +40,19 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   fabricName,
   fabricImage,
   fabricPrice,
+  yardsAvailable = 0,
+  minCut = 0,
+  soldOut = false,
 }) => {
+  const floor = Math.max(RESERVE_MIN, Math.ceil(minCut));
+  // Can't reserve more than what's left; can't reserve at all below the floor.
+  const cap = yardsAvailable > 0 ? Math.floor(yardsAvailable) : 0;
+  const canReserve = !soldOut && cap >= floor;
+  const startYards = Math.min(12, cap >= floor ? cap : floor);
+
   const [step, setStep] = useState<Step>('form');
   const [eventName, setEventName] = useState('');
-  const [yards, setYards] = useState(12);
+  const [yards, setYards] = useState(startYards);
   const [deadline, setDeadline] = useState('');
   const [reservationId, setReservationId] = useState('');
   const [copied, setCopied] = useState(false);
@@ -47,14 +65,15 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   const handleClose = () => {
     setStep('form');
     setEventName('');
-    setYards(12);
+    setYards(startYards);
     setDeadline('');
     setCopied(false);
     onClose();
   };
 
   const handleConfirm = async () => {
-    if (!eventName.trim() || !deadline || yards < 6 || submitting) return;
+    if (!eventName.trim() || !deadline || submitting) return;
+    if (!canReserve || yards < floor || yards > cap) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -166,24 +185,37 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
               />
             </div>
 
+            {/* Sold-out notice */}
+            {!canReserve && (
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#B4232A', background: 'rgba(180,35,42,0.06)', border: '1px solid rgba(180,35,42,0.15)', borderRadius: '10px', padding: '10px 12px' }}>
+                {soldOut || cap <= 0
+                  ? 'This fabric is sold out — reservation unavailable.'
+                  : `Not enough fabric to reserve (only ${cap} yd left, minimum ${floor}).`}
+              </div>
+            )}
+
             {/* Yards Selector */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
               <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Yards to Reserve</label>
-              <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderRadius: '14px', border: '1.5px solid #E5E5E5', background: '#FAFAFA' }}>
+              <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderRadius: '14px', border: '1.5px solid #E5E5E5', background: '#FAFAFA', opacity: canReserve ? 1 : 0.5 }}>
                 <button
-                  onClick={() => setYards(Math.max(6, yards - 6))}
-                  className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full"
+                  onClick={() => setYards(Math.max(floor, yards - 6))}
+                  disabled={!canReserve || yards <= floor}
+                  className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ width: '36px', height: '36px', border: 'none', background: '#EBEBEB', cursor: 'pointer' }}
                 >
                   <Minus size={16} color="#333" />
                 </button>
                 <div className="flex flex-col items-center">
                   <span style={{ fontSize: '24px', fontWeight: 900, color: '#1A1A1A' }}>{yards}</span>
-                  <span style={{ fontSize: '11px', color: '#888' }}>yards</span>
+                  <span style={{ fontSize: '11px', color: '#888' }}>
+                    yards{cap > 0 ? ` · ${cap} available` : ''}
+                  </span>
                 </div>
                 <button
-                  onClick={() => setYards(yards + 6)}
-                  className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full"
+                  onClick={() => setYards(Math.min(cap, yards + 6))}
+                  disabled={!canReserve || yards + 6 > cap}
+                  className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ width: '36px', height: '36px', border: 'none', background: '#EBEBEB', cursor: 'pointer' }}
                 >
                   <Plus size={16} color="#333" />
@@ -303,7 +335,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!eventName.trim() || !deadline || yards < 6 || submitting}
+              disabled={!eventName.trim() || !deadline || !canReserve || yards < floor || yards > cap || submitting}
               className="flex-1 transition-colors hover:opacity-90 disabled:opacity-40"
               style={{ padding: '14px', borderRadius: '14px', background: '#064E3B', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: submitting ? 'wait' : 'pointer' }}
             >
