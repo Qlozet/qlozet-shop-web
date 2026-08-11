@@ -106,6 +106,10 @@ function CatalogContent() {
 
   // ── Client-side sort for price (backend doesn't support price sort) ──
   const sortedProducts = [...filteredProducts].sort((a, b) => {
+    // Always sink sold-out products to the end, whatever the primary sort.
+    const aOut = a.availability?.state === 'out_of_stock' ? 1 : 0;
+    const bOut = b.availability?.state === 'out_of_stock' ? 1 : 0;
+    if (aOut !== bOut) return aOut - bOut;
     if (sortBy === 'priceAsc') return getProductPrice(a) - getProductPrice(b);
     if (sortBy === 'priceDesc') return getProductPrice(b) - getProductPrice(a);
     return 0; // backend handles rating/date sort
@@ -189,6 +193,7 @@ function CatalogContent() {
                   price={getProductPrice(product)}
                   originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
                   tag={getProductTag(product)}
+                  stockState={product.availability?.state}
                   isFavorite={wishlist.includes(product._id)}
                   onFavoriteToggle={(id) => toggleWishlist(id as string)}
                 />

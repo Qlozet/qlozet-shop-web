@@ -153,6 +153,33 @@ export interface ApiBusinessRef {
   description?: string;
 }
 
+// ─── Availability (computed server-side) ──────────────────────
+export type StockState = 'in_stock' | 'low_stock' | 'out_of_stock';
+
+export interface ApiVariantAvailability {
+  _id: string;
+  label?: string;
+  color?: string;
+  size?: string;
+  stock: number;
+  state: StockState;
+}
+
+export interface ApiAvailability {
+  state: StockState;
+  in_stock: boolean;
+  low_stock: boolean;
+  made_to_order?: boolean;
+  total_stock?: number;
+  fabric?: {
+    yard_length: number;
+    min_cut: number;
+    low_yards: number;
+    available: boolean;
+  };
+  variants?: ApiVariantAvailability[];
+}
+
 // ─── Top-Level Product Document ───────────────────────────────
 // Returned by GET /products and GET /products/:id
 
@@ -181,6 +208,9 @@ export interface ApiProduct {
   clothing?: ApiClothing;
   fabric?: ApiFabricSubDoc;
   accessory?: ApiAccessorySubDoc;
+
+  /** Computed per-variant stock availability (PDP + listings). */
+  availability?: ApiAvailability;
 }
 
 // ─── Pagination Wrappers ──────────────────────────────────────
