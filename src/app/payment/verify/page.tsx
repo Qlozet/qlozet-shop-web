@@ -147,7 +147,7 @@ function PaymentVerifyInner() {
               {reservationId ? (
                 <PrimaryLink href={`/reserve/${reservationId}`}>View reservation</PrimaryLink>
               ) : (
-                <PrimaryLink href="/orders">View orders</PrimaryLink>
+                <PrimaryLink href="/profile?tab=orders">View orders</PrimaryLink>
               )}
               <GhostLink href="/products">Continue shopping</GhostLink>
             </Actions>
