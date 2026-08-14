@@ -751,6 +751,10 @@ export interface OrderItemPayload {
   note?: string;
   quantity?: number;
   selections: CartSelections;
+  // Customer-supplied external fabric ("use my own fabric") applied to this
+  // clothing item, carried through so the backend persists it on the order.
+  applied_fabric_id?: string;
+  applied_fabric_yards?: number;
 }
 
 export interface SelectedShipping {

@@ -88,6 +88,14 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
     router.push(`/products/${productId}?fabric=${encodeURIComponent(fabricId)}&customize=true`);
   };
 
+  // Only garments that accept external fabric can have this fabric applied — the
+  // backend rejects the rest at add-to-cart, so gate them out of the picker too.
+  // Treat undefined as allowed; exclude only an explicit `false`.
+  const eligibleItems = customizableWishlistItems.filter((p: any) => {
+    const accepts = p?.clothing?.accepts_external_fabric ?? p?.accepts_external_fabric;
+    return accepts !== false;
+  });
+
   // ── Panel Content ──────────────────────────────────────────────
   const panelContent = (
     <>
@@ -242,11 +250,11 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                 <Loader2 size={32} color="#4C1D95" className="animate-spin" />
                 <p style={{ fontSize: '13px', color: '#999' }}>Loading your customizable items…</p>
               </div>
-            ) : customizableWishlistItems.length === 0 ? (
+            ) : eligibleItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
                 <Pen size={40} color="#CCC" />
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#999', textAlign: 'center' }}>No customizable items in your wishlist</p>
-                <p style={{ fontSize: '13px', color: '#BBB', textAlign: 'center' }}>Browse products and add customizable items to your wishlist first.</p>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: '#999', textAlign: 'center' }}>No eligible items in your wishlist</p>
+                <p style={{ fontSize: '13px', color: '#BBB', textAlign: 'center' }}>Add a customizable item that accepts your own fabric to your wishlist first.</p>
                 <button
                   onClick={() => { handleClose(); router.push('/products'); }}
                   className="transition-all hover:opacity-90"
@@ -257,7 +265,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-2" style={{ gap: '12px' }}>
-                {customizableWishlistItems.map((product) => (
+                {eligibleItems.map((product) => (
                   <button
                     key={product._id}
                     onClick={() => handleSelectProduct(product._id)}

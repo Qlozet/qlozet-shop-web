@@ -170,12 +170,21 @@ export function useCheckout() {
     setError(null);
 
     try {
-      // Build items from cart
+      // Build items from cart. Carry the customer's applied external fabric
+      // ("use my own fabric") through to order creation — without these two
+      // fields the backend never persists the fabric on the order item, so the
+      // tailor's foreign-fabric card comes up empty.
       const items = cart.map((item) => ({
         product_id: item.id,
         note: item.note,
         quantity: item.quantity,
         selections: item.selections || {},
+        ...(item.applied_fabric_id
+          ? {
+              applied_fabric_id: item.applied_fabric_id,
+              applied_fabric_yards: item.applied_fabric_yards,
+            }
+          : {}),
       }));
 
       // Build shipping selections

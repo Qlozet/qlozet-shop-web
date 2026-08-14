@@ -63,6 +63,39 @@ export default function CartPage() {
     };
   }, [cart]);
 
+  // Identity of any applied external fabric, so the cart can show WHICH fabric
+  // (not just its cost). Keyed by fabric product id.
+  const [fabricInfo, setFabricInfo] = useState<
+    Record<string, { name?: string; image?: string }>
+  >({});
+  useEffect(() => {
+    let cancelled = false;
+    const ids = Array.from(
+      new Set(cart.map((i) => i.applied_fabric_id).filter(Boolean) as string[]),
+    );
+    ids.forEach((id) => {
+      api
+        .get(`/products/${id}`)
+        .then((res) => {
+          const fab = res.data?.data ?? res.data;
+          const img = fab?.fabric?.images?.[0] ?? fab?.images?.[0];
+          if (!cancelled) {
+            setFabricInfo((prev) => ({
+              ...prev,
+              [id]: {
+                name: fab?.fabric?.name ?? fab?.name,
+                image: typeof img === 'string' ? img : (img as any)?.url,
+              },
+            }));
+          }
+        })
+        .catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cart]);
+
   // Total discount savings across the cart (§11).
   const totalDiscount = cart.reduce(
     (acc, item) => acc + (breakdowns[item.id]?.discount ?? 0) * item.quantity,
@@ -292,6 +325,27 @@ export default function CartPage() {
                           <span>Final</span>
                           <span>₦{breakdowns[item.id].final.toLocaleString()}</span>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Applied external fabric — which fabric the customer is using */}
+                    {item.applied_fabric_id && fabricInfo[item.applied_fabric_id] && (
+                      <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 6, overflow: 'hidden', background: '#EDE9FE', flexShrink: 0 }}>
+                          {fabricInfo[item.applied_fabric_id].image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={fabricInfo[item.applied_fabric_id].image}
+                              alt={fabricInfo[item.applied_fabric_id].name ?? 'Fabric'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : null}
+                        </div>
+                        <span style={{ fontSize: '12px', color: '#4C1D95' }}>
+                          Using your fabric:{' '}
+                          <strong>{fabricInfo[item.applied_fabric_id].name ?? 'your fabric'}</strong>
+                          {item.applied_fabric_yards ? ` · ${item.applied_fabric_yards} yd` : ''}
+                        </span>
                       </div>
                     )}
 

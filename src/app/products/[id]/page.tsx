@@ -99,6 +99,12 @@ export default function ProductDetailsPage() {
   const appliedFabricId = searchParams.get('fabric') || undefined;
   const [appliedFabricMinCut, setAppliedFabricMinCut] = useState<number>(1);
   const [appliedFabricYards, setAppliedFabricYards] = useState<number | undefined>(undefined);
+  // Identity of the applied fabric, so the customer can see WHICH fabric they
+  // are using (name + thumbnail), not just a yardage box.
+  const [appliedFabricInfo, setAppliedFabricInfo] = useState<{
+    name?: string;
+    image?: string;
+  } | null>(null);
 
   // ── Fetch product from API ─────────────────────────────────────
   const { product, loading: productLoading, error: productError } = useProduct(productId);
@@ -115,6 +121,12 @@ export default function ProductDetailsPage() {
         const minCut = Number(fab?.fabric?.min_cut) || 1;
         if (!cancelled) {
           setAppliedFabricMinCut(minCut);
+          const img =
+            fab?.fabric?.images?.[0] ?? fab?.images?.[0] ?? undefined;
+          setAppliedFabricInfo({
+            name: fab?.fabric?.name ?? fab?.name,
+            image: typeof img === 'string' ? img : img?.url,
+          });
           // Leave appliedFabricYards unset so it defaults to the garment's
           // requirement (resolveGarmentYards) at use time; the input still lets
           // the customer override.
@@ -715,6 +727,18 @@ export default function ProductDetailsPage() {
   const lowStock = availability?.state === 'low_stock';
   const canAddToCart = !productOutOfStock && !selectedVariantOut;
 
+  // Whether this garment accepts a customer-supplied external fabric. The
+  // backend gates this (product-level flag, falling back to the vendor's
+  // setting); mirror it here so we don't offer "apply fabric" on a garment that
+  // will be rejected at add-to-cart. Undefined = allowed; only explicit false
+  // blocks it.
+  const garmentAcceptsFabric =
+    (product as any)?.clothing?.accepts_external_fabric ??
+    (product as any)?.accepts_external_fabric ??
+    true;
+  const canApplyFabric =
+    !!appliedFabricId && product?.kind === 'clothing' && garmentAcceptsFabric;
+
   const handleAddToCart = () => {
     if (!product || !canAddToCart) return;
     const selections = buildSelections();
@@ -734,7 +758,7 @@ export default function ProductDetailsPage() {
       selections,
       // External fabric applied to this garment (cross-vendor) — only meaningful
       // for clothing; the backend ships it to the tailor via a fabric transfer.
-      ...(appliedFabricId && product.kind === 'clothing'
+      ...(canApplyFabric
         ? {
             applied_fabric_id: appliedFabricId,
             // How many yards of the external fabric this garment needs (its
@@ -1657,7 +1681,19 @@ export default function ProductDetailsPage() {
                 </button>
               )}
 
-              {appliedFabricId && product?.kind === 'clothing' && (
+              {appliedFabricId && product?.kind === 'clothing' && !garmentAcceptsFabric && (
+                <div
+                  style={{
+                    fontSize: '12.5px', fontWeight: 600, color: '#92400E',
+                    padding: '12px 14px', borderRadius: '12px',
+                    background: '#FFFBEB', border: '1px solid #FDE68A',
+                  }}
+                >
+                  This item doesn&apos;t accept your own fabric. You can still order it with the vendor&apos;s fabric.
+                </div>
+              )}
+
+              {canApplyFabric && (
                 <div
                   style={{
                     display: 'flex', flexDirection: 'column', gap: '6px',
@@ -1668,6 +1704,23 @@ export default function ProductDetailsPage() {
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#4C1D95', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Applied fabric
                   </span>
+                  {(appliedFabricInfo?.name || appliedFabricInfo?.image) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', background: '#EDE9FE', flexShrink: 0 }}>
+                        {appliedFabricInfo?.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={appliedFabricInfo.image}
+                            alt={appliedFabricInfo?.name ?? 'Fabric'}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : null}
+                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#3B0764' }}>
+                        {appliedFabricInfo?.name ?? 'Your fabric'}
+                      </span>
+                    </div>
+                  )}
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#3B0764' }}>
                     Yards
                     <input
