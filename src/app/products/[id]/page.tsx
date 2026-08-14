@@ -99,6 +99,12 @@ export default function ProductDetailsPage() {
   const appliedFabricId = searchParams.get('fabric') || undefined;
   const [appliedFabricMinCut, setAppliedFabricMinCut] = useState<number>(1);
   const [appliedFabricYards, setAppliedFabricYards] = useState<number | undefined>(undefined);
+  // Identity of the applied fabric, so the customer can see WHICH fabric they
+  // are using (name + thumbnail), not just a yardage box.
+  const [appliedFabricInfo, setAppliedFabricInfo] = useState<{
+    name?: string;
+    image?: string;
+  } | null>(null);
 
   // ── Fetch product from API ─────────────────────────────────────
   const { product, loading: productLoading, error: productError } = useProduct(productId);
@@ -115,6 +121,12 @@ export default function ProductDetailsPage() {
         const minCut = Number(fab?.fabric?.min_cut) || 1;
         if (!cancelled) {
           setAppliedFabricMinCut(minCut);
+          const img =
+            fab?.fabric?.images?.[0] ?? fab?.images?.[0] ?? undefined;
+          setAppliedFabricInfo({
+            name: fab?.fabric?.name ?? fab?.name,
+            image: typeof img === 'string' ? img : img?.url,
+          });
           // Leave appliedFabricYards unset so it defaults to the garment's
           // requirement (resolveGarmentYards) at use time; the input still lets
           // the customer override.
@@ -1668,6 +1680,23 @@ export default function ProductDetailsPage() {
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#4C1D95', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Applied fabric
                   </span>
+                  {(appliedFabricInfo?.name || appliedFabricInfo?.image) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', background: '#EDE9FE', flexShrink: 0 }}>
+                        {appliedFabricInfo?.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={appliedFabricInfo.image}
+                            alt={appliedFabricInfo?.name ?? 'Fabric'}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : null}
+                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#3B0764' }}>
+                        {appliedFabricInfo?.name ?? 'Your fabric'}
+                      </span>
+                    </div>
+                  )}
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#3B0764' }}>
                     Yards
                     <input
