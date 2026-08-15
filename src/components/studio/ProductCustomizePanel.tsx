@@ -94,8 +94,11 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
     const selFabric = (clothing?.fabrics ?? []).find(
       (f: { _id?: string }) => f._id === customization.selectedFabric,
     ) as { name?: string; images?: Array<string | { url?: string }> } | undefined;
-    const fabricImage = firstImg(selFabric?.images);
-    const fabricName = selFabric?.name;
+    // A customer-supplied external fabric ("Use Fabric") overrides the catalog
+    // fabric, so the AI edit renders the garment in the customer's own fabric.
+    const fabricImage =
+      customization.appliedFabric?.image ?? firstImg(selFabric?.images);
+    const fabricName = customization.appliedFabric?.name ?? selFabric?.name;
 
     // ── Accessories: names + first accessory image ──
     const accessoryNames: string[] = [];

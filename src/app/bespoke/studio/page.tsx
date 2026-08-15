@@ -49,6 +49,35 @@ function StudioContent() {
     initialGender: designGender,
   });
 
+  // ─── Applied "Use Fabric" fabric ─────────────────────────────
+  // UseFabricModal routes here as /bespoke/studio?fabric=<id>&design=<img>.
+  // Fetch the chosen fabric and feed it into the studio so it is pre-selected
+  // in the fabric tool sheet AND used as the fabric for image generation
+  // (previously this param was ignored, so generation used catalog fabrics only).
+  const appliedFabricId = searchParams.get('fabric');
+  useEffect(() => {
+    if (!appliedFabricId) return;
+    let cancelled = false;
+    api
+      .get(`/products/${appliedFabricId}`)
+      .then((res) => {
+        const fab = res.data?.data ?? res.data;
+        const img = fab?.fabric?.images?.[0] ?? fab?.images?.[0];
+        if (!cancelled) {
+          customization.setAppliedFabric({
+            id: appliedFabricId,
+            image: typeof img === 'string' ? img : img?.url,
+            name: fab?.fabric?.name ?? fab?.name,
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedFabricId]);
+
   // ─── Load saved design when designId is present ─────────────
   const [designLoaded, setDesignLoaded] = useState(false);
 

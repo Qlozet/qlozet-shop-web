@@ -405,6 +405,22 @@ export default function ProductDetailsPage() {
 
   const customization = useCustomization({ mode: 'product', defaultSection: 'styles' });
 
+  // Feed the applied "Use Fabric" fabric into the customization tool so it is
+  // pre-selected in the fabric sheet AND drives image generation (not just the
+  // order/price). Cleared when no fabric was applied.
+  useEffect(() => {
+    customization.setAppliedFabric(
+      appliedFabricId
+        ? {
+            id: appliedFabricId,
+            image: appliedFabricInfo?.image,
+            name: appliedFabricInfo?.name,
+          }
+        : null,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedFabricId, appliedFabricInfo?.image, appliedFabricInfo?.name]);
+
   // Sync color selection between main product details and Fabric panel
   useEffect(() => {
     if (selectedColor && selectedColor !== customization.selectedColor) {

@@ -15,6 +15,8 @@ interface FabricPanelProps {
   onSelectColor: (color: string) => void;
   selectedSize?: string | null;
   product?: ApiProduct;
+  /** Customer-supplied external fabric ("Use Fabric") — shown pre-selected. */
+  appliedFabric?: { id?: string; name?: string; image?: string } | null;
 }
 
 export const FabricPanel: React.FC<FabricPanelProps> = ({
@@ -24,6 +26,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
   onSelectColor,
   selectedSize,
   product,
+  appliedFabric,
 }) => {
   const productFabrics = product?.clothing?.fabrics || [];
   const colorVariants = product?.clothing?.color_variants || [];
@@ -38,7 +41,8 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
   const hasFabrics = productFabrics.length > 0;
 
   // If we have a product but no fabrics AND no color variants, show empty state
-  if (product && !hasFabrics && !hasColorVariants) {
+  // (unless the customer applied their own fabric, which we always surface).
+  if (product && !hasFabrics && !hasColorVariants && !appliedFabric?.image) {
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
         <p style={{ fontSize: '32px', marginBottom: '12px' }}>🧵</p>
@@ -57,8 +61,24 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
     return gy?.yards;
   })();
 
+  // The customer's applied external fabric always shows first, pre-selected.
+  const appliedFabricOption =
+    appliedFabric?.image
+      ? [
+          {
+            id: appliedFabric.id ?? 'applied-fabric',
+            name: appliedFabric.name || 'Your fabric',
+            image: appliedFabric.image,
+            extraCost: 0,
+            pricePerYard: 0,
+            yards: 0,
+            colors: [] as { name?: string; hex?: string }[],
+          },
+        ]
+      : [];
+
   // Build fabric options from product fabrics — priced by the yard.
-  const fabricOptions = hasFabrics
+  const baseFabricOptions = hasFabrics
     ? productFabrics.map((f) => {
         const pricePerYard = (f as { price_per_yard?: number }).price_per_yard || 0;
         const yards = garmentYards || (f as { min_cut?: number }).min_cut || 1;
@@ -74,6 +94,8 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
         };
       })
     : !hasColorVariants ? libraryFabrics : [];
+
+  const fabricOptions = [...appliedFabricOption, ...(baseFabricOptions as any[])];
 
   // ── Colour filter: distinct colours across the available fabrics ──
   const colorKey = (c?: { name?: string; hex?: string }) =>
