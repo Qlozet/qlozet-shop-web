@@ -31,6 +31,14 @@ export interface UseCustomizationOptions {
   initialGender?: DesignGender;
 }
 
+// A customer-supplied external fabric applied via "Use Fabric": its image drives
+// image generation and it shows pre-selected in the fabric tool sheet.
+export interface AppliedFabric {
+  id?: string;
+  image?: string;
+  name?: string;
+}
+
 export interface EditGarmentPayload {
   base_image_url: string;
   fabric_image_url?: string;
@@ -70,6 +78,10 @@ export interface CustomizationState {
   setSelectedFullBody: (id: string | null) => void;
   selectedFabric: string | null;
   setSelectedFabric: (id: string | null) => void;
+  // Customer-supplied external fabric ("Use Fabric") — image drives generation,
+  // shown pre-selected in the fabric tool sheet, overrides the catalog fabric.
+  appliedFabric: AppliedFabric | null;
+  setAppliedFabric: (fabric: AppliedFabric | null) => void;
   selectedColor: string | null;
   setSelectedColor: (id: string | null) => void;
   selectedAccessories: string[];
@@ -149,6 +161,12 @@ export function useCustomization({
   const [selectedTrouser, setSelectedTrouser] = useState<string | null>(null);
   const [selectedFullBody, setSelectedFullBody] = useState<string | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
+  const [appliedFabric, setAppliedFabricState] = useState<AppliedFabric | null>(null);
+  const setAppliedFabric = useCallback((fabric: AppliedFabric | null) => {
+    setAppliedFabricState(fabric);
+    // Pre-select it in the fabric tool sheet so the choice is reflected in the UI.
+    if (fabric?.id) setSelectedFabric(fabric.id);
+  }, []);
   const [selectedColor, setSelectedColor] = useState<string | null>('#1B2A4A');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
@@ -346,7 +364,16 @@ export function useCustomization({
       !!u && (/^https?:\/\//i.test(u) || u.startsWith('data:'));
     const configReferences: string[] = [];
     const selFabric = fabricLibrary.find((f) => f.id === selectedFabric);
-    if (selFabric?.image && isRemoteUrl(selFabric.image)) configReferences.push(selFabric.image);
+    // A customer-supplied external ("Use Fabric") fabric image takes priority
+    // over the catalog fabric, so the generated outfit is rendered with the
+    // customer's own fabric.
+    const fabricImageUrl =
+      appliedFabric?.image && isRemoteUrl(appliedFabric.image)
+        ? appliedFabric.image
+        : selFabric?.image && isRemoteUrl(selFabric.image)
+          ? selFabric.image
+          : undefined;
+    if (fabricImageUrl) configReferences.push(fabricImageUrl);
     const selAccs = selectedAccessories
       .map((id) => ACCESSORIES.find((a) => a.id === id))
       .filter(Boolean);
@@ -387,9 +414,9 @@ export function useCustomization({
 
     // Fabric + accessory image URLs as inspiration (real URLs only)
     const inspirationUrls: string[] = [];
-    if (selFabric?.image && isRemoteUrl(selFabric.image)) {
-      config.fabricRefId = selFabric.image;
-      inspirationUrls.push(selFabric.image);
+    if (fabricImageUrl) {
+      config.fabricRefId = fabricImageUrl;
+      inspirationUrls.push(fabricImageUrl);
     }
 
     if (inspirationUrls.length > 0 || configReferences.length > 0) {
@@ -542,6 +569,7 @@ export function useCustomization({
     selectedTrouser, setSelectedTrouser,
     selectedFullBody, setSelectedFullBody,
     selectedFabric, setSelectedFabric,
+    appliedFabric, setAppliedFabric,
     selectedColor, setSelectedColor,
     selectedAccessories, toggleAccessory,
     selectedAddons, selectAddon,

@@ -57,6 +57,7 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         onSelectColor={(color) => customization.setSelectedColor(color)}
         selectedSize={selectedSize}
         product={product}
+        appliedFabric={customization.appliedFabric}
       />
     );
   }
