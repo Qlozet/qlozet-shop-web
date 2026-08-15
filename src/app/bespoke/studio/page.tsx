@@ -78,6 +78,17 @@ function StudioContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedFabricId]);
 
+  // The bespoke "apply fabric to one of your designs" path passes the chosen
+  // design's image as ?design=<url>. Seed it as a reference image so generation
+  // is based on that design (together with the applied fabric above) instead of
+  // starting from a blank studio.
+  const appliedDesignImage = searchParams.get('design');
+  useEffect(() => {
+    if (!appliedDesignImage) return;
+    customization.setReferenceImages([appliedDesignImage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedDesignImage]);
+
   // ─── Load saved design when designId is present ─────────────
   const [designLoaded, setDesignLoaded] = useState(false);
 
