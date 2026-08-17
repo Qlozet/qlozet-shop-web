@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { X, ArrowLeft, Scissors, Pen, Sparkles, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getProductName, getProductImage, getProductPrice, type ApiProduct } from '@/lib/api-types';
-import { OUTFIT_POOL } from '@/data/studio-options';
+import { useBespokeDesigns, type BespokeDesign } from '@/hooks/useBespokeDesigns';
 
 // ═══════════════════════════════════════════════════════════════
 //  UseFabricModal
@@ -38,6 +38,15 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
 }) => {
   const router = useRouter();
   const [step, setStep] = useState<Step>('choose');
+
+  // The user's ACTUAL bespoke designs (from /bespoke/designs) — not placeholder
+  // art. Only designs with a usable image and not cancelled are offered.
+  const { designs, isLoading: loadingDesigns } = useBespokeDesigns();
+  const designImageOf = (d: BespokeDesign): string | undefined =>
+    d.design_images?.[0] ?? d.reference_images?.[0];
+  const usableDesigns = designs.filter(
+    (d) => d.status !== 'cancelled' && !!designImageOf(d),
+  );
 
   // Customizable clothing from the user's wishlist — server-filtered via the
   // dedicated endpoint (kind: clothing, type: customize, status: active).
@@ -78,9 +87,13 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
     onClose();
   };
 
-  const handleSelectDesign = (designImage: string) => {
+  const handleSelectDesign = (design: BespokeDesign) => {
     handleClose();
-    router.push(`/bespoke/studio?fabric=${encodeURIComponent(fabricId)}&design=${encodeURIComponent(designImage)}`);
+    // Pass designId so the studio loads the REAL design (canvas, references and
+    // selections), plus the fabric to apply on top of it.
+    router.push(
+      `/bespoke/studio?fabric=${encodeURIComponent(fabricId)}&designId=${encodeURIComponent(design._id)}`,
+    );
   };
 
   const handleSelectProduct = (productId: string) => {
@@ -207,10 +220,15 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
           </div>
         )}
 
-        {/* ── Step 2a: Bespoke Designs Grid ── */}
+        {/* ── Step 2a: Bespoke Designs Grid (the user's real designs) ── */}
         {step === 'bespoke' && (
           <div>
-            {OUTFIT_POOL.length === 0 ? (
+            {loadingDesigns ? (
+              <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
+                <Loader2 size={32} color="#4C1D95" className="animate-spin" />
+                <p style={{ fontSize: '13px', color: '#999' }}>Loading your designs…</p>
+              </div>
+            ) : usableDesigns.length === 0 ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
                 <Scissors size={40} color="#CCC" />
                 <p style={{ fontSize: '15px', fontWeight: 700, color: '#999', textAlign: 'center' }}>No designs yet</p>
@@ -225,18 +243,23 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-2" style={{ gap: '12px' }}>
-                {OUTFIT_POOL.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSelectDesign(img)}
-                    className="relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    style={{ aspectRatio: '3/4', borderRadius: '16px', border: '2px solid #E5E5E5', background: '#F5F5F5', cursor: 'pointer', padding: 0 }}
-                  >
-                    <Image src={img} alt={`Design ${idx + 1}`} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 45vw, 180px" />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)' }} />
-                    <span className="absolute bottom-3 left-3 text-white" style={{ fontSize: '11px', fontWeight: 700 }}>Design {idx + 1}</span>
-                  </button>
-                ))}
+                {usableDesigns.map((design) => {
+                  const img = designImageOf(design)!;
+                  return (
+                    <button
+                      key={design._id}
+                      onClick={() => handleSelectDesign(design)}
+                      className="relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      style={{ aspectRatio: '3/4', borderRadius: '16px', border: '2px solid #E5E5E5', background: '#F5F5F5', cursor: 'pointer', padding: 0 }}
+                    >
+                      <Image src={img} alt={design.name || 'Design'} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 45vw, 180px" />
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)' }} />
+                      <span className="absolute bottom-3 left-3 right-3 text-white truncate" style={{ fontSize: '11px', fontWeight: 700 }}>
+                        {design.name || 'Untitled Design'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
