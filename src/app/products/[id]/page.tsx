@@ -604,8 +604,21 @@ export default function ProductDetailsPage() {
         const cv = clothing.color_variants?.find(
           (c: any) => (c.name || c.color_name) === selectedColor,
         );
-        if (cv?._id) {
-          selections.color_variant_selections = [{ color_variant_id: cv._id, size: selectedSize || undefined, quantity: 1 }];
+        // Send the INNER size-variant id (the specific size within the colour) —
+        // the backend matches color_variant_id against variants[]._id for stock
+        // deduction, so sending the outer colour id left the selection empty and
+        // never reduced stock.
+        const sizeVariant =
+          cv?.variants?.find((v: any) => v.size === selectedSize) ??
+          (cv?.variants?.length === 1 ? cv.variants[0] : undefined);
+        if (sizeVariant?._id) {
+          selections.color_variant_selections = [
+            {
+              color_variant_id: sizeVariant._id,
+              size: selectedSize || sizeVariant.size,
+              quantity: 1,
+            },
+          ];
         }
       }
 
