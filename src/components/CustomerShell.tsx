@@ -147,13 +147,16 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       {/* ═══════════════════════════════════════════════════════════════
           MOBILE LAYOUT (< lg)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className={`lg:hidden flex flex-col min-h-screen ${isVendorPage ? 'bg-[#1a1206]' : 'bg-white'} text-[#1a1a1a] font-body hide-scrollbar`}>
+      <div
+        className="lg:hidden flex flex-col min-h-screen font-body hide-scrollbar"
+        style={{ background: isVendorPage ? '#1a1206' : 'var(--bg-surface)', color: 'var(--text-primary)' }}
+      >
         
         {/* ── Mobile Top Bar ── */}
         {!isStudio && !isVendorPage && (
         <header
-          className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 bg-white/95 backdrop-blur-md"
-          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid #F2F2F2' }}
+          className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 backdrop-blur-md"
+          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid var(--border-glass)', background: 'var(--glass-bg)' }}
         >
           {/* Left — Gender Toggle */}
           <button
@@ -266,8 +269,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {/* ── Mobile Bottom Tab Bar ── */}
         {!isStudio && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white flex items-center justify-around"
-          style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: '0 -2px 20px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+          style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: 'var(--shadow-md)', paddingBottom: 'env(safe-area-inset-bottom)', background: 'var(--bg-surface)', border: '1px solid var(--border-glass)' }}
         >
           {mobileTabItems.map((tab) => {
             const IconComp = tab.icon;
@@ -327,7 +330,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       {/* ═══════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (≥ lg) — unchanged
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="hidden lg:flex h-screen overflow-hidden bg-[#F0F0F0] text-[#1a1a1a] font-body" style={{ padding: '24px 24px 24px 0' }}>
+      <div className="hidden lg:flex h-screen overflow-hidden font-body" style={{ padding: '24px 24px 24px 0', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
         
         {/* 1. SIDEBAR (Left Navigation) - On grey background */}
         <aside className="w-[100px] flex-shrink-0 flex flex-col items-center justify-between py-8" style={{ paddingTop: '32px', paddingBottom: '32px' }}>
@@ -421,9 +424,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         </aside>
 
         {/* Main Structural Container - Big White Card */}
-        <div 
+        <div
           ref={scrollContainerRef}
-          className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'bg-white border border-gray-200'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
+          className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'border'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
+          style={isVendorPage ? undefined : { background: 'var(--bg-surface)', borderColor: 'var(--border-glass)' }}
         >
           <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio || isVendorPage ? '0' : '40px' }}>
             <div className="flex-1 flex flex-col">
@@ -483,8 +487,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               {/* Search Bar */}
               <form
                 onSubmit={handleSearchSubmit}
-                className={`w-full bg-white rounded-full flex items-center transition-all duration-300 ${isSearchFocused ? 'shadow-[0_4px_30px_rgba(0,0,0,0.12)]' : 'shadow-[0_4px_20px_rgba(0,0,0,0.06)]'}`}
-                style={{ padding: '6px 6px 6px 24px', border: '1px solid #EBEBEB' }}
+                className={`w-full rounded-full flex items-center transition-all duration-300 ${isSearchFocused ? 'shadow-[0_4px_30px_rgba(0,0,0,0.12)]' : 'shadow-[0_4px_20px_rgba(0,0,0,0.06)]'}`}
+                style={{ padding: '6px 6px 6px 24px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)' }}
               >
                 <input
                   type="text"
@@ -492,9 +496,9 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                  placeholder="What fit looking for today ?"
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#111111] placeholder-[#999]"
-                  style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
+                  placeholder="What are you looking for today?"
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999]"
+                  style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
                 />
                 <button
                   type="submit"

@@ -6,6 +6,7 @@
 
 import { Toaster } from 'sonner';
 import { Check, X, Info, TriangleAlert } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 
 const Badge = ({ bg, children }: { bg: string; children: React.ReactNode }) => (
   <span
@@ -25,19 +26,21 @@ const Badge = ({ bg, children }: { bg: string; children: React.ReactNode }) => (
 );
 
 export function AppToaster() {
+  const { isDark } = useTheme();
   return (
     <Toaster
       position="top-center"
       offset={18}
       gap={10}
       duration={3200}
+      theme={isDark ? 'dark' : 'light'}
       toastOptions={{
         style: {
-          background: '#FFFFFF',
-          color: '#26201B',
-          border: '1px solid #EFE7DD',
+          background: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-glass)',
           borderRadius: '14px',
-          boxShadow: '0 10px 34px rgba(38, 32, 27, 0.12)',
+          boxShadow: 'var(--shadow-md)',
           fontSize: '13.5px',
           fontWeight: 600,
           lineHeight: 1.45,

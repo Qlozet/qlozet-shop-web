@@ -56,6 +56,39 @@
    --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
    --transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
    --transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
+   color-scheme: light;
+ }
+
+ /* ── Dark theme ─────────────────────────────────────────────────────────
+    Applied when <html class="dark">. Matches the VENDOR app's dark palette
+    (cool near-black ground, #303030 cards, #404040 muted, near-white text) so
+    the two apps feel like one brand. Brand accents stay for legibility. Pages
+    darken by using these tokens instead of hardcoded hex — screen by screen. */
+ html.dark {
+   color-scheme: dark;
+
+   --bg-base: hsl(240, 10%, 4%);         /* vendor --background */
+   --bg-surface: #303030;                /* vendor --card */
+   --bg-surface-elevated: #404040;       /* vendor --muted */
+
+   --brand-brown: #E0B486;               /* readable tan on dark (brand pop) */
+   --brand-brown-hover: #EAC6A0;
+   --brand-brown-light: #C99A6A;
+
+   --text-primary: hsl(0, 0%, 98%);      /* vendor --foreground */
+   --text-secondary: hsl(240, 5%, 65%);  /* vendor --muted-foreground */
+   --text-muted: hsl(240, 5%, 55%);
+
+   --border-glass: hsl(240, 4%, 16%);    /* vendor --border */
+   --border-focus: rgba(250, 250, 250, 0.4);
+
+   --glass-bg: rgba(48, 48, 48, 0.92);
+   --glass-bg-dense: #303030;
+
+   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.55);
+   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.65);
+   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.8);
  }
 
  /* Base Styles & Resets */

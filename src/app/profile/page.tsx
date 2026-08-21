@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/hooks/useWallet';
 import {
   User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
@@ -85,7 +86,7 @@ function ProfilePageContent() {
   }, [searchParams]);
 
   const [pushNotif, setPushNotif] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDark, toggle: toggleTheme } = useTheme();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedItemIdx, setSelectedItemIdx] = useState(0);
   const [returnStep, setReturnStep] = useState(1);
@@ -409,7 +410,7 @@ function ProfilePageContent() {
               <MenuRow icon={Scissors} label="Reserved Fabric" iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED"
                 onClick={() => setActiveSection('reserved-fabric')} isActive={activeSection === 'reserved-fabric'} />
               <MenuRow icon={Moon} label="Dark Mode" iconBg="rgba(107,114,128,0.08)" iconColor="#6B7280"
-                trailing={<Toggle value={darkMode} onChange={setDarkMode} />} />
+                trailing={<Toggle value={isDark} onChange={toggleTheme} />} />
             </div>
           </div>
 

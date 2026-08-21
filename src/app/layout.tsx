@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Outfit, Inter } from 'next/font/google';
 import { AppProvider } from '@/context/AppContext';
+import { ThemeProvider, THEME_INIT_SCRIPT } from '@/context/ThemeContext';
 import { CustomerShell } from '@/components/CustomerShell';
 import { AppToaster } from '@/components/AppToaster';
 import './globals.css';
@@ -28,14 +29,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${inter.variable}`}>
-      <body className="bg-[#F0F0F0] text-[#1a1a1a]">
-        <AppProvider>
-          <CustomerShell>
-            {children}
-          </CustomerShell>
-          <AppToaster />
-        </AppProvider>
+    <html lang="en" className={`${outfit.variable} ${inter.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Apply the saved/system theme before paint to avoid a light flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+        <ThemeProvider>
+          <AppProvider>
+            <CustomerShell>
+              {children}
+            </CustomerShell>
+            <AppToaster />
+          </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
