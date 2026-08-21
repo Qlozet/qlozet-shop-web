@@ -80,13 +80,13 @@ const SizeGuideContent: React.FC<{
   return (
   <>
     {/* BODY MEASUREMENT header */}
-    <h4 className="text-sm font-bold text-[#111111]" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+    <h4 className="text-sm font-bold text-[var(--text-primary)]" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
       {selectedFit && getEase(guideData?.body_parts?.[0] ?? '') > 0 ? 'Garment Measurement' : 'Body Measurement'}
     </h4>
 
     {/* Unit Toggle + Fit */}
     <div className="flex items-center justify-between">
-      <div className="flex overflow-hidden" style={{ borderRadius: '8px', border: '1px solid #E5E5E5' }}>
+      <div className="flex overflow-hidden" style={{ borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
         {(['CM', 'IN'] as const).map((u) => (
           <button
             key={u}
@@ -95,8 +95,8 @@ const SizeGuideContent: React.FC<{
               padding: '6px 16px',
               fontSize: '12px',
               fontWeight: 600,
-              backgroundColor: unit === u ? '#1A1A1A' : '#FFFFFF',
-              color: unit === u ? '#FFFFFF' : '#666666',
+              backgroundColor: unit === u ? '#1A1A1A' : 'var(--bg-surface)',
+              color: unit === u ? '#FFFFFF' : 'var(--text-secondary)',
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.2s',
@@ -111,7 +111,7 @@ const SizeGuideContent: React.FC<{
         <button
           onClick={() => fitTypes.length > 1 && setShowFitDropdown(!showFitDropdown)}
           className="flex items-center gap-1.5"
-          style={{ fontSize: '13px', color: '#666', background: 'none', border: 'none', cursor: fitTypes.length > 1 ? 'pointer' : 'default', padding: 0 }}
+          style={{ fontSize: '13px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: fitTypes.length > 1 ? 'pointer' : 'default', padding: 0 }}
         >
           <span>{currentFitLabel}</span>
           {fitTypes.length > 1 && <ChevronDown size={14} />}
@@ -121,7 +121,7 @@ const SizeGuideContent: React.FC<{
             className="animate-fade-in"
             style={{
               position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-              background: 'white', borderRadius: '10px', border: '1px solid #E5E5E5',
+              background: 'var(--bg-surface)', borderRadius: '10px', border: '1px solid var(--border-glass)',
               boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 10, overflow: 'hidden',
               minWidth: '150px',
             }}
@@ -133,13 +133,13 @@ const SizeGuideContent: React.FC<{
                 style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '10px 14px', fontSize: '12px', fontWeight: idx === selectedFitIdx ? 700 : 400,
-                  color: idx === selectedFitIdx ? '#1A1A1A' : '#666',
-                  background: idx === selectedFitIdx ? '#F5F5F5' : 'white',
+                  color: idx === selectedFitIdx ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  background: idx === selectedFitIdx ? 'var(--bg-surface-elevated)' : 'var(--bg-surface)',
                   border: 'none', cursor: 'pointer',
                 }}
               >
                 {ft.label}
-                {ft.description && <span style={{ display: 'block', fontSize: '10px', color: '#999', marginTop: '2px' }}>{ft.description}</span>}
+                {ft.description && <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{ft.description}</span>}
               </button>
             ))}
           </div>
@@ -156,11 +156,11 @@ const SizeGuideContent: React.FC<{
         style={{
           gridTemplateColumns,
           padding: '10px 0',
-          borderBottom: '2px solid #E5E5E5',
+          borderBottom: '2px solid var(--border-glass)',
         }}
       >
         {headers.map((h) => (
-          <span key={h} style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span key={h} style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {h}
           </span>
         ))}
@@ -174,15 +174,15 @@ const SizeGuideContent: React.FC<{
           style={{
             gridTemplateColumns,
             padding: '14px 0',
-            borderBottom: '1px solid #F0F0F0',
-            backgroundColor: idx === 0 ? '#FAFAFA' : 'transparent',
+            borderBottom: '1px solid var(--border-glass)',
+            backgroundColor: idx === 0 ? 'var(--bg-surface-elevated)' : 'transparent',
           }}
         >
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{row.label}</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{row.label}</span>
           {guideData.body_parts.map(bp => {
             const m = row.measurements.find(x => x.body_part === bp);
             return (
-              <span key={bp} style={{ fontSize: '12px', color: '#555' }}>
+              <span key={bp} style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                 {formatCell(m, bp)}
               </span>
             );
@@ -195,7 +195,7 @@ const SizeGuideContent: React.FC<{
     {/* Progress bar accent */}
     <div style={{ width: '60px', height: '3px', borderRadius: '2px', background: '#D4752A', margin: '0 auto' }} />
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* HOW TO MEASURE button */}
     <button
@@ -203,19 +203,19 @@ const SizeGuideContent: React.FC<{
       className="w-full flex items-center justify-between transition-colors hover:bg-gray-50"
       style={{
         padding: '14px',
-        border: '1px solid #E5E5E5',
+        border: '1px solid var(--border-glass)',
         borderRadius: '12px',
         fontSize: '13px',
         fontWeight: 700,
-        color: '#1A1A1A',
+        color: 'var(--text-primary)',
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
-        background: 'white',
+        background: 'var(--bg-surface)',
         cursor: 'pointer',
       }}
     >
       <span>HOW TO MEASURE</span>
-      {showHowTo ? <Minus size={16} color="#999" /> : <Plus size={16} color="#999" />}
+      {showHowTo ? <Minus size={16} color="var(--text-muted)" /> : <Plus size={16} color="var(--text-muted)" />}
     </button>
 
     {/* How to Measure Section (expandable) */}
@@ -225,14 +225,14 @@ const SizeGuideContent: React.FC<{
           style={{
             padding: '16px',
             borderRadius: '12px',
-            background: '#FAFAFA',
+            background: 'var(--bg-surface-elevated)',
           }}
         >
           <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>Clothing</span>
-            <Minus size={16} color="#999" />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Clothing</span>
+            <Minus size={16} color="var(--text-muted)" />
           </div>
-          <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.6, marginBottom: '16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '16px' }}>
             To choose the the correct size for you, measure you as follows:
           </p>
 
@@ -251,7 +251,7 @@ const SizeGuideContent: React.FC<{
           {/* Steps */}
           <ol style={{ paddingLeft: '16px', margin: 0 }}>
             {HOW_TO_MEASURE_STEPS.map((step, i) => (
-              <li key={i} style={{ fontSize: '12px', color: '#555', lineHeight: 1.7, marginBottom: '8px' }}>
+              <li key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '8px' }}>
                 {step}
               </li>
             ))}
@@ -260,7 +260,7 @@ const SizeGuideContent: React.FC<{
       </div>
     )}
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* Accessory Sections */}
     {ACCESSORY_SECTIONS.map((section) => (
@@ -272,14 +272,14 @@ const SizeGuideContent: React.FC<{
           padding: '0',
           fontSize: '14px',
           fontWeight: 600,
-          color: '#1A1A1A',
+          color: 'var(--text-primary)',
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
         }}
       >
         <span>{section}</span>
-        <Plus size={16} color="#999" />
+        <Plus size={16} color="var(--text-muted)" />
       </button>
     ))}
   </>
@@ -311,8 +311,8 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
 
         {/* Bottom Sheet */}
         <div
-          className={`fixed left-3 right-3 bottom-3 z-[70] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-          style={{ maxHeight: '85vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+          className={`fixed left-3 right-3 bottom-3 z-[70] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+          style={{ maxHeight: '85vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
         >
 
           {/* Drag Handle */}
@@ -323,8 +323,8 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between shrink-0" style={{ padding: '16px 24px' }}>
             <div>
-              <h3 className="text-lg font-bold text-[#111111]">Size Guide</h3>
-              <span style={{ fontSize: '12px', color: '#888888' }}>{category}</span>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Size Guide</h3>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{category}</span>
             </div>
             <button
               onClick={onClose}

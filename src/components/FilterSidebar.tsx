@@ -25,7 +25,7 @@ const FilterContent: React.FC<{
   <>
     {/* Sorting */}
     <div className="flex flex-col gap-6">
-      <h4 className="text-sm font-bold text-[#111111]">Sort by</h4>
+      <h4 className="text-sm font-bold text-[var(--text-primary)]">Sort by</h4>
       <div className="flex flex-col gap-5">
         {[
           { id: 'rating', label: 'Best selling' },
@@ -53,19 +53,19 @@ const FilterContent: React.FC<{
       </div>
     </div>
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* On Sale */}
     <label className="flex items-center justify-between cursor-pointer">
-      <span className="text-sm font-bold text-[#111111]">On sale</span>
-      <div className="w-[24px] h-[24px] border border-gray-200 rounded-lg bg-gray-50" />
+      <span className="text-sm font-bold text-[var(--text-primary)]">On sale</span>
+      <div className="w-[24px] h-[24px] rounded-lg" style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }} />
     </label>
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* Price */}
     <div className="flex flex-col gap-8">
-      <h4 className="text-sm font-bold text-[#111111]">Price</h4>
+      <h4 className="text-sm font-bold text-[var(--text-primary)]">Price</h4>
       <div className="relative w-full h-2 bg-gray-200 rounded-full mt-4">
         <div className="absolute left-0 top-0 h-full bg-[#462814] rounded-full" style={{ width: `${(maxPrice / 200000) * 100}%` }} />
         <input
@@ -97,11 +97,11 @@ const FilterContent: React.FC<{
       </div>
     </div>
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* In Stock */}
     <label className="flex items-center justify-between cursor-pointer">
-      <span className="text-sm font-bold text-[#111111]">In-stock</span>
+      <span className="text-sm font-bold text-[var(--text-primary)]">In-stock</span>
       <div className="w-[24px] h-[24px] bg-black rounded-lg flex items-center justify-center">
         <svg width="14" height="12" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -133,8 +133,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
         {/* Bottom Sheet */}
         <div
-          className={`fixed left-3 right-3 bottom-3 z-[70] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-          style={{ maxHeight: '60vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+          className={`fixed left-3 right-3 bottom-3 z-[70] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+          style={{ maxHeight: '60vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
         >
           {/* Drag Handle */}
           <div className="flex justify-center pt-3 pb-1">
@@ -143,7 +143,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
           {/* Header */}
           <div className="flex items-center justify-between shrink-0" style={{ padding: '16px 24px' }}>
-            <h3 className="text-lg font-bold text-[#111111]">Filters</h3>
+            <h3 className="text-lg font-bold text-[var(--text-primary)]">Filters</h3>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
@@ -162,7 +162,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             <button
               onClick={onReset}
               className="flex-1 hover:bg-gray-200 transition-colors"
-              style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Reset
             </button>
@@ -184,11 +184,12 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           style={{ left: '120px', top: '48px', bottom: '48px' }}
         >
           <aside
-            className={`h-full w-[320px] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border border-gray-100 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`h-full w-[320px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            style={{ background: 'var(--bg-base)', border: '1px solid var(--border-glass)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between shrink-0" style={{ padding: '24px 24px 20px 24px' }}>
-              <h3 className="text-lg font-bold text-[#111111]">Filters</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Filters</h3>
               <button
                 onClick={onClose}
                 className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
@@ -207,7 +208,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               <button
                 onClick={onReset}
                 className="flex-1 hover:bg-gray-200 transition-colors"
-                style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Reset
               </button>
