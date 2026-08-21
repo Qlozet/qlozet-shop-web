@@ -1224,7 +1224,7 @@ export default function ProductDetailsPage() {
                     className="relative overflow-hidden transition-all"
                     style={{
                       width: '72px', height: '72px', borderRadius: '12px',
-                      border: idx === activeImageIdx && !viewingAi ? '2px solid #1A1A1A' : '2px solid #E5E5E5',
+                      border: idx === activeImageIdx && !viewingAi ? '2px solid var(--brand-fill)' : '2px solid var(--border-glass)',
                       background: '#F5F5F5', cursor: 'pointer',
                       opacity: idx === activeImageIdx && !viewingAi ? 1 : 0.7, flexShrink: 0,
                     }}
@@ -1468,7 +1468,7 @@ export default function ProductDetailsPage() {
                       style={{
                         width: '32px', height: '32px', borderRadius: '50%',
                         background: color.hex || '#CCC',
-                        border: color.name === selectedColor ? '3px solid #1A1A1A' : '2px solid var(--border-glass)',
+                        border: color.name === selectedColor ? '3px solid var(--brand-fill)' : '2px solid var(--border-glass)',
                         cursor: 'pointer',
                         outline: color.name === selectedColor ? '2px solid white' : 'none',
                         outlineOffset: '-4px',
@@ -1502,7 +1502,7 @@ export default function ProductDetailsPage() {
                       <div key={`${cat}-${id}`} className="flex flex-col items-center" style={{ gap: '4px' }}>
                         <div
                           className="flex items-center justify-center overflow-hidden"
-                          style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--bg-surface-elevated)', border: '2px solid #1A1A1A' }}
+                          style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--bg-surface-elevated)', border: '2px solid var(--brand-fill)' }}
                         >
                           {style.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
@@ -1573,9 +1573,9 @@ export default function ProductDetailsPage() {
                     style={{
                       minWidth: '42px', height: '42px', padding: '0 14px',
                       borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      background: size === selectedSize ? '#1A1A1A' : 'var(--bg-surface)',
-                      color: size === selectedSize ? '#FFFFFF' : 'var(--text-primary)',
-                      border: size === selectedSize ? '2px solid #1A1A1A' : '1px solid #E0E0E0',
+                      background: size === selectedSize ? 'var(--brand-fill)' : 'var(--bg-surface)',
+                      color: size === selectedSize ? 'var(--brand-fill-text)' : 'var(--text-primary)',
+                      border: size === selectedSize ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
                     }}
                   >
                     {size}
