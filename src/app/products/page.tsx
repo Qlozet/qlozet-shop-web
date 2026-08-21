@@ -115,6 +115,19 @@ function CatalogContent() {
     return 0; // backend handles rating/date sort
   });
 
+  // "Showing N items" must match what's on screen. When a client-only filter
+  // (price cap, or a bespoke/custom/ready-to-wear split the backend can't do) is
+  // active it trims the fetched page, so the backend total overstates the grid —
+  // fall back to the actual visible count in that case.
+  const clientFilterActive =
+    maxPrice < 200000 ||
+    selectedKind === 'bespoke' ||
+    selectedKind === 'custom' ||
+    selectedKind === 'read-to-wear';
+  const displayCount = clientFilterActive
+    ? sortedProducts.length
+    : pagination.totalItems;
+
   // ── Reset handler ─────────────────────────────────────────────
   const handleClearFilters = () => {
     setSearchQuery('');
@@ -155,7 +168,7 @@ function CatalogContent() {
           onCategoryChange={(kind) => { setSelectedKind(kind); setPage(1); }}
           isFilterOpen={isFilterOpen}
           onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
-          itemCount={pagination.totalItems}
+          itemCount={displayCount}
         />
 
         {/* Loading State */}
