@@ -21,6 +21,12 @@
    --brand-brown-hover: #331C0D;
    --brand-brown-light: #8B5A2B;
 
+   /* Filled brand elements (buttons, cart badge, search submit): dark-brown
+      fill + white content in light mode; flips to a white fill + near-black
+      content in dark mode (matches the vendor app's --primary). */
+   --brand-fill: #2C1810;
+   --brand-fill-text: #FFFFFF;
+
    --accent-gold: #D4AF37;
    --accent-gold-hover: #FFDF00;
 
@@ -76,6 +82,11 @@
    --brand-brown-hover: #EAC6A0;
    --brand-brown-light: #C99A6A;
 
+   /* Filled brand elements flip to white with near-black content (vendor
+      --primary / --primary-foreground). */
+   --brand-fill: hsl(0, 0%, 98%);
+   --brand-fill-text: hsl(240, 5.9%, 10%);
+
    --text-primary: hsl(0, 0%, 98%);      /* vendor --foreground */
    --text-secondary: hsl(240, 5%, 65%);  /* vendor --muted-foreground */
    --text-muted: hsl(240, 5%, 55%);
@@ -86,9 +97,17 @@
    --glass-bg: rgba(48, 48, 48, 0.92);
    --glass-bg-dense: #303030;
 
-   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.55);
-   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.65);
-   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.8);
+   /* Match the vendor app's shadow: a soft light-grey glow (same in both
+      modes), not heavy black. */
+   --shadow-sm: 0px 2px 12px 0px hsla(240, 13%, 72%, 0.10);
+   --shadow-md: 0px 4px 25px 0px hsla(240, 13%, 72%, 0.15);
+   --shadow-lg: 0px 8px 40px 0px hsla(240, 13%, 72%, 0.18);
+ }
+
+ /* Brand accent colour for text/icons (brown in light, white in dark) — used
+    with hover: too, e.g. active nav icons. */
+ @utility text-brand {
+   color: var(--brand-fill);
  }
 
  /* Base Styles & Resets */
