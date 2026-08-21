@@ -272,7 +272,9 @@ export default function CartPage() {
                     <div className="flex items-start justify-between gap-2">
                       <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }} className="truncate">{item.title}</h3>
                       <button
+                        type="button"
                         onClick={() => removeFromCart(item.id)}
+                        aria-label={`Remove ${item.title} from cart`}
                         className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-1"
                       >
                         <Trash2 size={15} />
@@ -554,20 +556,10 @@ export default function CartPage() {
 
             <div style={{ height: '1px', background: '#F0F0F0', margin: '0 0 14px 0' }} />
 
-            {/* Delivery Type Selector */}
-            <div
-              className="flex items-center justify-between"
-              style={{
-                padding: '10px 14px',
-                borderRadius: '10px',
-                border: '1px solid #E5E5E5',
-                marginBottom: '18px',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: 500, color: '#1A1A1A' }}>Standard Delivery</span>
-              <ChevronDown size={13} color="#999" />
-            </div>
+            {/* Delivery note — the actual courier per vendor is chosen at checkout. */}
+            <p style={{ fontSize: '11.5px', color: '#999', marginBottom: '18px', lineHeight: 1.6 }}>
+              Choose a delivery option for each vendor at checkout.
+            </p>
 
             {/* Checkout Button */}
             <button
@@ -604,8 +596,9 @@ export default function CartPage() {
               </p>
             )}
 
-            {/* Payment Icons */}
+            {/* Accepted card networks (Paystack) */}
             <div className="flex items-center justify-center gap-2.5">
+              <span style={{ fontSize: '10px', color: '#B8B0A6', marginRight: '2px' }}>We accept</span>
               {/* Mastercard */}
               <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="18" height="12" viewBox="0 0 20 14" fill="none">
@@ -618,13 +611,9 @@ export default function CartPage() {
               <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '9px', fontWeight: 900, color: '#1A1F71', fontStyle: 'italic' }}>VISA</span>
               </div>
-              {/* Apple Pay */}
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '7px', fontWeight: 700, color: '#1A1A1A' }}> Pay</span>
-              </div>
-              {/* Google Pay */}
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '7px', fontWeight: 700, color: '#4285F4' }}>G Pay</span>
+              {/* Verve */}
+              <div style={{ width: '38px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '8px', fontWeight: 900, color: '#0AA1DD', letterSpacing: '-0.02em' }}>verve</span>
               </div>
             </div>
           </div>
