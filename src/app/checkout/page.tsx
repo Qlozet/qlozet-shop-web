@@ -23,6 +23,11 @@ import {
 
 type PromoTab = 'promo' | 'voucher' | 'rewards';
 
+// Promo/voucher UI is hidden until codes are validated server-side. The old
+// flow checked a hardcoded code client-side and granted a flat discount to
+// anyone who found it. Flip to true once a real promo endpoint exists.
+const SHOW_PROMO = false;
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, clearCart, user } = useApp();
@@ -314,6 +319,9 @@ export default function CheckoutPage() {
         <div className="flex-1 min-w-0 flex flex-col gap-5">
 
           {/* ── PROMO, VOUCHERS OR REWARD ─────────────────────── */}
+          {/* Hidden until promo codes are validated server-side — the previous
+              client-side check granted a flat discount to anyone with the code. */}
+          {SHOW_PROMO && (
           <div style={cardStyle}>
             <button
               onClick={() => setShowPromo(!showPromo)}
@@ -411,6 +419,7 @@ export default function CheckoutPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* ── DELIVERY ADDRESS ───────────────────────────────── */}
           <div style={cardStyle}>

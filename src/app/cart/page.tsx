@@ -22,6 +22,10 @@ import {
   Pen,
 } from 'lucide-react';
 
+// "Qlozet Premiere" subscription is hidden until it's built (its CTA was a
+// no-op). Flip to true when the feature ships.
+const SHOW_PREMIERE = false;
+
 export default function CartPage() {
   const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
   const router = useRouter();
@@ -409,6 +413,9 @@ export default function CartPage() {
           </div>
 
           {/* ── QLOZET PREMIERE AFRICA ─────────────────────────── */}
+          {/* Hidden until the subscription is actually built — the "Add to Bag"
+              action was a no-op. */}
+          {SHOW_PREMIERE && (
           <div style={cardStyle}>
             <button
               onClick={() => setShowPremiere(!showPremiere)}
@@ -454,6 +461,7 @@ export default function CartPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* ── LOOKING FOR THIS? ──────────────────────────────── */}
           {lookingProduct && (
