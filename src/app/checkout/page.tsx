@@ -17,6 +17,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Truck,
+  Wallet,
+  Check,
 } from 'lucide-react';
 
 type PromoTab = 'promo' | 'voucher' | 'rewards';
@@ -55,8 +57,7 @@ export default function CheckoutPage() {
       if (token) {
         try {
           const res = await api.get('/users/customer/addresses');
-          console.log('[Checkout] Raw address response:', JSON.stringify(res.data));
-          
+
           // The backend response interceptor wraps in { statusCode, data }
           // But sometimes it could be nested: res.data.data or just res.data
           let addressList: any[] = [];
@@ -72,11 +73,8 @@ export default function CheckoutPage() {
             addressList = [res.data.data];
           }
           
-          console.log('[Checkout] Parsed address list:', addressList.length, 'addresses');
-          
           if (addressList.length > 0) {
             const defaultAddr = addressList.find((addr: any) => addr.is_default) || addressList[0];
-            console.log('[Checkout] Using address:', JSON.stringify(defaultAddr));
             if (defaultAddr) {
               addressId = defaultAddr._id || defaultAddr.id;
               if (isMounted) {
@@ -372,6 +370,7 @@ export default function CheckoutPage() {
                   />
                   <button
                     onClick={handleApplyPromo}
+                    type="button"
                     className="transition-all hover:bg-gray-100"
                     style={{
                       padding: '10px 20px',
@@ -386,7 +385,7 @@ export default function CheckoutPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    Change
+                    Apply
                   </button>
                 </div>
 
@@ -400,10 +399,6 @@ export default function CheckoutPage() {
                     {promoError}
                   </p>
                 )}
-
-                <p style={{ fontSize: '12px', color: '#999', marginBottom: '16px' }}>
-                  have you been <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>referred by a friend</span>?
-                </p>
 
                 {/* Need to Know */}
                 <h4 style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
@@ -438,6 +433,8 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <button
+                type="button"
+                onClick={() => router.push('/profile?tab=address-book')}
                 className="transition-all hover:bg-gray-100"
                 style={{
                   padding: '8px 20px',
@@ -624,6 +621,8 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <button
+                  type="button"
+                  onClick={() => router.push('/profile?tab=address-book')}
                   className="transition-all hover:bg-gray-100"
                   style={{
                     padding: '7px 18px',
@@ -646,58 +645,58 @@ export default function CheckoutPage() {
             <div style={{ height: '1px', background: '#F0F0F0', margin: '0 0 20px 0' }} />
 
             {/* Payment Type */}
-            <h4 className="text-center" style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
-              Payment Type
+            <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+              Payment Method
             </h4>
 
-            {/* Card Button */}
-            <button
-              onClick={() => { setPaymentMethod('card'); setPayError(''); }}
-              className="w-full flex items-center justify-center gap-3 transition-all hover:bg-gray-50"
-              style={{
-                padding: '14px',
-                borderRadius: '10px',
-                border: paymentMethod === 'card' ? '2px solid #462814' : '1px solid #E0E0E0',
-                background: '#FFF',
-                fontSize: '11px',
-                fontWeight: 800,
-                color: '#1A1A1A',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                cursor: 'pointer',
-                marginBottom: '12px',
-              }}
-            >
-              <CreditCard size={16} />
-              Add Credit / Debit Card
-            </button>
+            {/* Two consistent, selectable options with a radio indicator. */}
+            <div className="flex flex-col gap-2.5" style={{ marginBottom: '16px' }}>
+              {([
+                { key: 'card', title: 'Credit / Debit Card', sub: 'Pay securely with Paystack', Icon: CreditCard },
+                { key: 'wallet', title: 'Pay with Wallet', sub: 'Use your Qlozet wallet balance', Icon: Wallet },
+              ] as const).map(({ key, title, sub, Icon }) => {
+                const active = paymentMethod === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => { setPaymentMethod(key); setPayError(''); }}
+                    aria-pressed={active}
+                    className="w-full flex items-center gap-3 text-left transition-all"
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: active ? '2px solid #462814' : '1px solid #E0E0E0',
+                      background: active ? '#FAF6F1' : '#FFF',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{ width: '36px', height: '36px', borderRadius: '9px', background: '#F3ECE4', color: '#462814', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={18} />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1A1A1A' }}>{title}</span>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#999' }}>{sub}</span>
+                    </span>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                        border: active ? '6px solid #462814' : '2px solid #D9D2C9',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: '#FFF',
+                      }}
+                    >
+                      {active && <Check size={10} color="#FFF" style={{ marginTop: '-1px' }} />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-            <p className="text-center" style={{ fontSize: '12px', fontWeight: 700, color: '#999', margin: '0 0 12px 0' }}>OR</p>
-
-            {/* Wallet Button */}
-            <button
-              onClick={() => { setPaymentMethod('wallet'); setPayError(''); }}
-              className="w-full flex items-center justify-center gap-2 transition-all hover:opacity-90"
-              style={{
-                padding: '14px',
-                borderRadius: '10px',
-                border: paymentMethod === 'wallet' ? '2px solid #462814' : 'none',
-                background: '#064E3B',
-                fontSize: '11px',
-                fontWeight: 800,
-                color: '#FFF',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                cursor: 'pointer',
-                marginBottom: '16px',
-              }}
-            >
-              <span style={{ fontSize: '14px' }}>💳</span>
-              Pay with Wallet
-            </button>
-
-            {/* Payment Icons */}
+            {/* Accepted card networks (Paystack) */}
             <div className="flex items-center justify-center gap-2.5">
+              <span style={{ fontSize: '10px', color: '#B8B0A6', marginRight: '2px' }}>We accept</span>
               <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="18" height="12" viewBox="0 0 20 14" fill="none">
                   <circle cx="7" cy="7" r="5.5" fill="#EB001B" opacity="0.9"/>
@@ -708,11 +707,8 @@ export default function CheckoutPage() {
               <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '9px', fontWeight: 900, color: '#1A1F71', fontStyle: 'italic' }}>VISA</span>
               </div>
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '7px', fontWeight: 700, color: '#1A1A1A' }}> Pay</span>
-              </div>
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '7px', fontWeight: 700, color: '#4285F4' }}>G Pay</span>
+              <div style={{ width: '38px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '8px', fontWeight: 900, color: '#0AA1DD', letterSpacing: '-0.02em' }}>verve</span>
               </div>
             </div>
           </div>
