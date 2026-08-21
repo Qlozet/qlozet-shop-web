@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
@@ -40,6 +41,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     e.stopPropagation();
     if (onFavoriteToggle) {
       onFavoriteToggle(id);
+      if (isFavorite) toast('Removed from wishlist');
+      else toast.success('Saved to wishlist', { description: title });
     }
   };
 

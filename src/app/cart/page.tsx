@@ -61,7 +61,15 @@ export default function CartPage() {
           const b = payload?.breakdown;
           if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
         })
-        .catch(() => {});
+        .catch(() => {
+          // Don't fail silently — but dedupe to a single toast across all items
+          // via a stable id (sonner updates rather than stacks).
+          if (!cancelled)
+            toast.error("Couldn't refresh prices", {
+              id: 'cart-price-refresh',
+              description: 'Showing the last known price for now.',
+            });
+        });
     });
     return () => {
       cancelled = true;
