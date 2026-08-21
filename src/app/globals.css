@@ -68,9 +68,9 @@
  html.dark {
    color-scheme: dark;
 
-   --bg-base: hsl(240, 10%, 4%);         /* vendor --background */
-   --bg-surface: #303030;                /* vendor --card */
-   --bg-surface-elevated: #404040;       /* vendor --muted */
+   --bg-base: #242427;                   /* main background — grey, darkened a bit */
+   --bg-surface: #161619;                /* big content card — near-black (pops darker) */
+   --bg-surface-elevated: #2E2E33;       /* insets/chips ON the card (a touch lighter) */
 
    --brand-brown: #E0B486;               /* readable tan on dark (brand pop) */
    --brand-brown-hover: #EAC6A0;
