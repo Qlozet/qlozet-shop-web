@@ -90,6 +90,7 @@ function VendorRow({
       {vendors.length > 3 && (
         <button
           onClick={scrollRight}
+          aria-label="Scroll right"
           className="absolute z-10 flex items-center justify-center transition-opacity opacity-0 group-hover/row:opacity-100"
           style={{
             right: '-8px',
@@ -120,7 +121,7 @@ function FeedSkeleton() {
       {/* Category skeleton */}
       <div className="flex" style={{ gap: '20px' }}>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '360px' }} />
+          <div key={i} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0 w-[72vw] max-w-[360px] aspect-square" />
         ))}
       </div>
       {/* Vendor row skeletons */}
@@ -129,7 +130,7 @@ function FeedSkeleton() {
           <div className="h-3 w-32 bg-[#E5E5E5] rounded" />
           <div className="flex" style={{ gap: '16px' }}>
             {[1, 2, 3].map((j) => (
-              <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
+              <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0 w-[72vw] max-w-[360px] h-[500px]" />
             ))}
           </div>
         </div>
@@ -254,12 +255,13 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-              placeholder="What fit looking for today ?"
-              className="flex-1 bg-transparent border-none outline-none text-[15px] font-medium text-[#111111] placeholder-[#111111] transition-all text-center focus:text-left"
+              placeholder="What are you looking for today?"
+              className="flex-1 bg-transparent border-none outline-none text-[15px] font-medium text-[#111111] placeholder-[#9A8F86] transition-all text-center focus:text-left"
               style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
             />
             <button
               type="submit"
+              aria-label="Search"
               className="w-[48px] h-[48px] rounded-full bg-[#381F10] text-white flex items-center justify-center hover:bg-[#201007] transition-transform active:scale-95 shrink-0 shadow-[0_4px_15px_rgba(56,31,16,0.5)]"
               style={{ marginLeft: '16px' }}
             >
@@ -301,9 +303,11 @@ export default function HomePage() {
         <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 flex-1">
 
           {/* Men Card */}
-          <div
+          <button
+            type="button"
             onClick={() => handleGenderSelect('male')}
-            className="relative rounded-[20px] lg:rounded-[30px] overflow-hidden group cursor-pointer w-full h-[300px] lg:h-[600px] shadow-lg hover:shadow-2xl transition-shadow duration-500"
+            aria-label="Shop the Men's collection"
+            className="relative block text-left rounded-[20px] lg:rounded-[30px] overflow-hidden group cursor-pointer w-full h-[300px] lg:h-[600px] shadow-lg hover:shadow-2xl transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             <Image
               src="/image/seun.png"
@@ -326,12 +330,14 @@ export default function HomePage() {
                 <ArrowRight size={32} className="transition-transform duration-300 group-hover/btn:translate-x-3" />
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Women Card */}
-          <div
+          <button
+            type="button"
             onClick={() => handleGenderSelect('female')}
-            className="relative rounded-[20px] lg:rounded-[30px] overflow-hidden group cursor-pointer w-full h-[300px] lg:h-[600px] shadow-lg hover:shadow-2xl transition-shadow duration-500"
+            aria-label="Shop the Women's collection"
+            className="relative block text-left rounded-[20px] lg:rounded-[30px] overflow-hidden group cursor-pointer w-full h-[300px] lg:h-[600px] shadow-lg hover:shadow-2xl transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             <Image
               src="/image/slim-girl-1.jpg"
@@ -354,7 +360,7 @@ export default function HomePage() {
                 <ArrowRight size={32} className="transition-transform duration-300 group-hover/btn:translate-x-3" />
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     );
