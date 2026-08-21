@@ -205,13 +205,13 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             width: '52px',
             height: '52px',
             borderRadius: '50%',
-            background: '#FFFFFF',
+            background: 'var(--bg-base)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
-            border: '1px solid rgba(0,0,0,0.05)',
+            border: '1px solid var(--border-glass)',
             cursor: 'pointer',
           }}
         >
-          <Search size={20} strokeWidth={2} color="#1A1A1A" />
+          <Search size={20} strokeWidth={2} color="var(--text-primary)" />
         </button>
         )}
 
@@ -228,10 +228,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                 padding: '8px 8px 8px 18px',
                 gap: '8px',
                 margin: '0 12px',
-                background: '#FFFFFF',
+                background: 'var(--bg-base)',
                 borderRadius: '50px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-                border: '1px solid rgba(0,0,0,0.06)',
+                border: '1px solid var(--border-glass)',
               }}
             >
               <Search size={18} strokeWidth={2} color="#AAAAAA" className="flex-shrink-0" />
@@ -240,8 +240,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Ask anything about fashion..."
-                className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#1A1A1A] placeholder-[#999]"
-                style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0, minWidth: 0 }}
+                className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999]"
+                style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0, minWidth: 0 }}
               />
               {searchQuery && (
                 <button type="button" onClick={() => setSearchQuery('')} className="flex-shrink-0" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
@@ -270,7 +270,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {!isStudio && (
         <nav
           className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
-          style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: 'var(--shadow-md)', paddingBottom: 'env(safe-area-inset-bottom)', background: 'var(--bg-surface)', border: '1px solid var(--border-glass)' }}
+          style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: 'var(--shadow-md)', paddingBottom: 'env(safe-area-inset-bottom)', background: 'var(--bg-base)', border: '1px solid var(--border-glass)' }}
         >
           {mobileTabItems.map((tab) => {
             const IconComp = tab.icon;
@@ -457,19 +457,19 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               
               {/* Drop-Up Suggestions — appears ABOVE the search bar */}
               <div
-                className={`absolute left-0 w-full bg-white rounded-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.1)] border border-gray-100 flex flex-col transition-all origin-bottom ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 translate-y-2 pointer-events-none'}`}
-                style={{ bottom: '100%', marginBottom: '12px', padding: '24px', gap: '20px', transitionDuration: '0.35s' }}
+                className={`absolute left-0 w-full rounded-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.1)] border flex flex-col transition-all origin-bottom ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 translate-y-2 pointer-events-none'}`}
+                style={{ bottom: '100%', marginBottom: '12px', padding: '24px', gap: '20px', transitionDuration: '0.35s', background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
               >
                 <div className="flex flex-col text-left" style={{ gap: '12px' }}>
-                  <span className="text-[13px] font-extrabold text-[#111111] tracking-wide ml-2">Suggestions</span>
+                  <span className="text-[13px] font-extrabold tracking-wide ml-2" style={{ color: 'var(--text-primary)' }}>Suggestions</span>
                   <div className="flex flex-col items-start" style={{ gap: '10px' }}>
                     {SEARCH_SUGGESTIONS.map((suggestion) => (
                       <button
                         key={suggestion}
                         type="button"
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="bg-[#F2F2F2] hover:bg-[#E5E5E5] text-[#333333] text-[13px] font-medium rounded-full transition-colors text-left"
-                        style={{ padding: '10px 20px' }}
+                        className="text-[13px] font-medium rounded-full transition-colors text-left"
+                        style={{ padding: '10px 20px', background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
                       >
                         {suggestion}
                       </button>
@@ -477,8 +477,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   </div>
                 </div>
 
-                <div className="bg-[#F2F2F2] rounded-[16px]" style={{ padding: '16px 20px', marginTop: '8px' }}>
-                  <p className="text-[11.5px] text-[#888888] leading-[1.6] font-semibold text-left">
+                <div className="rounded-[16px]" style={{ padding: '16px 20px', marginTop: '8px', background: 'var(--bg-surface-elevated)' }}>
+                  <p className="text-[11.5px] leading-[1.6] font-semibold text-left" style={{ color: 'var(--text-muted)' }}>
                     Learn more on how we use your data to give you a personalized experience. Recommendation are information purposes only.
                   </p>
                 </div>
@@ -488,7 +488,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               <form
                 onSubmit={handleSearchSubmit}
                 className={`w-full rounded-full flex items-center transition-all duration-300 ${isSearchFocused ? 'shadow-[0_4px_30px_rgba(0,0,0,0.12)]' : 'shadow-[0_4px_20px_rgba(0,0,0,0.06)]'}`}
-                style={{ padding: '6px 6px 6px 24px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)' }}
+                style={{ padding: '6px 6px 6px 24px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
               >
                 <input
                   type="text"
