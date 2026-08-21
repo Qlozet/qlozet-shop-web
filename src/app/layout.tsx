@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit, Inter } from 'next/font/google';
 import { AppProvider } from '@/context/AppContext';
 import { CustomerShell } from '@/components/CustomerShell';
+import { AppToaster } from '@/components/AppToaster';
 import './globals.css';
 
 const outfit = Outfit({
@@ -33,6 +34,7 @@ export default function RootLayout({
           <CustomerShell>
             {children}
           </CustomerShell>
+          <AppToaster />
         </AppProvider>
       </body>
     </html>

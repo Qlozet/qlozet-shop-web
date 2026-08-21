@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -797,6 +798,14 @@ export default function ProductDetailsPage() {
           }
         : {}),
     });
+
+    // Confirm the core action — without this the tap gave no visible signal.
+    toast.success('Added to your cart', {
+      description: [productName, selectedSize && `Size ${selectedSize}`, selectedColor]
+        .filter(Boolean)
+        .join(' · '),
+      action: { label: 'View cart', onClick: () => router.push('/cart') },
+    });
   };
 
   const handleCustomize = () => {
@@ -1343,7 +1352,13 @@ export default function ProductDetailsPage() {
                 )}
               </div>
               <button
-                onClick={() => toggleWishlist(product._id)}
+                type="button"
+                aria-label={isWish ? 'Remove from wishlist' : 'Add to wishlist'}
+                onClick={() => {
+                  toggleWishlist(product._id);
+                  if (isWish) toast('Removed from wishlist');
+                  else toast.success('Saved to wishlist');
+                }}
                 className="flex items-center justify-center transition-all hover:scale-110"
                 style={{
                   width: '40px', height: '40px', borderRadius: '50%',

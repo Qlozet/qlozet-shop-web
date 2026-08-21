@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -277,7 +278,10 @@ export default function CartPage() {
                       <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }} className="truncate">{item.title}</h3>
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => {
+                          removeFromCart(item.id);
+                          toast('Removed from cart', { description: item.title });
+                        }}
                         aria-label={`Remove ${item.title} from cart`}
                         className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-1"
                       >
