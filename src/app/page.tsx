@@ -99,13 +99,13 @@ function VendorRow({
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: '#FFFFFF',
-            border: '1px solid #E5E5E5',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-glass)',
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           }}
         >
-          <ChevronRight size={18} color="#1A1A1A" />
+          <ChevronRight size={18} color="var(--text-primary)" />
         </button>
       )}
     </div>
@@ -117,20 +117,20 @@ function FeedSkeleton() {
   return (
     <div className="flex flex-col w-full animate-pulse" style={{ gap: '36px' }}>
       {/* Trending banner skeleton */}
-      <div className="rounded-[30px] bg-[#E8DDD0]" style={{ height: '280px' }} />
+      <div className="rounded-[30px]" style={{ height: '280px', background: 'var(--bg-surface-elevated)' }} />
       {/* Category skeleton */}
       <div className="flex" style={{ gap: '20px' }}>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0 w-[72vw] max-w-[360px] aspect-square" />
+          <div key={i} className="rounded-[24px] flex-shrink-0 w-[72vw] max-w-[360px] aspect-square" style={{ background: 'var(--bg-surface-elevated)' }} />
         ))}
       </div>
       {/* Vendor row skeletons */}
       {[1, 2].map((i) => (
         <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
-          <div className="h-3 w-32 bg-[#E5E5E5] rounded" />
+          <div className="h-3 w-32 rounded" style={{ background: 'var(--bg-surface-elevated)' }} />
           <div className="flex" style={{ gap: '16px' }}>
             {[1, 2, 3].map((j) => (
-              <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0 w-[72vw] max-w-[360px] h-[500px]" />
+              <div key={j} className="rounded-[24px] flex-shrink-0 w-[72vw] max-w-[360px] h-[500px]" style={{ background: 'var(--bg-surface-elevated)' }} />
             ))}
           </div>
         </div>
@@ -246,8 +246,8 @@ export default function HomePage() {
         <div id="homepage-top-search" className="hidden lg:block w-full max-w-[600px] relative -mt-4 z-30">
           <form
             onSubmit={handleSearchSubmit}
-            className={`w-full bg-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center transition-all duration-300 relative z-40 ${isSearchFocused ? 'shadow-[0_14px_45px_rgba(0,0,0,0.12)]' : ''}`}
-            style={{ padding: '8px 8px 8px 32px' }}
+            className={`w-full rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center transition-all duration-300 relative z-40 ${isSearchFocused ? 'shadow-[0_14px_45px_rgba(0,0,0,0.12)]' : ''}`}
+            style={{ padding: '8px 8px 8px 32px', background: 'var(--bg-surface)' }}
           >
             <input
               type="text"
@@ -256,8 +256,8 @@ export default function HomePage() {
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
               placeholder="What are you looking for today?"
-              className="flex-1 bg-transparent border-none outline-none text-[15px] font-medium text-[#111111] placeholder-[#9A8F86] transition-all text-center focus:text-left"
-              style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
+              className="flex-1 bg-transparent border-none outline-none text-[15px] font-medium placeholder-[#9A8F86] transition-all text-center focus:text-left"
+              style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
             />
             <button
               type="submit"
@@ -271,19 +271,19 @@ export default function HomePage() {
 
           {/* Search Dropdown */}
           <div
-            className={`absolute top-full left-0 w-full bg-white rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-gray-50 flex flex-col transition-all duration-400 origin-top z-30 ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 -translate-y-2 pointer-events-none'}`}
-            style={{ padding: '24px', gap: '20px', marginTop: '12px' }}
+            className={`absolute top-full left-0 w-full rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.1)] border flex flex-col transition-all duration-400 origin-top z-30 ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 -translate-y-2 pointer-events-none'}`}
+            style={{ padding: '24px', gap: '20px', marginTop: '12px', background: 'var(--bg-surface)', borderColor: 'var(--border-glass)' }}
           >
             <div className="flex flex-col text-left" style={{ gap: '12px' }}>
-              <span className="text-[13px] font-extrabold text-[#111111] tracking-wide ml-2">Suggestions</span>
+              <span className="text-[13px] font-extrabold tracking-wide ml-2" style={{ color: 'var(--text-primary)' }}>Suggestions</span>
               <div className="flex flex-col items-start" style={{ gap: '10px' }}>
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion}
                     type="button"
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="bg-[#F2F2F2] hover:bg-[#E5E5E5] text-[#333333] text-[13px] font-medium rounded-full transition-colors text-left"
-                    style={{ padding: '10px 20px' }}
+                    className="text-[13px] font-medium rounded-full transition-colors text-left"
+                    style={{ padding: '10px 20px', background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
                   >
                     {suggestion}
                   </button>
@@ -291,8 +291,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="bg-[#F2F2F2] rounded-[16px]" style={{ padding: '16px 20px', marginTop: '8px' }}>
-              <p className="text-[11.5px] text-[#888888] leading-[1.6] font-semibold text-left">
+            <div className="rounded-[16px]" style={{ padding: '16px 20px', marginTop: '8px', background: 'var(--bg-surface-elevated)' }}>
+              <p className="text-[11.5px] leading-[1.6] font-semibold text-left" style={{ color: 'var(--text-muted)' }}>
                 Learn more on how we use your data to give you a personalized experience. Recommendation are information purposes only.
               </p>
             </div>
@@ -412,7 +412,7 @@ export default function HomePage() {
                 style={{
                   fontSize: '13px',
                   fontWeight: 800,
-                  color: '#1A1A1A',
+                  color: 'var(--text-primary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   fontFamily: 'var(--font-display)',
@@ -420,8 +420,8 @@ export default function HomePage() {
               >
                 {section.label}
               </h3>
-              <ChevronRight size={14} color="#1A1A1A" className="transition-transform group-hover/sec:translate-x-1" />
-              <div style={{ height: '1px', flex: 1, background: '#EBEBEB' }} />
+              <ChevronRight size={14} color="var(--text-primary)" className="transition-transform group-hover/sec:translate-x-1" />
+              <div style={{ height: '1px', flex: 1, background: 'var(--border-glass)' }} />
             </Link>
 
             {/* Vendor Cards Row */}

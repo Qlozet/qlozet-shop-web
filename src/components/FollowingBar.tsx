@@ -27,7 +27,7 @@ export function FollowingBar({ followedVendorIds, vendors }: FollowingBarProps) 
           style={{
             fontSize: '11px',
             fontWeight: 900,
-            color: '#1A1A1A',
+            color: 'var(--text-primary)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
@@ -57,8 +57,8 @@ export function FollowingBar({ followedVendorIds, vendors }: FollowingBarProps) 
                 width: '56px',
                 height: '56px',
                 borderRadius: '14px',
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-glass)',
                 textDecoration: 'none',
               }}
               title={vendor.business_name}
@@ -76,7 +76,7 @@ export function FollowingBar({ followedVendorIds, vendors }: FollowingBarProps) 
                   style={{
                     fontSize: '16px',
                     fontWeight: 900,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     fontFamily: "var(--font-display), 'Outfit', sans-serif",
                   }}
                 >

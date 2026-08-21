@@ -69,11 +69,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       onClick={handleClick}
     >
       {/* Image Section */}
-      <div 
-        className="relative w-full bg-white overflow-hidden rounded-[14px] lg:rounded-[20px] p-[4px] lg:p-[6px] shadow-sm border border-gray-100/50" 
-        style={{ aspectRatio: '214/264' }}
+      <div
+        className="relative w-full overflow-hidden rounded-[14px] lg:rounded-[20px] p-[4px] lg:p-[6px] shadow-sm border"
+        style={{ aspectRatio: '214/264', background: 'var(--bg-surface)', borderColor: 'var(--border-glass)' }}
       >
-        <div className="relative w-full h-full overflow-hidden rounded-[8px] lg:rounded-[10px] bg-gray-50">
+        <div className="relative w-full h-full overflow-hidden rounded-[8px] lg:rounded-[10px]" style={{ background: 'var(--bg-surface-elevated)' }}>
           <Image
             src={imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlDQTNCOCI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'}
             alt={title}
@@ -127,10 +127,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           className="uppercase truncate text-left" 
           style={{ 
             fontFamily: "var(--font-outfit), 'Outfit', sans-serif", 
-            fontWeight: 800, 
-            fontSize: '10px', 
-            color: '#363636', 
-            lineHeight: 1.3 
+            fontWeight: 800,
+            fontSize: '10px',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.3
           }}
         >
           {brand}
@@ -142,7 +142,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           style={{
             fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
             fontSize: '13px',
-            color: '#2D2D2D',
+            color: 'var(--text-primary)',
             lineHeight: '20px',
             letterSpacing: '0.5px',
             paddingTop: '2px',
@@ -159,7 +159,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               fontFamily: "var(--font-inter), 'Inter', sans-serif",
               fontWeight: 'bold',
               fontSize: '14px',
-              color: '#464646',
+              color: 'var(--text-primary)',
               lineHeight: '20px',
               letterSpacing: '0.8px',
             }}
@@ -172,7 +172,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 fontFamily: "var(--font-inter), 'Inter', sans-serif",
                 fontWeight: 'normal',
                 fontSize: '12px',
-                color: '#999',
+                color: 'var(--text-muted)',
                 textDecoration: 'line-through',
               }}
             >
