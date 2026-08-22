@@ -1777,7 +1777,10 @@ export default function ProductDetailsPage() {
                           Math.max(appliedFabricMinCut, Number(e.target.value) || appliedFabricMinCut)
                         )
                       }
-                      style={{ width: '90px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #C4B5FD', fontSize: '13px' }}
+                      // Fixed colours: this card is fixed-light purple in both
+                      // themes, so the input can't inherit the (white-in-dark)
+                      // global input text colour or the number vanishes.
+                      style={{ width: '90px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #C4B5FD', fontSize: '13px', background: '#FFFFFF', color: '#3B0764' }}
                     />
                     <span style={{ fontSize: '12px', color: '#7C6BA0' }}>min {appliedFabricMinCut} yd</span>
                   </label>
