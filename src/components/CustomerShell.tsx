@@ -394,7 +394,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                       top: '-3px', right: '-3px',
                       width: '18px', height: '18px',
                       borderRadius: '50%',
-                      background: '#FFFFFF',
+                      background: 'var(--brand-fill-text)',
                       fontSize: '10px',
                       color: 'var(--brand-fill)',
                       lineHeight: 1,
