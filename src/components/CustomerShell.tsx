@@ -149,7 +149,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           ═══════════════════════════════════════════════════════════════ */}
       <div
         className="lg:hidden flex flex-col min-h-screen font-body hide-scrollbar"
-        style={{ background: isVendorPage ? '#1a1206' : 'var(--bg-surface)', color: 'var(--text-primary)' }}
+        style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
       >
         
         {/* ── Mobile Top Bar ── */}
@@ -426,8 +426,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {/* Main Structural Container - Big White Card */}
         <div
           ref={scrollContainerRef}
-          className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'border'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
-          style={isVendorPage ? undefined : { background: 'var(--bg-surface)', borderColor: 'var(--border-glass)' }}
+          className={`flex-1 ${isVendorPage ? 'border-none' : 'border'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
+          style={{ background: 'var(--bg-surface)', ...(isVendorPage ? {} : { borderColor: 'var(--border-glass)' }) }}
         >
           <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio || isVendorPage ? '0' : '40px' }}>
             <div className="flex-1 flex flex-col">
