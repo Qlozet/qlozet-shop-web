@@ -195,7 +195,9 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         <div className="flex items-center" style={{ gap: '10px' }}>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '5px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
             <TokenIcon size={14} color="#D4AF37" />
-            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>{customization.tokenBalance.toLocaleString()}</span>
+            {/* Sits on the fixed-light gold chip in both themes, so keep the
+                text fixed dark — the theme token would go white and vanish. */}
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A' }}>{customization.tokenBalance.toLocaleString()}</span>
           </div>
           <button
             onClick={onClose}
