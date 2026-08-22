@@ -235,8 +235,12 @@ export default function VendorPage() {
   });
 
   return (
-    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, padding: '24px', color: isLightTheme ? '#1a1a1a' : '#ffffff' }}>
+    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, color: isLightTheme ? '#1a1a1a' : '#ffffff' }}>
       <style>{`
+        /* Padding lives here (not inline) so the mobile bottom clearance for the
+           fixed bottom nav sits INSIDE the themed darkBg area — otherwise the
+           shell's padding shows the brown backdrop below the content. */
+        .vendor-page-root { padding: 24px 24px 104px; }
         @media (min-width: 1024px) { .vendor-page-root { padding: 40px !important; } }
         .vendor-page-bottom::after { content: ''; display: block; height: 100px; }
         ${isLightTheme ? `

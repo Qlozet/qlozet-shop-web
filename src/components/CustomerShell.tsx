@@ -183,7 +183,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         )}
 
         {/* ── Mobile Content ── */}
-        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio ? '0' : isSearchPage ? '140px' : '72px' }}>
+        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio || isVendorPage ? '0' : isSearchPage ? '140px' : '72px' }}>
           <div style={{ padding: isStudio || isVendorPage ? '0' : '24px 20px 20px 20px' }}>
             {children}
           </div>
@@ -441,7 +441,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           </main>
 
           {/* ── Sticky Search Bar — fixed at bottom center of this container ── */}
-          {!isStudio && (
+          {!isStudio && !isVendorPage && (
           <div
             className="sticky z-40 flex justify-center"
             style={{
