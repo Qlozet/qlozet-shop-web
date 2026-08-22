@@ -33,7 +33,7 @@ export default function Following() {
 
     return (
       <div
-        className="flex items-center justify-between transition-colors hover:bg-gray-50/50"
+        className="flex items-center justify-between transition-colors hover:bg-[var(--bg-surface-elevated)]"
         style={{
           padding: '14px 20px',
           borderBottom: showBorder ? '1px solid var(--border-glass)' : 'none',

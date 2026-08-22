@@ -25,7 +25,7 @@ export default function MenuRow({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between transition-colors hover:bg-gray-50/80"
+      className="w-full flex items-center justify-between transition-colors hover:bg-[var(--bg-surface-elevated)]"
       style={{
         padding: '14px 20px',
         background: isActive ? 'var(--bg-surface-elevated)' : 'none',

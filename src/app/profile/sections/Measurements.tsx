@@ -813,7 +813,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             <button
               key={p.id}
               onClick={() => { setSelectedProfile(p); setIsEditing(false); setUnit(p.unit); setActiveSection('measurement-detail'); }}
-              className="w-full flex items-center justify-between transition-all hover:bg-[#FAFAFA] active:scale-[0.99]"
+              className="w-full flex items-center justify-between transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-[0.99]"
               style={{ padding: '18px 20px', borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
             >
               <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</span>

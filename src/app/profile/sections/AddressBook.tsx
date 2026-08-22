@@ -222,7 +222,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
           </div>
 
           {!addressSearch && (
-            <button className="w-full flex items-center hover:bg-gray-50 transition-colors" style={{ padding: '14px 20px', gap: '10px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-glass)', cursor: 'pointer' }}>
+            <button className="w-full flex items-center hover:bg-[var(--bg-surface-elevated)] transition-colors" style={{ padding: '14px 20px', gap: '10px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-glass)', cursor: 'pointer' }}>
               <Navigation size={16} color="var(--brand-brown)" />
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Use your current location</span>
             </button>
@@ -274,7 +274,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
                     }
                   }}
                   disabled={isLoading}
-                  className="w-full flex items-start hover:bg-gray-50 transition-colors" 
+                  className="w-full flex items-start hover:bg-[var(--bg-surface-elevated)] transition-colors" 
                   style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < predictions.length - 1 ? '1px solid var(--border-glass)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
                 >
                   <MapPin size={16} color="var(--text-muted)" className="flex-shrink-0" style={{ marginTop: '2px' }} />
@@ -291,7 +291,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
                   key={`${addr.main}-${addr.sub}-${i}`}
                   onClick={() => handleAddAddress(addr)}
                   disabled={isLoading}
-                  className="w-full flex items-start hover:bg-gray-50 transition-colors" 
+                  className="w-full flex items-start hover:bg-[var(--bg-surface-elevated)] transition-colors" 
                   style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < filteredAddresses.length - 1 ? '1px solid var(--border-glass)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
                 >
                   <MapPin size={16} color="var(--text-muted)" className="flex-shrink-0" style={{ marginTop: '2px' }} />

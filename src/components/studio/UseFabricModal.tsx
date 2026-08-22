@@ -118,7 +118,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
           {step !== 'choose' && (
             <button
               onClick={handleBack}
-              className="flex items-center justify-center hover:bg-gray-100 transition-colors rounded-full"
+              className="flex items-center justify-center hover:bg-[var(--bg-surface-elevated)] transition-colors rounded-full"
               style={{ width: '32px', height: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}
             >
               <ArrowLeft size={18} color="var(--text-primary)" />

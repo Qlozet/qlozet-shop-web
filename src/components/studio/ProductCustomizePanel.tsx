@@ -201,7 +201,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="hover:text-black transition-colors hover:bg-gray-200 rounded-full p-2"
+            className="hover:text-black transition-colors hover:bg-[var(--bg-surface-elevated)] rounded-full p-2"
             style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
           >
             <X size={18} strokeWidth={3} />
@@ -325,7 +325,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         <div className="shrink-0 flex items-center gap-3" style={{ padding: '4px 24px 24px' }}>
           <button
             onClick={onClose}
-            className="flex-1 transition-colors hover:bg-gray-200"
+            className="flex-1 transition-colors hover:bg-[var(--bg-surface-elevated)]"
             style={{
               padding: '14px',
               borderRadius: '14px',

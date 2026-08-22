@@ -16,7 +16,7 @@ export const FitOptionCard: React.FC<FitOptionCardProps> = ({
 }) => (
   <button
     onClick={() => onSelect(option.id)}
-    className="flex flex-col transition-all hover:bg-gray-50"
+    className="flex flex-col transition-all hover:bg-[var(--bg-surface-elevated)]"
     style={{
       padding: '14px',
       borderRadius: '14px',

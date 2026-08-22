@@ -123,7 +123,7 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
                     <Image src={img} alt="" width={72} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                   </div>
                 ))}
-                <button className="flex flex-col items-center justify-center transition-all hover:border-[#462814]" style={{ width: '72px', height: '72px', borderRadius: '10px', border: '2px dashed var(--border-glass)', background: 'none', cursor: 'pointer', gap: '4px' }}>
+                <button className="flex flex-col items-center justify-center transition-all hover:border-[var(--brand-fill)]" style={{ width: '72px', height: '72px', borderRadius: '10px', border: '2px dashed var(--border-glass)', background: 'none', cursor: 'pointer', gap: '4px' }}>
                   <Upload size={16} color="var(--text-muted)" />
                   <span style={{ fontSize: '8px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.2, textAlign: 'center' }}>Add image/<br/>video</span>
                 </button>

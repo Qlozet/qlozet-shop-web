@@ -130,7 +130,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
         {step !== 'purchasing' && step !== 'funding' && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 rounded-full"
+            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] rounded-full"
             style={{ width: '32px', height: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}
           >
             <X size={18} color="var(--text-muted)" />
@@ -283,7 +283,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
             <div className="flex items-center" style={{ gap: '10px' }}>
               <button
                 onClick={() => setStep('select')}
-                className="flex-1 transition-all hover:bg-gray-200"
+                className="flex-1 transition-all hover:bg-[var(--bg-surface-elevated)]"
                 style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Back

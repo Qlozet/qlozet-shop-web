@@ -139,7 +139,7 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
         {/* Change Password */}
         <button
           onClick={() => setActiveSection('change-password')}
-          className="w-full flex items-center justify-between transition-all hover:bg-[#FAFAFA]"
+          className="w-full flex items-center justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
           style={{ padding: '18px 20px', borderRadius: '16px 16px 0 0', border: '1px solid var(--border-glass)', borderBottom: 'none', background: 'var(--bg-base)', cursor: 'pointer' }}
         >
           <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Change Password</span>

@@ -16,7 +16,7 @@ const TOKEN_PACKAGES = [
   { id: 'starter', tokens: 5, icon: Sparkles, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.08)', tag: null },
   { id: 'popular', tokens: 15, icon: Zap, color: '#D4AF37', bgColor: 'rgba(212,175,55,0.08)', tag: 'BEST VALUE' },
   { id: 'pro', tokens: 30, icon: Gem, color: '#3B82F6', bgColor: 'rgba(59,130,246,0.08)', tag: 'SAVE MORE' },
-  { id: 'ultimate', tokens: 60, icon: Crown, color: '#462814', bgColor: 'rgba(70,40,20,0.06)', tag: 'BEST DEAL' },
+  { id: 'ultimate', tokens: 60, icon: Crown, color: 'var(--brand-brown)', bgColor: 'rgba(70,40,20,0.06)', tag: 'BEST DEAL' },
 ];
 
 // ─── Props ────────────────────────────────────────────────────

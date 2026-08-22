@@ -203,7 +203,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                 <button
                   onClick={() => setYards(Math.max(floor, yards - 6))}
                   disabled={!canReserve || yards <= floor}
-                  className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center hover:bg-[var(--bg-surface-elevated)] transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ width: '36px', height: '36px', border: 'none', background: 'var(--bg-surface)', cursor: 'pointer' }}
                 >
                   <Minus size={16} color="var(--text-secondary)" />
@@ -217,7 +217,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                 <button
                   onClick={() => setYards(Math.min(cap, yards + 6))}
                   disabled={!canReserve || yards + 6 > cap}
-                  className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center hover:bg-[var(--bg-surface-elevated)] transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ width: '36px', height: '36px', border: 'none', background: 'var(--bg-surface)', cursor: 'pointer' }}
                 >
                   <Plus size={16} color="var(--text-secondary)" />
@@ -330,7 +330,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
             <button
               onClick={handleClose}
               disabled={submitting}
-              className="flex-1 transition-colors hover:bg-gray-200 disabled:opacity-40"
+              className="flex-1 transition-colors hover:bg-[var(--bg-surface-elevated)] disabled:opacity-40"
               style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Cancel

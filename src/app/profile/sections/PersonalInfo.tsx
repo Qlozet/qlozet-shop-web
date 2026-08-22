@@ -168,7 +168,7 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
           <label style={fieldLabel}>Address*</label>
           <button
             onClick={() => onNavigateToAddressBook?.()}
-            className="w-full flex items-center justify-between group hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-between group hover:bg-[var(--bg-surface-elevated)] transition-colors"
             style={{
               borderBottom: '1px solid var(--border-glass)',
               paddingBottom: '10px',

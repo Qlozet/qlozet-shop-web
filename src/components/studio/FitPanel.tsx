@@ -38,7 +38,7 @@ export const FitPanel: React.FC<FitPanelProps> = ({
 
       {/* Measurements link */}
       <div
-        className="flex items-center justify-between transition-all hover:bg-gray-50"
+        className="flex items-center justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
         style={{ padding: '14px', borderRadius: '14px', border: '1.5px solid var(--border-glass)', cursor: 'pointer' }}
         onClick={() => router.push('/profile?tab=measurements')}
       >
