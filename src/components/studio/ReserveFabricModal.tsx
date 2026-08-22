@@ -133,16 +133,17 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 24px 12px' }}>
         <div>
-          <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1A1A1A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {step === 'form' ? 'Reserve Fabric' : 'Reserved!'}
           </h3>
-          <p style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
             {step === 'form' ? 'Lock fabric for your event guests' : 'Share the link with your guests'}
           </p>
         </div>
         <button
           onClick={handleClose}
-          className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+          className="transition-colors rounded-full p-2"
+          style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
         >
           <X size={18} strokeWidth={3} />
         </button>
@@ -155,19 +156,19 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
         {step === 'form' && (
           <div className="flex flex-col" style={{ gap: '20px' }}>
             {/* Fabric Preview */}
-            <div className="flex items-center rounded-[16px] overflow-hidden" style={{ background: '#F5F5F5', gap: '14px', padding: '12px' }}>
+            <div className="flex items-center rounded-[16px] overflow-hidden" style={{ background: 'var(--bg-surface-elevated)', gap: '14px', padding: '12px' }}>
               <div className="relative flex-shrink-0 rounded-[12px] overflow-hidden" style={{ width: '56px', height: '56px' }}>
                 <Image src={fabricImage} alt={fabricName} fill style={{ objectFit: 'cover' }} sizes="56px" />
               </div>
               <div>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{fabricName}</p>
-                <p style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>₦{fabricPrice.toLocaleString()} per yard</p>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{fabricName}</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>₦{fabricPrice.toLocaleString()} per yard</p>
               </div>
             </div>
 
             {/* Event Name */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Event Name</label>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Event Name</label>
               <input
                 type="text"
                 placeholder="e.g. Adebayo Wedding"
@@ -177,9 +178,10 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                 style={{
                   padding: '14px 16px',
                   borderRadius: '14px',
-                  border: '1.5px solid #E5E5E5',
+                  border: '1.5px solid var(--border-glass)',
                   fontSize: '14px',
-                  background: '#FAFAFA',
+                  background: 'var(--bg-surface-elevated)',
+                  color: 'var(--text-primary)',
                   outline: 'none',
                 }}
               />
@@ -196,19 +198,19 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
 
             {/* Yards Selector */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Yards to Reserve</label>
-              <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderRadius: '14px', border: '1.5px solid #E5E5E5', background: '#FAFAFA', opacity: canReserve ? 1 : 0.5 }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Yards to Reserve</label>
+              <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderRadius: '14px', border: '1.5px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', opacity: canReserve ? 1 : 0.5 }}>
                 <button
                   onClick={() => setYards(Math.max(floor, yards - 6))}
                   disabled={!canReserve || yards <= floor}
                   className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ width: '36px', height: '36px', border: 'none', background: '#EBEBEB', cursor: 'pointer' }}
+                  style={{ width: '36px', height: '36px', border: 'none', background: 'var(--bg-surface)', cursor: 'pointer' }}
                 >
-                  <Minus size={16} color="#333" />
+                  <Minus size={16} color="var(--text-secondary)" />
                 </button>
                 <div className="flex flex-col items-center">
-                  <span style={{ fontSize: '24px', fontWeight: 900, color: '#1A1A1A' }}>{yards}</span>
-                  <span style={{ fontSize: '11px', color: '#888' }}>
+                  <span style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>{yards}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     yards{cap > 0 ? ` · ${cap} available` : ''}
                   </span>
                 </div>
@@ -216,16 +218,16 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                   onClick={() => setYards(Math.min(cap, yards + 6))}
                   disabled={!canReserve || yards + 6 > cap}
                   className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ width: '36px', height: '36px', border: 'none', background: '#EBEBEB', cursor: 'pointer' }}
+                  style={{ width: '36px', height: '36px', border: 'none', background: 'var(--bg-surface)', cursor: 'pointer' }}
                 >
-                  <Plus size={16} color="#333" />
+                  <Plus size={16} color="var(--text-secondary)" />
                 </button>
               </div>
             </div>
 
             {/* Deadline */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 <CalendarDays size={14} className="inline mr-1" style={{ verticalAlign: '-2px' }} />
                 Reservation Deadline
               </label>
@@ -238,33 +240,33 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                 style={{
                   padding: '14px 16px',
                   borderRadius: '14px',
-                  border: '1.5px solid #E5E5E5',
+                  border: '1.5px solid var(--border-glass)',
                   fontSize: '14px',
-                  background: '#FAFAFA',
+                  background: 'var(--bg-surface-elevated)',
+                  color: 'var(--text-primary)',
                   outline: 'none',
-                  colorScheme: 'light',
                 }}
               />
             </div>
 
             {/* Cost Breakdown */}
-            <div className="rounded-[16px]" style={{ background: '#F9FAFB', padding: '16px', border: '1px solid #F0F0F0' }}>
+            <div className="rounded-[16px]" style={{ background: 'var(--bg-surface-elevated)', padding: '16px', border: '1px solid var(--border-glass)' }}>
               <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#666' }}>Total fabric value</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>₦{totalFabricCost.toLocaleString()}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total fabric value</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>₦{totalFabricCost.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', color: '#666' }}>Reservation fee (10%)</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>₦{reservationFee.toLocaleString()}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Reservation fee (10%)</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>₦{reservationFee.toLocaleString()}</span>
               </div>
-              <div className="w-full h-px bg-gray-200" />
+              <div className="w-full h-px" style={{ background: 'var(--border-glass)' }} />
               <div className="flex items-center justify-between" style={{ marginTop: '12px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A' }}>You pay now</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>You pay now</span>
                 <span style={{ fontSize: '16px', fontWeight: 900, color: '#065F46' }}>₦{reservationFee.toLocaleString()}</span>
               </div>
             </div>
 
-            <p style={{ fontSize: '11px', color: '#999', textAlign: 'center', lineHeight: 1.4 }}>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
               Guests pay the fabric price when they claim. Unclaimed yards return to stock after the deadline.
             </p>
           </div>
@@ -279,16 +281,16 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
             </div>
 
             <div className="text-center">
-              <p style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A' }}>{eventName}</p>
-              <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>{yards} yards reserved \u00B7 ₦{fabricPrice.toLocaleString()}/yard</p>
+              <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{eventName}</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{yards} yards reserved \u00B7 ₦{fabricPrice.toLocaleString()}/yard</p>
             </div>
 
             {/* Share Link */}
-            <div className="w-full rounded-[16px]" style={{ background: '#F5F5F5', padding: '16px' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Share this link</p>
+            <div className="w-full rounded-[16px]" style={{ background: 'var(--bg-surface-elevated)', padding: '16px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Share this link</p>
               <div className="flex items-center" style={{ gap: '8px' }}>
-                <div className="flex-1 rounded-[10px] overflow-hidden" style={{ background: '#FFF', border: '1px solid #E5E5E5', padding: '12px 14px' }}>
-                  <p style={{ fontSize: '12px', color: '#333', wordBreak: 'break-all' }}>{shareUrl}</p>
+                <div className="flex-1 rounded-[10px] overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-glass)', padding: '12px 14px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{shareUrl}</p>
                 </div>
                 <button
                   onClick={handleCopy}
@@ -297,12 +299,12 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                     width: '44px',
                     height: '44px',
                     borderRadius: '12px',
-                    background: copied ? '#065F46' : '#1A1A1A',
+                    background: copied ? '#065F46' : 'var(--brand-fill)',
                     border: 'none',
                     cursor: 'pointer',
                   }}
                 >
-                  {copied ? <Check size={18} color="#FFF" /> : <Copy size={18} color="#FFF" />}
+                  {copied ? <Check size={18} color="#FFF" /> : <Copy size={18} color="var(--brand-fill-text)" />}
                 </button>
               </div>
             </div>
@@ -329,7 +331,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
               onClick={handleClose}
               disabled={submitting}
               className="flex-1 transition-colors hover:bg-gray-200 disabled:opacity-40"
-              style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Cancel
             </button>
@@ -350,7 +352,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
           <button
             onClick={handleClose}
             className="w-full transition-colors hover:opacity-90"
-            style={{ padding: '14px', borderRadius: '14px', background: '#1A1A1A', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+            style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
           >
             Done
           </button>
@@ -369,11 +371,11 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
             onClick={handleClose}
           />
           <div
-            className={`fixed left-3 right-3 bottom-3 z-[100] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-            style={{ maxHeight: '80vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+            className={`fixed left-3 right-3 bottom-3 z-[100] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+            style={{ maxHeight: '80vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
           >
             <div className="flex justify-center pt-3 pb-1">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
             </div>
             {panelContent}
           </div>
@@ -388,7 +390,8 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
           style={{ right: '48px', top: '48px', bottom: '48px' }}
         >
           <aside
-            className={`h-full w-[420px] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border border-gray-100 overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`h-full w-[420px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            style={{ background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
           >
             {panelContent}
           </aside>
