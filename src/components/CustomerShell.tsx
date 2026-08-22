@@ -330,7 +330,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       {/* ═══════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (≥ lg) — unchanged
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="hidden lg:flex h-screen overflow-hidden font-body" style={{ padding: '24px 24px 24px 0', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      <div className="hidden lg:flex h-screen overflow-hidden font-body" style={{ padding: '24px 24px 24px 0', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
         
         {/* 1. SIDEBAR (Left Navigation) - On grey background */}
         <aside className="w-[100px] flex-shrink-0 flex flex-col items-center justify-between py-8" style={{ paddingTop: '32px', paddingBottom: '32px' }}>

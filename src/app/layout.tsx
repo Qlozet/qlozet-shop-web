@@ -34,7 +34,7 @@ export default function RootLayout({
         {/* Apply the saved/system theme before paint to avoid a light flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      <body style={{ background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
         <ThemeProvider>
           <AppProvider>
             <CustomerShell>

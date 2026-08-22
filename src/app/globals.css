@@ -10,7 +10,13 @@
 
  :root {
    /* Colors */
-   --bg-base: #F8F9FA;
+   /* --bg-app: the app GROUND (behind the side menu + main content container).
+      Keeps the soft off-white in light; dark grey in dark. Only the shell ground
+      uses this. */
+   --bg-app: #F8F9FA;
+   /* --bg-base: component surface (cards, sheets, studio tools, search bars).
+      Pure white in light so those components read as white; dark grey in dark. */
+   --bg-base: #FFFFFF;
    --bg-surface: #FFFFFF;
    --bg-surface-elevated: #F0F0F0;
 
@@ -74,7 +80,8 @@
  html.dark {
    color-scheme: dark;
 
-   --bg-base: #242427;                   /* main background — grey, darkened a bit */
+   --bg-app: #242427;                    /* app ground — dark grey (unchanged in dark) */
+   --bg-base: #242427;                   /* component surface — dark grey (matches ground in dark) */
    --bg-surface: #161619;                /* big content card — near-black (pops darker) */
    --bg-surface-elevated: #2E2E33;       /* insets/chips ON the card (a touch lighter) */
 
@@ -121,7 +128,7 @@
 
  html,
  body {
-   background-color: var(--bg-base);
+   background-color: var(--bg-app);
    color: var(--text-primary);
    font-family: var(--font-body);
    scroll-behavior: smooth;
