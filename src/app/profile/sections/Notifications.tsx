@@ -19,7 +19,7 @@ const NOTIF_ITEMS: NotifItem[] = [
     id: 'installments',
     icon: Bell,
     iconBg: 'rgba(139,90,43,0.10)',
-    iconColor: '#8B5A2B',
+    iconColor: 'var(--brand-brown)',
     title: 'Installments',
     description: 'Notifications for upcoming payments, successful transactions, and payments issues',
   },
@@ -43,7 +43,7 @@ const NOTIF_ITEMS: NotifItem[] = [
     id: 'cart-reminder',
     icon: ShoppingCart,
     iconBg: 'rgba(139,90,43,0.10)',
-    iconColor: '#8B5A2B',
+    iconColor: 'var(--brand-brown)',
     title: 'Cart reminder',
     description: 'Reminders that there are items in your cart',
   },
@@ -84,8 +84,8 @@ export default function Notifications() {
       {/* Header card */}
       <div style={cardStyle}>
         <div style={{ padding: '24px 20px' }}>
-          <Bell size={28} color="#462814" strokeWidth={1.5} />
-          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
+          <Bell size={28} color="var(--brand-brown)" strokeWidth={1.5} />
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
             Notifications
           </h3>
         </div>
@@ -105,9 +105,9 @@ export default function Notifications() {
               style={{
                 padding: '18px 20px',
                 borderRadius: isFirst ? '16px 16px 0 0' : isLast ? '0 0 16px 16px' : '0',
-                border: '1px solid rgba(0,0,0,0.06)',
+                border: '1px solid var(--border-glass)',
                 borderTop: isFirst ? undefined : 'none',
-                background: '#FFFFFF',
+                background: 'var(--bg-base)',
               }}
             >
               {/* Icon + text */}
@@ -119,8 +119,8 @@ export default function Notifications() {
                   <Icon size={16} color={item.iconColor} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>{item.title}</p>
-                  <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.5 }}>{item.description}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>{item.title}</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{item.description}</p>
                 </div>
               </div>
 
@@ -132,7 +132,7 @@ export default function Notifications() {
                   width: '44px',
                   height: '24px',
                   borderRadius: '100px',
-                  background: toggles[item.id] ? '#2C1810' : '#E5E5E5',
+                  background: toggles[item.id] ? 'var(--brand-fill)' : 'var(--border-glass)',
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
@@ -145,7 +145,7 @@ export default function Notifications() {
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
-                    background: '#FFFFFF',
+                    background: toggles[item.id] ? 'var(--brand-fill-text)' : '#FFF',
                     top: '2px',
                     left: toggles[item.id] ? '22px' : '2px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.15)',

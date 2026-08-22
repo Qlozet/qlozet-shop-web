@@ -83,14 +83,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
   // ─── Shared: Fabric Usage info card ─────────────────────────
   const FabricUsageCard = () => (
-    <div style={{ background: '#F8F6F3', borderRadius: '16px', padding: '16px 20px', border: '1px solid rgba(0,0,0,0.04)', maxWidth: '260px' }}>
+    <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: '16px', padding: '16px 20px', border: '1px solid var(--border-glass)', maxWidth: '260px' }}>
       <div className="flex items-center" style={{ gap: '8px', marginBottom: '8px' }}>
         <div className="flex items-center justify-center" style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)' }}>
           <Sparkles size={10} color="#D4AF37" />
         </div>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
+        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
       </div>
-      <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.5 }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
         We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
       </p>
     </div>
@@ -101,8 +101,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     <div style={cardStyle}>
       <div className="flex flex-col lg:flex-row lg:items-start" style={{ padding: '24px 20px', gap: '16px' }}>
         <div className="flex-1">
-          <Ruler size={32} color="#1A1A1A" strokeWidth={1.5} style={{ marginBottom: '12px' }} />
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+          <Ruler size={32} color="var(--text-primary)" strokeWidth={1.5} style={{ marginBottom: '12px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
             My Measurement
           </h3>
         </div>
@@ -121,25 +121,25 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     const displayed = toDisplay(value, displayUnit);
     const step = displayUnit === 'inch' ? 0.25 : 0.5;
     return (
-      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-        <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>{MEASUREMENT_LABELS[fieldKey]}</span>
+      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)' }}>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{MEASUREMENT_LABELS[fieldKey]}</span>
         <div className="flex items-center" style={{ gap: '0' }}>
           <button
             onClick={() => onChange(fieldKey, toCm(Math.max(0, Math.round((displayed - step) * 100) / 100), displayUnit))}
             className="flex items-center justify-center transition-all active:scale-90"
-            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.1)', background: 'none', cursor: 'pointer' }}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer' }}
           >
-            <Minus size={14} color="#1A1A1A" />
+            <Minus size={14} color="var(--text-primary)" />
           </button>
-          <span style={{ width: '56px', textAlign: 'center', fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
+          <span style={{ width: '56px', textAlign: 'center', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
             {displayed || 0}
           </span>
           <button
             onClick={() => onChange(fieldKey, toCm(Math.round((displayed + step) * 100) / 100, displayUnit))}
             className="flex items-center justify-center transition-all active:scale-90"
-            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.1)', background: 'none', cursor: 'pointer' }}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer' }}
           >
-            <Plus size={14} color="#1A1A1A" />
+            <Plus size={14} color="var(--text-primary)" />
           </button>
         </div>
       </div>
@@ -157,13 +157,13 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90"
           style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}
         >
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
-        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
           What is your clothing size?
         </h3>
-        <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.6, maxWidth: '400px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '400px' }}>
           We use a special customization feature to get the most accurate sizes
         </p>
 
@@ -181,22 +181,22 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               style={{
                 padding: '18px 20px',
                 borderRadius: '16px',
-                border: selectedMethod === opt.key ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.08)',
-                background: '#FFFFFF',
+                border: selectedMethod === opt.key ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                background: 'var(--bg-base)',
                 cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>{opt.label}</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{opt.label}</span>
               <div
                 style={{
                   width: '24px', height: '24px', borderRadius: '50%',
-                  border: selectedMethod === opt.key ? 'none' : '2px solid #DDD',
-                  background: selectedMethod === opt.key ? '#1A1A1A' : 'transparent',
+                  border: selectedMethod === opt.key ? 'none' : '2px solid var(--border-glass)',
+                  background: selectedMethod === opt.key ? 'var(--brand-fill)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
                 {selectedMethod === opt.key && (
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="var(--brand-fill-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 )}
               </div>
             </button>
@@ -204,14 +204,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
         </div>
 
         {/* Feature info card */}
-        <div style={{ background: '#F8F6F3', borderRadius: '16px', padding: '20px', border: '1px solid rgba(0,0,0,0.04)' }}>
+        <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: '16px', padding: '20px', border: '1px solid var(--border-glass)' }}>
           <div className="flex items-center" style={{ gap: '8px', marginBottom: '10px' }}>
             <div className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)' }}>
               <Sparkles size={12} color="#D4AF37" />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>AI-Powered Sizing</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>AI-Powered Sizing</span>
           </div>
-          <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '10px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '10px' }}>
             Our AI analyzes your height, weight, and body type to predict accurate measurements across 14 body points — no tape measure needed.
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
         <button
           onClick={() => setActiveSection('measurement-form')}
           className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{ padding: '16px', borderRadius: '14px', background: '#1A1A1A', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+          style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
         >
           Continue
         </button>
@@ -240,7 +240,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
       return (
         <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
           <button onClick={() => setActiveSection('add-measurement')} className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90" style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}>
-            <ArrowLeft size={20} color="#1A1A1A" />
+            <ArrowLeft size={20} color="var(--text-primary)" />
           </button>
           <div className="relative overflow-hidden" style={{ borderRadius: '20px', background: 'linear-gradient(135deg, #1A1208 0%, #2C1810 40%, #3D2517 100%)', padding: '36px 32px', minHeight: '200px' }}>
             <div className="absolute inset-0" style={{ opacity: 0.15, background: 'repeating-linear-gradient(60deg, transparent, transparent 20px, rgba(212,175,55,0.3) 20px, rgba(212,175,55,0.3) 22px), repeating-linear-gradient(-60deg, transparent, transparent 20px, rgba(180,100,30,0.3) 20px, rgba(180,100,30,0.3) 22px)' }} />
@@ -282,14 +282,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
       return (
         <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
           <button onClick={() => setActiveSection('add-measurement')} className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90" style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}>
-            <ArrowLeft size={20} color="#1A1A1A" />
+            <ArrowLeft size={20} color="var(--text-primary)" />
           </button>
 
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
               Answer the questions below<br />to get your measurement.
             </h3>
-            <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.6, marginTop: '12px', maxWidth: '420px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '12px', maxWidth: '420px' }}>
               Our AI will predict your body measurements from just your height, weight, and gender.
             </p>
           </div>
@@ -297,7 +297,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           {/* Height + Gender */}
           <div className="flex" style={{ gap: '12px' }}>
             <div className="flex-1 flex flex-col" style={{ gap: '6px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Height</label>
+              <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Height</label>
               {/* Unit toggle */}
               <div className="flex" style={{ gap: '0', marginBottom: '6px' }}>
                 {(['cm', 'ft'] as const).map(u => (
@@ -307,10 +307,10 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                     style={{
                       padding: '6px 14px', fontSize: '11px', fontWeight: 700,
                       textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer',
-                      border: '1px solid rgba(0,0,0,0.08)',
+                      border: '1px solid var(--border-glass)',
                       borderRadius: u === 'cm' ? '8px 0 0 8px' : '0 8px 8px 0',
-                      background: heightUnit === u ? '#1A1A1A' : '#FAFAFA',
-                      color: heightUnit === u ? '#FFF' : '#999',
+                      background: heightUnit === u ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+                      color: heightUnit === u ? 'var(--brand-fill-text)' : 'var(--text-muted)',
                     }}
                   >
                     {u === 'cm' ? 'CM' : 'FT / IN'}
@@ -325,7 +325,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                   onChange={(e) => setHeightCmValue(e.target.value)}
                   placeholder="170"
                   className="w-full"
-                  style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '14px', fontWeight: 500, color: '#1A1A1A', background: '#FAFAFA', outline: 'none' }}
+                  style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
                 />
               ) : (
                 <div className="flex" style={{ gap: '8px' }}>
@@ -336,9 +336,9 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                       onChange={(e) => setHeightFt(e.target.value)}
                       placeholder="5"
                       className="w-full"
-                      style={{ padding: '14px 16px', paddingRight: '32px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '14px', fontWeight: 500, color: '#1A1A1A', background: '#FAFAFA', outline: 'none' }}
+                      style={{ padding: '14px 16px', paddingRight: '32px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
                     />
-                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: '#999' }}>ft</span>
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>ft</span>
                   </div>
                   <div className="flex-1 relative">
                     <input
@@ -347,15 +347,15 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                       onChange={(e) => setHeightIn(e.target.value)}
                       placeholder="7"
                       className="w-full"
-                      style={{ padding: '14px 16px', paddingRight: '28px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '14px', fontWeight: 500, color: '#1A1A1A', background: '#FAFAFA', outline: 'none' }}
+                      style={{ padding: '14px 16px', paddingRight: '28px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
                     />
-                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: '#999' }}>in</span>
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>in</span>
                   </div>
                 </div>
               )}
             </div>
             <div className="flex-1 flex flex-col" style={{ gap: '6px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gender</label>
+              <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gender</label>
               <div className="flex" style={{ gap: '8px' }}>
                 {(['male', 'female'] as const).map(g => (
                   <button
@@ -364,9 +364,9 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                     className="flex-1 transition-all"
                     style={{
                       padding: '14px', borderRadius: '12px',
-                      border: formGender === g ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.08)',
-                      background: formGender === g ? '#F8F6F3' : '#FAFAFA',
-                      fontSize: '13px', fontWeight: 600, color: '#1A1A1A',
+                      border: formGender === g ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                      background: formGender === g ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)',
+                      fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
                       cursor: 'pointer', textTransform: 'capitalize',
                     }}
                   >
@@ -379,14 +379,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
           {/* Weight */}
           <div className="flex flex-col" style={{ gap: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight (kg)</label>
+            <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight (kg)</label>
             <input
               type="number"
               value={formWeight}
               onChange={(e) => setFormWeight(e.target.value)}
               placeholder="70"
               className="w-full"
-              style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '14px', fontWeight: 500, color: '#1A1A1A', background: '#FAFAFA', outline: 'none' }}
+              style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
             />
           </div>
 
@@ -405,8 +405,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
             style={{
               padding: '16px', borderRadius: '14px',
-              background: isPredicting || !getHeightCm() || !formWeight ? '#D4C9C0' : '#2C1810',
-              color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
+              background: isPredicting || !getHeightCm() || !formWeight ? 'var(--bg-surface-elevated)' : 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
               letterSpacing: '0.12em', border: 'none',
               cursor: isPredicting || !getHeightCm() || !formWeight ? 'not-allowed' : 'pointer',
               gap: '10px',
@@ -429,14 +429,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '20px' }}>
         <button onClick={() => setActiveSection('add-measurement')} className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90" style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}>
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
         <MeasurementHeaderCard />
 
         {/* Title + Unit */}
         <div className="flex items-center justify-between">
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>New measurement</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>New measurement</span>
         </div>
 
         {/* Unit selector */}
@@ -444,12 +444,12 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value as 'cm' | 'inch')}
-            style={{ padding: '10px 36px 10px 14px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '13px', fontWeight: 600, color: '#1A1A1A', background: '#FAFAFA', appearance: 'none', cursor: 'pointer', outline: 'none' }}
+            style={{ padding: '10px 36px 10px 14px', borderRadius: '10px', border: '1px solid var(--border-glass)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', appearance: 'none', cursor: 'pointer', outline: 'none' }}
           >
             <option value="cm">Centimeters</option>
             <option value="inch">Inches</option>
           </select>
-          <ChevronDown size={14} color="#999" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
 
         {/* Stepper rows */}
@@ -469,14 +469,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
         {/* Profile name */}
         <div className="flex flex-col" style={{ gap: '6px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Profile Name</label>
+          <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Profile Name</label>
           <input
             type="text"
             value={saveProfileName}
             onChange={(e) => setSaveProfileName(e.target.value)}
             placeholder="e.g. My measurements"
             className="w-full"
-            style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '14px', fontWeight: 500, color: '#1A1A1A', background: '#FAFAFA', outline: 'none' }}
+            style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
           />
         </div>
 
@@ -497,8 +497,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
           style={{
             padding: '16px', borderRadius: '14px',
-            background: isSaving || !saveProfileName.trim() ? '#D4C9C0' : '#2C1810',
-            color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
+            background: isSaving || !saveProfileName.trim() ? 'var(--bg-surface-elevated)' : 'var(--brand-fill)',
+            color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
             letterSpacing: '0.12em', border: 'none',
             cursor: isSaving || !saveProfileName.trim() ? 'not-allowed' : 'pointer',
             gap: '10px',
@@ -517,7 +517,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '20px' }}>
         <button onClick={() => setActiveSection('measurement-form')} className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90" style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}>
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
         {/* Success badge */}
@@ -535,17 +535,17 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
         {/* Unit selector */}
         <div className="flex items-center justify-between">
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>Your predicted measurements</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Your predicted measurements</span>
           <div className="relative" style={{ width: 'fit-content' }}>
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as 'cm' | 'inch')}
-              style={{ padding: '8px 32px 8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '12px', fontWeight: 600, color: '#1A1A1A', background: '#FAFAFA', appearance: 'none', cursor: 'pointer', outline: 'none' }}
+              style={{ padding: '8px 32px 8px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', appearance: 'none', cursor: 'pointer', outline: 'none' }}
             >
               <option value="cm">cm</option>
               <option value="inch">inch</option>
             </select>
-            <ChevronDown size={12} color="#999" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <ChevronDown size={12} color="var(--text-muted)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           </div>
         </div>
 
@@ -566,14 +566,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
         {/* Profile name input */}
         <div className="flex flex-col" style={{ gap: '6px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Profile Name</label>
+          <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Profile Name</label>
           <input
             type="text"
             value={saveProfileName}
             onChange={(e) => setSaveProfileName(e.target.value)}
             placeholder="e.g. My measurements"
             className="w-full"
-            style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '14px', fontWeight: 500, color: '#1A1A1A', background: '#FAFAFA', outline: 'none' }}
+            style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
           />
         </div>
 
@@ -595,8 +595,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
           style={{
             padding: '16px', borderRadius: '14px',
-            background: isSaving || !saveProfileName.trim() ? '#D4C9C0' : '#2C1810',
-            color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
+            background: isSaving || !saveProfileName.trim() ? 'var(--bg-surface-elevated)' : 'var(--brand-fill)',
+            color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
             letterSpacing: '0.12em', border: 'none',
             cursor: isSaving || !saveProfileName.trim() ? 'not-allowed' : 'pointer',
             gap: '10px',
@@ -621,14 +621,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90"
           style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}
         >
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
         <MeasurementHeaderCard />
 
         {/* Profile name + Actions */}
         <div className="flex items-center justify-between">
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>{profile.name}</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{profile.name}</span>
           <div className="flex items-center" style={{ gap: '8px' }}>
             {isEditing ? (
               <>
@@ -636,7 +636,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                   <button
                     onClick={async () => { await setDefault(profile.name); setSelectedProfile({ ...profile, isDefault: true }); }}
                     className="transition-all hover:opacity-80 active:scale-95"
-                    style={{ padding: '6px 14px', borderRadius: '6px', background: '#F5F5F5', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                    style={{ padding: '6px 14px', borderRadius: '6px', background: 'var(--bg-surface-elevated)', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}
                   >
                     Set Default
                   </button>
@@ -644,16 +644,16 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="flex items-center justify-center transition-all hover:opacity-80 active:scale-95"
-                  style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)', background: 'none', cursor: 'pointer' }}
+                  style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer' }}
                 >
-                  <Trash2 size={16} color="#999" />
+                  <Trash2 size={16} color="var(--text-muted)" />
                 </button>
               </>
             ) : (
               <button
                 onClick={() => { setIsEditing(true); setEditValues({ ...profile.values }); }}
                 className="transition-all hover:opacity-80 active:scale-95"
-                style={{ padding: '8px 20px', borderRadius: '8px', background: '#1A1A1A', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                style={{ padding: '8px 20px', borderRadius: '8px', background: 'var(--brand-fill)', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: 'var(--brand-fill-text)', textTransform: 'uppercase', letterSpacing: '0.08em' }}
               >
                 Edit
               </button>
@@ -681,7 +681,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 transition-all hover:opacity-90"
-                style={{ padding: '10px', borderRadius: '8px', background: '#F5F5F5', color: '#1A1A1A', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}
+                style={{ padding: '10px', borderRadius: '8px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}
               >
                 Cancel
               </button>
@@ -694,12 +694,12 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value as 'cm' | 'inch')}
-            style={{ padding: '10px 36px 10px 14px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', fontSize: '13px', fontWeight: 600, color: '#1A1A1A', background: '#FAFAFA', appearance: 'none', cursor: 'pointer', outline: 'none' }}
+            style={{ padding: '10px 36px 10px 14px', borderRadius: '10px', border: '1px solid var(--border-glass)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', appearance: 'none', cursor: 'pointer', outline: 'none' }}
           >
             <option value="cm">Centimeters</option>
             <option value="inch">Inches</option>
           </select>
-          <ChevronDown size={14} color="#999" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
 
         {/* Measurement table */}
@@ -719,10 +719,10 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                 <div
                   key={key}
                   className="flex items-center justify-between"
-                  style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}
+                  style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)' }}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>{MEASUREMENT_LABELS[key]}</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>{toDisplay(cmValue || 0, unit)} {unit === 'inch' ? 'in' : 'cm'}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{MEASUREMENT_LABELS[key]}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{toDisplay(cmValue || 0, unit)} {unit === 'inch' ? 'in' : 'cm'}</span>
                 </div>
               );
             })}
@@ -742,8 +742,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
             style={{
               padding: '16px', borderRadius: '14px',
-              background: isSaving ? '#D4C9C0' : '#2C1810',
-              color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
+              background: isSaving ? 'var(--bg-surface-elevated)' : 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
               letterSpacing: '0.12em', border: 'none',
               cursor: isSaving ? 'not-allowed' : 'pointer', gap: '10px',
             }}
@@ -764,14 +764,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
       <div style={cardStyle}>
         <div className="flex flex-col lg:flex-row lg:items-start" style={{ padding: '24px 20px', gap: '16px' }}>
           <div className="flex-1">
-            <Ruler size={32} color="#1A1A1A" strokeWidth={1.5} style={{ marginBottom: '12px' }} />
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '16px' }}>
+            <Ruler size={32} color="var(--text-primary)" strokeWidth={1.5} style={{ marginBottom: '12px' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '16px' }}>
               My Measurement
             </h3>
             <button
               onClick={() => setActiveSection('add-measurement')}
               className="transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{ padding: '12px 24px', borderRadius: '10px', background: '#2C1810', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', border: 'none', cursor: 'pointer' }}
+              style={{ padding: '12px 24px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', border: 'none', cursor: 'pointer' }}
             >
               Add Measurement
             </button>
@@ -799,8 +799,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
       {/* Empty state */}
       {!isLoading && !error && profiles.length === 0 && (
         <div className="flex flex-col items-center" style={{ padding: '40px 20px', gap: '12px' }}>
-          <Ruler size={40} color="#CCC" strokeWidth={1} />
-          <p style={{ fontSize: '14px', color: '#999', textAlign: 'center', lineHeight: 1.6 }}>
+          <Ruler size={40} color="var(--text-muted)" strokeWidth={1} />
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
             No measurements saved yet.<br />Add your first measurement to get started.
           </p>
         </div>
@@ -814,16 +814,16 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               key={p.id}
               onClick={() => { setSelectedProfile(p); setIsEditing(false); setUnit(p.unit); setActiveSection('measurement-detail'); }}
               className="w-full flex items-center justify-between transition-all hover:bg-[#FAFAFA] active:scale-[0.99]"
-              style={{ padding: '18px 20px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', cursor: 'pointer' }}
+              style={{ padding: '18px 20px', borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
             >
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>{p.name}</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</span>
               <div className="flex items-center" style={{ gap: '10px' }}>
                 {p.isDefault && (
-                  <span style={{ fontSize: '9px', fontWeight: 800, color: '#1A1A1A', background: '#F0F0F0', padding: '4px 12px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', padding: '4px 12px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     Default
                   </span>
                 )}
-                <ChevronRight size={16} color="#CCC" />
+                <ChevronRight size={16} color="var(--text-muted)" />
               </div>
             </button>
           ))}

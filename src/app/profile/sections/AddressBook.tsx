@@ -156,7 +156,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
       return (
         <>
           {text.slice(0, idx)}
-          <strong style={{ color: '#462814', fontWeight: 700 }}>{text.slice(idx, idx + query.length)}</strong>
+          <strong style={{ color: 'var(--brand-brown)', fontWeight: 700 }}>{text.slice(idx, idx + query.length)}</strong>
           {text.slice(idx + query.length)}
         </>
       );
@@ -168,7 +168,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
         <div className="flex items-center justify-between">
-          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Add Address</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Add Address</h3>
         </div>
 
         {feedback.text && (
@@ -194,8 +194,8 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
         )}
 
         <div style={cardStyle}>
-          <div className="flex items-center" style={{ padding: '14px 20px', gap: '10px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-            <Search size={16} color="#999" />
+          <div className="flex items-center" style={{ padding: '14px 20px', gap: '10px', borderBottom: '1px solid var(--border-glass)' }}>
+            <Search size={16} color="var(--text-muted)" />
             <input
               type="text"
               value={addressSearch}
@@ -216,22 +216,22 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
                 }} 
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
               >
-                <X size={16} color="#999" />
+                <X size={16} color="var(--text-muted)" />
               </button>
             )}
           </div>
 
           {!addressSearch && (
-            <button className="w-full flex items-center hover:bg-gray-50 transition-colors" style={{ padding: '14px 20px', gap: '10px', background: 'none', border: 'none', borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer' }}>
-              <Navigation size={16} color="#462814" />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>Use your current location</span>
+            <button className="w-full flex items-center hover:bg-gray-50 transition-colors" style={{ padding: '14px 20px', gap: '10px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-glass)', cursor: 'pointer' }}>
+              <Navigation size={16} color="var(--brand-brown)" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Use your current location</span>
             </button>
           )}
 
           {addressSearch && showEmptyState && (
             <div className="flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '8px' }}>
-              <MapPin size={24} color="#CCC" />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#999' }}>No places match &ldquo;{addressSearch}&rdquo;</span>
+              <MapPin size={24} color="var(--text-muted)" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>No places match &ldquo;{addressSearch}&rdquo;</span>
             </div>
           )}
 
@@ -275,12 +275,12 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
                   }}
                   disabled={isLoading}
                   className="w-full flex items-start hover:bg-gray-50 transition-colors" 
-                  style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < predictions.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
+                  style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < predictions.length - 1 ? '1px solid var(--border-glass)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
                 >
-                  <MapPin size={16} color="#999" className="flex-shrink-0" style={{ marginTop: '2px' }} />
+                  <MapPin size={16} color="var(--text-muted)" className="flex-shrink-0" style={{ marginTop: '2px' }} />
                   <div className="flex flex-col" style={{ gap: '2px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{highlightMatch(addr.main)}</span>
-                    <span style={{ fontSize: '12px', color: '#999' }}>{highlightMatch(addr.sub)}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{highlightMatch(addr.main)}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{highlightMatch(addr.sub)}</span>
                   </div>
                 </button>
               ))
@@ -292,12 +292,12 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
                   onClick={() => handleAddAddress(addr)}
                   disabled={isLoading}
                   className="w-full flex items-start hover:bg-gray-50 transition-colors" 
-                  style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < filteredAddresses.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
+                  style={{ padding: '14px 20px', gap: '12px', background: 'none', border: 'none', borderBottom: i < filteredAddresses.length - 1 ? '1px solid var(--border-glass)' : 'none', cursor: 'pointer', textAlign: 'left', opacity: isLoading ? 0.7 : 1 }}
                 >
-                  <MapPin size={16} color="#999" className="flex-shrink-0" style={{ marginTop: '2px' }} />
+                  <MapPin size={16} color="var(--text-muted)" className="flex-shrink-0" style={{ marginTop: '2px' }} />
                   <div className="flex flex-col" style={{ gap: '2px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>{highlightMatch(addr.main)}</span>
-                    <span style={{ fontSize: '12px', color: '#999' }}>{highlightMatch(addr.sub)}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{highlightMatch(addr.main)}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{highlightMatch(addr.sub)}</span>
                   </div>
                 </button>
               ))
@@ -311,8 +311,8 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
   return (
     <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
       <div className="flex items-center justify-between">
-        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Address Book</h3>
-        <button onClick={() => setActiveSection('add-address')} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '100px', background: '#1A1A1A', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Address Book</h3>
+        <button onClick={() => setActiveSection('add-address')} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
           Add Address
         </button>
       </div>
@@ -322,7 +322,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
       )}
 
       {addresses.length === 0 && !isLoading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#999', fontSize: '14px', background: '#FFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontSize: '14px', background: 'var(--bg-base)', borderRadius: '16px', border: '1px solid var(--border-glass)' }}>
           No shipping addresses found. Add a new address to get started.
         </div>
       )}
@@ -331,25 +331,25 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
         <div key={addr.id} style={{ ...cardStyle, padding: '20px' }}>
           <div className="flex items-start justify-between">
             <div className="flex items-start" style={{ gap: '12px' }}>
-              <div className="flex-shrink-0" style={{ width: '18px', height: '18px', borderRadius: '50%', border: addr.isDefault ? '5px solid #1A1A1A' : '2px solid #CCC', marginTop: '2px' }} />
+              <div className="flex-shrink-0" style={{ width: '18px', height: '18px', borderRadius: '50%', border: addr.isDefault ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)', marginTop: '2px' }} />
               <div className="flex flex-col" style={{ gap: '2px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>{addr.name}</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{addr.name}</span>
                 {addr.lines.map((line, i) => (
-                  <span key={i} style={{ fontSize: '13px', color: '#666', lineHeight: 1.5 }}>{line}</span>
+                  <span key={i} style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{line}</span>
                 ))}
               </div>
             </div>
             <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
               <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                <Pencil size={16} color="#888" />
+                <Pencil size={16} color="var(--text-muted)" />
               </button>
               <button onClick={() => deleteAddress(addr.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                <Trash2 size={16} color="#888" />
+                <Trash2 size={16} color="var(--text-muted)" />
               </button>
             </div>
           </div>
           <div className="flex items-center" style={{ gap: '10px', marginTop: '14px' }}>
-            <span style={{ fontSize: '9px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.06em', background: '#1A1A1A', borderRadius: '4px', padding: '4px 10px' }}>
+            <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--brand-fill-text)', textTransform: 'uppercase', letterSpacing: '0.06em', background: 'var(--brand-fill)', borderRadius: '4px', padding: '4px 10px' }}>
               {addr.isDefault ? 'Your Default Address' : 'Toggle to make default'}
             </span>
             <Toggle value={addr.isDefault} onChange={() => toggleDefaultAddress(addr.id)} />

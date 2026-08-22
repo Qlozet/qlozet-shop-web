@@ -53,9 +53,9 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
     return (
       <div
         className="flex animate-fade-in"
-        style={{ gap: '0', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
+        style={{ gap: '0', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-glass)', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
       >
-        <div className="overflow-y-auto hide-scrollbar" style={{ width: '120px', maxHeight: '360px', background: '#FAFAFA' }}>
+        <div className="overflow-y-auto hide-scrollbar" style={{ width: '120px', maxHeight: '360px', background: 'var(--bg-surface-elevated)' }}>
           {yearRange.map((y) => (
             <button
               key={y}
@@ -63,8 +63,8 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
               style={{
                 display: 'block', width: '100%', padding: '10px 16px', textAlign: 'center',
                 fontSize: '14px', fontWeight: y === viewYear ? 700 : 500,
-                color: y === viewYear ? '#FFF' : '#555',
-                background: y === viewYear ? '#462814' : 'transparent',
+                color: y === viewYear ? 'var(--brand-fill-text)' : 'var(--text-secondary)',
+                background: y === viewYear ? 'var(--brand-fill)' : 'transparent',
                 borderRadius: y === viewYear ? '100px' : '0', border: 'none', cursor: 'pointer',
               }}
             >
@@ -72,7 +72,7 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
             </button>
           ))}
         </div>
-        <div className="overflow-y-auto hide-scrollbar" style={{ width: '160px', maxHeight: '360px', background: '#FFFFFF', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
+        <div className="overflow-y-auto hide-scrollbar" style={{ width: '160px', maxHeight: '360px', background: 'var(--bg-surface-elevated)', borderLeft: '1px solid var(--border-glass)' }}>
           {MONTHS.map((m, idx) => (
             <button
               key={m}
@@ -80,8 +80,8 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
               style={{
                 display: 'block', width: '100%', padding: '10px 20px', textAlign: 'left',
                 fontSize: '14px', fontWeight: idx === viewMonth ? 700 : 500,
-                color: idx === viewMonth ? '#FFF' : '#444',
-                background: idx === viewMonth ? '#462814' : 'transparent',
+                color: idx === viewMonth ? 'var(--brand-fill-text)' : 'var(--text-secondary)',
+                background: idx === viewMonth ? 'var(--brand-fill)' : 'transparent',
                 borderRadius: idx === viewMonth ? '100px' : '0', border: 'none', cursor: 'pointer',
               }}
             >
@@ -96,32 +96,32 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
   return (
     <div
       className="animate-fade-in"
-      style={{ background: '#FFF', borderRadius: '16px', padding: '20px 24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%', maxWidth: '380px' }}
+      style={{ background: 'var(--bg-surface-elevated)', borderRadius: '16px', padding: '20px 24px', border: '1px solid var(--border-glass)', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%', maxWidth: '380px' }}
     >
       <div className="flex items-center justify-between" style={{ marginBottom: '20px' }}>
         <button onClick={() => setViewMode('year-month')} className="flex items-center hover:opacity-70" style={{ gap: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>{MONTHS[viewMonth]} {viewYear}</span>
-          <ChevronRight size={16} color="#1A1A1A" />
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{MONTHS[viewMonth]} {viewYear}</span>
+          <ChevronRight size={16} color="var(--text-primary)" />
         </button>
         <div className="flex items-center" style={{ gap: '8px' }}>
           <button
             onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); } else setViewMonth(viewMonth - 1); }}
             style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <ChevronLeft size={18} color="#462814" />
+            <ChevronLeft size={18} color="var(--brand-brown)" />
           </button>
           <button
             onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); } else setViewMonth(viewMonth + 1); }}
             style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <ChevronRight size={18} color="#462814" />
+            <ChevronRight size={18} color="var(--brand-brown)" />
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7" style={{ marginBottom: '8px' }}>
         {DAY_LABELS.map((d) => (
-          <span key={d} className="text-center" style={{ fontSize: '12px', fontWeight: 600, color: '#999', padding: '4px 0' }}>{d}</span>
+          <span key={d} className="text-center" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', padding: '4px 0' }}>{d}</span>
         ))}
       </div>
 
@@ -136,8 +136,8 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
               style={{
                 padding: '10px 0', textAlign: 'center', fontSize: '14px',
                 fontWeight: isSelected ? 700 : 500,
-                color: isSelected ? '#FFF' : !cell.isCurrentMonth ? '#D0D0D0' : isWeekend ? '#462814' : '#1A1A1A',
-                background: isSelected ? '#462814' : 'transparent',
+                color: isSelected ? 'var(--brand-fill-text)' : !cell.isCurrentMonth ? 'var(--text-muted)' : isWeekend ? 'var(--brand-brown)' : 'var(--text-primary)',
+                background: isSelected ? 'var(--brand-fill)' : 'transparent',
                 borderRadius: isSelected ? '50%' : '0', border: 'none', cursor: 'pointer',
                 width: '100%', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}

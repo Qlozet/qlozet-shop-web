@@ -2,17 +2,20 @@ import React from 'react';
 
 // ─── Shared Styles ───────────────────────────────────────────
 export const cardStyle: React.CSSProperties = {
-  background: '#FFFFFF',
+  // Profile renders inside the shell's near-black content card, so the profile
+  // cards use the dark-grey ground (--bg-base) to stand out against it; insets
+  // on the card step up to --bg-surface-elevated.
+  background: 'var(--bg-base)',
   borderRadius: '24px',
-  border: '1px solid rgba(0,0,0,0.05)',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+  border: '1px solid var(--border-glass)',
+  boxShadow: 'var(--shadow-sm)',
   overflow: 'hidden',
 };
 
 export const sectionTitle: React.CSSProperties = {
   fontSize: '11px',
   fontWeight: 800,
-  color: '#1A1A1A',
+  color: 'var(--text-primary)',
   textTransform: 'uppercase',
   letterSpacing: '0.1em',
   padding: '18px 20px 10px',
@@ -21,7 +24,7 @@ export const sectionTitle: React.CSSProperties = {
 export const fieldLabel: React.CSSProperties = {
   fontSize: '10px',
   fontWeight: 700,
-  color: '#999',
+  color: 'var(--text-muted)',
   textTransform: 'uppercase',
   letterSpacing: '0.1em',
   marginBottom: '6px',
@@ -32,10 +35,10 @@ export const fieldInput: React.CSSProperties = {
   padding: '10px 0',
   fontSize: '14px',
   fontWeight: 500,
-  color: '#1A1A1A',
+  color: 'var(--text-primary)',
   background: 'transparent',
   border: 'none',
-  borderBottom: '1px solid rgba(0,0,0,0.1)',
+  borderBottom: '1px solid var(--border-glass)',
   outline: 'none',
   borderRadius: 0,
   boxShadow: 'none',

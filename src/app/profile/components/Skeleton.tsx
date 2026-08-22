@@ -13,7 +13,7 @@ const pulseKeyframes = `
 `;
 
 const baseStyle: React.CSSProperties = {
-  background: 'linear-gradient(90deg, #F0F0F0 25%, #E8E8E8 50%, #F0F0F0 75%)',
+  background: 'linear-gradient(90deg, var(--bg-surface-elevated) 25%, var(--border-glass) 50%, var(--bg-surface-elevated) 75%)',
   backgroundSize: '200% 100%',
   borderRadius: '8px',
   animation: 'skeletonPulse 1.5s ease-in-out infinite',
@@ -65,7 +65,7 @@ export function WalletSkeleton() {
   return (
     <div className="flex flex-col" style={{ gap: '20px' }}>
       {/* Balance card */}
-      <div style={{ background: '#FFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-base)', borderRadius: '16px', border: '1px solid var(--border-glass)', overflow: 'hidden' }}>
         <div className="flex flex-col sm:flex-row">
           <div className="flex-1 flex flex-col" style={{ padding: '24px 28px', gap: '16px' }}>
             <SkeletonCircle size={28} />
@@ -75,7 +75,7 @@ export function WalletSkeleton() {
               <SkeletonBox width="120px" height="36px" borderRadius="8px" />
             </div>
           </div>
-          <div className="flex flex-col justify-center" style={{ padding: '24px 28px', gap: '14px', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
+          <div className="flex flex-col justify-center" style={{ padding: '24px 28px', gap: '14px', borderLeft: '1px solid var(--border-glass)' }}>
             <div className="flex items-center" style={{ gap: '10px' }}>
               <SkeletonCircle size={32} />
               <div className="flex flex-col" style={{ gap: '4px' }}>
@@ -95,12 +95,12 @@ export function WalletSkeleton() {
       </div>
 
       {/* Transaction rows */}
-      <div style={{ background: '#FFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-base)', borderRadius: '16px', border: '1px solid var(--border-glass)', overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px' }}>
           <SkeletonBox width="140px" height="12px" />
         </div>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+          <div key={i} style={{ borderTop: '1px solid var(--border-glass)' }}>
             <SkeletonRow />
           </div>
         ))}
@@ -114,7 +114,7 @@ export function MeasurementSkeleton() {
   return (
     <div className="flex flex-col" style={{ gap: '12px' }}>
       {[1, 2, 3].map((i) => (
-        <div key={i} style={{ background: '#FFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', padding: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div key={i} style={{ background: 'var(--bg-base)', borderRadius: '16px', border: '1px solid var(--border-glass)', padding: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <SkeletonCircle size={42} />
           <div className="flex flex-col flex-1" style={{ gap: '6px' }}>
             <SkeletonBox width="45%" height="14px" />
@@ -132,7 +132,7 @@ export function AddressBookSkeleton() {
   return (
     <div className="flex flex-col" style={{ gap: '12px' }}>
       {[1, 2].map((i) => (
-        <div key={i} style={{ background: '#FFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', padding: '20px' }}>
+        <div key={i} style={{ background: 'var(--bg-base)', borderRadius: '16px', border: '1px solid var(--border-glass)', padding: '20px' }}>
           <div className="flex items-start justify-between">
             <div className="flex items-start" style={{ gap: '12px', flex: 1 }}>
               <SkeletonCircle size={36} />
