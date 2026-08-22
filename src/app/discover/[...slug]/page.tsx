@@ -148,8 +148,8 @@ export default function DiscoverSlugPage() {
   if (!current) {
     return (
       <div className="flex flex-col items-center justify-center py-20" style={{ gap: '16px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1A1A1A' }}>Category not found</h1>
-        <p style={{ fontSize: '14px', color: '#888' }}>The page you&apos;re looking for doesn&apos;t exist.</p>
+        <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>Category not found</h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>The page you&apos;re looking for doesn&apos;t exist.</p>
       </div>
     );
   }
@@ -165,7 +165,7 @@ export default function DiscoverSlugPage() {
       {/* Page Title */}
       <div className="text-center">
         <h1
-          className="font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          className="font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px', marginBottom: '8px' }}
         >
           {pageTitle}
@@ -195,10 +195,10 @@ export default function DiscoverSlugPage() {
                 borderRadius: '12px',
                 fontSize: '12px',
                 fontWeight: 800,
-                color: selectedProductType === pt ? '#FFFFFF' : '#1A1A1A',
+                color: selectedProductType === pt ? 'var(--brand-fill-text)' : 'var(--text-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                background: selectedProductType === pt ? '#1A1A1A' : '#F4F4F4',
+                background: selectedProductType === pt ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
                 border: 'none',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -218,17 +218,17 @@ export default function DiscoverSlugPage() {
         <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
           <button
             onClick={() => setShowFilter(true)}
-            className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-gray-100"
+            className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
             style={{
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              border: '1.5px solid #E5E5E5',
-              background: '#FFFFFF',
+              border: '1.5px solid var(--border-glass)',
+              background: 'var(--bg-base)',
               cursor: 'pointer',
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
               <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
               <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
@@ -247,10 +247,10 @@ export default function DiscoverSlugPage() {
                 borderRadius: '10px',
                 fontSize: '11px',
                 fontWeight: 800,
-                color: selectedCategory === cat ? '#FFFFFF' : '#1A1A1A',
+                color: selectedCategory === cat ? 'var(--brand-fill-text)' : 'var(--text-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                background: selectedCategory === cat ? '#1A1A1A' : '#F4F4F4',
+                background: selectedCategory === cat ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
                 border: 'none',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -267,13 +267,13 @@ export default function DiscoverSlugPage() {
         <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
           {[1, 2].map((i) => (
             <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
-              <div className="h-4 w-40 bg-[#E5E5E5] rounded" />
+              <div className="h-4 w-40 bg-[var(--bg-surface-elevated)] rounded" />
               <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px' }}>
                 {[1, 2, 3, 4].map((j) => (
                   <div key={j} className="flex-shrink-0 flex flex-col" style={{ width: '240px', gap: '12px' }}>
-                    <div className="rounded-[16px] bg-[#E5E5E5]" style={{ width: '240px', height: '320px' }} />
-                    <div className="h-4 w-3/4 bg-[#E5E5E5] rounded" />
-                    <div className="h-3 w-1/2 bg-[#E5E5E5] rounded" />
+                    <div className="rounded-[16px] bg-[var(--bg-surface-elevated)]" style={{ width: '240px', height: '320px' }} />
+                    <div className="h-4 w-3/4 bg-[var(--bg-surface-elevated)] rounded" />
+                    <div className="h-3 w-1/2 bg-[var(--bg-surface-elevated)] rounded" />
                   </div>
                 ))}
               </div>
@@ -329,25 +329,25 @@ export default function DiscoverSlugPage() {
             className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showFilter ? 'translate-y-0 lg:translate-x-0 opacity-100' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'}`}
             style={{
               maxHeight: '70vh',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--bg-base)',
               boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.08)',
-              border: '1px solid rgba(0,0,0,0.06)',
+              border: '1px solid var(--border-glass)',
             }}
           >
             {/* Drag Handle (mobile) */}
             <div className="flex justify-center pt-3 pb-1 lg:hidden">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'rgba(0,0,0,0.12)' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
             </div>
 
             {/* Header */}
             <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 24px 16px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1A1A1A' }}>Filter & Sort</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Filter & Sort</h3>
               <button
                 onClick={() => setShowFilter(false)}
-                className="w-9 h-9 flex items-center justify-center transition-colors hover:bg-gray-100"
-                style={{ borderRadius: '9999px', backgroundColor: 'rgba(0,0,0,0.04)' }}
+                className="w-9 h-9 flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
+                style={{ borderRadius: '9999px', backgroundColor: 'var(--bg-surface-elevated)' }}
               >
-                <X size={18} color="#1A1A1A" />
+                <X size={18} color="var(--text-primary)" />
               </button>
             </div>
 
@@ -355,13 +355,13 @@ export default function DiscoverSlugPage() {
             <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '0 24px 24px' }}>
               {/* Sort */}
               <div style={{ marginBottom: '28px' }}>
-                <p style={{ color: '#888', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Sort by</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Sort by</p>
                 <div className="flex flex-col gap-1">
                   {['Newest', 'Price: Low to High', 'Price: High to Low', 'Most Popular'].map((opt) => (
                     <button
                       key={opt}
-                      className="w-full text-left transition-colors hover:bg-gray-50"
-                      style={{ color: '#1A1A1A', fontSize: '14px', fontWeight: 500, padding: '12px 16px', borderRadius: '12px', background: 'none', border: 'none', cursor: 'pointer' }}
+                      className="w-full text-left transition-colors hover:bg-[var(--bg-surface-elevated)]"
+                      style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500, padding: '12px 16px', borderRadius: '12px', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
                       {opt}
                     </button>
@@ -371,7 +371,7 @@ export default function DiscoverSlugPage() {
 
               {/* Brand */}
               <div style={{ marginBottom: '28px' }}>
-                <p style={{ color: '#888', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Brand</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Brand</p>
                 <div className="flex flex-wrap gap-2">
                   {['AFRICANA COUTURE', 'GARM ISLAND', 'FRUCHÉ', 'EJIRO AMOS TAFIRI'].map((brand) => (
                     <button
@@ -380,11 +380,11 @@ export default function DiscoverSlugPage() {
                       style={{
                         padding: '10px 20px',
                         borderRadius: '9999px',
-                        backgroundColor: 'rgba(0,0,0,0.04)',
-                        border: '1px solid rgba(0,0,0,0.06)',
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-glass)',
                         fontSize: '12px',
                         fontWeight: 700,
-                        color: '#1A1A1A',
+                        color: 'var(--text-primary)',
                         cursor: 'pointer',
                       }}
                     >
@@ -396,7 +396,7 @@ export default function DiscoverSlugPage() {
 
               {/* Price Range */}
               <div style={{ marginBottom: '28px' }}>
-                <p style={{ color: '#888', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Price Range</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Price Range</p>
                 <div className="flex flex-wrap gap-2">
                   {['Under ₦50K', '₦50K - ₦100K', '₦100K - ₦200K', 'Over ₦200K'].map((range) => (
                     <button
@@ -405,11 +405,11 @@ export default function DiscoverSlugPage() {
                       style={{
                         padding: '10px 20px',
                         borderRadius: '9999px',
-                        backgroundColor: 'rgba(0,0,0,0.04)',
-                        border: '1px solid rgba(0,0,0,0.06)',
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-glass)',
                         fontSize: '12px',
                         fontWeight: 700,
-                        color: '#1A1A1A',
+                        color: 'var(--text-primary)',
                         cursor: 'pointer',
                       }}
                     >
@@ -421,7 +421,7 @@ export default function DiscoverSlugPage() {
 
               {/* Availability */}
               <div>
-                <p style={{ color: '#888', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Availability</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Availability</p>
                 <div className="flex flex-wrap gap-2">
                   {['In-stock', 'On sale', 'New arrivals'].map((opt) => (
                     <button
@@ -430,11 +430,11 @@ export default function DiscoverSlugPage() {
                       style={{
                         padding: '10px 20px',
                         borderRadius: '9999px',
-                        backgroundColor: 'rgba(0,0,0,0.04)',
-                        border: '1px solid rgba(0,0,0,0.06)',
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-glass)',
                         fontSize: '12px',
                         fontWeight: 700,
-                        color: '#1A1A1A',
+                        color: 'var(--text-primary)',
                         cursor: 'pointer',
                       }}
                     >
@@ -450,7 +450,7 @@ export default function DiscoverSlugPage() {
               <button
                 onClick={() => setShowFilter(false)}
                 className="w-full text-sm font-bold transition-colors hover:opacity-90"
-                style={{ padding: '14px', borderRadius: '16px', backgroundColor: '#1A1A1A', color: '#FFFFFF', border: 'none', cursor: 'pointer' }}
+                style={{ padding: '14px', borderRadius: '16px', backgroundColor: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer' }}
               >
                 Apply Filters
               </button>

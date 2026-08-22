@@ -18,17 +18,17 @@ export function CollectionChips({ chips, activeSlug, showFilter, onFilterClick }
       {showFilter && (
         <button
           onClick={onFilterClick}
-          className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-gray-100"
+          className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
           style={{
             width: '36px',
             height: '36px',
             borderRadius: '10px',
-            border: '1.5px solid #E5E5E5',
-            background: '#FFFFFF',
+            border: '1.5px solid var(--border-glass)',
+            background: 'var(--bg-base)',
             cursor: 'pointer',
           }}
         >
-          <SlidersHorizontal size={14} color="#1A1A1A" />
+          <SlidersHorizontal size={14} color="var(--text-primary)" />
         </button>
       )}
 
@@ -46,10 +46,10 @@ export function CollectionChips({ chips, activeSlug, showFilter, onFilterClick }
               borderRadius: '10px',
               fontSize: '11px',
               fontWeight: 800,
-              color: isActive ? '#FFFFFF' : '#1A1A1A',
+              color: isActive ? 'var(--brand-fill-text)' : 'var(--text-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
-              background: isActive ? '#1A1A1A' : '#F4F4F4',
+              background: isActive ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
               textDecoration: 'none',
               display: 'flex',
               alignItems: 'center',

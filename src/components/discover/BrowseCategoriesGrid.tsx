@@ -22,14 +22,14 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
           style={{
             fontSize: '12px',
             fontWeight: 900,
-            color: '#1A1A1A',
+            color: 'var(--text-primary)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
         >
           {title}
         </h2>
-        <ChevronRight size={14} color="#1A1A1A" />
+        <ChevronRight size={14} color="var(--text-primary)" />
       </div>
 
       {/* Grid */}
@@ -43,7 +43,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
               style={{
                 borderRadius: '24px',
                 textDecoration: 'none',
-                background: cat.color || '#2C1810',
+                background: cat.color || 'var(--brand-fill)',
               }}
             >
               {/* Header (Label + Arrow) */}
@@ -55,16 +55,16 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                   style={{
                     fontSize: '11px',
                     fontWeight: 900,
-                    color: '#FFFFFF',
+                    color: 'var(--brand-fill-text)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                   }}
                 >
                   {cat.label}
                 </span>
-                <ChevronRight 
-                  size={16} 
-                  color="#FFFFFF" 
+                <ChevronRight
+                  size={16}
+                  color="var(--brand-fill-text)"
                   className="opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"
                 />
               </div>
@@ -83,7 +83,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                         flex: 1,
                         aspectRatio: '3 / 4',
                         borderRadius: '16px',
-                        background: '#F5F3F0',
+                        background: 'var(--bg-surface-elevated)',
                       }}
                     >
                       <Image src={img} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
@@ -96,7 +96,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                         flex: 1,
                         aspectRatio: '3 / 4',
                         borderRadius: '16px',
-                        background: '#F5F3F0',
+                        background: 'var(--bg-surface-elevated)',
                       }}
                     >
                       <Image src={img} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-300" />

@@ -96,7 +96,7 @@ export default function DiscoverPage() {
 
       {/* Page Title */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         Discover
@@ -127,10 +127,10 @@ export default function DiscoverPage() {
               <div className="flex flex-col" style={{ gap: '16px' }}>
                 {/* Section Header */}
                 <div className="flex items-center" style={{ gap: '8px' }}>
-                  <h2 style={{ fontSize: '12px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {title}
                   </h2>
-                  <ChevronRight size={14} color="#1A1A1A" />
+                  <ChevronRight size={14} color="var(--text-primary)" />
                 </div>
                 {/* Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -188,10 +188,10 @@ export default function DiscoverPage() {
         <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
           {[1, 2].map((i) => (
             <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
-              <div className="h-3 w-32 bg-[#E5E5E5] rounded" />
+              <div className="h-3 w-32 bg-[var(--bg-surface-elevated)] rounded" />
               <div className="flex" style={{ gap: '16px' }}>
                 {[1, 2, 3].map((j) => (
-                  <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
+                  <div key={j} className="rounded-[24px] bg-[var(--bg-surface-elevated)] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
                 ))}
               </div>
             </div>

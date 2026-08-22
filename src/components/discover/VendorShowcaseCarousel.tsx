@@ -44,14 +44,14 @@ export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorSh
           style={{
             fontSize: '12px',
             fontWeight: 900,
-            color: '#1A1A1A',
+            color: 'var(--text-primary)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
         >
           {title}
         </h3>
-        <ChevronRight size={14} color="#1A1A1A" />
+        <ChevronRight size={14} color="var(--text-primary)" />
       </div>
 
       {/* Scrollable Row */}
@@ -87,13 +87,13 @@ export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorSh
               width: '40px',
               height: '40px',
               borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '1px solid #E5E5E5',
+              background: 'var(--bg-base)',
+              border: '1px solid var(--border-glass)',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             }}
           >
-            <ChevronRight size={18} color="#1A1A1A" />
+            <ChevronRight size={18} color="var(--text-primary)" />
           </button>
         )}
       </div>
