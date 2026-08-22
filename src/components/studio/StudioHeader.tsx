@@ -126,7 +126,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       {/* ═══ MOBILE TOP HEADER ═══ */}
       <div
-        className="absolute top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between bg-[var(--bg-base)] border-b border-[var(--border-glass)]"
+        className="absolute top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between bg-[var(--bg-surface)] border-b border-[var(--border-glass)]"
         style={{ height: '72px', padding: '0 20px' }}
       >
         {/* Left: Back + Title */}
