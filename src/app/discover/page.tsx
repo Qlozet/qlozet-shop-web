@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { GenderToggle } from '@/components/GenderToggle';
 import { useApp } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { HERO_BANNERS, BROWSE_CATEGORIES } from '@/data/taxonomy';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid';
@@ -16,6 +17,9 @@ import { getProductImage, getProductTag, hasDiscount } from '@/lib/api-types';
 
 export default function DiscoverPage() {
   const { gender, setGender } = useApp();
+  const { isDark } = useTheme();
+  // Match the real panels: mute the rich category colours in dark mode.
+  const panelBg = (color: string) => (isDark ? `color-mix(in srgb, ${color} 72%, var(--bg-surface))` : color);
 
   // ── Fetch live data ─────────────────────────────────────────────
   const audience = gender === 'male' ? 'men' : 'women';
@@ -138,7 +142,7 @@ export default function DiscoverPage() {
                     <div
                       key={idx}
                       className="flex flex-col overflow-hidden"
-                      style={{ borderRadius: '24px', background: item.color }}
+                      style={{ borderRadius: '24px', background: panelBg(item.color) }}
                     >
                       {/* Header — label + chevron */}
                       <div className="flex items-center justify-between" style={{ padding: '16px 16px 10px' }}>
