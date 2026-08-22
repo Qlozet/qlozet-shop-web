@@ -935,12 +935,12 @@ export default function ProductDetailsPage() {
         {/* ─── Back Button (sticky, matches studio style) ─────────── */}
         <button
           onClick={() => router.back()}
-          className="sticky top-4 z-40 flex items-center justify-center transition-all hover:bg-white/80 backdrop-blur-md shadow-sm"
+          className="sticky top-4 z-40 flex items-center justify-center transition-all backdrop-blur-md shadow-sm"
           style={{
             width: '40px',
             height: '40px',
             borderRadius: '12px',
-            background: 'rgba(255,255,255,0.9)',
+            background: 'var(--glass-bg)',
             border: '1px solid var(--border-glass)',
             cursor: 'pointer',
           }}
@@ -1594,7 +1594,7 @@ export default function ProductDetailsPage() {
                         borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                         background: sizeRec ? 'linear-gradient(135deg, #7C3AED, #4F46E5)' : 'var(--bg-surface-elevated)',
                         color: sizeRec ? '#FFF' : 'var(--text-secondary)',
-                        border: sizeRec ? '2px solid #7C3AED' : '1px solid #E0E0E0', gap: '4px',
+                        border: sizeRec ? '2px solid #7C3AED' : '1px solid var(--border-glass)', gap: '4px',
                         opacity: sizeRecLoading ? 0.6 : 1,
                       }}
                       title="AI-powered size recommendation"
@@ -1809,7 +1809,7 @@ export default function ProductDetailsPage() {
                       onClick={() => setFabricYards((y) => Math.max(fabricMinCut, Math.round(((y || fabricMinCut) - 0.5) * 2) / 2))}
                       aria-label="Decrease yards"
                       className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5"
-                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
                     >
                       −
                     </button>
@@ -1825,7 +1825,7 @@ export default function ProductDetailsPage() {
                         setFabricYards(fabricYardsLeft > 0 ? Math.min(v, fabricYardsLeft) : v);
                       }}
                       className="text-center"
-                      style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1px solid #E0E0E0', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}
+                      style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}
                     />
                     <button
                       type="button"
@@ -1836,7 +1836,7 @@ export default function ProductDetailsPage() {
                       aria-label="Increase yards"
                       className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed"
                       disabled={fabricYardsLeft > 0 && fabricYards >= fabricYardsLeft}
-                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
                     >
                       +
                     </button>
