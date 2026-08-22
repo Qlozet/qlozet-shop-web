@@ -19,9 +19,9 @@ import { useApp } from '@/context/AppContext';
 type Status = 'verifying' | 'success' | 'failed';
 
 // Brand tokens (shared with the profile / orders redesign).
-const INK = '#1A1A1A';
+const INK = 'var(--text-primary)';
 const BROWN = '#462814';
-const MUTE = '#8A7A6C';
+const MUTE = 'var(--text-secondary)';
 const GOOD = '#0F6E4F';
 
 function PaymentVerifyInner() {
@@ -109,15 +109,15 @@ function PaymentVerifyInner() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center"
-      style={{ padding: '48px 20px', background: '#FBF9F7' }}
+      style={{ padding: '48px 20px', background: 'var(--bg-app)' }}
     >
       <div
         className="w-full flex flex-col items-center text-center"
         style={{
           maxWidth: '400px',
           gap: '20px',
-          background: '#FFFFFF',
-          border: '1px solid rgba(0,0,0,0.05)',
+          background: 'var(--bg-base)',
+          border: '1px solid var(--border-glass)',
           borderRadius: '24px',
           padding: '40px 28px',
           boxShadow: '0 8px 40px rgba(70,40,20,0.06)',
@@ -183,7 +183,7 @@ function Spinner() {
       className="flex items-center justify-center rounded-full"
       style={{ width: '68px', height: '68px', background: 'rgba(70,40,20,0.06)' }}
     >
-      <Loader2 size={34} color={BROWN} className="animate-spin" />
+      <Loader2 size={34} color="var(--brand-fill)" className="animate-spin" />
     </div>
   );
 }
@@ -225,7 +225,7 @@ function Ref({ value }: { value: string }) {
         gap: '6px',
         padding: '8px 14px',
         borderRadius: '100px',
-        background: '#F5F1ED',
+        background: 'var(--bg-surface-elevated)',
         fontSize: '11px',
         fontWeight: 700,
         color: MUTE,
@@ -254,8 +254,8 @@ function PrimaryLink({ href, children }: { href: string; children: React.ReactNo
       style={{
         padding: '13px 20px',
         borderRadius: '14px',
-        background: BROWN,
-        color: '#FFFFFF',
+        background: 'var(--brand-fill)',
+        color: 'var(--brand-fill-text)',
         fontSize: '13px',
         fontWeight: 700,
         textDecoration: 'none',
@@ -270,11 +270,11 @@ function GhostLink({ href, children }: { href: string; children: React.ReactNode
   return (
     <Link
       href={href}
-      className="flex-1 flex items-center justify-center transition-colors hover:bg-black/[0.03]"
+      className="flex-1 flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
       style={{
         padding: '13px 20px',
         borderRadius: '14px',
-        border: '1px solid rgba(0,0,0,0.1)',
+        border: '1px solid var(--border-glass)',
         color: INK,
         fontSize: '13px',
         fontWeight: 700,
@@ -290,8 +290,8 @@ export default function PaymentVerifyPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center" style={{ background: '#FBF9F7' }}>
-          <Loader2 size={38} className="animate-spin" color={BROWN} />
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-app)' }}>
+          <Loader2 size={38} className="animate-spin" color="var(--brand-fill)" />
         </div>
       }
     >
