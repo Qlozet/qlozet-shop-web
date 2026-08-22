@@ -156,7 +156,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {!isStudio && !isVendorPage && (
         <header
           className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 backdrop-blur-md"
-          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid var(--border-glass)', background: 'var(--glass-bg)' }}
+          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid var(--border-glass)', background: 'var(--bg-surface)' }}
         >
           {/* Left — Gender Toggle */}
           <button
