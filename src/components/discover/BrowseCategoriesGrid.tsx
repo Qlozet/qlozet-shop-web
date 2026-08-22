@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { type BrowseCategory } from '@/data/taxonomy';
+import { useTheme } from '@/context/ThemeContext';
 
 interface BrowseCategoriesGridProps {
   categories: BrowseCategory[];
@@ -12,7 +13,17 @@ interface BrowseCategoriesGridProps {
 }
 
 export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }: BrowseCategoriesGridProps) {
+  const { isDark } = useTheme();
   if (!categories || categories.length === 0) return null;
+
+  // The category colours are rich earthy tones. In dark mode they read too loud
+  // against the near-black page, so blend ~28% of the near-black surface into
+  // each one to mute/tint it. Labels stay white in both themes (the panels are
+  // dark enough for white to read either way).
+  const panelBg = (color?: string) => {
+    const base = color || '#2C1810';
+    return isDark ? `color-mix(in srgb, ${base} 72%, var(--bg-surface))` : base;
+  };
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
@@ -43,7 +54,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
               style={{
                 borderRadius: '24px',
                 textDecoration: 'none',
-                background: cat.color || 'var(--brand-fill)',
+                background: panelBg(cat.color),
               }}
             >
               {/* Header (Label + Arrow) */}
@@ -55,7 +66,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                   style={{
                     fontSize: '11px',
                     fontWeight: 900,
-                    color: 'var(--brand-fill-text)',
+                    color: '#FFFFFF',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                   }}
@@ -64,7 +75,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                 </span>
                 <ChevronRight
                   size={16}
-                  color="var(--brand-fill-text)"
+                  color="#FFFFFF"
                   className="opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"
                 />
               </div>
