@@ -33,7 +33,7 @@ function StyleSkeleton() {
         <div
           key={i}
           className="animate-pulse"
-          style={{ height: '56px', borderRadius: '16px', background: '#F0F0F0' }}
+          style={{ height: '56px', borderRadius: '16px', background: 'var(--border-glass)' }}
         />
       ))}
     </div>
@@ -44,7 +44,7 @@ function StyleSkeleton() {
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-      <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {title}
       </span>
     </div>

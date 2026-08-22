@@ -21,8 +21,8 @@ export const AddonsPanel: React.FC<AddonsPanelProps> = ({
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
         <p style={{ fontSize: '32px', marginBottom: '12px' }}>🎨</p>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: '#666' }}>No add-ons</p>
-        <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>No add-ons</p>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
           This product doesn&apos;t have add-on options.
         </p>
       </div>
@@ -35,10 +35,10 @@ export const AddonsPanel: React.FC<AddonsPanelProps> = ({
         <div key={addon._id || addon.name} style={{ marginBottom: '24px' }}>
           {/* Section header */}
           <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               {addon.name}
             </span>
-            <span style={{ fontSize: '10px', color: '#999' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
               {addon.variants.length} option{addon.variants.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -85,8 +85,8 @@ function ColorAddonVariants({
             style={{
               padding: '8px',
               borderRadius: '12px',
-              border: isSelected ? '2px solid #2C1810' : '2px solid transparent',
-              background: isSelected ? '#FAF6F1' : '#F5F5F5',
+              border: isSelected ? '2px solid var(--brand-fill)' : '2px solid transparent',
+              background: isSelected ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)',
               cursor: 'pointer',
               minWidth: '70px',
               gap: '4px',
@@ -100,17 +100,17 @@ function ColorAddonVariants({
                 borderRadius: '50%',
                 background: v.color_hex || '#CCC',
                 border: '2px solid rgba(0,0,0,0.08)',
-                boxShadow: isSelected ? '0 0 0 2px #2C1810' : 'none',
+                boxShadow: isSelected ? '0 0 0 2px var(--brand-fill)' : 'none',
               }}
             />
             <span style={{
-              fontSize: '9px', fontWeight: 700, color: '#1A1A1A',
+              fontSize: '9px', fontWeight: 700, color: 'var(--text-primary)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               maxWidth: '70px',
             }}>
               {v.name}
             </span>
-            <span style={{ fontSize: '9px', fontWeight: 600, color: '#666' }}>
+            <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary)' }}>
               ₦{v.price.toLocaleString()}
             </span>
           </button>
@@ -142,8 +142,8 @@ function PictureAddonVariants({
             style={{
               padding: '8px 12px',
               borderRadius: '16px',
-              border: isSelected ? '1px solid #2C1810' : '1px solid transparent',
-              background: isSelected ? '#FAF6F1' : '#F5F5F5',
+              border: isSelected ? '1px solid var(--brand-fill)' : '1px solid transparent',
+              background: isSelected ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)',
               cursor: 'pointer',
               gap: '12px',
               height: '56px',
@@ -151,8 +151,8 @@ function PictureAddonVariants({
           >
             {/* Thumbnail */}
             <div
-              className="flex items-center justify-center bg-white shadow-sm overflow-hidden"
-              style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }}
+              className="flex items-center justify-center shadow-sm overflow-hidden"
+              style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0, background: 'var(--bg-surface-elevated)' }}
             >
               {v.image_url ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -170,12 +170,12 @@ function PictureAddonVariants({
             {/* Text */}
             <div className="flex-1 text-left flex flex-col justify-center" style={{ overflow: 'hidden', minWidth: 0 }}>
               <p style={{
-                fontSize: '11px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3,
+                fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {v.name}
               </p>
-              <p style={{ fontSize: '10px', fontWeight: 700, color: '#1A1A1A', marginTop: '2px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                 ₦{v.price.toLocaleString()}
               </p>
             </div>
@@ -185,12 +185,12 @@ function PictureAddonVariants({
               className="flex items-center justify-center"
               style={{
                 width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
-                border: isSelected ? '1.5px solid #2C1810' : 'none',
-                background: isSelected ? 'transparent' : '#D1D5DB',
+                border: isSelected ? '1.5px solid var(--brand-fill)' : 'none',
+                background: isSelected ? 'transparent' : 'var(--border-glass)',
               }}
             >
               {isSelected && (
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2C1810' }} />
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--brand-fill)' }} />
               )}
             </div>
           </button>

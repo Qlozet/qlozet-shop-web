@@ -21,7 +21,7 @@ export const FitPanel: React.FC<FitPanelProps> = ({
   return (
     <div style={{ padding: '20px' }}>
       <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Preference
         </span>
       </div>
@@ -39,16 +39,16 @@ export const FitPanel: React.FC<FitPanelProps> = ({
       {/* Measurements link */}
       <div
         className="flex items-center justify-between transition-all hover:bg-gray-50"
-        style={{ padding: '14px', borderRadius: '14px', border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
+        style={{ padding: '14px', borderRadius: '14px', border: '1.5px solid var(--border-glass)', cursor: 'pointer' }}
         onClick={() => router.push('/profile?tab=measurements')}
       >
         <div>
-          <p style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A' }}>Your Measurements</p>
-          <p style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)' }}>Your Measurements</p>
+          <p style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>
             Tap to set or edit your body measurements
           </p>
         </div>
-        <ChevronRight size={16} color="#888" />
+        <ChevronRight size={16} color="var(--text-muted)" />
       </div>
     </div>
   );

@@ -44,16 +44,16 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
         style={{
           padding: '8px 12px',
           borderRadius: '16px',
-          border: isSelected ? '1px solid #2C1810' : '1px solid transparent',
-          background: isSelected ? '#FAF6F1' : '#F5F5F5',
+          border: isSelected ? '1px solid var(--brand-fill)' : '1px solid transparent',
+          background: isSelected ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)',
           cursor: 'pointer',
           gap: '12px',
           height: '56px',
         }}
       >
         <div
-          className="flex items-center justify-center bg-white shadow-sm overflow-hidden"
-          style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }}
+          className="flex items-center justify-center shadow-sm overflow-hidden"
+          style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0, background: 'var(--bg-surface-elevated)' }}
         >
           {accessory.imageUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -69,13 +69,13 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
         </div>
         <div className="flex-1 text-left flex flex-col justify-center" style={{ overflow: 'hidden', minWidth: 0 }}>
           <p style={{
-            fontSize: '11px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3,
+            fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {accessory.name}
           </p>
           {accessory.extraCost && (
-            <p style={{ fontSize: '10px', fontWeight: 700, color: '#1A1A1A', marginTop: '2px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
               +₦{accessory.extraCost.toLocaleString()}
             </p>
           )}
@@ -84,10 +84,10 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
           className="flex items-center justify-center"
           style={{
             width: '18px', height: '18px', borderRadius: '4px', flexShrink: 0,
-            background: isSelected ? '#2C1810' : '#D1D5DB',
+            background: isSelected ? 'var(--brand-fill)' : 'var(--border-glass)',
           }}
         >
-          {isSelected && <Check size={12} color="#FFF" strokeWidth={3} />}
+          {isSelected && <Check size={12} color="var(--brand-fill-text)" strokeWidth={3} />}
         </div>
       </button>
 
