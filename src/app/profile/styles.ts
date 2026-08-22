@@ -8,7 +8,9 @@ export const cardStyle: React.CSSProperties = {
   background: 'var(--bg-base)',
   borderRadius: '24px',
   border: '1px solid var(--border-glass)',
-  boxShadow: 'var(--shadow-sm)',
+  // Soft, subtle lift — the border already delineates the card, so keep the
+  // shadow light in both themes (the shared --shadow-sm reads too heavy here).
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
   overflow: 'hidden',
 };
 
