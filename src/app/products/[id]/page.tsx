@@ -1793,7 +1793,7 @@ export default function ProductDetailsPage() {
                   style={{
                     display: 'flex', flexDirection: 'column', gap: '10px',
                     padding: '14px 16px', borderRadius: '14px',
-                    background: '#FAF8F5', border: '1px solid #EDE7DF',
+                    background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)',
                   }}
                 >
                   <div className="flex items-center justify-between">
@@ -1811,7 +1811,7 @@ export default function ProductDetailsPage() {
                       type="button"
                       onClick={() => setFabricYards((y) => Math.max(fabricMinCut, Math.round(((y || fabricMinCut) - 0.5) * 2) / 2))}
                       aria-label="Decrease yards"
-                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5"
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-[var(--border-glass)]"
                       style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
                     >
                       −
@@ -1837,7 +1837,7 @@ export default function ProductDetailsPage() {
                         return fabricYardsLeft > 0 ? Math.min(next, fabricYardsLeft) : next;
                       })}
                       aria-label="Increase yards"
-                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-[var(--border-glass)] disabled:opacity-40 disabled:cursor-not-allowed"
                       disabled={fabricYardsLeft > 0 && fabricYards >= fabricYardsLeft}
                       style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
                     >
