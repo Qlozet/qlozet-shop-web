@@ -166,10 +166,10 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
       {step === 'start' && (
         <div className="flex flex-col" style={{ gap: '24px' }}>
           <div>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
               Start Your Bespoke<br />Journey
             </h3>
-            <p style={{ fontSize: '13px', color: '#888', marginTop: '8px', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
               Use pictures of an existing product or design from scratch
             </p>
           </div>
@@ -177,50 +177,50 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
             <button
               onClick={() => setDesignMethod('reference')}
               className="w-full flex items-center justify-between transition-all"
-              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'reference' ? '#F9F6F1' : '#F9F9F9', border: designMethod === 'reference' ? '1.5px solid #2C1810' : '1.5px solid transparent', cursor: 'pointer' }}
+              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'reference' ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)', border: designMethod === 'reference' ? '1.5px solid var(--brand-fill)' : '1.5px solid transparent', cursor: 'pointer' }}
             >
               <div className="flex items-center" style={{ gap: '14px' }}>
                 <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(139,90,43,0.08)' }}>
-                  <Upload size={16} color="#8B5A2B" />
+                  <Upload size={16} color="var(--brand-brown)" />
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upload Reference</span>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upload Reference</span>
                 <span className="inline-flex items-center" style={{ fontSize: '9px', fontWeight: 700, color: '#D4AF37', background: 'rgba(212,175,55,0.12)', padding: '2px 8px', borderRadius: '6px', marginLeft: '6px', gap: '3px' }}><TokenIcon size={10} color="#D4AF37" /> {REFERENCE_ANALYSIS_COST}</span>
               </div>
-              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'reference' ? '5px solid #2C1810' : '2px solid #CCC' }} />
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'reference' ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)' }} />
             </button>
             <button
               onClick={() => setDesignMethod('scratch')}
               className="w-full flex items-center justify-between transition-all"
-              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'scratch' ? '#F9F6F1' : '#F9F9F9', border: designMethod === 'scratch' ? '1.5px solid #2C1810' : '1.5px solid transparent', cursor: 'pointer' }}
+              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'scratch' ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)', border: designMethod === 'scratch' ? '1.5px solid var(--brand-fill)' : '1.5px solid transparent', cursor: 'pointer' }}
             >
               <div className="flex items-center" style={{ gap: '14px' }}>
                 <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
                   <Sparkles size={16} color="#D4AF37" />
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Start from Scratch</span>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Start from Scratch</span>
               </div>
-              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'scratch' ? '5px solid #2C1810' : '2px solid #CCC' }} />
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'scratch' ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)' }} />
             </button>
           </div>
-          <div style={{ padding: '16px 18px', borderRadius: '14px', background: '#F9F7F4' }}>
+          <div style={{ padding: '16px 18px', borderRadius: '14px', background: 'var(--bg-surface-elevated)' }}>
             <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
               <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
                 <Scissors size={12} color="#EA580C" />
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
             </div>
-            <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6, marginBottom: '8px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '8px' }}>
               We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
             </p>
             <button className="flex items-center" style={{ gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>Learn more</span>
-              <ArrowRight size={12} color="#1A1A1A" />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Learn more</span>
+              <ArrowRight size={12} color="var(--text-primary)" />
             </button>
           </div>
           <button
             onClick={() => setStep('name')}
             className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+            style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
           >
             Continue
           </button>
@@ -230,12 +230,12 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
       {step === 'name' && (
         <div className="flex flex-col" style={{ gap: '24px' }}>
           <div>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
               Name Your<br />Masterpiece
             </h3>
           </div>
           <div>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
               Style Name
             </label>
             <input
@@ -243,24 +243,24 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
               value={styleName}
               onChange={(e) => setStyleName(e.target.value)}
               placeholder="e.g. My Wedding Agbada"
-              style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', borderBottom: '1.5px solid #E5E5E5', outline: 'none', padding: '10px 0' }}
+              style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', borderBottom: '1.5px solid var(--border-glass)', outline: 'none', padding: '10px 0' }}
             />
           </div>
-          <div style={{ padding: '16px 18px', borderRadius: '14px', background: '#F9F7F4' }}>
+          <div style={{ padding: '16px 18px', borderRadius: '14px', background: 'var(--bg-surface-elevated)' }}>
             <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
               <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
                 <Scissors size={12} color="#EA580C" />
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>Fabric Usage</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
             </div>
-            <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
             </p>
           </div>
           <button
             onClick={() => setStep('category')}
             className="transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer', maxWidth: '320px', margin: '0 auto', width: '100%' }}
+            style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer', maxWidth: '320px', margin: '0 auto', width: '100%' }}
           >
             Continue
           </button>
@@ -270,14 +270,14 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
       {step === 'category' && (
         <div className="flex flex-col" style={{ gap: '24px' }}>
           <div className="text-center">
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
               Create Your Masterpiece
             </h3>
             <div className="flex items-center justify-center" style={{ gap: '16px', marginTop: '12px' }}>
-              <button onClick={() => setGender('men')} style={{ fontSize: '12px', fontWeight: gender === 'men' ? 800 : 500, color: gender === 'men' ? '#1A1A1A' : '#999', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'men' ? '2px solid #1A1A1A' : '2px solid transparent', padding: '4px 0' }}>
+              <button onClick={() => setGender('men')} style={{ fontSize: '12px', fontWeight: gender === 'men' ? 800 : 500, color: gender === 'men' ? 'var(--text-primary)' : 'var(--text-muted)', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'men' ? '2px solid var(--text-primary)' : '2px solid transparent', padding: '4px 0' }}>
                 Men
               </button>
-              <button onClick={() => setGender('women')} style={{ fontSize: '12px', fontWeight: gender === 'women' ? 800 : 500, color: gender === 'women' ? '#1A1A1A' : '#999', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'women' ? '2px solid #1A1A1A' : '2px solid transparent', padding: '4px 0' }}>
+              <button onClick={() => setGender('women')} style={{ fontSize: '12px', fontWeight: gender === 'women' ? 800 : 500, color: gender === 'women' ? 'var(--text-primary)' : 'var(--text-muted)', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'women' ? '2px solid var(--text-primary)' : '2px solid transparent', padding: '4px 0' }}>
                 Women
               </button>
             </div>
@@ -290,13 +290,13 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
                 className="flex flex-col items-center transition-all"
                 style={{
                   padding: '16px 8px', borderRadius: '16px',
-                  background: selectedCategory === type ? 'rgba(107,114,128,0.12)' : '#F9F9F9',
-                  border: selectedCategory === type ? '2px solid #1A1A1A' : '2px solid transparent',
+                  background: selectedCategory === type ? 'rgba(107,114,128,0.12)' : 'var(--bg-surface-elevated)',
+                  border: selectedCategory === type ? '2px solid var(--text-primary)' : '2px solid transparent',
                   cursor: 'pointer', gap: '8px',
                 }}
               >
-                <Scissors size={24} color={selectedCategory === type ? '#1A1A1A' : '#999'} />
-                <span style={{ fontSize: '10px', fontWeight: 700, color: selectedCategory === type ? '#1A1A1A' : '#666', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{type}</span>
+                <Scissors size={24} color={selectedCategory === type ? 'var(--text-primary)' : 'var(--text-muted)'} />
+                <span style={{ fontSize: '10px', fontWeight: 700, color: selectedCategory === type ? 'var(--text-primary)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{type}</span>
               </button>
             ))}
           </div>
@@ -311,7 +311,7 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
               }
             }}
             className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+            style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
           >
             Get Started
           </button>
@@ -329,19 +329,19 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
           onClick={() => setStep(null)}
         />
         <div
-          className="fixed left-3 right-3 bottom-3 z-[101] bg-white rounded-[24px] flex flex-col"
+          className="fixed left-3 right-3 bottom-3 z-[101] bg-[var(--bg-base)] rounded-[24px] flex flex-col"
           style={{ maxHeight: '85vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)' }}
         >
           <div className="flex justify-center pt-3 pb-1">
-            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
           </div>
           <div className="flex-1 overflow-y-auto hide-scrollbar relative" style={{ padding: '20px 24px 24px' }}>
             <button
               onClick={() => setStep(null)}
-              className="absolute top-0 right-0 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
-              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer' }}
+              className="absolute top-0 right-0 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
             >
-              <X size={14} color="#666" />
+              <X size={14} color="var(--text-secondary)" />
             </button>
             {stepContent}
           </div>
@@ -352,14 +352,14 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
       <div className="hidden lg:flex fixed inset-0 z-[100] items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
         <div
           className="relative w-full animate-fade-in"
-          style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: '#FFFFFF', boxShadow: '0 24px 80px rgba(0,0,0,0.15)', overflow: 'hidden' }}
+          style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)', overflow: 'hidden' }}
         >
           <button
             onClick={() => setStep(null)}
-            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
-            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer' }}
+            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
           >
-            <X size={14} color="#666" />
+            <X size={14} color="var(--text-secondary)" />
           </button>
           <div style={{ padding: '32px 28px' }}>
             {stepContent}
@@ -422,7 +422,7 @@ function BespokeContent() {
 
       {/* ─── Page Header ─── */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         Bespoke
@@ -441,7 +441,7 @@ function BespokeContent() {
                 borderRadius: '10px',
                 fontSize: '12px',
                 fontWeight: activeTab === tab ? 800 : 600,
-                color: activeTab === tab ? '#1A1A1A' : '#999',
+                color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 background: activeTab === tab ? 'rgba(44,24,16,0.06)' : 'transparent',
@@ -466,8 +466,8 @@ function BespokeContent() {
           style={{
             padding: '10px 20px',
             borderRadius: '10px',
-            background: '#2C1810',
-            color: '#FFF',
+            background: 'var(--brand-fill)',
+            color: 'var(--brand-fill-text)',
             fontSize: '11px',
             fontWeight: 800,
             textTransform: 'uppercase',
@@ -492,13 +492,13 @@ function BespokeContent() {
                 className="flex items-center justify-center"
                 style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
               >
-                <AlertCircle size={32} color="#8B5A2B" strokeWidth={1.5} />
+                <AlertCircle size={32} color="var(--brand-brown)" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col" style={{ gap: '8px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Sign In Required
                 </h3>
-                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '400px' }}>
                   You must sign in first before being able to view, use, or create custom designs.
                   However, you can browse and open templates in the templates tab.
                 </p>
@@ -510,8 +510,8 @@ function BespokeContent() {
                   style={{
                     padding: '14px 32px',
                     borderRadius: '100px',
-                    background: '#2C1810',
-                    color: '#FFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     fontSize: '12px',
                     fontWeight: 800,
                     textTransform: 'uppercase',
@@ -526,13 +526,13 @@ function BespokeContent() {
                 </Link>
                 <button
                   onClick={() => setActiveTab('templates')}
-                  className="flex items-center transition-all hover:bg-gray-100 active:scale-[0.98]"
+                  className="flex items-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-[0.98]"
                   style={{
                     padding: '14px 32px',
                     borderRadius: '100px',
                     background: 'transparent',
-                    color: '#2C1810',
-                    border: '1.5px solid #2C1810',
+                    color: 'var(--brand-brown)',
+                    border: '1.5px solid var(--brand-brown)',
                     fontSize: '12px',
                     fontWeight: 800,
                     textTransform: 'uppercase',
@@ -549,15 +549,15 @@ function BespokeContent() {
               {/* Search + filter */}
               <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
                 <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
-                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: '#F5F5F5', gap: '8px', maxWidth: '300px' }}>
-                    <Search size={14} color="#999" />
+                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', gap: '8px', maxWidth: '300px' }}>
+                    <Search size={14} color="var(--text-muted)" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search bespoke"
                       className="flex-1 bg-transparent border-none outline-none"
-                      style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A', background: 'transparent', border: 'none', outline: 'none' }}
+                      style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', background: 'transparent', border: 'none', outline: 'none' }}
                     />
                   </div>
 
@@ -575,8 +575,8 @@ function BespokeContent() {
                       width: '44px',
                       height: '44px',
                       borderRadius: '50%',
-                      background: '#2C1810',
-                      color: '#FFF',
+                      background: 'var(--brand-fill)',
+                      color: 'var(--brand-fill-text)',
                       border: 'none',
                       cursor: 'pointer',
                       flexShrink: 0,
@@ -599,10 +599,10 @@ function BespokeContent() {
                         borderRadius: '100px',
                         fontSize: '11px',
                         fontWeight: 'bold',
-                        color: activeCategory === cat ? '#FFFFFF' : '#1A1A1A',
+                        color: activeCategory === cat ? 'var(--bg-base)' : 'var(--text-primary)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        background: activeCategory === cat ? '#1A1A1A' : '#F4F4F4',
+                        background: activeCategory === cat ? 'var(--text-primary)' : 'var(--bg-surface-elevated)',
                         border: 'none',
                         cursor: 'pointer',
                         flexShrink: 0,
@@ -619,9 +619,9 @@ function BespokeContent() {
                 <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="flex flex-col animate-pulse" style={{ gap: '8px' }}>
-                      <div style={{ aspectRatio: '214/264', borderRadius: '20px', background: '#F0EDEB' }} />
-                      <div style={{ height: '12px', width: '70%', borderRadius: '6px', background: '#F0EDEB' }} />
-                      <div style={{ height: '10px', width: '40%', borderRadius: '6px', background: '#F5F3F1' }} />
+                      <div style={{ aspectRatio: '214/264', borderRadius: '20px', background: 'var(--bg-surface-elevated)' }} />
+                      <div style={{ height: '12px', width: '70%', borderRadius: '6px', background: 'var(--bg-surface-elevated)' }} />
+                      <div style={{ height: '10px', width: '40%', borderRadius: '6px', background: 'var(--bg-surface-elevated)' }} />
                     </div>
                   ))}
                 </div>
@@ -632,13 +632,13 @@ function BespokeContent() {
                     className="flex items-center justify-center"
                     style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(44,24,16,0.06), rgba(44,24,16,0.02))' }}
                   >
-                    <Scissors size={32} color="#8B5A2B" strokeWidth={1.5} />
+                    <Scissors size={32} color="var(--brand-brown)" strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col" style={{ gap: '8px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       No designs yet
                     </h3>
-                    <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '320px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '320px' }}>
                       Start creating your first custom outfit. Choose your style, fabric, and let AI generate your perfect design.
                     </p>
                   </div>
@@ -648,8 +648,8 @@ function BespokeContent() {
                     style={{
                       padding: '14px 32px',
                       borderRadius: '100px',
-                      background: '#2C1810',
-                      color: '#FFF',
+                      background: 'var(--brand-fill)',
+                      color: 'var(--brand-fill-text)',
                       fontSize: '12px',
                       fontWeight: 800,
                       textTransform: 'uppercase',
@@ -671,7 +671,7 @@ function BespokeContent() {
                     const statusStyle = STATUS_COLORS[design.status];
                     return (
                       <Link href={`/bespoke/studio?name=${encodeURIComponent(design.name)}&type=${encodeURIComponent(design.category)}&designId=${design.id}`} key={design.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
-                        <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
+                        <div className="relative overflow-hidden bg-[var(--bg-surface-elevated)]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                           <Image src={design.image} alt={design.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                           {/* Status badge */}
                           <div
@@ -698,8 +698,8 @@ function BespokeContent() {
                           </div>
                         </div>
                         <div>
-                          <p style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', marginBottom: '2px' }}>{design.name}</p>
-                          <p style={{ fontSize: '11px', color: '#999' }}>{design.date}</p>
+                          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>{design.name}</p>
+                          <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{design.date}</p>
                         </div>
                       </Link>
                     );
@@ -733,22 +733,22 @@ function BespokeContent() {
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
             {TEMPLATES.map((t) => (
               <Link href={`/bespoke/studio?name=${encodeURIComponent(t.name)}&type=${encodeURIComponent(t.category)}`} key={t.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
-                <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
+                <div className="relative overflow-hidden bg-[var(--bg-surface-elevated)]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                   <Image src={t.image} alt={t.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end" style={{ padding: '10px' }}>
                     <span
                       className="w-full flex items-center justify-center transition-all"
-                      style={{ padding: '10px', borderRadius: '10px', background: '#FFFFFF', color: '#1A1A1A', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                      style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}
                     >
                       Use Template
                     </span>
                   </div>
                 </div>
                 <div>
-                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{t.name}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</p>
                   <div className="flex items-center" style={{ gap: '4px', marginTop: '2px' }}>
                     <TrendingUp size={12} color="#10B981" />
-                    <span style={{ fontSize: '11px', color: '#888' }}>{t.uses.toLocaleString()} uses</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.uses.toLocaleString()} uses</span>
                   </div>
                 </div>
               </Link>
@@ -779,7 +779,7 @@ function BespokeContent() {
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
             {COMMUNITY.map((item) => (
               <Link href={`/bespoke/studio?name=${encodeURIComponent(item.name)}`} key={item.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
-                <div className="relative overflow-hidden bg-[#F7F7F7]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
+                <div className="relative overflow-hidden bg-[var(--bg-surface-elevated)]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                   <Image src={item.image} alt={item.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                   {/* Like overlay */}
                   <div className="absolute bottom-3 left-3 flex items-center" style={{ gap: '6px', padding: '6px 12px', borderRadius: '10px', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
@@ -790,8 +790,8 @@ function BespokeContent() {
                 <div className="flex items-center" style={{ gap: '6px' }}>
                   <span style={{ fontSize: '13px' }}>{item.avatar}</span>
                   <div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{item.name}</p>
-                    <p style={{ fontSize: '11px', color: '#888' }}>by {item.designer}</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{item.name}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>by {item.designer}</p>
                   </div>
                 </div>
               </Link>
@@ -809,13 +809,13 @@ function BespokeContent() {
                 className="flex items-center justify-center"
                 style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
               >
-                <AlertCircle size={32} color="#8B5A2B" strokeWidth={1.5} />
+                <AlertCircle size={32} color="var(--brand-brown)" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col" style={{ gap: '8px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Sign In Required
                 </h3>
-                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '400px' }}>
                   You must sign in first before being able to view or manage your quotes.
                 </p>
               </div>
@@ -825,8 +825,8 @@ function BespokeContent() {
                 style={{
                   padding: '14px 32px',
                   borderRadius: '100px',
-                  background: '#2C1810',
-                  color: '#FFF',
+                  background: 'var(--brand-fill)',
+                  color: 'var(--brand-fill-text)',
                   fontSize: '12px',
                   fontWeight: 800,
                   textTransform: 'uppercase',
@@ -865,13 +865,13 @@ function BespokeContent() {
                     {/* Quotes header */}
                     <div
                       className="flex items-center justify-between"
-                      style={{ padding: '24px 20px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
+                      style={{ padding: '24px 20px', borderRadius: '20px', background: 'var(--bg-base)', border: '1px solid rgba(0,0,0,0.06)' }}
                     >
                       <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           Your Quotes
                         </h3>
-                        <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                           {quotedDesigns.length} design{quotedDesigns.length !== 1 ? 's' : ''} out for quotes
                         </p>
                       </div>
@@ -882,46 +882,46 @@ function BespokeContent() {
 
                     {quotedDesigns.length === 0 ? (
                       <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-                        <p style={{ fontSize: '13px', color: '#888' }}>
+                        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                           No quote requests yet. Design an outfit and tap “Order Now” to request quotes from tailors.
                         </p>
                       </div>
                     ) : (
                       <div className="flex flex-col" style={{ gap: '0' }}>
                         {quotedDesigns.map((d, idx) => {
-                          const s = statusLabel[(d.status as string) || ''] ?? { text: d.status, bg: 'rgba(0,0,0,0.05)', color: '#666' };
+                          const s = statusLabel[(d.status as string) || ''] ?? { text: d.status, bg: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' };
                           const isFirst = idx === 0;
                           const isLast = idx === quotedDesigns.length - 1;
                           return (
                             <button
                               key={d._id}
                               onClick={() => setQuotesDesignId(d._id)}
-                              className="flex items-center justify-between transition-all hover:bg-gray-50"
+                              className="flex items-center justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
                               style={{
                                 padding: '16px 20px', textAlign: 'left',
                                 borderRadius: isFirst ? '16px 16px 0 0' : isLast ? '0 0 16px 16px' : '0',
                                 border: '1px solid rgba(0,0,0,0.06)',
                                 borderTop: isFirst ? undefined : 'none',
-                                background: '#FFFFFF', cursor: 'pointer', width: '100%',
+                                background: 'var(--bg-base)', cursor: 'pointer', width: '100%',
                               }}
                             >
                               <div className="flex items-center" style={{ gap: '12px' }}>
-                                <div className="overflow-hidden" style={{ width: '44px', height: '52px', borderRadius: '10px', background: '#F5F5F5', flexShrink: 0 }}>
+                                <div className="overflow-hidden" style={{ width: '44px', height: '52px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', flexShrink: 0 }}>
                                   {d.design_images?.[0] && (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={d.design_images[0]} alt={d.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                   )}
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>{d.name}</p>
+                                  <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>{d.name}</p>
                                   <span style={{ fontSize: '9px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: s.bg, color: s.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                                     {s.text}
                                   </span>
                                 </div>
                               </div>
                               <div className="flex items-center" style={{ gap: '8px' }}>
-                                <span style={{ fontSize: '11px', color: '#888' }}>View quotes</span>
-                                <ChevronRight size={16} color="#CCC" />
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>View quotes</span>
+                                <ChevronRight size={16} color="var(--text-muted)" />
                               </div>
                             </button>
                           );
@@ -954,7 +954,7 @@ export default function BespokePage() {
   return (
     <Suspense fallback={
       <div className="min-h-[50vh] flex items-center justify-center">
-        <span className="w-8 h-8 rounded-full border-2 border-[#2C1810]/20 border-t-[#2C1810] animate-spin"></span>
+        <span className="w-8 h-8 rounded-full border-2 border-[var(--brand-fill)]/20 border-t-[var(--brand-fill)] animate-spin"></span>
       </div>
     }>
       <BespokeContent />

@@ -264,8 +264,8 @@ function StudioContent() {
     <div
       className="relative w-full h-full overflow-hidden flex flex-col lg:flex-row"
       style={{
-        backgroundColor: '#F9F9F9',
-        backgroundImage: 'radial-gradient(#E5E5E5 1.5px, transparent 1.5px)',
+        backgroundColor: 'var(--bg-surface)',
+        backgroundImage: 'radial-gradient(var(--border-glass) 1.5px, transparent 1.5px)',
         backgroundSize: '24px 24px',
         minHeight: 'calc(100vh - 130px)',
       }}
@@ -356,15 +356,15 @@ function StudioContent() {
         >
           <div
             className="relative w-full animate-fade-in"
-            style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: '#FFF', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', overflow: 'hidden' }}
+            style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', overflow: 'hidden' }}
           >
             {/* Close */}
             <button
               onClick={() => setShowRefOverlay(false)}
-              className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
-              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer' }}
+              className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', cursor: 'pointer' }}
             >
-              <X size={14} color="#666" />
+              <X size={14} color="var(--text-secondary)" />
             </button>
 
             <div style={{ padding: '32px 28px' }}>
@@ -372,7 +372,7 @@ function StudioContent() {
               {detectedStyles.length > 0 && !isAnalyzing ? (
                 <div className="flex flex-col items-center" style={{ gap: '16px', padding: '20px 0' }}>
                   <Sparkles size={40} color="#D4AF37" />
-                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1A1A1A', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', textAlign: 'center' }}>
                     Styles Detected!
                   </h3>
                   <div className="flex flex-wrap justify-center" style={{ gap: '8px' }}>
@@ -380,21 +380,21 @@ function StudioContent() {
                       <span key={i} style={{
                         padding: '6px 14px', borderRadius: '100px',
                         background: 'rgba(44,24,16,0.06)', fontSize: '11px',
-                        fontWeight: 700, color: '#2C1810',
+                        fontWeight: 700, color: 'var(--brand-brown)',
                       }}>
                         ✓ {s}
                       </span>
                     ))}
                   </div>
-                  <p style={{ fontSize: '12px', color: '#888' }}>Auto-applied to your design</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Auto-applied to your design</p>
                 </div>
               ) : (
                 <div className="flex flex-col" style={{ gap: '20px' }}>
                   <div>
-                    <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
                       Upload Your<br />Reference
                     </h3>
-                    <p style={{ fontSize: '13px', color: '#888', marginTop: '8px', lineHeight: 1.6 }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
                       Our AI will analyze your photo and auto-select matching styles
                     </p>
                   </div>
@@ -403,28 +403,28 @@ function StudioContent() {
                   <div
                     onClick={!isAnalyzing ? () => refFileInput.current?.click() : undefined}
                     className={`flex flex-col items-center justify-center transition-all ${
-                      isAnalyzing ? 'opacity-60 cursor-not-allowed' : 'hover:border-[#2C1810] cursor-pointer'
+                      isAnalyzing ? 'opacity-60 cursor-not-allowed' : 'hover:border-[var(--brand-fill)] cursor-pointer'
                     }`}
                     style={{
                       padding: '40px 20px', borderRadius: '16px',
-                      border: '2px dashed rgba(0,0,0,0.15)', background: '#FAFAFA',
+                      border: '2px dashed var(--border-glass)', background: 'var(--bg-surface-elevated)',
                     }}
                   >
                     {isAnalyzing ? (
                       <>
-                        <Loader2 size={32} color="#2C1810" className="animate-spin" style={{ marginBottom: '12px' }} />
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#2C1810', textAlign: 'center' }}>
+                        <Loader2 size={32} color="var(--brand-brown)" className="animate-spin" style={{ marginBottom: '12px' }} />
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--brand-brown)', textAlign: 'center' }}>
                           {analyzeStatus || 'Analyzing...'}
                         </p>
                       </>
                     ) : (
                       <>
-                        <Upload size={32} color="#999" style={{ marginBottom: '12px' }} />
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#666', textAlign: 'center' }}>
+                        <Upload size={32} color="var(--text-muted)" style={{ marginBottom: '12px' }} />
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>
                           Drop your reference photo here or{' '}
-                          <span style={{ color: '#2C1810', textDecoration: 'underline' }}>browse</span>
+                          <span style={{ color: 'var(--brand-brown)', textDecoration: 'underline' }}>browse</span>
                         </p>
-                        <p style={{ fontSize: '10px', color: '#AAA', marginTop: '6px' }}>
+                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px' }}>
                           PNG, JPG up to 10MB
                         </p>
                       </>
@@ -452,8 +452,8 @@ function StudioContent() {
                     className="w-full transition-all hover:opacity-70"
                     style={{
                       padding: '12px', borderRadius: '14px', background: 'none',
-                      color: '#888', fontSize: '12px', fontWeight: 600,
-                      border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer',
+                      color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600,
+                      border: '1px solid var(--border-glass)', cursor: 'pointer',
                     }}
                   >
                     Skip — Design from Scratch
@@ -477,7 +477,7 @@ export default function BespokeStudioPage() {
     <Suspense
       fallback={
         <div className="min-h-[50vh] flex items-center justify-center">
-          <span className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-[#2C1810] animate-spin" />
+          <span className="w-8 h-8 rounded-full border-2 border-[var(--border-glass)] border-t-[var(--brand-fill)] animate-spin" />
         </div>
       }
     >

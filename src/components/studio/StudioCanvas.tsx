@@ -28,11 +28,11 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             className="flex items-center justify-center"
             style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(70,40,20,0.08)' }}
           >
-            <Loader2 size={32} color="#462814" className="animate-spin" />
+            <Loader2 size={32} color="var(--brand-brown)" className="animate-spin" />
           </div>
           <div className="text-center">
-            <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>Loading saved design...</p>
-            <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Retrieving your customization</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Loading saved design...</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Retrieving your customization</p>
           </div>
         </div>
       ) : isGenerating ? (
@@ -45,8 +45,8 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             <Loader2 size={32} color="#7C3AED" className="animate-spin" />
           </div>
           <div className="text-center">
-            <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>Generating your outfit...</p>
-            <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>This may take a moment</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Generating your outfit...</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>This may take a moment</p>
           </div>
         </div>
       ) : currentImage ? (
@@ -59,17 +59,17 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         <div className="flex flex-col items-center" style={{ gap: '16px' }}>
           <div className="relative w-[120px] h-[160px] opacity-20">
             <svg viewBox="0 0 160 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M80 10 L60 40 L40 40 L30 80 L25 140 L45 180 L80 190 L115 180 L135 140 L130 80 L120 40 L100 40 Z" stroke="#1A1A1A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M60 40 Q80 60 100 40" stroke="#1A1A1A" strokeWidth="4" />
-              <path d="M30 80 L25 140" stroke="#1A1A1A" strokeWidth="4" />
-              <path d="M130 80 L135 140" stroke="#1A1A1A" strokeWidth="4" />
+              <path d="M80 10 L60 40 L40 40 L30 80 L25 140 L45 180 L80 190 L115 180 L135 140 L130 80 L120 40 L100 40 Z" stroke="var(--text-muted)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M60 40 Q80 60 100 40" stroke="var(--text-muted)" strokeWidth="4" />
+              <path d="M30 80 L25 140" stroke="var(--text-muted)" strokeWidth="4" />
+              <path d="M130 80 L135 140" stroke="var(--text-muted)" strokeWidth="4" />
             </svg>
           </div>
           <div className="text-center px-6">
-            <p style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <p style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               NO DESIGN YET?
             </p>
-            <p style={{ fontSize: '13px', color: '#666', marginTop: '8px', lineHeight: 1.5, maxWidth: '280px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.5, maxWidth: '280px' }}>
               Select a style, fabric, and details — then tap Generate to preview your outfit.
             </p>
           </div>

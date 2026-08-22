@@ -21,10 +21,10 @@ function StyleChip({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center transition-all hover:bg-gray-50 active:scale-95 overflow-hidden ${isActive ? 'bg-gray-100 ring-1 ring-gray-200' : ''}`}
+      className={`flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-95 overflow-hidden ${isActive ? 'bg-[var(--bg-surface-elevated)] ring-1 ring-[var(--border-glass)]' : ''}`}
       style={{
         width: '48px', height: '48px', borderRadius: '16px',
-        border: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer', position: 'relative',
+        border: '1px solid var(--border-glass)', cursor: 'pointer', position: 'relative',
       }}
       title={style?.name || 'Style'}
     >
@@ -79,7 +79,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
       <div className="flex flex-col gap-4 mt-4 px-4 lg:px-6 overflow-visible items-center" style={{ paddingBottom: '20px' }}>
 
         {/* 1. Styles Capsule */}
-        <div className="group relative flex flex-col items-center bg-white rounded-[24px] shadow-sm border border-gray-100" style={{ gap: '8px', padding: '12px' }}>
+        <div className="group relative flex flex-col items-center bg-[var(--bg-base)] rounded-[24px] shadow-sm border border-[var(--border-glass)]" style={{ gap: '8px', padding: '12px' }}>
           <ToolbarTooltip label="Style" />
           {activeSelections.map((styleId, idx) => (
             <StyleChip
@@ -91,22 +91,22 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
           ))}
           <button
             onClick={() => setExpandedSection('styles')}
-            className="flex items-center justify-center transition-all hover:bg-gray-50 active:scale-95 overflow-hidden"
-            style={{ width: '48px', height: '48px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer' }}
+            className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-95 overflow-hidden"
+            style={{ width: '48px', height: '48px', borderRadius: '16px', border: '1px solid var(--border-glass)', cursor: 'pointer' }}
           >
-            <Plus size={24} color="#555" strokeWidth={1.5} />
+            <Plus size={24} color="var(--text-secondary)" strokeWidth={1.5} />
           </button>
         </div>
 
         {/* 2. Accessories Capsule */}
-        <div className="group relative flex flex-col items-center bg-white rounded-[24px] shadow-sm border border-gray-100" style={{ gap: '8px', padding: '12px' }}>
+        <div className="group relative flex flex-col items-center bg-[var(--bg-base)] rounded-[24px] shadow-sm border border-[var(--border-glass)]" style={{ gap: '8px', padding: '12px' }}>
           <ToolbarTooltip label="Accessories" />
           {selectedAccessories.map((accId, idx) => (
             <button
               key={`acc-${idx}`}
               onClick={() => setExpandedSection('accessories')}
-              className={`flex items-center justify-center transition-all hover:bg-gray-50 active:scale-95 overflow-hidden ${expandedSection === 'accessories' ? 'bg-gray-100 ring-1 ring-gray-200' : ''}`}
-              style={{ width: '48px', height: '48px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer' }}
+              className={`flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-95 overflow-hidden ${expandedSection === 'accessories' ? 'bg-[var(--bg-surface-elevated)] ring-1 ring-[var(--border-glass)]' : ''}`}
+              style={{ width: '48px', height: '48px', borderRadius: '16px', border: '1px solid var(--border-glass)', cursor: 'pointer' }}
               title="Accessories"
             >
               <span style={{ fontSize: '24px' }}>{ACCESSORIES.find(a => a.id === accId)?.emoji || '💎'}</span>
@@ -114,24 +114,24 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
           ))}
           <button
             onClick={() => setExpandedSection('accessories')}
-            className="flex items-center justify-center transition-all hover:bg-gray-50 active:scale-95 overflow-hidden"
-            style={{ width: '48px', height: '48px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer' }}
+            className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-95 overflow-hidden"
+            style={{ width: '48px', height: '48px', borderRadius: '16px', border: '1px solid var(--border-glass)', cursor: 'pointer' }}
           >
-            <Plus size={24} color="#555" strokeWidth={1.5} />
+            <Plus size={24} color="var(--text-secondary)" strokeWidth={1.5} />
           </button>
         </div>
 
         {/* 3. Color/Fabric Swatch */}
         <button
           onClick={() => setExpandedSection('fabric')}
-          className="group relative flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border border-gray-100"
+          className="group relative flex items-center justify-center transition-all active:scale-95 bg-[var(--bg-base)] shadow-sm border border-[var(--border-glass)]"
           style={{ width: '64px', height: '64px', borderRadius: '50%', cursor: 'pointer', alignSelf: 'center' }}
           title="Color"
         >
           {selectedColor ? (
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: selectedColor, border: '3px solid #FFF', boxShadow: '0 0 0 1px rgba(0,0,0,0.1)' }} />
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: selectedColor, border: '3px solid var(--bg-base)', boxShadow: '0 0 0 1px rgba(0,0,0,0.1)' }} />
           ) : (
-            <Palette size={26} color="#555" strokeWidth={1.5} />
+            <Palette size={26} color="var(--text-secondary)" strokeWidth={1.5} />
           )}
           <ToolbarTooltip label="Fabric & Color" />
         </button>
@@ -139,8 +139,8 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
         {/* 4. Reference Image */}
         <button
           onClick={() => setExpandedSection('reference')}
-          className={`group flex items-center justify-center transition-all active:scale-95 shadow-sm border ${expandedSection === 'reference' ? 'border-[#2C1810]' : 'border-gray-100'} hover:bg-gray-50 relative`}
-          style={{ width: '64px', height: '64px', borderRadius: '50%', cursor: 'pointer', alignSelf: 'center', background: '#FFF' }}
+          className={`group flex items-center justify-center transition-all active:scale-95 shadow-sm border ${expandedSection === 'reference' ? 'border-[var(--brand-fill)]' : 'border-[var(--border-glass)]'} hover:bg-[var(--bg-surface-elevated)] relative`}
+          style={{ width: '64px', height: '64px', borderRadius: '50%', cursor: 'pointer', alignSelf: 'center', background: 'var(--bg-base)' }}
           title="Reference"
         >
           {referenceImages.length === 1 ? (
@@ -163,7 +163,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
                       width: '32px',
                       height: '32px',
                       borderRadius: '8px',
-                      border: '2px solid #FFF',
+                      border: '2px solid var(--bg-base)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
                       transform: `rotate(${rotation}deg)`,
                       zIndex: 3 - idx,
@@ -180,14 +180,14 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
                 style={{
                   bottom: '0px', right: '0px',
                   width: '20px', height: '20px', borderRadius: '50%',
-                  background: '#2C1810', border: '2px solid #FFF', zIndex: 10,
+                  background: 'var(--brand-fill)', border: '2px solid var(--bg-base)', zIndex: 10,
                 }}
               >
-                <span style={{ fontSize: '9px', fontWeight: 800, color: '#FFF' }}>{referenceImages.length}</span>
+                <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--brand-fill-text)' }}>{referenceImages.length}</span>
               </div>
             </div>
           ) : (
-            <ImageIcon size={26} color="#555" strokeWidth={1.5} />
+            <ImageIcon size={26} color="var(--text-secondary)" strokeWidth={1.5} />
           )}
           <ToolbarTooltip label="Reference" />
         </button>
@@ -195,11 +195,11 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
         {/* 5. Fit/Ruler */}
         <button
           onClick={() => setExpandedSection('fit')}
-          className={`group flex items-center justify-center transition-all active:scale-95 bg-white shadow-sm border ${expandedSection === 'fit' ? 'border-[#2C1810]' : 'border-gray-100'} hover:bg-gray-50 overflow-visible relative`}
+          className={`group flex items-center justify-center transition-all active:scale-95 bg-[var(--bg-base)] shadow-sm border ${expandedSection === 'fit' ? 'border-[var(--brand-fill)]' : 'border-[var(--border-glass)]'} hover:bg-[var(--bg-surface-elevated)] overflow-visible relative`}
           style={{ width: '64px', height: '64px', borderRadius: '50%', cursor: 'pointer', alignSelf: 'center' }}
           title="Fit & Measurements"
         >
-          <Ruler size={26} color="#555" strokeWidth={1.5} />
+          <Ruler size={26} color="var(--text-secondary)" strokeWidth={1.5} />
           <ToolbarTooltip label="Fit" />
         </button>
       </div>

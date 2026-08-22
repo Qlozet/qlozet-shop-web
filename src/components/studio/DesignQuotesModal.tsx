@@ -132,26 +132,26 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         className='relative w-full animate-fade-in'
         style={{
           maxWidth: '480px', margin: '20px', borderRadius: '24px',
-          background: '#FFFFFF', boxShadow: '0 24px 80px rgba(0,0,0,0.15)',
+          background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)',
           overflow: 'hidden', maxHeight: '86vh', display: 'flex', flexDirection: 'column',
         }}
       >
         <button
           onClick={onClose}
-          className='absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90'
+          className='absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90'
           style={{
             width: '32px', height: '32px', borderRadius: '50%',
-            border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer',
+            border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', cursor: 'pointer',
           }}
         >
-          <X size={14} color='#666' />
+          <X size={14} color='var(--text-secondary)' />
         </button>
 
         <div style={{ padding: '28px 28px 16px' }}>
-          <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
             Quotes
           </h3>
-          <p style={{ fontSize: '13px', color: '#888', marginTop: '6px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>
             {designObj?.name ? designObj.name : 'Your design'} · choose the tailor you like
           </p>
         </div>
@@ -159,10 +159,10 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         <div style={{ padding: '0 28px 28px', overflowY: 'auto' }}>
           {loading ? (
             <div className='flex items-center justify-center' style={{ padding: '40px 0' }}>
-              <Loader2 size={22} className='animate-spin' color='#888' />
+              <Loader2 size={22} className='animate-spin' color='var(--text-muted)' />
             </div>
           ) : quotes.length === 0 ? (
-            <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0' }}>
               No quotes yet. The tailors you selected will send their quotes soon.
             </p>
           ) : (
@@ -175,29 +175,29 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                   <div
                     key={q._id}
                     style={{
-                      border: `1.5px solid ${accepted ? '#064E3B' : 'rgba(0,0,0,0.08)'}`,
+                      border: `1.5px solid ${accepted ? '#064E3B' : 'var(--border-glass)'}`,
                       borderRadius: '16px', padding: '16px',
-                      background: accepted ? 'rgba(6,78,59,0.04)' : '#FFF',
+                      background: accepted ? 'rgba(6,78,59,0.04)' : 'var(--bg-surface-elevated)',
                     }}
                   >
                     <div className='flex items-center justify-between' style={{ marginBottom: '10px' }}>
                       <div className='flex items-center' style={{ gap: '10px' }}>
                         <div
                           className='flex items-center justify-center overflow-hidden'
-                          style={{ width: '36px', height: '36px', borderRadius: '9px', background: '#F2F2F2' }}
+                          style={{ width: '36px', height: '36px', borderRadius: '9px', background: 'var(--bg-surface-elevated)' }}
                         >
                           {(q.vendor as any)?.business_logo_url || q.vendor?.logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={(q.vendor as any)?.business_logo_url || q.vendor?.logo_url} alt={q.vendor?.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <Store size={15} color='#999' />
+                            <Store size={15} color='var(--text-muted)' />
                           )}
                         </div>
-                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                           {q.vendor?.business_name || 'Tailor'}
                         </span>
                       </div>
-                      <span style={{ fontSize: '15px', fontWeight: 800, color: '#1A1A1A' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
                         {naira(total)}
                       </span>
                     </div>
@@ -206,10 +206,10 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       <div className='flex flex-col' style={{ gap: '4px', marginBottom: '12px' }}>
                         {(q.line_items ?? []).map((li: any, i: number) => (
                           <div key={i} className='flex items-center justify-between'>
-                            <span style={{ fontSize: '12px', color: '#888' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                               {li.description || li.label}
                             </span>
-                            <span style={{ fontSize: '12px', color: '#555' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                               {naira(li.total ?? li.amount)}
                             </span>
                           </div>
@@ -260,7 +260,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           )}
                         </button>
                         {walletBalance < total && (
-                          <p style={{ fontSize: '10px', color: '#999', textAlign: 'center' }}>
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
                             Insufficient wallet balance — top up or pay with card.
                           </p>
                         )}
@@ -269,7 +269,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           disabled={acceptingId === q._id}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
-                            padding: '12px', borderRadius: '12px', background: '#FFF',
+                            padding: '12px', borderRadius: '12px', background: 'var(--bg-surface-elevated)',
                             color: '#064E3B', fontSize: '12px', fontWeight: 800,
                             textTransform: 'uppercase', letterSpacing: '0.06em',
                             border: '1.5px solid #064E3B', cursor: 'pointer', gap: '8px',
@@ -279,7 +279,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <p style={{ fontSize: '11px', color: '#999', textAlign: 'center' }}>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
                         {q.status === 'pending' ? 'Awaiting the tailor’s quote' : q.status}
                       </p>
                     )}
