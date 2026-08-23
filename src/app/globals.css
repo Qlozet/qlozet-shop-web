@@ -117,6 +117,44 @@
    color: var(--brand-fill);
  }
 
+ /* Dual-range price slider (two overlaid range inputs). The track/thumb is
+    transparent to clicks except the thumb itself, so both handles are draggable. */
+ .dual-range {
+   -webkit-appearance: none;
+   appearance: none;
+   background: transparent;
+   pointer-events: none;
+   position: absolute;
+   left: 0;
+   top: 50%;
+   transform: translateY(-50%);
+   width: 100%;
+   height: 0;
+   margin: 0;
+   padding: 0;
+ }
+ .dual-range::-webkit-slider-thumb {
+   -webkit-appearance: none;
+   pointer-events: auto;
+   width: 20px;
+   height: 20px;
+   border-radius: 50%;
+   background: var(--brand-fill);
+   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+   cursor: pointer;
+   border: none;
+ }
+ .dual-range::-moz-range-thumb {
+   pointer-events: auto;
+   width: 20px;
+   height: 20px;
+   border-radius: 50%;
+   background: var(--brand-fill);
+   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+   cursor: pointer;
+   border: none;
+ }
+
  /* Base Styles & Resets */
  * {
    box-sizing: border-box;

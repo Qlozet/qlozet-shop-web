@@ -4,24 +4,57 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
+const PRICE_MAX = 200000;
+const PRICE_STEP = 5000;
+
 // ─── Component Props ──────────────────────────────────────────────
 interface FilterSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  minPrice: number;
+  onMinPriceChange: (price: number) => void;
   maxPrice: number;
   onMaxPriceChange: (price: number) => void;
+  onSale: boolean;
+  onOnSaleChange: (v: boolean) => void;
+  inStock: boolean;
+  onInStockChange: (v: boolean) => void;
   onReset: () => void;
 }
+
+// ─── Checkbox visual ──────────────────────────────────────────────
+const CheckBox: React.FC<{ checked: boolean }> = ({ checked }) =>
+  checked ? (
+    <div
+      className="w-[24px] h-[24px] rounded-lg flex items-center justify-center"
+      style={{ background: 'var(--brand-fill)' }}
+    >
+      <svg width="14" height="12" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 4L3.5 6.5L9 1" stroke="var(--brand-fill-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  ) : (
+    <div
+      className="w-[24px] h-[24px] rounded-lg"
+      style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}
+    />
+  );
 
 // ─── Shared Filter Content ────────────────────────────────────────
 const FilterContent: React.FC<{
   sortBy: string;
   onSortChange: (s: string) => void;
+  minPrice: number;
+  onMinPriceChange: (p: number) => void;
   maxPrice: number;
   onMaxPriceChange: (p: number) => void;
-}> = ({ sortBy, onSortChange, maxPrice, onMaxPriceChange }) => (
+  onSale: boolean;
+  onOnSaleChange: (v: boolean) => void;
+  inStock: boolean;
+  onInStockChange: (v: boolean) => void;
+}> = ({ sortBy, onSortChange, minPrice, onMinPriceChange, maxPrice, onMaxPriceChange, onSale, onOnSaleChange, inStock, onInStockChange }) => (
   <>
     {/* Sorting */}
     <div className="flex flex-col gap-6">
@@ -56,10 +89,10 @@ const FilterContent: React.FC<{
     <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* On Sale */}
-    <label className="flex items-center justify-between cursor-pointer">
+    <button type="button" onClick={() => onOnSaleChange(!onSale)} className="flex items-center justify-between cursor-pointer w-full" style={{ background: 'none', border: 'none', padding: 0 }}>
       <span className="text-sm font-bold text-[var(--text-primary)]">On sale</span>
-      <div className="w-[24px] h-[24px] rounded-lg" style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }} />
-    </label>
+      <CheckBox checked={onSale} />
+    </button>
 
     <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
@@ -67,32 +100,48 @@ const FilterContent: React.FC<{
     <div className="flex flex-col gap-8">
       <h4 className="text-sm font-bold text-[var(--text-primary)]">Price</h4>
       <div className="relative w-full h-2 bg-[var(--bg-surface-elevated)] rounded-full mt-4">
-        <div className="absolute left-0 top-0 h-full bg-[var(--brand-fill)] rounded-full" style={{ width: `${(maxPrice / 200000) * 100}%` }} />
+        {/* Active fill between min and max */}
+        <div
+          className="absolute top-0 h-full bg-[var(--brand-fill)] rounded-full"
+          style={{ left: `${(minPrice / PRICE_MAX) * 100}%`, right: `${100 - (maxPrice / PRICE_MAX) * 100}%` }}
+        />
+        {/* Min thumb */}
         <input
           type="range"
           min={0}
-          max={200000}
-          step={5000}
-          className="absolute w-full -top-2.5 h-8 opacity-0 cursor-pointer"
-          value={maxPrice}
-          onChange={(e) => onMaxPriceChange(Number(e.target.value))}
+          max={PRICE_MAX}
+          step={PRICE_STEP}
+          value={minPrice}
+          onChange={(e) => onMinPriceChange(Math.min(Number(e.target.value), maxPrice - PRICE_STEP))}
+          className="dual-range"
+          style={{ zIndex: minPrice > PRICE_MAX - PRICE_STEP * 2 ? 5 : 3 }}
+          aria-label="Minimum price"
         />
-        {/* Fake min thumb */}
-        <div className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-[var(--brand-fill)] rounded-full shadow-md pointer-events-none" style={{ left: '-12px' }} />
         {/* Max thumb */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-[var(--brand-fill)] rounded-full shadow-md pointer-events-none"
-          style={{ left: `calc(${(maxPrice / 200000) * 100}% - 12px)` }}
+        <input
+          type="range"
+          min={0}
+          max={PRICE_MAX}
+          step={PRICE_STEP}
+          value={maxPrice}
+          onChange={(e) => onMaxPriceChange(Math.max(Number(e.target.value), minPrice + PRICE_STEP))}
+          className="dual-range"
+          style={{ zIndex: 4 }}
+          aria-label="Maximum price"
         />
       </div>
 
       <div className="flex items-center justify-between gap-5 mt-2">
         <div className="flex-1 rounded-2xl px-6 py-4 flex items-center justify-center" style={{ border: '1px solid var(--border-glass)' }}>
-          <span className="text-[15px] font-medium text-[var(--text-secondary)]">0</span>
+          <span className="text-[15px] font-medium text-[var(--text-secondary)]">
+            {minPrice > 0 ? `₦${minPrice.toLocaleString()}` : '₦0'}
+          </span>
         </div>
         <span className="text-[var(--text-muted)] font-bold">-</span>
         <div className="flex-1 rounded-2xl px-6 py-4 flex items-center justify-center" style={{ border: '1px solid var(--border-glass)' }}>
-          <span className="text-[15px] font-medium text-[var(--text-secondary)]">{maxPrice >= 200000 ? '200K+' : maxPrice.toLocaleString()}</span>
+          <span className="text-[15px] font-medium text-[var(--text-secondary)]">
+            {maxPrice >= PRICE_MAX ? '₦200K+' : `₦${maxPrice.toLocaleString()}`}
+          </span>
         </div>
       </div>
     </div>
@@ -100,14 +149,10 @@ const FilterContent: React.FC<{
     <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* In Stock */}
-    <label className="flex items-center justify-between cursor-pointer">
-      <span className="text-sm font-bold text-[var(--text-primary)]">In-stock</span>
-      <div className="w-[24px] h-[24px] bg-[var(--brand-fill)] rounded-lg flex items-center justify-center">
-        <svg width="14" height="12" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 4L3.5 6.5L9 1" stroke="var(--brand-fill-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-    </label>
+    <button type="button" onClick={() => onInStockChange(!inStock)} className="flex items-center justify-between cursor-pointer w-full" style={{ background: 'none', border: 'none', padding: 0 }}>
+      <span className="text-sm font-bold text-[var(--text-primary)]">In-stock only</span>
+      <CheckBox checked={inStock} />
+    </button>
   </>
 );
 
@@ -117,10 +162,31 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onClose,
   sortBy,
   onSortChange,
+  minPrice,
+  onMinPriceChange,
   maxPrice,
   onMaxPriceChange,
+  onSale,
+  onOnSaleChange,
+  inStock,
+  onInStockChange,
   onReset,
 }) => {
+  const content = (
+    <FilterContent
+      sortBy={sortBy}
+      onSortChange={onSortChange}
+      minPrice={minPrice}
+      onMinPriceChange={onMinPriceChange}
+      maxPrice={maxPrice}
+      onMaxPriceChange={onMaxPriceChange}
+      onSale={onSale}
+      onOnSaleChange={onOnSaleChange}
+      inStock={inStock}
+      onInStockChange={onInStockChange}
+    />
+  );
+
   return (
     <>
       {/* ══════ MOBILE: Bottom Sheet ══════ */}
@@ -134,7 +200,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         {/* Bottom Sheet */}
         <div
           className={`fixed left-3 right-3 bottom-3 z-[70] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-          style={{ maxHeight: '60vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+          style={{ maxHeight: '70vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
         >
           {/* Drag Handle */}
           <div className="flex justify-center pt-3 pb-1">
@@ -146,7 +212,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             <h3 className="text-lg font-bold text-[var(--text-primary)]">Filters</h3>
             <button
               onClick={onClose}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface-elevated)] rounded-full p-2"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-elevated)] rounded-full p-2"
             >
               <X size={18} strokeWidth={3} />
             </button>
@@ -154,7 +220,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto flex flex-col gap-8 hide-scrollbar" style={{ padding: '0 24px 24px 24px' }}>
-            <FilterContent sortBy={sortBy} onSortChange={onSortChange} maxPrice={maxPrice} onMaxPriceChange={onMaxPriceChange} />
+            {content}
           </div>
 
           {/* Footer */}
@@ -168,7 +234,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="flex-1 hover:bg-gray-800 transition-colors"
+              className="flex-1 transition-opacity hover:opacity-90"
               style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Done
@@ -192,7 +258,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               <h3 className="text-lg font-bold text-[var(--text-primary)]">Filters</h3>
               <button
                 onClick={onClose}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface-elevated)] rounded-full p-2"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-elevated)] rounded-full p-2"
               >
                 <X size={16} strokeWidth={3} />
               </button>
@@ -200,7 +266,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto flex flex-col gap-10 hide-scrollbar" style={{ padding: '0 24px 24px 24px' }}>
-              <FilterContent sortBy={sortBy} onSortChange={onSortChange} maxPrice={maxPrice} onMaxPriceChange={onMaxPriceChange} />
+              {content}
             </div>
 
             {/* Footer */}
@@ -214,7 +280,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 hover:bg-gray-800 transition-colors"
+                className="flex-1 transition-opacity hover:opacity-90"
                 style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Done

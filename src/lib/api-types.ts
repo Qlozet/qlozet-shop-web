@@ -405,7 +405,16 @@ export interface ProductQueryParams {
   product_type?: string;
   category?: string;
   audience?: string;
-  sortBy?: 'rating' | 'date' | 'relevance';
+  /** Clothing type filter: customize (bespoke) vs non_customize (ready-to-wear). */
+  type?: 'customize' | 'non_customize';
+  /** Price range on the effective (discounted-or-base) price. */
+  minPrice?: number;
+  maxPrice?: number;
+  /** Only products with an active discount. */
+  on_sale?: boolean;
+  /** Only products currently in stock. */
+  in_stock?: boolean;
+  sortBy?: 'rating' | 'date' | 'relevance' | 'price';
   order?: 'asc' | 'desc';
 }
 
