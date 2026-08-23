@@ -321,7 +321,9 @@ export default function VendorPage() {
                 style={{ padding: '9px 16px', backgroundColor: 'rgba(220,38,38,0.92)', borderColor: 'rgba(255,255,255,0.25)' }}
               >
                 <Tag size={13} color="#FFF" />
-                <span className="text-white text-xs font-bold">
+                {/* Inline white (not .text-white) so the light-theme override
+                    can't flip it dark — it sits on the red deals pill. */}
+                <span className="text-xs font-bold" style={{ color: '#FFFFFF' }}>
                   {promotions.length} {promotions.length === 1 ? 'Deal' : 'Deals'}
                 </span>
               </button>
@@ -465,8 +467,10 @@ export default function VendorPage() {
                     stockState={product.availability?.state}
                     customizable={prodTag === 'CUSTOMIZABLE'}
                   >
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product._id); }} className="absolute bottom-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border border-white/15" style={{ backgroundColor: 'rgba(255,255,255,0.15)', zIndex: 3 }}>
-                      <Heart size={14} className={isFav ? "fill-white text-white" : "text-white"} />
+                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product._id); }} className="absolute bottom-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border" style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.15)', zIndex: 3 }}>
+                      {/* Inline white (not .text-white/.border-white) so the light-theme
+                          override can't flip the heart/outline dark — it sits on the product image. */}
+                      <Heart size={14} color="#FFFFFF" fill={isFav ? '#FFFFFF' : 'none'} />
                     </button>
                   </ProductThumb>
 
