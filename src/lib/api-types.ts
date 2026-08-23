@@ -279,6 +279,8 @@ export interface ApiBusinessPublic {
   year_founded?: string;
   /** True when the vendor currently has at least one active discounted product. */
   has_active_discount?: boolean;
+  /** Count of the vendor's active products (0 → empty shop). */
+  total_products?: number;
   createdAt: string;
 }
 

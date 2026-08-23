@@ -28,20 +28,28 @@ export default function DiscoverPage() {
 
   const isLoading = productsLoading || vendorsLoading;
 
+  // Only vendors that actually have products to show (hide empty shops).
+  // `total_products` is undefined on older API responses — treat unknown as
+  // visible so the carousels don't go empty before the backend is deployed.
+  const stockedVendors = useMemo(
+    () => allVendors.filter((v) => (v.total_products ?? 1) > 0),
+    [allVendors]
+  );
+
   // Top vendors sorted by rating
   const worthTheHypeVendors = useMemo(() =>
-    [...allVendors]
+    [...stockedVendors]
       .sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0))
       .slice(0, 5),
-    [allVendors]
+    [stockedVendors]
   );
 
   // Top shops by total items sold
   const topShops = useMemo(() =>
-    [...allVendors]
+    [...stockedVendors]
       .sort((a, b) => (b.total_items_sold ?? 0) - (a.total_items_sold ?? 0))
       .slice(0, 8),
-    [allVendors]
+    [stockedVendors]
   );
 
   // ── Dynamic Browse Categories ──────────────────────────────────
