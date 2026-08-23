@@ -75,7 +75,7 @@ export default function OnboardingPage() {
   const firstName = user?.name?.split(' ')[0] || 'there';
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#F7F7F7' }}>
+    <div className="flex min-h-screen" style={{ background: 'var(--bg-base)' }}>
 
       {/* ═══════════════════════════════════════════════════════════════
           DESKTOP: LEFT PANEL — Hero image
@@ -137,7 +137,7 @@ export default function OnboardingPage() {
       {/* ═══════════════════════════════════════════════════════════════
           RIGHT PANEL — Form Content
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="w-full lg:w-[55%] bg-white text-[#121118] flex flex-col relative">
+      <div className="w-full lg:w-[55%] bg-[var(--bg-base)] text-[var(--text-primary)] flex flex-col relative">
 
         {/* ── MOBILE VIEW ── */}
         <div className="lg:hidden flex flex-col min-h-screen">
@@ -152,7 +152,7 @@ export default function OnboardingPage() {
                     height: '3px',
                     flex: 1,
                     borderRadius: '3px',
-                    background: currentStep >= s ? '#D4800D' : '#E5E5E5',
+                    background: currentStep >= s ? '#D4800D' : 'var(--border-glass)',
                     transition: 'background 0.3s',
                   }}
                 />
@@ -168,11 +168,11 @@ export default function OnboardingPage() {
                     Welcome to Qlozet
                   </span>
                 </div>
-                <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', lineHeight: 1.15, marginBottom: '12px' }}>
+                <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', lineHeight: 1.15, marginBottom: '12px' }}>
                   Hi {firstName},<br />
-                  <span style={{ color: '#462814' }}>glad to have you!</span>
+                  <span style={{ color: 'var(--brand-brown)' }}>glad to have you!</span>
                 </h1>
-                <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.7, marginBottom: '24px' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '24px' }}>
                   Let&apos;s personalise your experience so you see the styles, fabrics, and brands that match your taste.
                 </p>
 
@@ -191,7 +191,7 @@ export default function OnboardingPage() {
                     <button
                       onClick={handleWelcomeContinue}
                       className="w-full flex items-center justify-center transition-all hover:opacity-90"
-                      style={{ padding: '16px', borderRadius: '14px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
+                      style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
                     >
                       LET&apos;S GO
                       <ArrowRight size={15} />
@@ -204,10 +204,10 @@ export default function OnboardingPage() {
             {/* ── MOBILE STEP 2: GENDER ── */}
             {currentStep === 2 && (
               <div className="animate-fade-in flex flex-col flex-1">
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
                   Who are you shopping for?
                 </h1>
-                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '28px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '28px' }}>
                   This helps us show you the most relevant products and collections.
                 </p>
 
@@ -219,18 +219,18 @@ export default function OnboardingPage() {
                     style={{
                       padding: '20px 22px',
                       borderRadius: '18px',
-                      border: selectedGender === 'male' ? '2px solid #462814' : '1px solid #E5E5E5',
-                      background: selectedGender === 'male' ? '#FBF6F2' : 'transparent',
+                      border: selectedGender === 'male' ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                      background: selectedGender === 'male' ? 'var(--bg-surface-elevated)' : 'transparent',
                     }}
                   >
                     <div className="flex items-center" style={{ gap: '16px' }}>
-                      <span style={{ width: '50px', height: '50px', borderRadius: '50%', background: selectedGender === 'male' ? '#462814' : '#F2F2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: selectedGender === 'male' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♂</span>
+                      <span style={{ width: '50px', height: '50px', borderRadius: '50%', background: selectedGender === 'male' ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: selectedGender === 'male' ? 'var(--brand-fill-text)' : 'var(--text-primary)', transition: 'all 0.3s' }}>♂</span>
                       <div>
-                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Men</span>
-                        <span style={{ fontSize: '11px', color: '#AAA', fontWeight: 500 }}>Agbada, kaftans, suits & more</span>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Men</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>Agbada, kaftans, suits & more</span>
                       </div>
                     </div>
-                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', border: selectedGender === 'male' ? '6px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', border: selectedGender === 'male' ? '6px solid var(--brand-fill)' : '2px solid var(--border-glass)', transition: 'all 0.3s' }} />
                   </div>
 
                   {/* Woman */}
@@ -240,18 +240,18 @@ export default function OnboardingPage() {
                     style={{
                       padding: '20px 22px',
                       borderRadius: '18px',
-                      border: selectedGender === 'female' ? '2px solid #462814' : '1px solid #E5E5E5',
-                      background: selectedGender === 'female' ? '#FBF6F2' : 'transparent',
+                      border: selectedGender === 'female' ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                      background: selectedGender === 'female' ? 'var(--bg-surface-elevated)' : 'transparent',
                     }}
                   >
                     <div className="flex items-center" style={{ gap: '16px' }}>
-                      <span style={{ width: '50px', height: '50px', borderRadius: '50%', background: selectedGender === 'female' ? '#462814' : '#F2F2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: selectedGender === 'female' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♀</span>
+                      <span style={{ width: '50px', height: '50px', borderRadius: '50%', background: selectedGender === 'female' ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: selectedGender === 'female' ? 'var(--brand-fill-text)' : 'var(--text-primary)', transition: 'all 0.3s' }}>♀</span>
                       <div>
-                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Women</span>
-                        <span style={{ fontSize: '11px', color: '#AAA', fontWeight: 500 }}>Dresses, ankara, iro & buba & more</span>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Women</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>Dresses, ankara, iro & buba & more</span>
                       </div>
                     </div>
-                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', border: selectedGender === 'female' ? '6px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', border: selectedGender === 'female' ? '6px solid var(--brand-fill)' : '2px solid var(--border-glass)', transition: 'all 0.3s' }} />
                   </div>
                 </div>
 
@@ -262,8 +262,8 @@ export default function OnboardingPage() {
                   style={{
                     padding: '16px',
                     borderRadius: '14px',
-                    background: selectedGender ? '#462814' : '#D4C9C0',
-                    color: '#FFFFFF',
+                    background: selectedGender ? 'var(--brand-fill)' : 'var(--border-glass)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '13px',
                     fontWeight: 700,
@@ -280,10 +280,10 @@ export default function OnboardingPage() {
             {/* ── MOBILE STEP 3: AESTHETICS ── */}
             {currentStep === 3 && (
               <div className="animate-fade-in flex flex-col flex-1">
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
                   What&apos;s your aesthetic?
                 </h1>
-                <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6, marginBottom: '20px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '20px' }}>
                   Select styles you love. This curates your recommendations and home feed.
                 </p>
 
@@ -298,7 +298,7 @@ export default function OnboardingPage() {
                         style={{
                           aspectRatio: '3/4',
                           borderRadius: '16px',
-                          border: isActive ? '2px solid #462814' : '1px solid #E5E5E5',
+                          border: isActive ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
                         }}
                       >
                         <Image src={aes.image} alt={aes.label} fill style={{ objectFit: 'cover' }} />
@@ -319,15 +319,15 @@ export default function OnboardingPage() {
                   <button
                     onClick={handleFinishOnboarding}
                     className="w-full flex items-center justify-center transition-all hover:opacity-90"
-                    style={{ padding: '16px', borderRadius: '14px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
+                    style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
                   >
                     <Sparkles size={14} />
                     FINISH
                   </button>
                   <button
                     onClick={handleSkipAesthetics}
-                    className="w-full flex items-center justify-center transition-all hover:bg-gray-50"
-                    style={{ padding: '14px', borderRadius: '14px', background: 'transparent', color: '#999', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                    className="w-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)]"
+                    style={{ padding: '14px', borderRadius: '14px', background: 'transparent', color: 'var(--text-muted)', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                   >
                     Skip for now
                   </button>
@@ -343,8 +343,8 @@ export default function OnboardingPage() {
 
           {/* Step counter */}
           <div className="absolute top-8 left-8 flex justify-between w-full pr-16 items-center">
-            <QlozetLogo width={48} color="#121118" />
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{currentStep}/3</span>
+            <QlozetLogo width={48} color="var(--text-primary)" />
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{currentStep}/3</span>
           </div>
 
           <div className="w-full max-w-[500px] flex flex-col relative z-10 animate-fade-in">
@@ -355,7 +355,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={() => setCurrentStep((prev) => (prev - 1) as OnboardStep)}
                   className="hover:underline flex items-center"
-                  style={{ fontSize: '13px', color: '#462814', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: '6px' }}
+                  style={{ fontSize: '13px', color: 'var(--brand-brown)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: '6px' }}
                 >
                   ← Back
                 </button>
@@ -371,7 +371,7 @@ export default function OnboardingPage() {
                       height: '4px',
                       width: s === currentStep ? '32px' : '16px',
                       borderRadius: '4px',
-                      background: currentStep >= s ? '#462814' : '#EBEBEB',
+                      background: currentStep >= s ? 'var(--brand-fill)' : 'var(--border-glass)',
                     }}
                   />
                 ))}
@@ -389,16 +389,16 @@ export default function OnboardingPage() {
                     style={{
                       fontSize: '36px',
                       fontWeight: 800,
-                      color: '#1A1A1A',
+                      color: 'var(--text-primary)',
                       fontFamily: 'var(--font-display)',
                       lineHeight: 1.15,
                       marginBottom: '12px',
                     }}
                   >
                     Hi {firstName},<br />
-                    <span style={{ color: '#462814' }}>glad to have you!</span>
+                    <span style={{ color: 'var(--brand-brown)' }}>glad to have you!</span>
                   </h1>
-                  <p style={{ fontSize: '15px', color: '#888', lineHeight: 1.7, maxWidth: '380px' }}>
+                  <p style={{ fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: '380px' }}>
                     Let&apos;s personalise your experience so you see the styles, fabrics, and brands that match your taste.
                   </p>
                 </div>
@@ -420,8 +420,8 @@ export default function OnboardingPage() {
                   style={{
                     padding: '16px',
                     borderRadius: '14px',
-                    background: '#462814',
-                    color: '#FFFFFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -444,7 +444,7 @@ export default function OnboardingPage() {
                     style={{
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: '#1A1A1A',
+                      color: 'var(--text-primary)',
                       fontFamily: 'var(--font-display)',
                       letterSpacing: '-0.01em',
                       marginBottom: '8px',
@@ -452,7 +452,7 @@ export default function OnboardingPage() {
                   >
                     Who are you shopping for?
                   </h1>
-                  <p style={{ fontSize: '15px', color: '#888', lineHeight: 1.7 }}>
+                  <p style={{ fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
                     This helps us show you the most relevant products, collections, and recommendations.
                   </p>
                 </div>
@@ -465,18 +465,18 @@ export default function OnboardingPage() {
                     style={{
                       padding: '22px 24px',
                       borderRadius: '20px',
-                      border: selectedGender === 'male' ? '2px solid #462814' : '1px solid #EBEBEB',
-                      background: selectedGender === 'male' ? '#FBF6F2' : 'transparent',
+                      border: selectedGender === 'male' ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                      background: selectedGender === 'male' ? 'var(--bg-surface-elevated)' : 'transparent',
                     }}
                   >
                     <div className="flex items-center" style={{ gap: '18px' }}>
-                      <span style={{ width: '54px', height: '54px', borderRadius: '50%', background: selectedGender === 'male' ? '#462814' : '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', color: selectedGender === 'male' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♂</span>
+                      <span style={{ width: '54px', height: '54px', borderRadius: '50%', background: selectedGender === 'male' ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', color: selectedGender === 'male' ? 'var(--brand-fill-text)' : 'var(--text-primary)', transition: 'all 0.3s' }}>♂</span>
                       <div>
-                        <span style={{ fontSize: '17px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Men</span>
-                        <span style={{ fontSize: '12px', color: '#AAA', fontWeight: 500 }}>Agbada, kaftans, suits & more</span>
+                        <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Men</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Agbada, kaftans, suits & more</span>
                       </div>
                     </div>
-                    <span className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', border: selectedGender === 'male' ? '7px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
+                    <span className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', border: selectedGender === 'male' ? '7px solid var(--brand-fill)' : '2px solid var(--border-glass)', transition: 'all 0.3s' }} />
                   </div>
 
                   {/* Woman */}
@@ -486,18 +486,18 @@ export default function OnboardingPage() {
                     style={{
                       padding: '22px 24px',
                       borderRadius: '20px',
-                      border: selectedGender === 'female' ? '2px solid #462814' : '1px solid #EBEBEB',
-                      background: selectedGender === 'female' ? '#FBF6F2' : 'transparent',
+                      border: selectedGender === 'female' ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                      background: selectedGender === 'female' ? 'var(--bg-surface-elevated)' : 'transparent',
                     }}
                   >
                     <div className="flex items-center" style={{ gap: '18px' }}>
-                      <span style={{ width: '54px', height: '54px', borderRadius: '50%', background: selectedGender === 'female' ? '#462814' : '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', color: selectedGender === 'female' ? '#FFFFFF' : '#1A1A1A', transition: 'all 0.3s' }}>♀</span>
+                      <span style={{ width: '54px', height: '54px', borderRadius: '50%', background: selectedGender === 'female' ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', color: selectedGender === 'female' ? 'var(--brand-fill-text)' : 'var(--text-primary)', transition: 'all 0.3s' }}>♀</span>
                       <div>
-                        <span style={{ fontSize: '17px', fontWeight: 700, color: '#1A1A1A', display: 'block' }}>Women</span>
-                        <span style={{ fontSize: '12px', color: '#AAA', fontWeight: 500 }}>Dresses, ankara, iro & buba & more</span>
+                        <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Women</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Dresses, ankara, iro & buba & more</span>
                       </div>
                     </div>
-                    <span className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', border: selectedGender === 'female' ? '7px solid #462814' : '2px solid #DDD', transition: 'all 0.3s' }} />
+                    <span className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '50%', border: selectedGender === 'female' ? '7px solid var(--brand-fill)' : '2px solid var(--border-glass)', transition: 'all 0.3s' }} />
                   </div>
                 </div>
 
@@ -508,8 +508,8 @@ export default function OnboardingPage() {
                   style={{
                     padding: '16px',
                     borderRadius: '14px',
-                    background: selectedGender ? '#462814' : '#EBEBEB',
-                    color: selectedGender ? '#FFFFFF' : '#BBB',
+                    background: selectedGender ? 'var(--brand-fill)' : 'var(--border-glass)',
+                    color: selectedGender ? 'var(--brand-fill-text)' : 'var(--text-muted)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -531,7 +531,7 @@ export default function OnboardingPage() {
                     style={{
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: '#1A1A1A',
+                      color: 'var(--text-primary)',
                       fontFamily: 'var(--font-display)',
                       letterSpacing: '-0.01em',
                       marginBottom: '8px',
@@ -539,7 +539,7 @@ export default function OnboardingPage() {
                   >
                     What&apos;s your aesthetic?
                   </h1>
-                  <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.7 }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
                     Select the styles you love. This curates the recommendations shown in your feed.
                   </p>
                 </div>
@@ -556,7 +556,7 @@ export default function OnboardingPage() {
                         style={{
                           aspectRatio: '3/4',
                           borderRadius: '16px',
-                          border: isActive ? '2px solid #462814' : '1px solid #EBEBEB',
+                          border: isActive ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
                         }}
                       >
                         <Image src={aes.image} alt={aes.label} fill style={{ objectFit: 'cover' }} />
@@ -577,15 +577,15 @@ export default function OnboardingPage() {
                   <button
                     onClick={handleFinishOnboarding}
                     className="w-full flex items-center justify-center transition-all hover:opacity-90"
-                    style={{ padding: '16px', borderRadius: '14px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer', gap: '8px' }}
+                    style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer', gap: '8px' }}
                   >
                     <Sparkles size={14} />
                     FINISH PERSONALIZATION
                   </button>
                   <button
                     onClick={handleSkipAesthetics}
-                    className="w-full flex items-center justify-center transition-all hover:bg-gray-50"
-                    style={{ padding: '12px', borderRadius: '14px', background: 'transparent', color: '#999', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                    className="w-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)]"
+                    style={{ padding: '12px', borderRadius: '14px', background: 'transparent', color: 'var(--text-muted)', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                   >
                     Skip for now
                   </button>

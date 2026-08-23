@@ -73,17 +73,17 @@ export default function RegisterPage() {
     width: '100%',
     padding: '14px 16px',
     borderRadius: '12px',
-    border: '1px solid #E5E5E5',
-    background: '#FAFAFA',
+    border: '1px solid var(--border-glass)',
+    background: 'var(--bg-surface-elevated)',
     fontSize: '14px',
-    color: '#1A1A1A',
+    color: 'var(--text-primary)',
     outline: 'none',
     transition: 'border-color 0.2s',
     fontFamily: 'var(--font-body)',
   };
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.style.borderColor = '#462814';
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => e.target.style.borderColor = '#E5E5E5';
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.style.borderColor = 'var(--brand-brown)';
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => e.target.style.borderColor = 'var(--border-glass)';
 
   // Form Handler Step 1 (Email Input)
   const handleEmailSubmit = (e: React.FormEvent) => {
@@ -200,12 +200,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#F7F7F7' }}>
+    <div className="flex min-h-screen" style={{ background: 'var(--bg-base)' }}>
 
       {/* ═══════════════════════════════════════════════════════════════
           MOBILE VIEW (< lg)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="lg:hidden w-full min-h-screen flex flex-col" style={{ background: '#F7F7F7' }}>
+      <div className="lg:hidden w-full min-h-screen flex flex-col" style={{ background: 'var(--bg-base)' }}>
 
         {/* Ankara Header Band — hidden on OTP step */}
         {step !== 'otp' && (
@@ -235,7 +235,7 @@ export default function RegisterPage() {
                   style={{
                     height: '3px',
                     flex: 1,
-                    background: i <= stepIndex ? '#D4800D' : '#E5E5E5',
+                    background: i <= stepIndex ? 'var(--brand-fill)' : 'var(--border-glass)',
                     borderRadius: '3px',
                   }}
                 />
@@ -252,39 +252,39 @@ export default function RegisterPage() {
           {/* ─── STEP 1: EMAIL ─── */}
           {step === 'email' && (
             <div className="animate-fade-in flex flex-col flex-1">
-              <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '8px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '8px' }}>
                 HI THERE WELCOME TO QLOZET
               </h1>
-              <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '24px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '24px' }}>
                 Let&apos;s take a few minutes to make altire personalized to you
               </p>
 
               <form onSubmit={handleEmailSubmit} className="flex flex-col" style={{ gap: '16px' }}>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
-                  <input type="email" placeholder="ciroma_chukwu@gmail.com" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+                  <input type="email" placeholder="ciroma_chukwu@gmail.com" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
 
                 {/* Social Signup */}
                 <div className="flex flex-col" style={{ gap: '10px', marginTop: '8px' }}>
-                  <button type="button" onClick={() => { setEmail('ciroma_chukwu@gmail.com'); setStep('personal'); }} className="w-full flex items-center justify-center" style={{ padding: '13px', borderRadius: '12px', background: 'transparent', border: '1px solid #E5E5E5', fontSize: '12px', fontWeight: 600, color: '#1A1A1A', cursor: 'pointer', gap: '10px' }}>
+                  <button type="button" onClick={() => { setEmail('ciroma_chukwu@gmail.com'); setStep('personal'); }} className="w-full flex items-center justify-center" style={{ padding: '13px', borderRadius: '12px', background: 'transparent', border: '1px solid var(--border-glass)', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', gap: '10px' }}>
                     <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.7 0 3.3.6 4.6 1.8l2.4-2.4C17.3 1.5 14.9.5 12.24.5c-5.8 0-10.5 4.7-10.5 10.5s4.7 10.5 10.5 10.5c5.5 0 10-4 10-10.5c0-.6-.1-1.2-.2-1.715z"/></svg>
                     SIGNUP with Google
                   </button>
-                  <button type="button" onClick={() => { setEmail('ciroma_chukwu@gmail.com'); setStep('personal'); }} className="w-full flex items-center justify-center" style={{ padding: '13px', borderRadius: '12px', background: 'transparent', border: '1px solid #E5E5E5', fontSize: '12px', fontWeight: 600, color: '#1A1A1A', cursor: 'pointer', gap: '10px' }}>
+                  <button type="button" onClick={() => { setEmail('ciroma_chukwu@gmail.com'); setStep('personal'); }} className="w-full flex items-center justify-center" style={{ padding: '13px', borderRadius: '12px', background: 'transparent', border: '1px solid var(--border-glass)', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', gap: '10px' }}>
                     <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.22.67-2.94 1.51-.64.74-1.2 1.88-1.05 3 .1.07 2.34-.16 3-.45"/></svg>
                     SIGNUP with Apple
                   </button>
                 </div>
 
-                <button type="submit" className="w-full flex items-center justify-center transition-all" style={{ padding: '15px', borderRadius: '12px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', marginTop: '8px' }}>
-                  {isLoading ? <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }}></span> : 'CONTINUE'}
+                <button type="submit" className="w-full flex items-center justify-center transition-all" style={{ padding: '15px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', marginTop: '8px' }}>
+                  {isLoading ? <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }}></span> : 'CONTINUE'}
                 </button>
               </form>
 
-              <p style={{ fontSize: '12px', color: '#999', textAlign: 'center', marginTop: '28px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '28px' }}>
                 Already got an account?{' '}
-                <Link href="/auth/login" style={{ color: '#1A1A1A', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}>LOGIN</Link>
+                <Link href="/auth/login" style={{ color: 'var(--text-primary)', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}>LOGIN</Link>
               </p>
             </div>
           )}
@@ -292,29 +292,29 @@ export default function RegisterPage() {
           {/* ─── STEP 2: PERSONAL INFO ─── */}
           {step === 'personal' && (
             <div className="animate-fade-in">
-              <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '4px' }}>Personal Details</h1>
-              <button onClick={() => setStep('email')} style={{ fontSize: '20px', color: '#1A1A1A', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '24px', display: 'block' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '4px' }}>Personal Details</h1>
+              <button onClick={() => setStep('email')} style={{ fontSize: '20px', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '24px', display: 'block' }}>
                 <ArrowLeft size={20} />
               </button>
 
               <form onSubmit={handlePersonalSubmit} className="flex flex-col" style={{ gap: '16px' }}>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
-                  <input type="text" placeholder="Kemi Ayomi" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
+                  <input type="text" placeholder="Kemi Ayomi" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
                 </div>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
-                  <input type="tel" placeholder="08112345677" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
+                  <input type="tel" placeholder="08112345677" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={phone} onChange={(e) => setPhone(e.target.value)} required />
                 </div>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Address</label>
-                  <input type="text" placeholder="13c Hallen Estate, Abuja" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={address} onChange={(e) => setAddress(e.target.value)} required />
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Address</label>
+                  <input type="text" placeholder="13c Hallen Estate, Abuja" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={address} onChange={(e) => setAddress(e.target.value)} required />
                 </div>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date of Birth</label>
-                  <input type="text" placeholder="May 20, 1995" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={dob} onChange={(e) => setDob(e.target.value)} required />
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date of Birth</label>
+                  <input type="text" placeholder="May 20, 1995" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={dob} onChange={(e) => setDob(e.target.value)} required />
                 </div>
-                <button type="submit" className="w-full flex items-center justify-center" style={{ padding: '15px', borderRadius: '12px', background: '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', marginTop: '12px' }}>CONTINUE</button>
+                <button type="submit" className="w-full flex items-center justify-center" style={{ padding: '15px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', marginTop: '12px' }}>CONTINUE</button>
               </form>
             </div>
           )}
@@ -322,27 +322,27 @@ export default function RegisterPage() {
           {/* ─── STEP 3: CREATE PASSWORD ─── */}
           {step === 'password' && (
             <div className="animate-fade-in">
-              <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '4px' }}>Create Password</h1>
-              <button onClick={() => setStep('personal')} style={{ fontSize: '20px', color: '#1A1A1A', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '24px', display: 'block' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '4px' }}>Create Password</h1>
+              <button onClick={() => setStep('personal')} style={{ fontSize: '20px', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '24px', display: 'block' }}>
                 <ArrowLeft size={20} />
               </button>
 
               <form onSubmit={handlePasswordSubmit} className="flex flex-col" style={{ gap: '16px' }}>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
                   <div className="relative">
-                    <input type={showPass ? 'text' : 'password'} placeholder="••••••••••••" style={{ width: '100%', padding: '12px 40px 12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0 }}>
+                    <input type={showPass ? 'text' : 'password'} placeholder="••••••••••••" style={{ width: '100%', padding: '12px 40px 12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}>
                       {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Password</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Password</label>
                   <div className="relative">
-                    <input type={showConfPass ? 'text' : 'password'} placeholder="••••••••••••" style={{ width: '100%', padding: '12px 40px 12px 0', border: 'none', borderBottom: '1px solid #E5E5E5', background: 'transparent', fontSize: '14px', color: '#1A1A1A', outline: 'none' }} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                    <button type="button" onClick={() => setShowConfPass(!showConfPass)} style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0 }}>
+                    <input type={showConfPass ? 'text' : 'password'} placeholder="••••••••••••" style={{ width: '100%', padding: '12px 40px 12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowConfPass(!showConfPass)} style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}>
                       {showConfPass ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
@@ -357,16 +357,16 @@ export default function RegisterPage() {
                     { met: passwordsMatch, label: 'Password must match' },
                   ].map((rule, i) => (
                     <div key={i} className="flex items-center" style={{ gap: '10px' }}>
-                      <span style={{ width: '18px', height: '18px', borderRadius: '50%', border: rule.met ? 'none' : '1.5px solid #DDD', background: rule.met ? '#462814' : '#E5E5E5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {rule.met && <Check size={10} color="#FFFFFF" strokeWidth={3} />}
+                      <span style={{ width: '18px', height: '18px', borderRadius: '50%', border: rule.met ? 'none' : '1.5px solid var(--border-glass)', background: rule.met ? 'var(--brand-fill)' : 'var(--border-glass)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {rule.met && <Check size={10} color="var(--brand-fill-text)" strokeWidth={3} />}
                       </span>
-                      <span style={{ fontSize: '12px', color: rule.met ? '#1A1A1A' : '#AAA', fontWeight: rule.met ? 500 : 400 }}>{rule.label}</span>
+                      <span style={{ fontSize: '12px', color: rule.met ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: rule.met ? 500 : 400 }}>{rule.label}</span>
                     </div>
                   ))}
                 </div>
 
-                <button type="submit" disabled={!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch} className="w-full flex items-center justify-center" style={{ padding: '15px', borderRadius: '12px', background: (!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch) ? '#D4C9C0' : '#462814', color: '#FFFFFF', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: (!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch) ? 'not-allowed' : 'pointer', marginTop: '4px' }}>
-                  {isLoading ? <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }}></span> : 'SIGN UP'}
+                <button type="submit" disabled={!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch} className="w-full flex items-center justify-center" style={{ padding: '15px', borderRadius: '12px', background: (!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch) ? '#D4C9C0' : 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: (!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch) ? 'not-allowed' : 'pointer', marginTop: '4px' }}>
+                  {isLoading ? <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }}></span> : 'SIGN UP'}
                 </button>
               </form>
             </div>
@@ -376,7 +376,7 @@ export default function RegisterPage() {
           {step === 'otp' && (
             <div className="animate-fade-in flex flex-col items-center" style={{ paddingTop: '20px' }}>
               <button onClick={() => setStep('password')} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '48px' }}>
-                <ArrowLeft size={22} color="#1A1A1A" />
+                <ArrowLeft size={22} color="var(--text-primary)" />
               </button>
 
               {/* Mail Icon */}
@@ -385,9 +385,9 @@ export default function RegisterPage() {
                 <span style={{ position: 'absolute', top: '14px', right: '14px', width: '12px', height: '12px', background: '#DC2626', borderRadius: '50%', border: '2px solid #FFFFFF' }}></span>
               </div>
 
-              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1A1A', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>You&apos;ve got mail</h1>
-              <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.7, textAlign: 'center', maxWidth: '280px', marginBottom: '32px' }}>
-                We sent an email to <span style={{ color: '#1A1A1A', fontWeight: 600 }}>{email}</span> please type the verification code you see.
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>You&apos;ve got mail</h1>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, textAlign: 'center', maxWidth: '280px', marginBottom: '32px' }}>
+                We sent an email to <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{email}</span> please type the verification code you see.
               </p>
 
               <form onSubmit={handleOtpSubmit} className="flex flex-col items-center w-full" style={{ gap: '28px' }}>
@@ -402,11 +402,11 @@ export default function RegisterPage() {
                         width: '56px',
                         height: '48px',
                         border: 'none',
-                        borderBottom: cell ? '2px solid #1A1A1A' : '2px solid #E5E5E5',
+                        borderBottom: cell ? '2px solid var(--text-primary)' : '2px solid var(--border-glass)',
                         background: 'transparent',
                         fontSize: '20px',
                         fontWeight: 800,
-                        color: '#1A1A1A',
+                        color: 'var(--text-primary)',
                         textAlign: 'center',
                         outline: 'none',
                         fontFamily: 'var(--font-display)',
@@ -432,7 +432,7 @@ export default function RegisterPage() {
                   ))}
                 </div>
 
-                <button type="button" onClick={() => setStep('otp')} style={{ fontSize: '13px', color: '#1A1A1A', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                <button type="button" onClick={() => setStep('otp')} style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
                   Verify from email
                 </button>
               </form>
@@ -496,11 +496,11 @@ export default function RegisterPage() {
       {/* DESKTOP: Right Panel — Form */}
       <div
         className="hidden lg:flex w-1/2 items-center justify-center relative"
-        style={{ padding: '48px 32px', background: '#F7F7F7' }}
+        style={{ padding: '48px 32px', background: 'var(--bg-base)' }}
       >
         {/* Mobile Logo */}
         <div className="absolute top-8 left-8 lg:hidden">
-          <QlozetLogo width={48} color="#1A1A1A" />
+          <QlozetLogo width={48} color="var(--text-primary)" />
         </div>
 
         <div className="w-full animate-fade-in" style={{ maxWidth: '420px' }}>
@@ -514,7 +514,7 @@ export default function RegisterPage() {
                 style={{
                   height: '4px',
                   flex: 1,
-                  background: i <= stepIndex ? '#462814' : '#EBEBEB',
+                  background: i <= stepIndex ? 'var(--brand-fill)' : 'var(--border-glass)',
                   borderRadius: '4px',
                 }}
               />
@@ -546,7 +546,7 @@ export default function RegisterPage() {
                   style={{
                     fontSize: '28px',
                     fontWeight: 700,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     fontFamily: 'var(--font-display)',
                     letterSpacing: '-0.01em',
                     marginBottom: '8px',
@@ -554,7 +554,7 @@ export default function RegisterPage() {
                 >
                   Shop the Right Way
                 </h1>
-                <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   Get started and customize your traditional fits.
                 </p>
               </div>
@@ -566,15 +566,15 @@ export default function RegisterPage() {
                     setEmail('ciroma_chukwu@gmail.com');
                     setStep('personal');
                   }}
-                  className="w-full flex items-center justify-center transition-all hover:bg-gray-50"
+                  className="w-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)]"
                   style={{
                     padding: '14px',
                     borderRadius: '12px',
-                    background: '#F7F7F7',
-                    border: '1px solid #E5E5E5',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-glass)',
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer',
                     gap: '10px',
                   }}
@@ -587,15 +587,15 @@ export default function RegisterPage() {
                     setEmail('ciroma_chukwu@gmail.com');
                     setStep('personal');
                   }}
-                  className="w-full flex items-center justify-center transition-all hover:bg-gray-50"
+                  className="w-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)]"
                   style={{
                     padding: '14px',
                     borderRadius: '12px',
-                    background: '#F7F7F7',
-                    border: '1px solid #E5E5E5',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-glass)',
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer',
                     gap: '10px',
                   }}
@@ -607,15 +607,15 @@ export default function RegisterPage() {
 
               {/* Divider */}
               <div className="relative" style={{ margin: '24px 0', textAlign: 'center' }}>
-                <span style={{ position: 'absolute', inset: '0', top: '50%', transform: 'translateY(-50%)', borderTop: '1px solid #EFEFEF' }}></span>
+                <span style={{ position: 'absolute', inset: '0', top: '50%', transform: 'translateY(-50%)', borderTop: '1px solid var(--border-glass)' }}></span>
                 <span
                   style={{
                     position: 'relative',
-                    background: '#F7F7F7',
+                    background: 'var(--bg-base)',
                     padding: '0 16px',
                     fontSize: '12px',
                     fontWeight: 600,
-                    color: '#CCC',
+                    color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
                   }}
@@ -626,7 +626,7 @@ export default function RegisterPage() {
 
               <form onSubmit={handleEmailSubmit} className="flex flex-col" style={{ gap: '20px' }}>
                 <div className="flex flex-col" style={{ gap: '8px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Email</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</label>
                   <input 
                     type="email" 
                     placeholder="ciroma_chukwu@gmail.com" 
@@ -644,8 +644,8 @@ export default function RegisterPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '12px',
-                    background: '#462814',
-                    color: '#FFFFFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -654,14 +654,14 @@ export default function RegisterPage() {
                   }}
                 >
                   {isLoading ? (
-                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }}></span>
+                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }}></span>
                   ) : 'SIGNUP with email'}
                 </button>
               </form>
 
-              <p style={{ fontSize: '13px', color: '#999', textAlign: 'center', marginTop: '32px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '32px' }}>
                 Already got an account?{' '}
-                <Link href="/auth/login" style={{ color: '#462814', fontWeight: 600, textDecoration: 'none' }} className="hover:underline">
+                <Link href="/auth/login" style={{ color: 'var(--brand-brown)', fontWeight: 600, textDecoration: 'none' }} className="hover:underline">
                   LOGIN
                 </Link>
               </p>
@@ -675,7 +675,7 @@ export default function RegisterPage() {
                 onClick={() => setStep('email')}
                 style={{
                   fontSize: '13px',
-                  color: '#462814',
+                  color: 'var(--brand-brown)',
                   fontWeight: 600,
                   background: 'none',
                   border: 'none',
@@ -693,7 +693,7 @@ export default function RegisterPage() {
                   style={{
                     fontSize: '28px',
                     fontWeight: 700,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     fontFamily: 'var(--font-display)',
                     letterSpacing: '-0.01em',
                     marginBottom: '8px',
@@ -701,7 +701,7 @@ export default function RegisterPage() {
                 >
                   Personal Details
                 </h1>
-                <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   Enter your details to create your bespoke profile.
                 </p>
               </div>
@@ -709,7 +709,7 @@ export default function RegisterPage() {
               <form onSubmit={handlePersonalSubmit} className="flex flex-col" style={{ gap: '18px' }}>
                 {/* Full Name */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Full Name</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Full Name</label>
                   <input 
                     type="text" 
                     placeholder="Kemi Ayomi" 
@@ -724,7 +724,7 @@ export default function RegisterPage() {
 
                 {/* Phone */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Phone Number</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Phone Number</label>
                   <input 
                     type="tel" 
                     placeholder="08112345677" 
@@ -739,7 +739,7 @@ export default function RegisterPage() {
 
                 {/* Address */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Address</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Address</label>
                   <input 
                     type="text" 
                     placeholder="13c Hallen Estate, Abuja, Nigeria" 
@@ -754,7 +754,7 @@ export default function RegisterPage() {
 
                 {/* DOB */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Date of Birth</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Date of Birth</label>
                   <input 
                     type="text" 
                     placeholder="May 20, 1995" 
@@ -773,8 +773,8 @@ export default function RegisterPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '12px',
-                    background: '#462814',
-                    color: '#FFFFFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -796,7 +796,7 @@ export default function RegisterPage() {
                 onClick={() => setStep('personal')}
                 style={{
                   fontSize: '13px',
-                  color: '#462814',
+                  color: 'var(--brand-brown)',
                   fontWeight: 600,
                   background: 'none',
                   border: 'none',
@@ -814,7 +814,7 @@ export default function RegisterPage() {
                   style={{
                     fontSize: '28px',
                     fontWeight: 700,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     fontFamily: 'var(--font-display)',
                     letterSpacing: '-0.01em',
                     marginBottom: '8px',
@@ -822,7 +822,7 @@ export default function RegisterPage() {
                 >
                   Create Password
                 </h1>
-                <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   Protect your customized fitting room profile.
                 </p>
               </div>
@@ -830,7 +830,7 @@ export default function RegisterPage() {
               <form onSubmit={handlePasswordSubmit} className="flex flex-col" style={{ gap: '18px' }}>
                 {/* Password */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Password</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
                   <div className="relative">
                     <input 
                       type={showPass ? 'text' : 'password'} 
@@ -845,7 +845,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPass(!showPass)}
-                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0 }}
+                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
                     >
                       {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -854,7 +854,7 @@ export default function RegisterPage() {
 
                 {/* Confirm Password */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Confirm Password</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Confirm Password</label>
                   <div className="relative">
                     <input 
                       type={showConfPass ? 'text' : 'password'} 
@@ -869,7 +869,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfPass(!showConfPass)}
-                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0 }}
+                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
                     >
                       {showConfPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -891,14 +891,14 @@ export default function RegisterPage() {
                           width: '18px',
                           height: '18px',
                           borderRadius: '50%',
-                          border: rule.met ? 'none' : '1.5px solid #DDD',
+                          border: rule.met ? 'none' : '1.5px solid var(--border-glass)',
                           background: rule.met ? '#2D8A4E' : 'transparent',
                           flexShrink: 0,
                         }}
                       >
                         {rule.met && <Check size={10} color="#FFFFFF" strokeWidth={3} />}
                       </span>
-                      <span style={{ fontSize: '12px', color: rule.met ? '#1A1A1A' : '#AAA', fontWeight: rule.met ? 500 : 400, transition: 'color 0.2s' }}>
+                      <span style={{ fontSize: '12px', color: rule.met ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: rule.met ? 500 : 400, transition: 'color 0.2s' }}>
                         {rule.label}
                       </span>
                     </div>
@@ -912,8 +912,8 @@ export default function RegisterPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '12px',
-                    background: (!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch) ? '#D4C9C0' : '#462814',
-                    color: '#FFFFFF',
+                    background: (!hasMinLen || !hasSymbol || !hasNumber || !passwordsMatch) ? '#D4C9C0' : 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -923,7 +923,7 @@ export default function RegisterPage() {
                   }}
                 >
                   {isLoading ? (
-                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }}></span>
+                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }}></span>
                   ) : 'SIGN UP'}
                 </button>
               </form>
@@ -966,7 +966,7 @@ export default function RegisterPage() {
                   style={{
                     fontSize: '28px',
                     fontWeight: 700,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     fontFamily: 'var(--font-display)',
                     letterSpacing: '-0.01em',
                     marginBottom: '8px',
@@ -974,8 +974,8 @@ export default function RegisterPage() {
                 >
                   You&apos;ve got mail
                 </h1>
-                <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.7, maxWidth: '280px', margin: '0 auto' }}>
-                  We sent an email to <span style={{ color: '#1A1A1A', fontWeight: 600 }}>{email}</span>. Please type the verification code you see.
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: '280px', margin: '0 auto' }}>
+                  We sent an email to <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{email}</span>. Please type the verification code you see.
                 </p>
               </div>
 
@@ -991,11 +991,11 @@ export default function RegisterPage() {
                         width: '56px',
                         height: '64px',
                         borderRadius: '14px',
-                        border: cell ? '2px solid #462814' : '1px solid #E5E5E5',
-                        background: '#FAFAFA',
+                        border: cell ? '2px solid var(--brand-brown)' : '1px solid var(--border-glass)',
+                        background: 'var(--bg-surface-elevated)',
                         fontSize: '22px',
                         fontWeight: 800,
-                        color: '#1A1A1A',
+                        color: 'var(--text-primary)',
                         textAlign: 'center',
                         outline: 'none',
                         transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -1004,8 +1004,8 @@ export default function RegisterPage() {
                       value={cell}
                       onChange={(e) => handleOtpChange(e.target.value, idx)}
                       onKeyDown={(e) => handleOtpKeyDown(e, idx)}
-                      onFocus={(e) => { e.target.style.borderColor = '#462814'; e.target.style.boxShadow = '0 0 0 3px rgba(70,40,20,0.08)'; }}
-                      onBlur={(e) => { e.target.style.borderColor = cell ? '#462814' : '#E5E5E5'; e.target.style.boxShadow = 'none'; }}
+                      onFocus={(e) => { e.target.style.borderColor = 'var(--brand-brown)'; e.target.style.boxShadow = '0 0 0 3px rgba(70,40,20,0.08)'; }}
+                      onBlur={(e) => { e.target.style.borderColor = cell ? 'var(--brand-brown)' : 'var(--border-glass)'; e.target.style.boxShadow = 'none'; }}
                       maxLength={1}
                       required
                     />
@@ -1018,8 +1018,8 @@ export default function RegisterPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '12px',
-                    background: '#462814',
-                    color: '#FFFFFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -1028,7 +1028,7 @@ export default function RegisterPage() {
                   }}
                 >
                   {isLoading ? (
-                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }}></span>
+                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }}></span>
                   ) : 'VERIFY CODE'}
                 </button>
               </form>
@@ -1037,7 +1037,7 @@ export default function RegisterPage() {
                 onClick={() => setStep('otp')}
                 style={{
                   fontSize: '13px',
-                  color: '#462814',
+                  color: 'var(--brand-brown)',
                   fontWeight: 600,
                   background: 'none',
                   border: 'none',
