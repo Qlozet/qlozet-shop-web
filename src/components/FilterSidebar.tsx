@@ -61,7 +61,7 @@ const FilterContent: React.FC<{
       <h4 className="text-sm font-bold text-[var(--text-primary)]">Sort by</h4>
       <div className="flex flex-col gap-5">
         {[
-          { id: 'rating', label: 'Best selling' },
+          { id: 'rating', label: 'Top rated' },
           { id: 'newest', label: 'Newest' },
           { id: 'priceAsc', label: 'Price: Low - High' },
           { id: 'priceDesc', label: 'Price: High - Low' }
