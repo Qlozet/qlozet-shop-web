@@ -482,7 +482,7 @@ export default function VendorPage() {
                   {/* Inline marginTop (not a Tailwind mb-[…] class): Tailwind's
                       scanner skips this [id] dynamic-route folder, so a class
                       unique to this file wouldn't generate. Inline always works. */}
-                  <div className="flex flex-col gap-1 px-1" style={{ marginTop: '20px' }}>
+                  <div className="flex flex-col gap-1 px-1" style={{ marginTop: '16px' }}>
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-white text-sm font-bold">₦{prodPrice.toLocaleString()}</span>
