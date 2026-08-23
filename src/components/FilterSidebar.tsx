@@ -131,15 +131,17 @@ const FilterContent: React.FC<{
         />
       </div>
 
-      <div className="flex items-center justify-between gap-5 mt-2">
-        <div className="flex-1 rounded-2xl px-6 py-4 flex items-center justify-center" style={{ border: '1px solid var(--border-glass)' }}>
-          <span className="text-[15px] font-medium text-[var(--text-secondary)]">
+      <div className="flex items-center justify-between gap-4 mt-1">
+        <div className="flex-1 rounded-xl px-4 py-2.5 flex flex-col items-center gap-0.5" style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}>
+          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Min</span>
+          <span className="text-[14px] font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {minPrice > 0 ? `₦${minPrice.toLocaleString()}` : '₦0'}
           </span>
         </div>
-        <span className="text-[var(--text-muted)] font-bold">-</span>
-        <div className="flex-1 rounded-2xl px-6 py-4 flex items-center justify-center" style={{ border: '1px solid var(--border-glass)' }}>
-          <span className="text-[15px] font-medium text-[var(--text-secondary)]">
+        <span className="text-[var(--text-muted)]">—</span>
+        <div className="flex-1 rounded-xl px-4 py-2.5 flex flex-col items-center gap-0.5" style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}>
+          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Max</span>
+          <span className="text-[14px] font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {maxPrice >= PRICE_MAX ? '₦200K+' : `₦${maxPrice.toLocaleString()}`}
           </span>
         </div>
