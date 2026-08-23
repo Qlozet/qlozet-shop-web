@@ -113,8 +113,8 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
         {/* Header card */}
         <div style={cardStyle}>
           <div style={{ padding: '24px 20px' }}>
-            <CreditCard size={28} color="#462814" strokeWidth={1.5} />
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
+            <CreditCard size={28} color="var(--brand-brown)" strokeWidth={1.5} />
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
               Add New Card
             </h3>
           </div>
@@ -162,8 +162,8 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
         {/* Form fields */}
         <div className="flex flex-col" style={{ gap: '12px' }}>
           {/* Card Number */}
-          <div style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+          <div style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', padding: '14px 20px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
               Card Number
             </label>
             <input
@@ -172,14 +172,14 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
               onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
               placeholder="0000 0000 0000 0000"
               maxLength={19}
-              style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', fontFamily: 'monospace', letterSpacing: '0.15em' }}
+              style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', fontFamily: 'monospace', letterSpacing: '0.15em' }}
             />
           </div>
 
           {/* Expiry + CVV */}
           <div className="flex" style={{ gap: '12px' }}>
-            <div className="flex-1" style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+            <div className="flex-1" style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', padding: '14px 20px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
                 Expiry Date
               </label>
               <input
@@ -188,11 +188,11 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
                 onChange={(e) => setExpiry(e.target.value.replace(/\D/g, ''))}
                 placeholder="MM/YY"
                 maxLength={5}
-                style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', fontFamily: 'monospace' }}
+                style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', fontFamily: 'monospace' }}
               />
             </div>
-            <div className="flex-1" style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+            <div className="flex-1" style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', padding: '14px 20px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
                 CVV
               </label>
               <div className="flex items-center justify-between">
@@ -202,18 +202,18 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
                   onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
                   placeholder="•••"
                   maxLength={3}
-                  style={{ flex: 1, fontSize: '15px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', fontFamily: 'monospace' }}
+                  style={{ flex: 1, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', fontFamily: 'monospace' }}
                 />
                 <button onClick={() => setShowCvv(!showCvv)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
-                  {showCvv ? <EyeOff size={16} color="#999" /> : <Eye size={16} color="#999" />}
+                  {showCvv ? <EyeOff size={16} color="var(--text-muted)" /> : <Eye size={16} color="var(--text-muted)" />}
                 </button>
               </div>
             </div>
           </div>
 
           {/* Cardholder Name */}
-          <div style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+          <div style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', padding: '14px 20px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
               Cardholder Name
             </label>
             <input
@@ -221,7 +221,7 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
               value={holderName}
               onChange={(e) => setHolderName(e.target.value)}
               placeholder="Name on card"
-              style={{ width: '100%', fontSize: '14px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', textTransform: 'uppercase' }}
+              style={{ width: '100%', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', textTransform: 'uppercase' }}
             />
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
         <button
           onClick={() => setActiveSection('payment-information')}
           className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+          style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
         >
           Save Card
         </button>
@@ -247,18 +247,18 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
       <div style={cardStyle}>
         <div className="flex items-center justify-between" style={{ padding: '24px 20px' }}>
           <div>
-            <CreditCard size={28} color="#462814" strokeWidth={1.5} />
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
+            <CreditCard size={28} color="var(--brand-brown)" strokeWidth={1.5} />
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
               Payment Information
             </h3>
-            <p style={{ fontSize: '12px', color: '#888', marginTop: '6px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
               {cards.length} card{cards.length !== 1 ? 's' : ''} saved
             </p>
           </div>
           <button
             onClick={() => setActiveSection('add-card')}
             className="flex items-center gap-2 transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '10px 20px', borderRadius: '10px', background: '#2C1810', color: '#FFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+            style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
           >
             <Plus size={14} />
             Add Card
@@ -367,7 +367,7 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
       <div className="flex" style={{ gap: '10px' }}>
         <button
           className="flex-1 flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{ padding: '14px', borderRadius: '14px', background: '#F5F5F5', color: '#1A1A1A', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}
+          style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: '1px solid var(--border-glass)', cursor: 'pointer' }}
         >
           <Check size={14} />
           Set as Default
@@ -383,16 +383,16 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
 
       {/* Accepted payment methods */}
       <div style={{ ...cardStyle, padding: '20px' }}>
-        <p style={{ fontSize: '11px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
           Accepted Payment Methods
         </p>
         <div className="flex items-center" style={{ gap: '10px' }}>
           {/* Visa */}
-          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: '#F7F7F7', border: '1px solid rgba(0,0,0,0.04)' }}>
+          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}>
             <span style={{ fontSize: '11px', fontWeight: 900, color: '#1A1F71', fontStyle: 'italic' }}>VISA</span>
           </div>
           {/* Mastercard */}
-          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: '#F7F7F7', border: '1px solid rgba(0,0,0,0.04)' }}>
+          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}>
             <svg width="24" height="16" viewBox="0 0 24 16" fill="none">
               <circle cx="9" cy="8" r="6" fill="#EB001B" opacity="0.9" />
               <circle cx="15" cy="8" r="6" fill="#F79E1B" opacity="0.9" />
@@ -400,15 +400,15 @@ export default function PaymentInformation({ activeSection, setActiveSection }: 
             </svg>
           </div>
           {/* Verve */}
-          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: '#F7F7F7', border: '1px solid rgba(0,0,0,0.04)' }}>
+          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}>
             <span style={{ fontSize: '8px', fontWeight: 800, color: '#00425F', letterSpacing: '0.04em' }}>VERVE</span>
           </div>
           {/* Apple Pay */}
-          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: '#F7F7F7', border: '1px solid rgba(0,0,0,0.04)' }}>
-            <span style={{ fontSize: '9px', fontWeight: 700, color: '#1A1A1A' }}> Pay</span>
+          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}>
+            <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-primary)' }}> Pay</span>
           </div>
           {/* Google Pay */}
-          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: '#F7F7F7', border: '1px solid rgba(0,0,0,0.04)' }}>
+          <div className="flex items-center justify-center" style={{ width: '50px', height: '32px', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}>
             <span style={{ fontSize: '9px', fontWeight: 700, color: '#4285F4' }}>G Pay</span>
           </div>
         </div>

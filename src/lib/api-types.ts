@@ -279,6 +279,8 @@ export interface ApiBusinessPublic {
   year_founded?: string;
   /** True when the vendor currently has at least one active discounted product. */
   has_active_discount?: boolean;
+  /** Count of the vendor's active products (0 → empty shop). */
+  total_products?: number;
   createdAt: string;
 }
 
@@ -405,7 +407,16 @@ export interface ProductQueryParams {
   product_type?: string;
   category?: string;
   audience?: string;
-  sortBy?: 'rating' | 'date' | 'relevance';
+  /** Clothing type filter: customize (bespoke) vs non_customize (ready-to-wear). */
+  type?: 'customize' | 'non_customize';
+  /** Price range on the effective (discounted-or-base) price. */
+  minPrice?: number;
+  maxPrice?: number;
+  /** Only products with an active discount. */
+  on_sale?: boolean;
+  /** Only products currently in stock. */
+  in_stock?: boolean;
+  sortBy?: 'rating' | 'date' | 'relevance' | 'price';
   order?: 'asc' | 'desc';
 }
 

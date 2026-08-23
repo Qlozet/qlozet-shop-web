@@ -25,14 +25,14 @@ export default function MenuRow({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between transition-colors hover:bg-gray-50/80"
+      className="w-full flex items-center justify-between transition-colors hover:bg-[var(--bg-surface-elevated)]"
       style={{
         padding: '14px 20px',
-        background: isActive ? 'rgba(70,40,20,0.04)' : 'none',
+        background: isActive ? 'var(--bg-surface-elevated)' : 'none',
         border: 'none',
         cursor: onClick ? 'pointer' : 'default',
-        borderBottom: '1px solid rgba(0,0,0,0.04)',
-        borderLeft: isActive ? '3px solid #462814' : '3px solid transparent',
+        borderBottom: '1px solid var(--border-glass)',
+        borderLeft: isActive ? '3px solid var(--brand-fill)' : '3px solid transparent',
       }}
     >
       <div className="flex items-center" style={{ gap: '14px' }}>
@@ -42,9 +42,9 @@ export default function MenuRow({
         >
           <Icon size={16} color={iconColor} strokeWidth={2} />
         </span>
-        <span style={{ fontSize: '13px', fontWeight: isActive ? 700 : 600, color: '#1A1A1A' }}>{label}</span>
+        <span style={{ fontSize: '13px', fontWeight: isActive ? 700 : 600, color: 'var(--text-primary)' }}>{label}</span>
       </div>
-      {trailing || <ChevronRight size={16} color="#CCC" />}
+      {trailing || <ChevronRight size={16} color="var(--text-muted)" />}
     </button>
   );
 }

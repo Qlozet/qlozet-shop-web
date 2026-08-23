@@ -94,11 +94,11 @@ export default function ReservedFabric() {
     <div className="flex flex-col" style={{ gap: '16px' }}>
       {/* ── Section Header Card ───────────────────────────────── */}
       <div style={{ ...cardStyle, padding: '28px' }}>
-        <Scissors size={28} color="#462814" strokeWidth={1.5} />
+        <Scissors size={28} color="var(--brand-brown)" strokeWidth={1.5} />
         <h3 style={{
           fontSize: '16px',
           fontWeight: 800,
-          color: '#1A1A1A',
+          color: 'var(--text-primary)',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
           marginTop: '12px',
@@ -110,28 +110,28 @@ export default function ReservedFabric() {
 
       {/* Summary Card */}
       <div style={cardStyle}>
-        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '20px 20px 12px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, padding: '20px 20px 12px' }}>
           Fabrics you&apos;ve placed on hold. Reservations last 7 days before expiring.
         </p>
 
         {/* Stats */}
         <div
           className="flex items-center justify-around"
-          style={{ padding: '14px 20px', borderTop: '1px solid #F5F5F5', borderBottom: '1px solid #F5F5F5' }}
+          style={{ padding: '14px 20px', borderTop: '1px solid var(--border-glass)', borderBottom: '1px solid var(--border-glass)' }}
         >
           <div className="flex flex-col items-center">
-            <span style={{ fontSize: '20px', fontWeight: 800, color: '#1A1A1A' }}>{reservations.length}</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total</span>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{reservations.length}</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total</span>
           </div>
-          <div style={{ width: '1px', height: '30px', background: '#F0F0F0' }} />
+          <div style={{ width: '1px', height: '30px', background: 'var(--border-glass)' }} />
           <div className="flex flex-col items-center">
             <span style={{ fontSize: '20px', fontWeight: 800, color: '#10B981' }}>{activeCount}</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Active</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Active</span>
           </div>
-          <div style={{ width: '1px', height: '30px', background: '#F0F0F0' }} />
+          <div style={{ width: '1px', height: '30px', background: 'var(--border-glass)' }} />
           <div className="flex flex-col items-center">
             <span style={{ fontSize: '20px', fontWeight: 800, color: '#EF4444' }}>{expiredCount}</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Expired</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Expired</span>
           </div>
         </div>
       </div>
@@ -142,14 +142,14 @@ export default function ReservedFabric() {
           <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px' }}>
             <div
               className="flex items-center justify-center"
-              style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#F5F5F5', marginBottom: '14px' }}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', marginBottom: '14px' }}
             >
-              <ShoppingBag size={22} color="#CCC" />
+              <ShoppingBag size={22} color="var(--text-muted)" />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#999' }}>No reserved fabrics</span>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>No reserved fabrics</span>
             <Link
               href="/discover"
-              style={{ fontSize: '12px', fontWeight: 700, color: '#462814', marginTop: '8px', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+              style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-brown)', marginTop: '8px', textDecoration: 'underline', textUnderlineOffset: '3px' }}
             >
               Browse fabrics
             </Link>
@@ -169,7 +169,7 @@ export default function ReservedFabric() {
               <Link
                 href={`/products/${res.productId}`}
                 className="relative flex-shrink-0 overflow-hidden"
-                style={{ width: '80px', height: '100px', borderRadius: '12px', background: '#F5F5F5' }}
+                style={{ width: '80px', height: '100px', borderRadius: '12px', background: 'var(--bg-surface-elevated)' }}
               >
                 <Image
                   src={res.image}
@@ -182,19 +182,19 @@ export default function ReservedFabric() {
 
               {/* Info */}
               <div className="flex flex-col flex-1 min-w-0" style={{ gap: '6px' }}>
-                <Link href={`/products/${res.productId}`} className="truncate" style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', textDecoration: 'none' }}>
+                <Link href={`/products/${res.productId}`} className="truncate" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
                   {res.title}
                 </Link>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   {res.brand}
                 </span>
 
                 {/* Price + yards */}
                 <div className="flex items-center" style={{ gap: '12px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#1A1A1A' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
                     ₦{(res.price * res.yards).toLocaleString()}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#999', background: '#F5F5F5', padding: '2px 8px', borderRadius: '100px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', background: 'var(--bg-surface-elevated)', padding: '2px 8px', borderRadius: '100px' }}>
                     {res.yards} yards
                   </span>
                 </div>
@@ -216,7 +216,7 @@ export default function ReservedFabric() {
                     {statusStyle.label}
                   </span>
                   {!isExpired && (
-                    <span className="flex items-center" style={{ gap: '4px', fontSize: '11px', fontWeight: 600, color: res.status === 'expiring-soon' ? '#F59E0B' : '#999' }}>
+                    <span className="flex items-center" style={{ gap: '4px', fontSize: '11px', fontWeight: 600, color: res.status === 'expiring-soon' ? '#F59E0B' : 'var(--text-muted)' }}>
                       <Clock size={12} />
                       {timeLeft}
                     </span>
@@ -231,7 +231,7 @@ export default function ReservedFabric() {
             {/* Action row */}
             <div
               className="flex items-center"
-              style={{ padding: '12px 20px', borderTop: '1px solid #F8F8F8', gap: '10px' }}
+              style={{ padding: '12px 20px', borderTop: '1px solid var(--border-glass)', gap: '10px' }}
             >
               {!isExpired ? (
                 <>
@@ -241,8 +241,8 @@ export default function ReservedFabric() {
                     style={{
                       padding: '10px',
                       borderRadius: '10px',
-                      background: '#462814',
-                      color: '#FFFFFF',
+                      background: 'var(--brand-fill)',
+                      color: 'var(--brand-fill-text)',
                       fontSize: '12px',
                       fontWeight: 700,
                       textDecoration: 'none',
@@ -260,8 +260,8 @@ export default function ReservedFabric() {
                     style={{
                       padding: '10px 16px',
                       borderRadius: '10px',
-                      border: '1px solid #F0F0F0',
-                      background: '#FFFFFF',
+                      border: '1px solid var(--border-glass)',
+                      background: 'var(--bg-base)',
                       color: '#EF4444',
                       fontSize: '12px',
                       fontWeight: 700,
@@ -280,9 +280,9 @@ export default function ReservedFabric() {
                   style={{
                     padding: '10px',
                     borderRadius: '10px',
-                    border: '1px solid #F0F0F0',
-                    background: '#FFFFFF',
-                    color: '#999',
+                    border: '1px solid var(--border-glass)',
+                    background: 'var(--bg-base)',
+                    color: 'var(--text-muted)',
                     fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',

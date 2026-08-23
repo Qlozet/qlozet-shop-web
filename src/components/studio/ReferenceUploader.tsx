@@ -64,37 +64,37 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
       <div
         onClick={!isUploading && !atLimit ? onUploadClick : undefined}
         className={`flex flex-col items-center justify-center transition-all ${
-          isUploading || atLimit ? 'opacity-50 cursor-not-allowed' : 'hover:border-[#2C1810] cursor-pointer'
+          isUploading || atLimit ? 'opacity-50 cursor-not-allowed' : 'hover:border-[var(--brand-fill)] cursor-pointer'
         }`}
         style={{
           padding: '28px 16px',
           borderRadius: '16px',
-          border: `2px dashed ${uploadError ? 'rgba(220,38,38,0.4)' : 'rgba(0,0,0,0.15)'}`,
-          background: uploadError ? '#FEF2F2' : '#FAFAFA',
+          border: `2px dashed ${uploadError ? 'rgba(220,38,38,0.4)' : 'var(--border-glass)'}`,
+          background: uploadError ? '#FEF2F2' : 'var(--bg-surface-elevated)',
           marginBottom: '16px',
         }}
       >
         {isUploading ? (
           <>
-            <Loader2 size={28} color="#2C1810" className="animate-spin" style={{ marginBottom: '10px' }} />
-            <p style={{ fontSize: '12px', fontWeight: 600, color: '#2C1810', textAlign: 'center' }}>
+            <Loader2 size={28} color="var(--brand-brown)" className="animate-spin" style={{ marginBottom: '10px' }} />
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brand-brown)', textAlign: 'center' }}>
               {uploadStatus || 'Uploading...'}
             </p>
           </>
         ) : (
           <>
-            <Upload size={28} color={atLimit ? '#CCC' : '#999'} style={{ marginBottom: '10px' }} />
-            <p style={{ fontSize: '12px', fontWeight: 600, color: '#666', textAlign: 'center' }}>
+            <Upload size={28} color={atLimit ? 'var(--text-muted)' : 'var(--text-muted)'} style={{ marginBottom: '10px' }} />
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>
               {atLimit ? (
                 'Maximum 3 reference images reached'
               ) : (
                 <>
                   Drag or drop your images here or{' '}
-                  <span style={{ color: '#2C1810', textDecoration: 'underline' }}>choose a file</span>
+                  <span style={{ color: 'var(--brand-brown)', textDecoration: 'underline' }}>choose a file</span>
                 </>
               )}
             </p>
-            <p style={{ fontSize: '10px', color: '#AAA', marginTop: '4px' }}>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
               {atLimit ? `${referenceImages.length}/3 uploaded` : `PNG, JPG up to 10MB · ${referenceImages.length}/3`}
             </p>
           </>
@@ -114,7 +114,7 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
         accept="image/*"
         multiple
         onChange={onFileChange}
-        style={{ display: 'none' }}
+        style={{ display: 'none', color: 'var(--text-primary)' }}
       />
 
       {/* Uploaded references */}
@@ -124,7 +124,7 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
             <div
               key={idx}
               className="flex items-center justify-between"
-              style={{ padding: '10px 12px', borderRadius: '12px', background: '#F5F5F5' }}
+              style={{ padding: '10px 12px', borderRadius: '12px', background: 'var(--bg-surface-elevated)' }}
             >
               <div className="flex items-center" style={{ gap: '10px' }}>
                 <div
@@ -135,23 +135,23 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
                   <img src={img} alt={`Ref ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div>
-                  <p style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     Reference {idx + 1}
                   </p>
-                  <p style={{ fontSize: '9px', color: '#999' }}>
+                  <p style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
                     ✓ Uploaded to cloud
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => onRemove(idx)}
-                className="flex items-center justify-center transition-all hover:bg-gray-200 active:scale-90"
+                className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
                 style={{
                   width: '28px', height: '28px', borderRadius: '8px',
                   border: 'none', background: 'transparent', cursor: 'pointer',
                 }}
               >
-                <X size={14} color="#888" />
+                <X size={14} color="var(--text-muted)" />
               </button>
             </div>
           ))}
@@ -162,10 +162,10 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
       <div>
         <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
           <div className="flex items-center" style={{ gap: '6px' }}>
-            <MessageSquare size={14} color="#666" />
+            <MessageSquare size={14} color="var(--text-secondary)" />
             <label
               htmlFor="user-prompt"
-              style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}
+              style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}
             >
               Additional Instructions
             </label>
@@ -177,7 +177,7 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
             </div>
           )}
         </div>
-        <div className="relative" style={{ borderRadius: '12px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#FAFAFA', overflow: 'hidden' }}>
+        <div className="relative" style={{ borderRadius: '12px', border: '1.5px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', overflow: 'hidden' }}>
           {/* Ghost suggestion text (underneath) */}
           {showGhost && (
             <div
@@ -190,7 +190,7 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
                 padding: '12px 14px',
                 fontSize: '12px',
                 lineHeight: '1.5',
-                color: 'rgba(0,0,0,0.18)',
+                color: 'var(--text-muted)',
                 fontFamily: 'inherit',
                 pointerEvents: 'none',
                 whiteSpace: 'pre-wrap',
@@ -212,7 +212,7 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
               width: '100%',
               padding: '12px 14px',
               fontSize: '12px',
-              color: '#333',
+              color: 'var(--text-primary)',
               lineHeight: '1.5',
               resize: 'vertical',
               outline: 'none',
@@ -227,12 +227,12 @@ export const ReferenceUploader: React.FC<ReferenceUploaderProps> = ({
         {showGhost ? (
           <div className="flex items-center" style={{ gap: '4px', marginTop: '6px' }}>
             <Sparkles size={10} color="#D4AF37" />
-            <p style={{ fontSize: '10px', color: '#999' }}>
-              Press <kbd style={{ padding: '1px 5px', borderRadius: '3px', border: '1px solid #DDD', background: '#F5F5F5', fontSize: '9px', fontWeight: 600, color: '#666' }}>Tab</kbd> to accept suggestion
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+              Press <kbd style={{ padding: '1px 5px', borderRadius: '3px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary)' }}>Tab</kbd> to accept suggestion
             </p>
           </div>
         ) : (
-          <p style={{ fontSize: '10px', color: '#AAA', marginTop: '4px' }}>
+          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
             Optional — describe any specific details the AI should focus on
           </p>
         )}

@@ -4,41 +4,74 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
+const PRICE_MAX = 200000;
+const PRICE_STEP = 5000;
+
 // ─── Component Props ──────────────────────────────────────────────
 interface FilterSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  minPrice: number;
+  onMinPriceChange: (price: number) => void;
   maxPrice: number;
   onMaxPriceChange: (price: number) => void;
+  onSale: boolean;
+  onOnSaleChange: (v: boolean) => void;
+  inStock: boolean;
+  onInStockChange: (v: boolean) => void;
   onReset: () => void;
 }
+
+// ─── Checkbox visual ──────────────────────────────────────────────
+const CheckBox: React.FC<{ checked: boolean }> = ({ checked }) =>
+  checked ? (
+    <div
+      className="w-[24px] h-[24px] rounded-lg flex items-center justify-center"
+      style={{ background: 'var(--brand-fill)' }}
+    >
+      <svg width="14" height="12" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 4L3.5 6.5L9 1" stroke="var(--brand-fill-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  ) : (
+    <div
+      className="w-[24px] h-[24px] rounded-lg"
+      style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}
+    />
+  );
 
 // ─── Shared Filter Content ────────────────────────────────────────
 const FilterContent: React.FC<{
   sortBy: string;
   onSortChange: (s: string) => void;
+  minPrice: number;
+  onMinPriceChange: (p: number) => void;
   maxPrice: number;
   onMaxPriceChange: (p: number) => void;
-}> = ({ sortBy, onSortChange, maxPrice, onMaxPriceChange }) => (
+  onSale: boolean;
+  onOnSaleChange: (v: boolean) => void;
+  inStock: boolean;
+  onInStockChange: (v: boolean) => void;
+}> = ({ sortBy, onSortChange, minPrice, onMinPriceChange, maxPrice, onMaxPriceChange, onSale, onOnSaleChange, inStock, onInStockChange }) => (
   <>
     {/* Sorting */}
     <div className="flex flex-col gap-6">
-      <h4 className="text-sm font-bold text-[#111111]">Sort by</h4>
+      <h4 className="text-sm font-bold text-[var(--text-primary)]">Sort by</h4>
       <div className="flex flex-col gap-5">
         {[
-          { id: 'rating', label: 'Best selling' },
+          { id: 'rating', label: 'Top rated' },
           { id: 'newest', label: 'Newest' },
           { id: 'priceAsc', label: 'Price: Low - High' },
           { id: 'priceDesc', label: 'Price: High - Low' }
         ].map((option) => (
           <label key={option.id} className="flex items-center justify-between cursor-pointer group">
-            <span className={`text-[15px] ${sortBy === option.id ? 'font-semibold text-black' : 'text-gray-600 group-hover:text-black'}`}>
+            <span className={`text-[15px] ${sortBy === option.id ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>
               {option.label}
             </span>
-            <div className={`w-[24px] h-[24px] rounded-full border flex items-center justify-center transition-colors ${sortBy === option.id ? 'border-black' : 'border-gray-300 group-hover:border-gray-400'}`}>
-              {sortBy === option.id && <div className="w-[14px] h-[14px] bg-black rounded-full" />}
+            <div className={`w-[24px] h-[24px] rounded-full border flex items-center justify-center transition-colors ${sortBy === option.id ? 'border-[var(--brand-fill)]' : 'border-[var(--border-glass)] group-hover:border-[var(--text-muted)]'}`}>
+              {sortBy === option.id && <div className="w-[14px] h-[14px] bg-[var(--brand-fill)] rounded-full" />}
             </div>
             <input
               type="radio"
@@ -53,61 +86,75 @@ const FilterContent: React.FC<{
       </div>
     </div>
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* On Sale */}
-    <label className="flex items-center justify-between cursor-pointer">
-      <span className="text-sm font-bold text-[#111111]">On sale</span>
-      <div className="w-[24px] h-[24px] border border-gray-200 rounded-lg bg-gray-50" />
-    </label>
+    <button type="button" onClick={() => onOnSaleChange(!onSale)} className="flex items-center justify-between cursor-pointer w-full" style={{ background: 'none', border: 'none', padding: 0 }}>
+      <span className="text-sm font-bold text-[var(--text-primary)]">On sale</span>
+      <CheckBox checked={onSale} />
+    </button>
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* Price */}
     <div className="flex flex-col gap-8">
-      <h4 className="text-sm font-bold text-[#111111]">Price</h4>
-      <div className="relative w-full h-2 bg-gray-200 rounded-full mt-4">
-        <div className="absolute left-0 top-0 h-full bg-[#462814] rounded-full" style={{ width: `${(maxPrice / 200000) * 100}%` }} />
+      <h4 className="text-sm font-bold text-[var(--text-primary)]">Price</h4>
+      <div className="relative w-full h-2 bg-[var(--bg-surface-elevated)] rounded-full mt-4">
+        {/* Active fill between min and max */}
+        <div
+          className="absolute top-0 h-full bg-[var(--brand-fill)] rounded-full"
+          style={{ left: `${(minPrice / PRICE_MAX) * 100}%`, right: `${100 - (maxPrice / PRICE_MAX) * 100}%` }}
+        />
+        {/* Min thumb */}
         <input
           type="range"
           min={0}
-          max={200000}
-          step={5000}
-          className="absolute w-full -top-2.5 h-8 opacity-0 cursor-pointer"
-          value={maxPrice}
-          onChange={(e) => onMaxPriceChange(Number(e.target.value))}
+          max={PRICE_MAX}
+          step={PRICE_STEP}
+          value={minPrice}
+          onChange={(e) => onMinPriceChange(Math.min(Number(e.target.value), maxPrice - PRICE_STEP))}
+          className="dual-range"
+          style={{ zIndex: minPrice > PRICE_MAX - PRICE_STEP * 2 ? 5 : 3 }}
+          aria-label="Minimum price"
         />
-        {/* Fake min thumb */}
-        <div className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-[#462814] rounded-full shadow-md pointer-events-none" style={{ left: '-12px' }} />
         {/* Max thumb */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-[#462814] rounded-full shadow-md pointer-events-none"
-          style={{ left: `calc(${(maxPrice / 200000) * 100}% - 12px)` }}
+        <input
+          type="range"
+          min={0}
+          max={PRICE_MAX}
+          step={PRICE_STEP}
+          value={maxPrice}
+          onChange={(e) => onMaxPriceChange(Math.max(Number(e.target.value), minPrice + PRICE_STEP))}
+          className="dual-range"
+          style={{ zIndex: 4 }}
+          aria-label="Maximum price"
         />
       </div>
 
-      <div className="flex items-center justify-between gap-5 mt-2">
-        <div className="flex-1 border border-gray-200 rounded-2xl px-6 py-4 flex items-center justify-center">
-          <span className="text-[15px] font-medium text-gray-700">0</span>
+      <div className="flex items-center justify-between gap-4 mt-1">
+        <div className="flex-1 rounded-xl px-4 py-2.5 flex flex-col items-center gap-0.5" style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}>
+          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Min</span>
+          <span className="text-[14px] font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {minPrice > 0 ? `₦${minPrice.toLocaleString()}` : '₦0'}
+          </span>
         </div>
-        <span className="text-gray-300 font-bold">-</span>
-        <div className="flex-1 border border-gray-200 rounded-2xl px-6 py-4 flex items-center justify-center">
-          <span className="text-[15px] font-medium text-gray-700">{maxPrice >= 200000 ? '200K+' : maxPrice.toLocaleString()}</span>
+        <span className="text-[var(--text-muted)]">—</span>
+        <div className="flex-1 rounded-xl px-4 py-2.5 flex flex-col items-center gap-0.5" style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}>
+          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Max</span>
+          <span className="text-[14px] font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {maxPrice >= PRICE_MAX ? '₦200K+' : `₦${maxPrice.toLocaleString()}`}
+          </span>
         </div>
       </div>
     </div>
 
-    <div className="w-full h-px bg-gray-100" />
+    <div className="w-full h-px" style={{ background: 'var(--bg-surface-elevated)' }} />
 
     {/* In Stock */}
-    <label className="flex items-center justify-between cursor-pointer">
-      <span className="text-sm font-bold text-[#111111]">In-stock</span>
-      <div className="w-[24px] h-[24px] bg-black rounded-lg flex items-center justify-center">
-        <svg width="14" height="12" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-    </label>
+    <button type="button" onClick={() => onInStockChange(!inStock)} className="flex items-center justify-between cursor-pointer w-full" style={{ background: 'none', border: 'none', padding: 0 }}>
+      <span className="text-sm font-bold text-[var(--text-primary)]">In-stock only</span>
+      <CheckBox checked={inStock} />
+    </button>
   </>
 );
 
@@ -117,10 +164,31 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onClose,
   sortBy,
   onSortChange,
+  minPrice,
+  onMinPriceChange,
   maxPrice,
   onMaxPriceChange,
+  onSale,
+  onOnSaleChange,
+  inStock,
+  onInStockChange,
   onReset,
 }) => {
+  const content = (
+    <FilterContent
+      sortBy={sortBy}
+      onSortChange={onSortChange}
+      minPrice={minPrice}
+      onMinPriceChange={onMinPriceChange}
+      maxPrice={maxPrice}
+      onMaxPriceChange={onMaxPriceChange}
+      onSale={onSale}
+      onOnSaleChange={onOnSaleChange}
+      inStock={inStock}
+      onInStockChange={onInStockChange}
+    />
+  );
+
   return (
     <>
       {/* ══════ MOBILE: Bottom Sheet ══════ */}
@@ -133,20 +201,20 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
         {/* Bottom Sheet */}
         <div
-          className={`fixed left-3 right-3 bottom-3 z-[70] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-          style={{ maxHeight: '60vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+          className={`fixed left-3 right-3 bottom-3 z-[70] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+          style={{ maxHeight: '70vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
         >
           {/* Drag Handle */}
           <div className="flex justify-center pt-3 pb-1">
-            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
           </div>
 
           {/* Header */}
           <div className="flex items-center justify-between shrink-0" style={{ padding: '16px 24px' }}>
-            <h3 className="text-lg font-bold text-[#111111]">Filters</h3>
+            <h3 className="text-lg font-bold text-[var(--text-primary)]">Filters</h3>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-elevated)] rounded-full p-2"
             >
               <X size={18} strokeWidth={3} />
             </button>
@@ -154,22 +222,22 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto flex flex-col gap-8 hide-scrollbar" style={{ padding: '0 24px 24px 24px' }}>
-            <FilterContent sortBy={sortBy} onSortChange={onSortChange} maxPrice={maxPrice} onMaxPriceChange={onMaxPriceChange} />
+            {content}
           </div>
 
           {/* Footer */}
           <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px' }}>
             <button
               onClick={onReset}
-              className="flex-1 hover:bg-gray-200 transition-colors"
-              style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              className="flex-1 hover:bg-[var(--bg-surface-elevated)] transition-colors"
+              style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Reset
             </button>
             <button
               onClick={onClose}
-              className="flex-1 hover:bg-gray-800 transition-colors"
-              style={{ padding: '14px', borderRadius: '14px', background: '#1A1A1A', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              className="flex-1 transition-opacity hover:opacity-90"
+              style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Done
             </button>
@@ -184,14 +252,15 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           style={{ left: '120px', top: '48px', bottom: '48px' }}
         >
           <aside
-            className={`h-full w-[320px] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border border-gray-100 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`h-full w-[320px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            style={{ background: 'var(--bg-base)', border: '1px solid var(--border-glass)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between shrink-0" style={{ padding: '24px 24px 20px 24px' }}>
-              <h3 className="text-lg font-bold text-[#111111]">Filters</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Filters</h3>
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-elevated)] rounded-full p-2"
               >
                 <X size={16} strokeWidth={3} />
               </button>
@@ -199,22 +268,22 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto flex flex-col gap-10 hide-scrollbar" style={{ padding: '0 24px 24px 24px' }}>
-              <FilterContent sortBy={sortBy} onSortChange={onSortChange} maxPrice={maxPrice} onMaxPriceChange={onMaxPriceChange} />
+              {content}
             </div>
 
             {/* Footer */}
             <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px' }}>
               <button
                 onClick={onReset}
-                className="flex-1 hover:bg-gray-200 transition-colors"
-                style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                className="flex-1 hover:bg-[var(--bg-surface-elevated)] transition-colors"
+                style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Reset
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 hover:bg-gray-800 transition-colors"
-                style={{ padding: '14px', borderRadius: '14px', background: '#1A1A1A', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                className="flex-1 transition-opacity hover:opacity-90"
+                style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Done
               </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,10 @@ import {
   Heart,
   Pen,
 } from 'lucide-react';
+
+// "Qlozet Premiere" subscription is hidden until it's built (its CTA was a
+// no-op). Flip to true when the feature ships.
+const SHOW_PREMIERE = false;
 
 export default function CartPage() {
   const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
@@ -56,7 +61,15 @@ export default function CartPage() {
           const b = payload?.breakdown;
           if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
         })
-        .catch(() => {});
+        .catch(() => {
+          // Don't fail silently — but dedupe to a single toast across all items
+          // via a stable id (sonner updates rather than stacks).
+          if (!cancelled)
+            toast.error("Couldn't refresh prices", {
+              id: 'cart-price-refresh',
+              description: 'Showing the last known price for now.',
+            });
+        });
     });
     return () => {
       cancelled = true;
@@ -136,20 +149,20 @@ export default function CartPage() {
     return (
       <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in">
         <h1
-          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px' }}
         >
           My Cart
         </h1>
         <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '20px' }}>
           <div className="flex items-center justify-center" style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}>
-            <ShoppingBag size={32} color="#8B5A2B" strokeWidth={1.5} />
+            <ShoppingBag size={32} color="var(--brand-brown)" strokeWidth={1.5} />
           </div>
           <div className="flex flex-col" style={{ gap: '8px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Sign In Required
             </h3>
-            <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '400px' }}>
               You must sign in first before being able to view or manage your shopping cart.
             </p>
           </div>
@@ -159,8 +172,8 @@ export default function CartPage() {
             style={{
               padding: '14px 32px',
               borderRadius: '100px',
-              background: '#2C1810',
-              color: '#FFF',
+              background: 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)',
               fontSize: '12px',
               fontWeight: 800,
               textTransform: 'uppercase',
@@ -180,9 +193,9 @@ export default function CartPage() {
 
   // ─── Card style ─────────────────────────────────────────────
   const cardStyle: React.CSSProperties = {
-    background: '#FFFFFF',
+    background: 'var(--bg-base)',
     borderRadius: '24px',
-    border: '1px solid rgba(0,0,0,0.04)',
+    border: '1px solid var(--border-glass)',
     padding: '24px',
     boxShadow: '0 2px 12px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04)',
   };
@@ -192,19 +205,19 @@ export default function CartPage() {
     return (
       <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in">
         <h1
-          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px' }}
         >
           My Cart
         </h1>
         <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '16px' }}>
-          <div className="flex items-center justify-center" style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#F5F0EB' }}>
-            <ShoppingBag size={28} color="#462814" strokeWidth={1.5} />
+          <div className="flex items-center justify-center" style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--bg-surface-elevated)' }}>
+            <ShoppingBag size={28} color="var(--brand-brown)" strokeWidth={1.5} />
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1A1A1A', fontFamily: 'var(--font-display)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
             Your cart is empty
           </h3>
-          <p style={{ fontSize: '14px', color: '#999', maxWidth: '300px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', maxWidth: '300px', lineHeight: 1.6 }}>
             Browse our collection and add items to your cart.
           </p>
           <Link href="/products" className="btn-primary" style={{ marginTop: '8px', padding: '12px 32px', fontSize: '13px', borderRadius: '100px' }}>
@@ -220,7 +233,7 @@ export default function CartPage() {
 
       {/* ─── Title ────────────────────────────────────────────────── */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         My Cart
@@ -240,7 +253,7 @@ export default function CartPage() {
                   {/* Product Image */}
                   <Link
                     href={`/products/${item.id}`}
-                    className="relative flex-shrink-0 rounded-xl overflow-hidden bg-[#F5F5F5]"
+                    className="relative flex-shrink-0 rounded-xl overflow-hidden bg-[var(--bg-surface-elevated)]"
                     style={{ width: '100px', height: '120px' }}
                   >
                     <Image
@@ -256,8 +269,8 @@ export default function CartPage() {
                         top: '6px', left: '6px',
                         width: '20px', height: '20px',
                         borderRadius: '50%',
-                        background: '#2C1810',
-                        color: '#FFFFFF',
+                        background: 'var(--brand-fill)',
+                        color: 'var(--brand-fill-text)',
                         fontSize: '10px',
                         fontWeight: 800,
                         lineHeight: 1,
@@ -270,21 +283,26 @@ export default function CartPage() {
                   {/* Product Info */}
                   <div className="flex-1 flex flex-col gap-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }} className="truncate">{item.title}</h3>
+                      <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }} className="truncate">{item.title}</h3>
                       <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-1"
+                        type="button"
+                        onClick={() => {
+                          removeFromCart(item.id);
+                          toast('Removed from cart', { description: item.title });
+                        }}
+                        aria-label={`Remove ${item.title} from cart`}
+                        className="text-[var(--text-muted)] hover:text-red-500 transition-colors flex-shrink-0 p-1"
                       >
                         <Trash2 size={15} />
                       </button>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
                         ₦{(effectivePrice(item) * item.quantity).toLocaleString()}
                       </span>
                       {item.quantity > 1 && (
-                        <span style={{ fontSize: '11px', color: '#888', fontWeight: 500 }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
                           (₦{effectivePrice(item).toLocaleString()} each)
                         </span>
                       )}
@@ -292,7 +310,7 @@ export default function CartPage() {
 
                     {/* Pricing breakdown (§8) */}
                     {breakdowns[item.id] && (
-                      <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '10px', background: '#FAFAFA', border: '1px solid #F0F0F0', fontSize: '11px' }}>
+                      <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', fontSize: '11px' }}>
                         {(
                           [
                             ['Base', breakdowns[item.id].base],
@@ -306,12 +324,12 @@ export default function CartPage() {
                         )
                           .filter(([label, v]) => label === 'Base' || v > 0)
                           .map(([label, v]) => (
-                            <div key={label} className="flex items-center justify-between" style={{ color: '#666' }}>
+                            <div key={label} className="flex items-center justify-between" style={{ color: 'var(--text-secondary)' }}>
                               <span>{label}</span>
                               <span>₦{v.toLocaleString()}</span>
                             </div>
                           ))}
-                        <div className="flex items-center justify-between" style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #EEE', color: '#333', fontWeight: 600 }}>
+                        <div className="flex items-center justify-between" style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid var(--border-glass)', color: 'var(--text-primary)', fontWeight: 600 }}>
                           <span>Before discount</span>
                           <span>₦{breakdowns[item.id].before_discount.toLocaleString()}</span>
                         </div>
@@ -321,7 +339,7 @@ export default function CartPage() {
                             <span>-₦{breakdowns[item.id].discount.toLocaleString()}</span>
                           </div>
                         )}
-                        <div className="flex items-center justify-between" style={{ marginTop: '2px', color: '#1A1A1A', fontWeight: 700 }}>
+                        <div className="flex items-center justify-between" style={{ marginTop: '2px', color: 'var(--text-primary)', fontWeight: 700 }}>
                           <span>Final</span>
                           <span>₦{breakdowns[item.id].final.toLocaleString()}</span>
                         </div>
@@ -363,14 +381,14 @@ export default function CartPage() {
                     <div className="flex items-center gap-2" style={{ marginTop: '8px' }}>
                       <Link
                         href={`/products/${item.id}`}
-                        className="flex items-center gap-1.5 transition-colors hover:bg-gray-50"
+                        className="flex items-center gap-1.5 transition-colors hover:bg-[var(--bg-surface-elevated)]"
                         style={{
                           padding: '5px 14px',
                           borderRadius: '6px',
-                          border: '1px solid #E0E0E0',
+                          border: '1px solid var(--border-glass)',
                           fontSize: '10px',
                           fontWeight: 800,
-                          color: '#1A1A1A',
+                          color: 'var(--text-primary)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em',
                           textDecoration: 'none',
@@ -386,13 +404,13 @@ export default function CartPage() {
                           width: '30px',
                           height: '30px',
                           borderRadius: '8px',
-                          background: wishlist.includes(item.id) ? '#462814' : 'none',
-                          border: wishlist.includes(item.id) ? 'none' : '1px solid #E0E0E0',
+                          background: wishlist.includes(item.id) ? 'var(--brand-fill)' : 'none',
+                          border: wishlist.includes(item.id) ? 'none' : '1px solid var(--border-glass)',
                           cursor: 'pointer',
                           flexShrink: 0,
                         }}
                       >
-                        <Heart size={13} color={wishlist.includes(item.id) ? '#FFFFFF' : '#1A1A1A'} fill={wishlist.includes(item.id) ? '#FFFFFF' : 'none'} />
+                        <Heart size={13} color={wishlist.includes(item.id) ? 'var(--brand-fill-text)' : 'var(--text-primary)'} fill={wishlist.includes(item.id) ? 'var(--brand-fill-text)' : 'none'} />
                       </button>
                     </div>
                   </div>
@@ -400,13 +418,16 @@ export default function CartPage() {
 
                 {/* Divider between items */}
                 {idx < cart.length - 1 && (
-                  <div style={{ height: '1px', background: '#F2F2F2', margin: '20px 0' }} />
+                  <div style={{ height: '1px', background: 'var(--border-glass)', margin: '20px 0' }} />
                 )}
               </div>
             ))}
           </div>
 
           {/* ── QLOZET PREMIERE AFRICA ─────────────────────────── */}
+          {/* Hidden until the subscription is actually built — the "Add to Bag"
+              action was a no-op. */}
+          {SHOW_PREMIERE && (
           <div style={cardStyle}>
             <button
               onClick={() => setShowPremiere(!showPremiere)}
@@ -416,20 +437,20 @@ export default function CartPage() {
               <div className="flex items-center gap-3">
                 <div
                   className="flex items-center justify-center flex-shrink-0"
-                  style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#462814' }}
+                  style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--brand-fill)' }}
                 >
                   <span style={{ color: '#D4AF37', fontWeight: 800, fontSize: '11px', fontFamily: 'var(--font-display)' }}>Q</span>
                 </div>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Qlozet Premiere Africa
                 </h3>
               </div>
-              {showPremiere ? <ChevronUp size={16} color="#BBB" /> : <ChevronDown size={16} color="#BBB" />}
+              {showPremiere ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
             </button>
 
             {showPremiere && (
               <div className="animate-fade-in" style={{ marginTop: '16px' }}>
-                <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.7, marginBottom: '16px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '16px' }}>
                   Get unlimited Next Day Delivery for only ₦10,000 a year. Minimum spend per order applies.
                 </p>
                 <button
@@ -437,8 +458,8 @@ export default function CartPage() {
                   style={{
                     padding: '9px 22px',
                     borderRadius: '8px',
-                    background: '#462814',
-                    color: '#FFFFFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     fontSize: '10px',
                     fontWeight: 800,
                     textTransform: 'uppercase',
@@ -452,6 +473,7 @@ export default function CartPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* ── LOOKING FOR THIS? ──────────────────────────────── */}
           {lookingProduct && (
@@ -461,10 +483,10 @@ export default function CartPage() {
                 className="w-full flex items-center justify-between"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
-                <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Looking for this ?
                 </h3>
-                {showLooking ? <ChevronUp size={16} color="#BBB" /> : <ChevronDown size={16} color="#BBB" />}
+                {showLooking ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
               </button>
 
               {showLooking && (
@@ -492,10 +514,10 @@ export default function CartPage() {
               className="w-full flex items-center justify-between"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
-              <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Suggested for you
               </h3>
-              {showSuggested ? <ChevronUp size={16} color="#BBB" /> : <ChevronDown size={16} color="#BBB" />}
+              {showSuggested ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
             </button>
 
             {showSuggested && (
@@ -523,14 +545,14 @@ export default function CartPage() {
         {/* ══════ RIGHT COLUMN — Order Summary (sticky) ══════ */}
         <div className="w-full lg:w-[280px] flex-shrink-0 lg:sticky lg:top-6">
           <div style={{ ...cardStyle, padding: '20px' }}>
-            <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>
               Total
             </h3>
 
             {/* Sub-total */}
             <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', color: '#666' }}>Sub-total</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>₦{subtotal.toLocaleString()}</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Sub-total</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>₦{subtotal.toLocaleString()}</span>
             </div>
 
             {/* Discount savings (§11) */}
@@ -544,30 +566,20 @@ export default function CartPage() {
             {/* Delivery */}
             <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
               <div className="flex items-center gap-1">
-                <span style={{ fontSize: '13px', color: '#666' }}>Delivery</span>
-                <Info size={12} color="#CCC" />
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Delivery</span>
+                <Info size={12} color="var(--text-muted)" />
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}
               </span>
             </div>
 
-            <div style={{ height: '1px', background: '#F0F0F0', margin: '0 0 14px 0' }} />
+            <div style={{ height: '1px', background: 'var(--border-glass)', margin: '0 0 14px 0' }} />
 
-            {/* Delivery Type Selector */}
-            <div
-              className="flex items-center justify-between"
-              style={{
-                padding: '10px 14px',
-                borderRadius: '10px',
-                border: '1px solid #E5E5E5',
-                marginBottom: '18px',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: 500, color: '#1A1A1A' }}>Standard Delivery</span>
-              <ChevronDown size={13} color="#999" />
-            </div>
+            {/* Delivery note — the actual courier per vendor is chosen at checkout. */}
+            <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '18px', lineHeight: 1.6 }}>
+              Choose a delivery option for each vendor at checkout.
+            </p>
 
             {/* Checkout Button */}
             <button
@@ -604,10 +616,11 @@ export default function CartPage() {
               </p>
             )}
 
-            {/* Payment Icons */}
+            {/* Accepted card networks (Paystack) */}
             <div className="flex items-center justify-center gap-2.5">
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginRight: '2px' }}>We accept</span>
               {/* Mastercard */}
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="18" height="12" viewBox="0 0 20 14" fill="none">
                   <circle cx="7" cy="7" r="5.5" fill="#EB001B" opacity="0.9"/>
                   <circle cx="13" cy="7" r="5.5" fill="#F79E1B" opacity="0.9"/>
@@ -615,16 +628,12 @@ export default function CartPage() {
                 </svg>
               </div>
               {/* Visa */}
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '9px', fontWeight: 900, color: '#1A1F71', fontStyle: 'italic' }}>VISA</span>
               </div>
-              {/* Apple Pay */}
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '7px', fontWeight: 700, color: '#1A1A1A' }}> Pay</span>
-              </div>
-              {/* Google Pay */}
-              <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '7px', fontWeight: 700, color: '#4285F4' }}>G Pay</span>
+              {/* Verve */}
+              <div style={{ width: '38px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '8px', fontWeight: 900, color: '#0AA1DD', letterSpacing: '-0.02em' }}>verve</span>
               </div>
             </div>
           </div>

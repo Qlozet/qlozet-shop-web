@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { GenderToggle } from '@/components/GenderToggle';
 import { useApp } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { HERO_BANNERS, BROWSE_CATEGORIES } from '@/data/taxonomy';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid';
@@ -16,6 +17,9 @@ import { getProductImage, getProductTag, hasDiscount } from '@/lib/api-types';
 
 export default function DiscoverPage() {
   const { gender, setGender } = useApp();
+  const { isDark } = useTheme();
+  // Match the real panels: mute the rich category colours in dark mode.
+  const panelBg = (color: string) => (isDark ? `color-mix(in srgb, ${color} 72%, var(--bg-surface))` : color);
 
   // ── Fetch live data ─────────────────────────────────────────────
   const audience = gender === 'male' ? 'men' : 'women';
@@ -24,20 +28,28 @@ export default function DiscoverPage() {
 
   const isLoading = productsLoading || vendorsLoading;
 
+  // Only vendors that actually have products to show (hide empty shops).
+  // `total_products` is undefined on older API responses — treat unknown as
+  // visible so the carousels don't go empty before the backend is deployed.
+  const stockedVendors = useMemo(
+    () => allVendors.filter((v) => (v.total_products ?? 1) > 0),
+    [allVendors]
+  );
+
   // Top vendors sorted by rating
   const worthTheHypeVendors = useMemo(() =>
-    [...allVendors]
+    [...stockedVendors]
       .sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0))
       .slice(0, 5),
-    [allVendors]
+    [stockedVendors]
   );
 
   // Top shops by total items sold
   const topShops = useMemo(() =>
-    [...allVendors]
+    [...stockedVendors]
       .sort((a, b) => (b.total_items_sold ?? 0) - (a.total_items_sold ?? 0))
       .slice(0, 8),
-    [allVendors]
+    [stockedVendors]
   );
 
   // ── Dynamic Browse Categories ──────────────────────────────────
@@ -96,7 +108,7 @@ export default function DiscoverPage() {
 
       {/* Page Title */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         Discover
@@ -127,10 +139,10 @@ export default function DiscoverPage() {
               <div className="flex flex-col" style={{ gap: '16px' }}>
                 {/* Section Header */}
                 <div className="flex items-center" style={{ gap: '8px' }}>
-                  <h2 style={{ fontSize: '12px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {title}
                   </h2>
-                  <ChevronRight size={14} color="#1A1A1A" />
+                  <ChevronRight size={14} color="var(--text-primary)" />
                 </div>
                 {/* Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -138,7 +150,7 @@ export default function DiscoverPage() {
                     <div
                       key={idx}
                       className="flex flex-col overflow-hidden"
-                      style={{ borderRadius: '24px', background: item.color }}
+                      style={{ borderRadius: '24px', background: panelBg(item.color) }}
                     >
                       {/* Header — label + chevron */}
                       <div className="flex items-center justify-between" style={{ padding: '16px 16px 10px' }}>
@@ -188,10 +200,10 @@ export default function DiscoverPage() {
         <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
           {[1, 2].map((i) => (
             <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
-              <div className="h-3 w-32 bg-[#E5E5E5] rounded" />
+              <div className="h-3 w-32 bg-[var(--bg-surface-elevated)] rounded" />
               <div className="flex" style={{ gap: '16px' }}>
                 {[1, 2, 3].map((j) => (
-                  <div key={j} className="rounded-[24px] bg-[#F0EBE4] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
+                  <div key={j} className="rounded-[24px] bg-[var(--bg-surface-elevated)] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
                 ))}
               </div>
             </div>

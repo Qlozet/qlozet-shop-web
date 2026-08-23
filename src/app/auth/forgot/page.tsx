@@ -14,18 +14,16 @@ import { ArrowLeft, Eye, EyeOff, Mail, ShieldCheck, CheckCircle2 } from 'lucide-
 //  Step 3: set a new password → consumes the code
 // ═══════════════════════════════════════════════════════════════
 
-const BRAND = '#462814';
-
 type Step = 'email' | 'code' | 'password' | 'done';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '14px 16px',
   borderRadius: '12px',
-  border: '1px solid #E5E5E5',
-  background: '#FAFAFA',
+  border: '1px solid var(--border-glass)',
+  background: 'var(--bg-surface-elevated)',
   fontSize: '14px',
-  color: '#1A1A1A',
+  color: 'var(--text-primary)',
   outline: 'none',
   transition: 'border-color 0.2s',
 };
@@ -126,26 +124,26 @@ export default function ForgotPasswordPage() {
     : 'You can now sign in with your new password.';
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: '#F7F7F7' }}>
+    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--bg-base)' }}>
       <div
         className="w-full"
-        style={{ maxWidth: '420px', background: '#FFFFFF', borderRadius: '20px', border: '1px solid #EDEDED', padding: '32px 28px' }}
+        style={{ maxWidth: '420px', background: 'var(--bg-base)', borderRadius: '20px', border: '1px solid var(--border-glass)', padding: '32px 28px' }}
       >
         {/* Logo */}
         <div className="flex justify-center" style={{ marginBottom: '22px' }}>
-          <QlozetLogo color={BRAND} />
+          <QlozetLogo color="var(--brand-brown)" />
         </div>
 
         {/* Icon + heading */}
         <div className="flex flex-col items-center text-center" style={{ marginBottom: '22px', gap: '10px' }}>
           <div
             className="flex items-center justify-center"
-            style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(70,40,20,0.07)', color: BRAND }}
+            style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(70,40,20,0.07)', color: 'var(--brand-brown)' }}
           >
             {step === 'done' ? <CheckCircle2 size={24} /> : step === 'code' ? <ShieldCheck size={24} /> : <Mail size={24} />}
           </div>
-          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1A1A', margin: 0 }}>{heading}</h1>
-          <p style={{ fontSize: '13.5px', color: '#777', margin: 0, lineHeight: 1.5 }}>{sub}</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{heading}</h1>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{sub}</p>
         </div>
 
         {error && (
@@ -154,7 +152,7 @@ export default function ForgotPasswordPage() {
           </div>
         )}
         {notice && step === 'code' && (
-          <div style={{ fontSize: '13px', color: BRAND, background: 'rgba(70,40,20,0.05)', border: '1px solid rgba(70,40,20,0.12)', borderRadius: '10px', padding: '10px 12px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--brand-brown)', background: 'rgba(70,40,20,0.05)', border: '1px solid rgba(70,40,20,0.12)', borderRadius: '10px', padding: '10px 12px', marginBottom: '16px' }}>
             {notice}
           </div>
         )}
@@ -163,7 +161,7 @@ export default function ForgotPasswordPage() {
           <button
             onClick={() => router.push('/auth/login')}
             className="w-full flex items-center justify-center transition-all hover:opacity-90"
-            style={{ padding: '15px', borderRadius: '12px', background: BRAND, color: '#FFF', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer' }}
+            style={{ padding: '15px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer' }}
           >
             BACK TO SIGN IN →
           </button>
@@ -171,15 +169,15 @@ export default function ForgotPasswordPage() {
           <form onSubmit={onSubmit} className="flex flex-col" style={{ gap: '16px' }}>
             {step === 'email' && (
               <div className="flex flex-col" style={{ gap: '8px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Email address</label>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Email address</label>
                 <input
                   type="email"
                   placeholder="you@example.com"
                   style={inputStyle}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onFocus={(e) => (e.target.style.borderColor = BRAND)}
-                  onBlur={(e) => (e.target.style.borderColor = '#E5E5E5')}
+                  onFocus={(e) => (e.target.style.borderColor = 'var(--brand-brown)')}
+                  onBlur={(e) => (e.target.style.borderColor = 'var(--border-glass)')}
                   required
                   autoFocus
                 />
@@ -188,7 +186,7 @@ export default function ForgotPasswordPage() {
 
             {step === 'code' && (
               <div className="flex flex-col" style={{ gap: '8px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>6-digit code</label>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>6-digit code</label>
                 <input
                   inputMode="numeric"
                   autoComplete="one-time-code"
@@ -197,18 +195,18 @@ export default function ForgotPasswordPage() {
                   style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.5em', fontSize: '18px', fontWeight: 700 }}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  onFocus={(e) => (e.target.style.borderColor = BRAND)}
-                  onBlur={(e) => (e.target.style.borderColor = '#E5E5E5')}
+                  onFocus={(e) => (e.target.style.borderColor = 'var(--brand-brown)')}
+                  onBlur={(e) => (e.target.style.borderColor = 'var(--border-glass)')}
                   required
                   autoFocus
                 />
                 <div className="flex items-center justify-center" style={{ gap: '6px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '12.5px', color: '#999' }}>Didn&apos;t get it?</span>
+                  <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Didn&apos;t get it?</span>
                   <button
                     type="button"
                     onClick={sendCode}
                     disabled={cooldown > 0 || isLoading}
-                    style={{ fontSize: '12.5px', fontWeight: 600, color: cooldown > 0 ? '#BBB' : BRAND, background: 'none', border: 'none', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0 }}
+                    style={{ fontSize: '12.5px', fontWeight: 600, color: cooldown > 0 ? 'var(--text-muted)' : 'var(--brand-brown)', background: 'none', border: 'none', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0 }}
                   >
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                   </button>
@@ -219,7 +217,7 @@ export default function ForgotPasswordPage() {
             {step === 'password' && (
               <>
                 <div className="flex flex-col" style={{ gap: '8px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>New password</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>New password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -227,30 +225,30 @@ export default function ForgotPasswordPage() {
                       style={{ ...inputStyle, padding: '14px 48px 14px 16px' }}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      onFocus={(e) => (e.target.style.borderColor = BRAND)}
-                      onBlur={(e) => (e.target.style.borderColor = '#E5E5E5')}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--brand-brown)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border-glass)')}
                       required
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0 }}
+                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
                 <div className="flex flex-col" style={{ gap: '8px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>Confirm password</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Confirm password</label>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••••••"
                     style={inputStyle}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    onFocus={(e) => (e.target.style.borderColor = BRAND)}
-                    onBlur={(e) => (e.target.style.borderColor = '#E5E5E5')}
+                    onFocus={(e) => (e.target.style.borderColor = 'var(--brand-brown)')}
+                    onBlur={(e) => (e.target.style.borderColor = 'var(--border-glass)')}
                     required
                   />
                 </div>
@@ -261,10 +259,10 @@ export default function ForgotPasswordPage() {
               type="submit"
               disabled={isLoading}
               className="w-full flex items-center justify-center transition-all hover:opacity-90"
-              style={{ padding: '15px', borderRadius: '12px', background: BRAND, color: '#FFF', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer', marginTop: '4px' }}
+              style={{ padding: '15px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer', marginTop: '4px' }}
             >
               {isLoading ? (
-                <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }} />
+                <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }} />
               ) : step === 'email' ? 'SEND CODE →' : step === 'code' ? 'CONTINUE →' : 'RESET PASSWORD →'}
             </button>
           </form>
@@ -274,14 +272,14 @@ export default function ForgotPasswordPage() {
         {step !== 'done' && (
           <div className="flex justify-center" style={{ marginTop: '22px' }}>
             {step === 'email' ? (
-              <Link href="/auth/login" style={{ fontSize: '13px', color: '#777', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }} className="hover:underline">
+              <Link href="/auth/login" style={{ fontSize: '13px', color: 'var(--text-secondary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }} className="hover:underline">
                 <ArrowLeft size={15} /> Back to sign in
               </Link>
             ) : (
               <button
                 type="button"
                 onClick={() => { setError(''); setStep(step === 'password' ? 'code' : 'email'); }}
-                style={{ fontSize: '13px', color: '#777', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                style={{ fontSize: '13px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 className="hover:underline"
               >
                 <ArrowLeft size={15} /> Back

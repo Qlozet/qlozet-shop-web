@@ -10,7 +10,13 @@
 
  :root {
    /* Colors */
-   --bg-base: #F8F9FA;
+   /* --bg-app: the app GROUND (behind the side menu + main content container).
+      Keeps the soft off-white in light; dark grey in dark. Only the shell ground
+      uses this. */
+   --bg-app: #F8F9FA;
+   /* --bg-base: component surface (cards, sheets, studio tools, search bars).
+      Pure white in light so those components read as white; dark grey in dark. */
+   --bg-base: #FFFFFF;
    --bg-surface: #FFFFFF;
    --bg-surface-elevated: #F0F0F0;
 
@@ -20,6 +26,12 @@
    --brand-brown: #462814;
    --brand-brown-hover: #331C0D;
    --brand-brown-light: #8B5A2B;
+
+   /* Filled brand elements (buttons, cart badge, search submit): dark-brown
+      fill + white content in light mode; flips to a white fill + near-black
+      content in dark mode (matches the vendor app's --primary). */
+   --brand-fill: #2C1810;
+   --brand-fill-text: #FFFFFF;
 
    --accent-gold: #D4AF37;
    --accent-gold-hover: #FFDF00;
@@ -56,6 +68,96 @@
    --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
    --transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
    --transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
+   color-scheme: light;
+ }
+
+ /* ── Dark theme ─────────────────────────────────────────────────────────
+    Applied when <html class="dark">. Matches the VENDOR app's dark palette
+    (cool near-black ground, #303030 cards, #404040 muted, near-white text) so
+    the two apps feel like one brand. Brand accents stay for legibility. Pages
+    darken by using these tokens instead of hardcoded hex — screen by screen. */
+ html.dark {
+   color-scheme: dark;
+
+   --bg-app: #242427;                    /* app ground — dark grey (unchanged in dark) */
+   --bg-base: #242427;                   /* component surface — dark grey (matches ground in dark) */
+   --bg-surface: #161619;                /* big content card — near-black (pops darker) */
+   --bg-surface-elevated: #2E2E33;       /* insets/chips ON the card (a touch lighter) */
+
+   --brand-brown: #E0B486;               /* readable tan on dark (brand pop) */
+   --brand-brown-hover: #EAC6A0;
+   --brand-brown-light: #C99A6A;
+
+   /* Filled brand elements flip to white with near-black content (vendor
+      --primary / --primary-foreground). */
+   --brand-fill: hsl(0, 0%, 98%);
+   --brand-fill-text: hsl(240, 5.9%, 10%);
+
+   --text-primary: hsl(0, 0%, 98%);      /* vendor --foreground */
+   --text-secondary: hsl(240, 5%, 65%);  /* vendor --muted-foreground */
+   --text-muted: hsl(240, 5%, 55%);
+
+   --border-glass: hsl(240, 4%, 16%);    /* vendor --border */
+   --border-focus: rgba(250, 250, 250, 0.4);
+
+   --glass-bg: rgba(48, 48, 48, 0.92);
+   --glass-bg-dense: #303030;
+
+   /* Match the vendor app's shadow: a soft light-grey glow (same in both
+      modes), not heavy black. */
+   --shadow-sm: 0px 2px 12px 0px hsla(240, 13%, 72%, 0.10);
+   --shadow-md: 0px 4px 25px 0px hsla(240, 13%, 72%, 0.15);
+   --shadow-lg: 0px 8px 40px 0px hsla(240, 13%, 72%, 0.18);
+ }
+
+ /* Brand accent colour for text/icons (brown in light, white in dark) — used
+    with hover: too, e.g. active nav icons. */
+ @utility text-brand {
+   color: var(--brand-fill);
+ }
+
+ /* Dual-range price slider (two overlaid range inputs). The track/thumb is
+    transparent to clicks except the thumb itself, so both handles are draggable. */
+ .dual-range {
+   -webkit-appearance: none;
+   appearance: none;
+   background: transparent;
+   pointer-events: none;
+   position: absolute;
+   left: 0;
+   top: 50%;
+   transform: translateY(-50%);
+   width: 100%;
+   height: 0;
+   margin: 0;
+   padding: 0;
+ }
+ .dual-range::-webkit-slider-thumb {
+   -webkit-appearance: none;
+   pointer-events: auto;
+   width: 22px;
+   height: 22px;
+   border-radius: 50%;
+   background: var(--brand-fill);
+   border: 3px solid var(--bg-base);
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+   cursor: grab;
+   transition: transform var(--transition-fast);
+ }
+ .dual-range::-webkit-slider-thumb:active {
+   cursor: grabbing;
+   transform: scale(1.12);
+ }
+ .dual-range::-moz-range-thumb {
+   pointer-events: auto;
+   width: 22px;
+   height: 22px;
+   border-radius: 50%;
+   background: var(--brand-fill);
+   border: 3px solid var(--bg-base);
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+   cursor: grab;
  }
 
  /* Base Styles & Resets */
@@ -69,7 +171,7 @@
 
  html,
  body {
-   background-color: var(--bg-base);
+   background-color: var(--bg-app);
    color: var(--text-primary);
    font-family: var(--font-body);
    scroll-behavior: smooth;

@@ -114,7 +114,7 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
   };
 
   return (
-    <div className="animate-fade-in" style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', padding: '32px', position: 'relative' }}>
+    <div className="animate-fade-in" style={{ background: 'var(--bg-base)', borderRadius: '16px', border: '1px solid var(--border-glass)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', padding: '32px', position: 'relative' }}>
       
       {/* Feedback Messages */}
       {feedback.text && (
@@ -137,16 +137,16 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
       {/* Avatar */}
       <div className="flex items-start" style={{ marginBottom: '28px' }}>
         <div className="relative">
-          <div className="overflow-hidden" style={{ width: '100px', height: '100px', borderRadius: '50%', background: '#F0ECE8', border: '3px solid #E8E0D8' }}>
+          <div className="overflow-hidden" style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', border: '3px solid var(--border-glass)' }}>
             <Image src="/image/woman.png" alt="Profile Photo" width={100} height={100} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
           </div>
-          <button style={{ position: 'absolute', top: '0', right: '-8px', width: '28px', height: '28px', borderRadius: '50%', background: '#FFF', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <Pencil size={12} color="#666" />
+          <button style={{ position: 'absolute', top: '0', right: '-8px', width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <Pencil size={12} color="var(--text-secondary)" />
           </button>
         </div>
       </div>
 
-      <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '28px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '28px' }}>
         Basic Info
       </h3>
 
@@ -158,7 +158,7 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
         <div>
           <label style={fieldLabel}>Username*</label>
           <input type="text" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} style={fieldInput} placeholder="Choose a unique username" />
-          <span style={{ fontSize: '10px', color: '#999', marginTop: '4px', display: 'block' }}>Must be unique. Letters, numbers, and underscores only.</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Must be unique. Letters, numbers, and underscores only.</span>
         </div>
         <div>
           <label style={fieldLabel}>Email Address*</label>
@@ -168,25 +168,25 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
           <label style={fieldLabel}>Address*</label>
           <button
             onClick={() => onNavigateToAddressBook?.()}
-            className="w-full flex items-center justify-between group hover:bg-gray-50 transition-colors"
-            style={{ 
-              borderBottom: '1px solid rgba(0,0,0,0.1)', 
-              paddingBottom: '10px', 
-              background: 'none', 
+            className="w-full flex items-center justify-between group hover:bg-[var(--bg-surface-elevated)] transition-colors"
+            style={{
+              borderBottom: '1px solid var(--border-glass)',
+              paddingBottom: '10px',
+              background: 'none',
               border: 'none',
               borderBottomWidth: '1px',
               borderBottomStyle: 'solid',
-              borderBottomColor: 'rgba(0,0,0,0.1)',
+              borderBottomColor: 'var(--border-glass)',
               cursor: 'pointer',
               padding: '0 0 10px 0',
             }}
           >
             <div className="flex items-center" style={{ gap: '8px', flex: 1, minWidth: 0 }}>
-              <MapPin size={14} color="#462814" className="flex-shrink-0" />
-              <span style={{ 
-                fontSize: '14px', 
-                fontWeight: 500, 
-                color: defaultAddress ? '#1A1A1A' : '#999',
+              <MapPin size={14} color="var(--brand-brown)" className="flex-shrink-0" />
+              <span style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: defaultAddress ? 'var(--text-primary)' : 'var(--text-muted)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -197,17 +197,17 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
                 }
               </span>
             </div>
-            <ChevronRight size={16} color="#999" className="flex-shrink-0" />
+            <ChevronRight size={16} color="var(--text-muted)" className="flex-shrink-0" />
           </button>
         </div>
         <div className="relative">
           <label style={fieldLabel}>Date of Birth</label>
-          <div className="flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '10px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+          <div className="flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-glass)', paddingBottom: '10px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
               {MONTHS[dob.getMonth()]} {dob.getDate()}, {dob.getFullYear()}
             </span>
             <button onClick={() => setShowDatePicker(!showDatePicker)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-              <Calendar size={18} color="#888" />
+              <Calendar size={18} color="var(--text-muted)" />
             </button>
           </div>
           {showDatePicker && (
@@ -226,8 +226,8 @@ export default function PersonalInfo({ userName, onNavigateToAddressBook }: Pers
           marginTop: '36px',
           padding: '16px',
           borderRadius: '12px',
-          background: hasChanges ? '#462814' : '#D1C7BE',
-          color: '#FFF',
+          background: hasChanges ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+          color: hasChanges ? 'var(--brand-fill-text)' : 'var(--text-muted)',
           fontSize: '12px',
           fontWeight: 800,
           textTransform: 'uppercase',

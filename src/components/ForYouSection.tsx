@@ -123,7 +123,7 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
                 style={{
                   borderRadius: '10px',
                   aspectRatio: '1 / 1',
-                  background: '#F5F5F5',
+                  background: 'var(--bg-surface-elevated)',
                 }}
               >
                 <Image

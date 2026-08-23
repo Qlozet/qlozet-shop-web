@@ -46,8 +46,8 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
         <p style={{ fontSize: '32px', marginBottom: '12px' }}>🧵</p>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: '#666' }}>No fabric options</p>
-        <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>No fabric options</p>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
           This product doesn&apos;t have custom fabric choices.
         </p>
       </div>
@@ -146,7 +146,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
       {fabricOptions.length > 0 ? (
         <>
           <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Material
             </span>
           </div>
@@ -159,9 +159,9 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                 className="flex items-center flex-shrink-0 transition-all"
                 style={{
                   padding: '5px 12px', borderRadius: '9999px',
-                  border: colorFilter === null ? '1.5px solid #2C1810' : '1px solid #E0E0E0',
-                  background: colorFilter === null ? '#FAF6F1' : '#FFF',
-                  fontSize: '11px', fontWeight: 700, color: '#1A1A1A', cursor: 'pointer', whiteSpace: 'nowrap',
+                  border: colorFilter === null ? '1.5px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                  background: 'var(--bg-surface-elevated)',
+                  fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer', whiteSpace: 'nowrap',
                 }}
               >
                 All
@@ -176,12 +176,12 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                     className="flex items-center flex-shrink-0 transition-all"
                     style={{
                       padding: '5px 12px 5px 6px', borderRadius: '9999px', gap: '6px',
-                      border: active ? '1.5px solid #2C1810' : '1px solid #E0E0E0',
-                      background: active ? '#FAF6F1' : '#FFF', cursor: 'pointer',
+                      border: active ? '1.5px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                      background: 'var(--bg-surface-elevated)', cursor: 'pointer',
                     }}
                   >
                     <span style={{ width: '14px', height: '14px', borderRadius: '50%', flexShrink: 0, background: c.hex || '#CCC', border: '1px solid rgba(0,0,0,0.1)' }} />
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#1A1A1A', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {c.name || c.hex}
                     </span>
                   </button>
@@ -201,7 +201,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                 />
               ))
             ) : (
-              <p className="col-span-2 text-center" style={{ fontSize: '12px', color: '#999', padding: '16px 0' }}>
+              <p className="col-span-2 text-center" style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '16px 0' }}>
                 No fabrics in this colour.
               </p>
             )}
@@ -213,7 +213,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
       {hasColorVariants && (
         <>
           <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Fabric Color
             </span>
           </div>
@@ -233,8 +233,8 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                   style={{
                     padding: '8px 12px',
                     borderRadius: '16px',
-                    border: isSelected ? '1px solid #2C1810' : '1px solid transparent',
-                    background: isSelected ? '#FAF6F1' : '#F5F5F5',
+                    border: isSelected ? '1px solid var(--brand-fill)' : '1px solid transparent',
+                    background: 'var(--bg-surface-elevated)',
                     cursor: 'pointer',
                     gap: '12px',
                     height: '56px',
@@ -242,8 +242,8 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                 >
                   {/* Thumbnail: image or hex swatch */}
                   <div
-                    className="flex items-center justify-center bg-white shadow-sm overflow-hidden"
-                    style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }}
+                    className="flex items-center justify-center shadow-sm overflow-hidden"
+                    style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0, background: 'var(--bg-surface-elevated)' }}
                   >
                     {cvImage ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -279,14 +279,14 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                         }}
                       />
                       <p style={{
-                        fontSize: '11px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3,
+                        fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {cvName}
                       </p>
                     </div>
                     {minPrice > 0 ? (
-                      <p style={{ fontSize: '10px', fontWeight: 700, color: '#1A1A1A', marginTop: '2px' }}>
+                      <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                         from ₦{minPrice.toLocaleString()}
                       </p>
                     ) : null}
@@ -297,12 +297,12 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                     className="flex items-center justify-center"
                     style={{
                       width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
-                      border: isSelected ? '1.5px solid #2C1810' : 'none',
-                      background: isSelected ? 'transparent' : '#D1D5DB',
+                      border: isSelected ? '1.5px solid var(--brand-fill)' : 'none',
+                      background: isSelected ? 'transparent' : 'var(--border-glass)',
                     }}
                   >
                     {isSelected && (
-                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2C1810' }} />
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--brand-fill)' }} />
                     )}
                   </div>
                 </button>
@@ -317,7 +317,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
         <>
           <span
             style={{
-              fontSize: '11px', fontWeight: 800, color: '#666',
+              fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)',
               textTransform: 'uppercase', letterSpacing: '0.06em',
               display: 'block', marginBottom: '12px',
             }}

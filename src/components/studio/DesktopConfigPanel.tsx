@@ -61,15 +61,15 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
       className="absolute z-20 hidden lg:flex flex-col"
       style={{ right: '24px', top: '90px', bottom: '24px', width: '380px', gap: '16px' }}
     >
-      <div className="flex-1 flex flex-col bg-white shadow-lg overflow-hidden border border-gray-100 rounded-[24px]">
+      <div className="flex-1 flex flex-col bg-[var(--bg-base)] shadow-lg overflow-hidden border border-[var(--border-glass)] rounded-[24px]">
         {/* Context Header */}
-        <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 20px 8px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 20px 8px', borderBottom: '1px solid var(--border-glass)' }}>
+          <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {sectionLabel[expandedSection] || ''}
           </span>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '5px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
             <TokenIcon size={14} color="#D4AF37" />
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A' }}>{tokenBalance.toLocaleString()}</span>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>{tokenBalance.toLocaleString()}</span>
           </div>
         </div>
 
@@ -95,8 +95,8 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
               onClick={() => setShowSaveModal(true)}
               className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-md"
               style={{
-                padding: '16px', borderRadius: '16px', background: '#2C1810',
-                color: '#FFF', fontSize: '12px', fontWeight: 800,
+                padding: '16px', borderRadius: '16px', background: 'var(--brand-fill)',
+                color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800,
                 textTransform: 'uppercase', letterSpacing: '0.08em',
                 border: 'none', cursor: 'pointer', gap: '8px',
               }}

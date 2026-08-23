@@ -33,8 +33,8 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
         style={{
           padding: '8px 12px',
           borderRadius: '16px',
-          border: isSelected ? '1px solid #2C1810' : '1px solid transparent',
-          background: isSelected ? '#FAF6F1' : '#F5F5F5',
+          border: isSelected ? '1px solid var(--brand-fill)' : '1px solid transparent',
+          background: isSelected ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)',
           cursor: 'pointer',
           gap: '12px',
           height: '56px',
@@ -42,8 +42,8 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
       >
         {/* Thumbnail */}
         <div
-          className="flex items-center justify-center bg-white shadow-sm overflow-hidden"
-          style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }}
+          className="flex items-center justify-center shadow-sm overflow-hidden"
+          style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0, background: 'var(--bg-surface-elevated)' }}
         >
           {option.imageUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -61,13 +61,13 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
         {/* Text */}
         <div className="flex-1 text-left flex flex-col justify-center" style={{ overflow: 'hidden', minWidth: 0 }}>
           <p style={{
-            fontSize: '11px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3,
+            fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {option.label}
           </p>
           {option.extraCost !== undefined && (
-            <p style={{ fontSize: '10px', fontWeight: 700, color: option.extraCost > 0 ? '#1A1A1A' : '#059669', marginTop: '2px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 700, color: option.extraCost > 0 ? 'var(--text-primary)' : '#059669', marginTop: '2px' }}>
               {option.extraCost > 0 ? `+₦${option.extraCost.toLocaleString()}` : 'Included'}
             </p>
           )}
@@ -78,12 +78,12 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
           className="flex items-center justify-center"
           style={{
             width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
-            border: isSelected ? '1.5px solid #2C1810' : 'none',
-            background: isSelected ? 'transparent' : '#D1D5DB',
+            border: isSelected ? '1.5px solid var(--brand-fill)' : 'none',
+            background: isSelected ? 'transparent' : 'var(--border-glass)',
           }}
         >
           {isSelected && (
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2C1810' }} />
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--brand-fill)' }} />
           )}
         </div>
       </button>

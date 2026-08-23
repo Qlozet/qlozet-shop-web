@@ -25,11 +25,10 @@ function mapKindToParams(kind: CategoryKind): Partial<ProductQueryParams> {
       return {};
     case 'bespoke':
     case 'custom':
-      // Backend doesn't have a direct "customizable" filter,
-      // so we filter clothing and post-filter by type
-      return { kind: 'clothing' };
+      // Customizable clothing (made-to-order) — filtered server-side via `type`.
+      return { kind: 'clothing', type: 'customize' };
     case 'read-to-wear':
-      return { kind: 'clothing' };
+      return { kind: 'clothing', type: 'non_customize' };
     case 'fabric':
       return { kind: 'fabric' };
     case 'accessory':
@@ -38,6 +37,8 @@ function mapKindToParams(kind: CategoryKind): Partial<ProductQueryParams> {
       return {};
   }
 }
+
+const PRICE_MAX = 200000;
 
 // ─── CatalogContent ───────────────────────────────────────────────
 function CatalogContent() {
@@ -51,7 +52,10 @@ function CatalogContent() {
     (searchParams.get('kind') as CategoryKind) || 'all'
   );
   const [sortBy, setSortBy] = useState<string>(searchParams.get('sort') || 'rating');
-  const [maxPrice, setMaxPrice] = useState<number>(200000);
+  const [minPrice, setMinPrice] = useState<number>(0);
+  const [maxPrice, setMaxPrice] = useState<number>(PRICE_MAX);
+  const [onSale, setOnSale] = useState(false);
+  const [inStock, setInStock] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -73,9 +77,14 @@ function CatalogContent() {
     setPage(1);
   }, [searchParams]);
 
-  // ── Build backend query params ────────────────────────────────
-  const backendSortBy = sortBy === 'priceAsc' || sortBy === 'priceDesc' ? undefined : sortBy as 'rating' | 'date' | 'relevance' | undefined;
-  const backendOrder = sortBy === 'priceAsc' ? 'asc' as const : sortBy === 'priceDesc' ? 'desc' as const : undefined;
+  // ── Build backend query params (everything filters/sorts server-side) ──
+  const SORT_MAP: Record<string, { sortBy: ProductQueryParams['sortBy']; order: 'asc' | 'desc' }> = {
+    rating: { sortBy: 'rating', order: 'desc' },
+    newest: { sortBy: 'date', order: 'desc' },
+    priceAsc: { sortBy: 'price', order: 'asc' },
+    priceDesc: { sortBy: 'price', order: 'desc' },
+  };
+  const { sortBy: backendSortBy, order: backendOrder } = SORT_MAP[sortBy] ?? SORT_MAP.rating;
 
   const queryParams: ProductQueryParams = {
     page,
@@ -83,44 +92,28 @@ function CatalogContent() {
     search: searchQuery || undefined,
     sortBy: backendSortBy,
     order: backendOrder,
+    minPrice: minPrice > 0 ? minPrice : undefined,
+    maxPrice: maxPrice < PRICE_MAX ? maxPrice : undefined,
+    on_sale: onSale || undefined,
+    in_stock: inStock || undefined,
     ...mapKindToParams(selectedKind),
   };
 
   const { products, loading, error, pagination, refetch } = useProducts(queryParams);
 
-  // ── Client-side post-filters (for things backend doesn't support) ──
-  const filteredProducts = products.filter((p) => {
-    // Price filter (client-side — backend doesn't have price range)
-    if (getProductPrice(p) > maxPrice) return false;
-
-    // Custom/bespoke post-filter (backend returns all clothing)
-    if (selectedKind === 'bespoke' || selectedKind === 'custom') {
-      return p.clothing?.type === 'customize';
-    }
-    if (selectedKind === 'read-to-wear') {
-      return p.clothing?.type !== 'customize';
-    }
-
-    return true;
-  });
-
-  // ── Client-side sort for price (backend doesn't support price sort) ──
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    // Always sink sold-out products to the end, whatever the primary sort.
-    const aOut = a.availability?.state === 'out_of_stock' ? 1 : 0;
-    const bOut = b.availability?.state === 'out_of_stock' ? 1 : 0;
-    if (aOut !== bOut) return aOut - bOut;
-    if (sortBy === 'priceAsc') return getProductPrice(a) - getProductPrice(b);
-    if (sortBy === 'priceDesc') return getProductPrice(b) - getProductPrice(a);
-    return 0; // backend handles rating/date sort
-  });
+  // Server does the filtering/sorting/pagination, so the grid is the fetched
+  // page as-is and the count is the backend total.
+  const displayCount = pagination.totalItems;
 
   // ── Reset handler ─────────────────────────────────────────────
   const handleClearFilters = () => {
     setSearchQuery('');
     setSelectedKind('all');
     setSortBy('rating');
-    setMaxPrice(200000);
+    setMinPrice(0);
+    setMaxPrice(PRICE_MAX);
+    setOnSale(false);
+    setInStock(false);
     setPage(1);
     router.push('/products');
   };
@@ -140,9 +133,15 @@ function CatalogContent() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         sortBy={sortBy}
-        onSortChange={setSortBy}
+        onSortChange={(s) => { setSortBy(s); setPage(1); }}
+        minPrice={minPrice}
+        onMinPriceChange={(v) => { setMinPrice(v); setPage(1); }}
         maxPrice={maxPrice}
-        onMaxPriceChange={setMaxPrice}
+        onMaxPriceChange={(v) => { setMaxPrice(v); setPage(1); }}
+        onSale={onSale}
+        onOnSaleChange={(v) => { setOnSale(v); setPage(1); }}
+        inStock={inStock}
+        onInStockChange={(v) => { setInStock(v); setPage(1); }}
         onReset={handleClearFilters}
       />
 
@@ -155,14 +154,14 @@ function CatalogContent() {
           onCategoryChange={(kind) => { setSelectedKind(kind); setPage(1); }}
           isFilterOpen={isFilterOpen}
           onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
-          itemCount={pagination.totalItems}
+          itemCount={displayCount}
         />
 
         {/* Loading State */}
         {loading && (
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-pulse justify-items-center">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-[20px] bg-[#F0EBE4]" style={{ width: '100%', aspectRatio: '3/4' }} />
+              <div key={i} className="rounded-[20px] bg-[var(--bg-surface-elevated)]" style={{ width: '100%', aspectRatio: '3/4' }} />
             ))}
           </div>
         )}
@@ -170,9 +169,9 @@ function CatalogContent() {
         {/* Error State */}
         {error && !loading && (
           <div className="glass-panel border border-white/5 p-12 text-center flex flex-col items-center justify-center gap-4">
-            <SlidersHorizontal size={36} className="text-[#999]" />
-            <h3 className="text-base font-bold text-[#1A1A1A]">Something went wrong</h3>
-            <p className="text-xs text-[#888] max-w-[280px]">{error}</p>
+            <SlidersHorizontal size={36} className="text-[var(--text-muted)]" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">Something went wrong</h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-[280px]">{error}</p>
             <button onClick={refetch} className="btn-primary" style={{ padding: '10px 20px', fontSize: '11px' }}>
               Try Again
             </button>
@@ -180,10 +179,10 @@ function CatalogContent() {
         )}
 
         {/* Product Grid */}
-        {!loading && !error && sortedProducts.length > 0 && (
+        {!loading && !error && products.length > 0 && (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-slide-up justify-items-center">
-              {sortedProducts.map((product) => (
+              {products.map((product) => (
                 <ProductCard
                   key={product._id}
                   id={product._id}
@@ -211,15 +210,15 @@ function CatalogContent() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: '#F5F5F5',
-                    border: '1px solid #E5E5E5',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-glass)',
                     cursor: pagination.hasPrevious ? 'pointer' : 'default',
                   }}
                 >
-                  <ChevronLeft size={16} color="#1A1A1A" />
+                  <ChevronLeft size={16} color="var(--text-primary)" />
                 </button>
 
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
 
@@ -231,12 +230,12 @@ function CatalogContent() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: '#F5F5F5',
-                    border: '1px solid #E5E5E5',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-glass)',
                     cursor: pagination.hasNext ? 'pointer' : 'default',
                   }}
                 >
-                  <ChevronRight size={16} color="#1A1A1A" />
+                  <ChevronRight size={16} color="var(--text-primary)" />
                 </button>
               </div>
             )}
@@ -244,11 +243,11 @@ function CatalogContent() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && sortedProducts.length === 0 && (
+        {!loading && !error && products.length === 0 && (
           <div className="glass-panel border border-white/5 p-12 text-center flex flex-col items-center justify-center gap-4">
-            <SlidersHorizontal size={36} className="text-[#999]" />
-            <h3 className="text-base font-bold text-[#1A1A1A]">No products match your filters</h3>
-            <p className="text-xs text-[#888] max-w-[280px]">
+            <SlidersHorizontal size={36} className="text-[var(--text-muted)]" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">No products match your filters</h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-[280px]">
               Try searching with broader keywords, adjusting the price sliders, or resetting categories.
             </p>
             <button onClick={handleClearFilters} className="btn-primary" style={{ padding: '10px 20px', fontSize: '11px' }}>

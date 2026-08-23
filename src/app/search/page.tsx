@@ -94,7 +94,7 @@ function SearchContent() {
       {/* Vendor Results — only shown when the search matches vendors */}
       {(vendorsLoading || DEMO_VENDORS.length > 0) && (
       <div>
-        <h2 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
           Vendors Results
         </h2>
         <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '16px', paddingBottom: '4px' }}>
@@ -126,7 +126,7 @@ function SearchContent() {
                 }}
               >
                 {/* Vendor image wrapper */}
-                <div className="relative w-full overflow-visible bg-[#F5F5F5]" style={{ height: '110px' }}>
+                <div className="relative w-full overflow-visible bg-[var(--bg-surface-elevated)]" style={{ height: '110px' }}>
                   <Image
                     src={vendor.image}
                     alt={vendor.name}
@@ -142,7 +142,7 @@ function SearchContent() {
                   {/* Logo overlay */}
                   <div
                     className="absolute flex items-center justify-center overflow-hidden"
-                    style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#FFFFFF', border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', bottom: '-22px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}
+                    style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-base)', border: '3px solid var(--bg-base)', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', bottom: '-22px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}
                   >
                     {vendor.logoImage ? (
                       <div className="relative w-full h-full">
@@ -213,7 +213,7 @@ function SearchContent() {
 
       {/* Item Results */}
       <div>
-        <h2 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
           Item Results
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 lg:gap-5">
@@ -275,9 +275,9 @@ function SearchContent() {
           {!hasHistory && !aiLoading && (
             <div className="flex flex-col items-center justify-center" style={{ gap: '12px', padding: '60px 20px' }}>
               <PenLine size={24} color="#D4AF37" />
-              <p style={{ fontSize: '14px', color: '#888', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 Ask me anything about fashion!<br />
-                <span style={{ fontSize: '12px', color: '#aaa' }}>e.g. &quot;Show me agbada styles under 100k&quot;</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>e.g. &quot;Show me agbada styles under 100k&quot;</span>
               </p>
             </div>
           )}
@@ -297,8 +297,8 @@ function SearchContent() {
                   {msg.role === 'user' ? (
                     /* User message bubble */
                     <div style={{
-                      background: '#1A1A1A',
-                      color: '#FFFFFF',
+                      background: 'var(--brand-fill)',
+                      color: 'var(--brand-fill-text)',
                       padding: '12px 18px',
                       borderRadius: '20px 20px 4px 20px',
                       fontSize: '14px',
@@ -309,13 +309,13 @@ function SearchContent() {
                   ) : (
                     /* Assistant message */
                     <div style={{
-                      background: '#F8F6F3',
+                      background: 'var(--bg-surface-elevated)',
                       padding: '14px 18px',
                       borderRadius: '20px 20px 20px 4px',
                       fontSize: '14px',
                       lineHeight: 1.75,
-                      color: '#444',
-                      border: '1px solid rgba(0,0,0,0.04)',
+                      color: 'var(--text-secondary)',
+                      border: '1px solid var(--border-glass)',
                     }}>
                       <Markdown content={msg.content} />
                     </div>
@@ -331,7 +331,7 @@ function SearchContent() {
               <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '0ms' }} />
               <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '150ms' }} />
               <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '300ms' }} />
-              <span style={{ fontSize: '13px', color: '#999', marginLeft: '4px' }}>Thinking...</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)', marginLeft: '4px' }}>Thinking...</span>
             </div>
           )}
 
@@ -351,7 +351,7 @@ function SearchContent() {
           {/* Products from latest response */}
           {aiProducts.length > 0 && !aiLoading && (
             <div className="animate-fade-in mx-auto w-full" style={{ maxWidth: '800px', marginTop: '16px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
                 Recommended for you
               </h3>
               <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '14px', paddingBottom: '4px' }}>
@@ -393,26 +393,26 @@ function SearchContent() {
       <div className="flex items-center justify-between" style={{ marginBottom: '28px' }}>
         {/* History icon */}
         <button
-          className="flex items-center justify-center transition-all hover:bg-[#F5F5F5] active:scale-90"
-          style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFFFFF', cursor: 'pointer' }}
+          className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+          style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
         >
-          <Clock size={18} color="#1A1A1A" />
+          <Clock size={18} color="var(--text-primary)" />
         </button>
 
         {/* Toggle: Search / AI */}
-        <div className="flex items-center" style={{ gap: '0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden', background: '#FFFFFF' }}>
+        <div className="flex items-center" style={{ gap: '0', borderRadius: '12px', border: '1px solid var(--border-glass)', overflow: 'hidden', background: 'var(--bg-base)' }}>
           <button
             onClick={() => handleSetViewMode('search')}
             className="flex items-center justify-center transition-all"
             style={{
               width: '44px',
               height: '38px',
-              background: viewMode === 'search' ? '#1A1A1A' : 'transparent',
+              background: viewMode === 'search' ? 'var(--brand-fill)' : 'transparent',
               border: 'none',
               cursor: 'pointer',
             }}
           >
-            <Search size={16} color={viewMode === 'search' ? '#FFFFFF' : '#999'} />
+            <Search size={16} color={viewMode === 'search' ? 'var(--brand-fill-text)' : 'var(--text-muted)'} />
           </button>
           <button
             onClick={() => handleSetViewMode('ai')}
@@ -420,22 +420,22 @@ function SearchContent() {
             style={{
               width: '44px',
               height: '38px',
-              background: viewMode === 'ai' ? '#1A1A1A' : 'transparent',
+              background: viewMode === 'ai' ? 'var(--brand-fill)' : 'transparent',
               border: 'none',
               cursor: 'pointer',
             }}
           >
-            <List size={16} color={viewMode === 'ai' ? '#FFFFFF' : '#999'} />
+            <List size={16} color={viewMode === 'ai' ? 'var(--brand-fill-text)' : 'var(--text-muted)'} />
           </button>
         </div>
 
         {/* Compose icon — new conversation */}
         <button
           onClick={() => { resetAI(); }}
-          className="flex items-center justify-center transition-all hover:bg-[#F5F5F5] active:scale-90"
-          style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: '#FFFFFF', cursor: 'pointer' }}
+          className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+          style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
         >
-          <PenLine size={18} color="#1A1A1A" />
+          <PenLine size={18} color="var(--text-primary)" />
         </button>
       </div>
 
@@ -447,16 +447,16 @@ function SearchContent() {
             <div className="flex flex-col items-center animate-fade-in" style={{ gap: '32px', paddingTop: '40px' }}>
               <div className="flex flex-col items-center" style={{ gap: '8px' }}>
                 <Wand2 size={28} color="#D4AF37" strokeWidth={1.5} />
-                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'center' }}>
                   What are you looking for?
                 </h2>
-                <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', maxWidth: '300px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '300px' }}>
                   Search for products or ask our AI stylist anything about fashion
                 </p>
               </div>
 
               <div className="flex flex-col w-full" style={{ gap: '12px', maxWidth: '400px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Try asking
                 </span>
                 {[
@@ -474,16 +474,16 @@ function SearchContent() {
                     style={{
                       padding: '14px 20px',
                       gap: '12px',
-                      background: '#F8F6F3',
+                      background: 'var(--bg-surface-elevated)',
                       borderRadius: '16px',
-                      border: '1px solid rgba(0,0,0,0.04)',
+                      border: '1px solid var(--border-glass)',
                       cursor: 'pointer',
                       fontSize: '13px',
                       fontWeight: 600,
-                      color: '#333',
+                      color: 'var(--text-primary)',
                     }}
                   >
-                    <Search size={14} color="#AAAAAA" className="flex-shrink-0" />
+                    <Search size={14} color="var(--text-muted)" className="flex-shrink-0" />
                     {suggestion}
                   </button>
                 ))}
@@ -503,7 +503,7 @@ export default function SearchPage() {
   return (
     <Suspense fallback={
       <div className="min-h-[50vh] flex items-center justify-center">
-        <span className="w-8 h-8 rounded-full border-2 border-[#2C1810]/20 border-t-[#2C1810] animate-spin"></span>
+        <span className="w-8 h-8 rounded-full border-2 border-[var(--border-glass)] border-t-[var(--brand-brown)] animate-spin"></span>
       </div>
     }>
       <SearchContent />

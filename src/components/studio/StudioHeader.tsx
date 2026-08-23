@@ -85,16 +85,16 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
       <div className="absolute top-6 left-6 z-40 hidden lg:flex items-center" style={{ gap: '14px' }}>
         <Link
           href="/bespoke"
-          className="flex items-center justify-center transition-all hover:bg-white/80 backdrop-blur-md shadow-sm"
-          style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.9)' }}
+          className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] backdrop-blur-md shadow-sm"
+          style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-base)' }}
         >
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </Link>
         <div>
-          <p style={{ fontSize: '10px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <p style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Bespoke Studio
           </p>
-          <p className="truncate" style={{ fontSize: '13px', color: '#1A1A1A', fontWeight: 600, maxWidth: '200px' }}>
+          <p className="truncate" style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, maxWidth: '200px' }}>
             {designName}
           </p>
         </div>
@@ -114,19 +114,19 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               height: '44px',
               borderRadius: '50%',
               border: 'none',
-              background: '#FFFFFF',
+              background: 'var(--bg-base)',
               cursor: disabled ? 'not-allowed' : 'pointer',
               opacity: disabled ? 0.4 : 1,
             }}
           >
-            <Icon size={18} color={color || '#1A1A1A'} />
+            <Icon size={18} color={color || 'var(--text-primary)'} />
           </button>
         ))}
       </div>
 
       {/* ═══ MOBILE TOP HEADER ═══ */}
       <div
-        className="absolute top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between bg-white border-b border-gray-100"
+        className="absolute top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between bg-[var(--bg-surface)] border-b border-[var(--border-glass)]"
         style={{ height: '72px', padding: '0 20px' }}
       >
         {/* Left: Back + Title */}
@@ -136,13 +136,13 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             className="flex items-center justify-center transition-all"
             style={{ width: '36px', height: '36px' }}
           >
-            <ArrowLeft size={22} color="#1A1A1A" />
+            <ArrowLeft size={22} color="var(--text-primary)" />
           </Link>
           <div>
-            <p style={{ fontSize: '11px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               DESIGN STUDIO
             </p>
-            <p className="truncate" style={{ fontSize: '14px', color: '#1A1A1A', fontWeight: 600, maxWidth: '180px' }}>
+            <p className="truncate" style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 600, maxWidth: '180px' }}>
               {designName}
             </p>
           </div>
@@ -152,7 +152,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="flex items-center" style={{ gap: '12px' }}>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '6px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
             <TokenIcon size={14} color="#D4AF37" />
-            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A' }}>{tokenBalance}</span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{tokenBalance}</span>
           </div>
 
           {/* 3-dot menu trigger */}
@@ -162,7 +162,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               className="flex items-center justify-center"
               style={{ width: '36px', height: '36px', background: 'none', border: 'none', cursor: 'pointer' }}
             >
-              <MoreVertical size={22} color="#1A1A1A" />
+              <MoreVertical size={22} color="var(--text-primary)" />
             </button>
 
             {/* Dropdown */}
@@ -173,10 +173,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                   top: '44px',
                   right: 0,
                   minWidth: '190px',
-                  background: '#FFFFFF',
+                  background: 'var(--bg-base)',
                   borderRadius: '16px',
                   boxShadow: '0 8px 40px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
-                  border: '1px solid #F0F0F0',
+                  border: '1px solid var(--border-glass)',
                   padding: '8px 0',
                   zIndex: 100,
                 }}
@@ -185,12 +185,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                   <React.Fragment key={id}>
                     {/* Separator before Delete */}
                     {id === 'delete' && (
-                      <div style={{ height: '1px', background: '#F0F0F0', margin: '4px 0' }} />
+                      <div style={{ height: '1px', background: 'var(--border-glass)', margin: '4px 0' }} />
                     )}
                     <button
                       onClick={() => !disabled && handleAction(id)}
                       disabled={disabled}
-                      className="w-full flex items-center transition-colors hover:bg-gray-50"
+                      className="w-full flex items-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
                       style={{
                         padding: '12px 18px',
                         gap: '14px',
@@ -200,8 +200,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                         opacity: disabled ? 0.4 : 1,
                       }}
                     >
-                      <Icon size={18} color={color || '#1A1A1A'} />
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: color || '#1A1A1A' }}>
+                      <Icon size={18} color={color || 'var(--text-primary)'} />
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: color || 'var(--text-primary)' }}>
                         {label}
                       </span>
                     </button>

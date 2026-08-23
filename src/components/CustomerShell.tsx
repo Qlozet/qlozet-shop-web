@@ -147,19 +147,22 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       {/* ═══════════════════════════════════════════════════════════════
           MOBILE LAYOUT (< lg)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className={`lg:hidden flex flex-col min-h-screen ${isVendorPage ? 'bg-[#1a1206]' : 'bg-white'} text-[#1a1a1a] font-body hide-scrollbar`}>
+      <div
+        className="lg:hidden flex flex-col min-h-screen font-body hide-scrollbar"
+        style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+      >
         
         {/* ── Mobile Top Bar ── */}
         {!isStudio && !isVendorPage && (
         <header
-          className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 bg-white/95 backdrop-blur-md"
-          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid #F2F2F2' }}
+          className="flex items-center justify-between flex-shrink-0 sticky top-0 z-50 backdrop-blur-md"
+          style={{ padding: '20px 20px 12px 20px', borderBottom: '1px solid var(--border-glass)', background: 'var(--bg-surface)' }}
         >
           {/* Left — Gender Toggle */}
           <button
             onClick={() => setGender(gender === 'male' ? 'female' : 'male')}
             className="flex items-center"
-            style={{ gap: '4px', fontSize: '12px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+            style={{ gap: '4px', fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
             {gender === 'male' ? 'MEN' : 'WOMEN'}
             <ChevronDown size={14} strokeWidth={2.5} />
@@ -167,12 +170,12 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
 
           {/* Center — QLOZET Logo */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-            <QlozetLogo width={42} color="#2C1810" />
+            <QlozetLogo width={42} color="var(--brand-fill)" />
           </Link>
 
           {/* Right — Action Icons */}
           <div className="flex items-center" style={{ gap: '16px' }}>
-            <Link href="/wishlist" className="relative text-[#1A1A1A]">
+            <Link href="/wishlist" className="relative" style={{ color: 'var(--text-primary)' }}>
               <Heart size={20} strokeWidth={1.8} />
             </Link>
           </div>
@@ -180,7 +183,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         )}
 
         {/* ── Mobile Content ── */}
-        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio ? '0' : isSearchPage ? '140px' : '72px' }}>
+        <main className="flex-1 overflow-y-auto hide-scrollbar" style={{ paddingBottom: isStudio || isVendorPage ? '0' : isSearchPage ? '140px' : '72px' }}>
           <div style={{ padding: isStudio || isVendorPage ? '0' : '24px 20px 20px 20px' }}>
             {children}
           </div>
@@ -202,13 +205,13 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
             width: '52px',
             height: '52px',
             borderRadius: '50%',
-            background: '#FFFFFF',
+            background: 'var(--bg-base)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
-            border: '1px solid rgba(0,0,0,0.05)',
+            border: '1px solid var(--border-glass)',
             cursor: 'pointer',
           }}
         >
-          <Search size={20} strokeWidth={2} color="#1A1A1A" />
+          <Search size={20} strokeWidth={2} color="var(--text-primary)" />
         </button>
         )}
 
@@ -225,10 +228,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                 padding: '8px 8px 8px 18px',
                 gap: '8px',
                 margin: '0 12px',
-                background: '#FFFFFF',
+                background: 'var(--bg-base)',
                 borderRadius: '50px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-                border: '1px solid rgba(0,0,0,0.06)',
+                border: '1px solid var(--border-glass)',
               }}
             >
               <Search size={18} strokeWidth={2} color="#AAAAAA" className="flex-shrink-0" />
@@ -237,8 +240,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Ask anything about fashion..."
-                className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#1A1A1A] placeholder-[#999]"
-                style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0, minWidth: 0 }}
+                className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999]"
+                style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: 0, minWidth: 0 }}
               />
               {searchQuery && (
                 <button type="button" onClick={() => setSearchQuery('')} className="flex-shrink-0" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
@@ -252,12 +255,12 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   width: '38px',
                   height: '38px',
                   borderRadius: '50%',
-                  background: '#2C1810',
+                  background: 'var(--brand-fill)',
                   border: 'none',
                   cursor: 'pointer',
                 }}
               >
-                <ArrowRight size={18} strokeWidth={2.5} color="#FFFFFF" />
+                <ArrowRight size={18} strokeWidth={2.5} color="var(--brand-fill-text)" />
               </button>
             </form>
           </div>
@@ -266,8 +269,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {/* ── Mobile Bottom Tab Bar ── */}
         {!isStudio && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white flex items-center justify-around"
-          style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: '0 -2px 20px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+          style={{ height: '64px', borderRadius: '50px', margin: '0 12px 10px 12px', boxShadow: 'var(--shadow-md)', paddingBottom: 'env(safe-area-inset-bottom)', background: 'var(--bg-base)', border: '1px solid var(--border-glass)' }}
         >
           {mobileTabItems.map((tab) => {
             const IconComp = tab.icon;
@@ -286,23 +289,23 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                         width: '40px',
                         height: '40px',
                         borderRadius: '50%',
-                        background: '#2C1810',
+                        background: 'var(--brand-fill)',
                         transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                         transform: cartBounce ? 'scale(1.25)' : 'scale(1)',
                       }}
                     >
-                      <ShoppingCart size={18} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+                      <ShoppingCart size={18} color="var(--brand-fill-text)" fill="var(--brand-fill-text)" strokeWidth={0} />
                       <span
                         className="absolute flex items-center justify-center font-bold"
                         style={{
                           top: '-4px', right: '-4px',
                           width: '16px', height: '16px',
                           borderRadius: '50%',
-                          background: '#FFFFFF',
+                          background: 'var(--brand-fill-text)',
                           fontSize: '9px',
-                          color: '#2C1810',
+                          color: 'var(--brand-fill)',
                           lineHeight: 1,
-                          border: '2px solid #2C1810',
+                          border: '2px solid var(--brand-fill)',
                         }}
                       >
                         {cartCount}
@@ -312,8 +315,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                     <IconComp
                       size={24}
                       strokeWidth={tab.match ? 0 : 1.6}
-                      fill={tab.match ? '#2C1810' : 'none'}
-                      color={tab.match ? '#2C1810' : '#AAAAAA'}
+                      fill={tab.match ? 'var(--brand-fill)' : 'none'}
+                      color={tab.match ? 'var(--brand-fill)' : '#AAAAAA'}
                     />
                   )}
                 </div>
@@ -327,42 +330,42 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       {/* ═══════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (≥ lg) — unchanged
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="hidden lg:flex h-screen overflow-hidden bg-[#F0F0F0] text-[#1a1a1a] font-body" style={{ padding: '24px 24px 24px 0' }}>
+      <div className="hidden lg:flex h-screen overflow-hidden font-body" style={{ padding: '24px 24px 24px 0', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
         
         {/* 1. SIDEBAR (Left Navigation) - On grey background */}
         <aside className="w-[100px] flex-shrink-0 flex flex-col items-center justify-between py-8" style={{ paddingTop: '32px', paddingBottom: '32px' }}>
           
           {/* Logo */}
           <Link href="/" className="flex items-center justify-center">
-            <QlozetLogo width={46} color="#2C1810" />
+            <QlozetLogo width={46} color="var(--brand-fill)" />
           </Link>
 
           {/* Navigation Icons */}
           <nav className="flex flex-col gap-6">
             <Link 
               href="/" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/' ? 'text-brand' : 'text-gray-400 hover:text-brand'}`}
             >
               <Home size={22} fill={pathname === '/' ? 'currentColor' : 'none'} strokeWidth={pathname === '/' ? 0 : 2} />
             </Link>
             
             <Link 
               href="/discover" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/discover') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/discover') ? 'text-brand' : 'text-gray-400 hover:text-brand'}`}
             >
               <LayoutGrid size={22} fill={pathname.startsWith('/discover') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/discover') ? 0 : 2} />
             </Link>
 
             <Link 
               href="/bespoke" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/bespoke') ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname.startsWith('/bespoke') ? 'text-brand' : 'text-gray-400 hover:text-brand'}`}
             >
               <Scissors size={22} fill={pathname.startsWith('/bespoke') ? 'currentColor' : 'none'} strokeWidth={pathname.startsWith('/bespoke') ? 0 : 2} />
             </Link>
 
             <Link 
               href="/wishlist" 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/wishlist' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/wishlist' ? 'text-brand' : 'text-gray-400 hover:text-brand'}`}
             >
               <Heart size={22} fill={pathname === '/wishlist' ? 'currentColor' : 'none'} strokeWidth={pathname === '/wishlist' ? 0 : 2} />
             </Link>
@@ -379,23 +382,23 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                     width: '42px',
                     height: '42px',
                     borderRadius: '50%',
-                    background: '#2C1810',
+                    background: 'var(--brand-fill)',
                     transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     transform: cartBounce ? 'scale(1.25)' : 'scale(1)',
                   }}
                 >
-                  <ShoppingCart size={20} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+                  <ShoppingCart size={20} color="var(--brand-fill-text)" fill="var(--brand-fill-text)" strokeWidth={0} />
                   <span
                     className="absolute flex items-center justify-center font-bold"
                     style={{
                       top: '-3px', right: '-3px',
                       width: '18px', height: '18px',
                       borderRadius: '50%',
-                      background: '#FFFFFF',
+                      background: 'var(--brand-fill-text)',
                       fontSize: '10px',
-                      color: '#2C1810',
+                      color: 'var(--brand-fill)',
                       lineHeight: 1,
-                      border: '2px solid #2C1810',
+                      border: '2px solid var(--brand-fill)',
                     }}
                   >
                     {cartCount}
@@ -403,7 +406,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                 </div>
               ) : (
                 <div className="p-3">
-                  <ShoppingCart size={22} fill={pathname === '/cart' ? 'currentColor' : 'none'} strokeWidth={pathname === '/cart' ? 0 : 2} color={pathname === '/cart' ? '#2C1810' : '#9CA3AF'} />
+                  <ShoppingCart size={22} fill={pathname === '/cart' ? 'currentColor' : 'none'} strokeWidth={pathname === '/cart' ? 0 : 2} color={pathname === '/cart' ? 'var(--brand-fill)' : '#9CA3AF'} />
                 </div>
               )}
             </Link>
@@ -413,7 +416,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           <div className="flex flex-col gap-6 items-center">
             <Link 
               href={user ? '/profile' : '/auth/login'} 
-              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/profile' ? 'text-[#2C1810]' : 'text-gray-400 hover:text-[#2C1810]'}`}
+              className={`p-3 rounded-2xl flex items-center justify-center transition-all ${pathname === '/profile' ? 'text-brand' : 'text-gray-400 hover:text-brand'}`}
             >
               <User size={22} fill={pathname === '/profile' ? 'currentColor' : 'none'} strokeWidth={pathname === '/profile' ? 0 : 2} />
             </Link>
@@ -421,9 +424,10 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         </aside>
 
         {/* Main Structural Container - Big White Card */}
-        <div 
+        <div
           ref={scrollContainerRef}
-          className={`flex-1 ${isVendorPage ? 'bg-[#1a1206] border-none' : 'bg-white border border-gray-200'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
+          className={`flex-1 ${isVendorPage ? 'border-none' : 'border'} rounded-[40px] shadow-xl flex flex-col ${isStudio ? 'overflow-hidden' : 'overflow-y-auto'} relative hide-scrollbar`}
+          style={{ background: 'var(--bg-surface)', ...(isVendorPage ? {} : { borderColor: 'var(--border-glass)' }) }}
         >
           <main className={`flex-1 flex flex-col w-full h-full min-h-min ${isStudio ? 'overflow-hidden' : ''}`} style={{ padding: isStudio || isVendorPage ? '0' : '40px' }}>
             <div className="flex-1 flex flex-col">
@@ -437,7 +441,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           </main>
 
           {/* ── Sticky Search Bar — fixed at bottom center of this container ── */}
-          {!isStudio && (
+          {!isStudio && !isVendorPage && (
           <div
             className="sticky z-40 flex justify-center"
             style={{
@@ -453,19 +457,19 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               
               {/* Drop-Up Suggestions — appears ABOVE the search bar */}
               <div
-                className={`absolute left-0 w-full bg-white rounded-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.1)] border border-gray-100 flex flex-col transition-all origin-bottom ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 translate-y-2 pointer-events-none'}`}
-                style={{ bottom: '100%', marginBottom: '12px', padding: '24px', gap: '20px', transitionDuration: '0.35s' }}
+                className={`absolute left-0 w-full rounded-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.1)] border flex flex-col transition-all origin-bottom ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 translate-y-2 pointer-events-none'}`}
+                style={{ bottom: '100%', marginBottom: '12px', padding: '24px', gap: '20px', transitionDuration: '0.35s', background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
               >
                 <div className="flex flex-col text-left" style={{ gap: '12px' }}>
-                  <span className="text-[13px] font-extrabold text-[#111111] tracking-wide ml-2">Suggestions</span>
+                  <span className="text-[13px] font-extrabold tracking-wide ml-2" style={{ color: 'var(--text-primary)' }}>Suggestions</span>
                   <div className="flex flex-col items-start" style={{ gap: '10px' }}>
                     {SEARCH_SUGGESTIONS.map((suggestion) => (
                       <button
                         key={suggestion}
                         type="button"
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="bg-[#F2F2F2] hover:bg-[#E5E5E5] text-[#333333] text-[13px] font-medium rounded-full transition-colors text-left"
-                        style={{ padding: '10px 20px' }}
+                        className="text-[13px] font-medium rounded-full transition-colors text-left"
+                        style={{ padding: '10px 20px', background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
                       >
                         {suggestion}
                       </button>
@@ -473,8 +477,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   </div>
                 </div>
 
-                <div className="bg-[#F2F2F2] rounded-[16px]" style={{ padding: '16px 20px', marginTop: '8px' }}>
-                  <p className="text-[11.5px] text-[#888888] leading-[1.6] font-semibold text-left">
+                <div className="rounded-[16px]" style={{ padding: '16px 20px', marginTop: '8px', background: 'var(--bg-surface-elevated)' }}>
+                  <p className="text-[11.5px] leading-[1.6] font-semibold text-left" style={{ color: 'var(--text-muted)' }}>
                     Learn more on how we use your data to give you a personalized experience. Recommendation are information purposes only.
                   </p>
                 </div>
@@ -483,8 +487,8 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
               {/* Search Bar */}
               <form
                 onSubmit={handleSearchSubmit}
-                className={`w-full bg-white rounded-full flex items-center transition-all duration-300 ${isSearchFocused ? 'shadow-[0_4px_30px_rgba(0,0,0,0.12)]' : 'shadow-[0_4px_20px_rgba(0,0,0,0.06)]'}`}
-                style={{ padding: '6px 6px 6px 24px', border: '1px solid #EBEBEB' }}
+                className={`w-full rounded-full flex items-center transition-all duration-300 ${isSearchFocused ? 'shadow-[0_4px_30px_rgba(0,0,0,0.12)]' : 'shadow-[0_4px_20px_rgba(0,0,0,0.06)]'}`}
+                style={{ padding: '6px 6px 6px 24px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
               >
                 <input
                   type="text"
@@ -492,14 +496,14 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                  placeholder="What fit looking for today ?"
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-[#111111] placeholder-[#999]"
-                  style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
+                  placeholder="What are you looking for today?"
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999]"
+                  style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
                 />
                 <button
                   type="submit"
-                  className="w-[40px] h-[40px] rounded-full bg-[#381F10] text-white flex items-center justify-center hover:bg-[#201007] transition-transform active:scale-95 shrink-0"
-                  style={{ marginLeft: '12px' }}
+                  className="w-[40px] h-[40px] rounded-full flex items-center justify-center transition-transform active:scale-95 shrink-0"
+                  style={{ marginLeft: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)' }}
                 >
                   <ArrowRight size={18} strokeWidth={2.5} />
                 </button>

@@ -118,14 +118,14 @@ export function PreviewCard({
           ? `translate(${layout.x}px, ${layout.y}px) translateY(-100%)`
           : `translate(${layout.x}px, ${layout.y}px)`,
         borderRadius: '16px',
-        background: '#FFFFFF',
+        background: 'var(--bg-surface-elevated)',
         boxShadow: '0 12px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
         overflow: 'hidden',
       }}
     >
       {/* Image */}
       {info.imageUrl && (
-        <div style={{ width: '100%', height: '160px', background: '#F5F5F5', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '160px', background: 'var(--bg-surface-elevated)', overflow: 'hidden' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={info.imageUrl}
@@ -137,11 +137,11 @@ export function PreviewCard({
 
       {/* Info */}
       <div style={{ padding: '12px 14px' }}>
-        <p style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', marginBottom: '4px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
           {info.label}
         </p>
         {info.description && (
-          <p style={{ fontSize: '11px', color: '#777', lineHeight: 1.5, marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '8px' }}>
             {info.description}
           </p>
         )}
@@ -153,8 +153,8 @@ export function PreviewCard({
                 style={{
                   fontSize: '9px',
                   fontWeight: 600,
-                  color: '#666',
-                  background: '#F0F0F0',
+                  color: 'var(--text-secondary)',
+                  background: 'var(--border-glass)',
                   borderRadius: '6px',
                   padding: '2px 7px',
                   textTransform: 'capitalize',
@@ -166,7 +166,7 @@ export function PreviewCard({
           </div>
         )}
         {info.extraCost !== undefined && (
-          <p style={{ fontSize: '11px', fontWeight: 700, color: info.extraCost > 0 ? '#2C1810' : '#059669' }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: info.extraCost > 0 ? 'var(--brand-fill)' : '#059669' }}>
             {info.extraCost > 0 ? `+₦${info.extraCost.toLocaleString()}` : '✓ Included'}
           </p>
         )}
@@ -180,7 +180,7 @@ export function PreviewCard({
         transform: 'translateX(-50%) rotate(45deg)',
         width: '12px',
         height: '12px',
-        background: isAbove ? '#FFFFFF' : (info.imageUrl ? '#F5F5F5' : '#FFFFFF'),
+        background: isAbove ? 'var(--bg-surface-elevated)' : (info.imageUrl ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)'),
         boxShadow: isAbove
           ? '2px 2px 4px rgba(0,0,0,0.06)'
           : '-2px -2px 4px rgba(0,0,0,0.06)',

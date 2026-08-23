@@ -118,17 +118,17 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
           {step !== 'choose' && (
             <button
               onClick={handleBack}
-              className="flex items-center justify-center hover:bg-gray-100 transition-colors rounded-full"
+              className="flex items-center justify-center hover:bg-[var(--bg-surface-elevated)] transition-colors rounded-full"
               style={{ width: '32px', height: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}
             >
-              <ArrowLeft size={18} color="#1A1A1A" />
+              <ArrowLeft size={18} color="var(--text-primary)" />
             </button>
           )}
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1A1A1A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {step === 'choose' ? 'Use Fabric' : step === 'bespoke' ? 'Your Designs' : 'Custom Clothing'}
             </h3>
-            <p style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
               {step === 'choose'
                 ? fabricName
                 : step === 'bespoke'
@@ -139,7 +139,8 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
         </div>
         <button
           onClick={handleClose}
-          className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+          className="transition-colors rounded-full p-2"
+          style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
         >
           <X size={18} strokeWidth={3} />
         </button>
@@ -152,13 +153,13 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
         {step === 'choose' && (
           <div className="flex flex-col" style={{ gap: '14px' }}>
             {/* Fabric Preview */}
-            <div className="flex items-center rounded-[16px] overflow-hidden" style={{ background: '#F5F5F5', gap: '14px', padding: '12px' }}>
+            <div className="flex items-center rounded-[16px] overflow-hidden" style={{ background: 'var(--bg-surface-elevated)', gap: '14px', padding: '12px' }}>
               <div className="relative flex-shrink-0 rounded-[12px] overflow-hidden" style={{ width: '56px', height: '56px' }}>
                 <Image src={fabricImage} alt={fabricName} fill style={{ objectFit: 'cover' }} sizes="56px" />
               </div>
               <div>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{fabricName}</p>
-                <p style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>Selected fabric</p>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{fabricName}</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Selected fabric</p>
               </div>
             </div>
 
@@ -167,7 +168,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                 This fabric is sold out, so it can&apos;t be applied to an outfit right now. Check back after it&apos;s restocked.
               </div>
             ) : (
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#555', textAlign: 'center', margin: '8px 0' }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', margin: '8px 0' }}>
                 What would you like to use your fabric for?
               </p>
             )}
@@ -226,13 +227,13 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
             {loadingDesigns ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
                 <Loader2 size={32} color="#4C1D95" className="animate-spin" />
-                <p style={{ fontSize: '13px', color: '#999' }}>Loading your designs…</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Loading your designs…</p>
               </div>
             ) : usableDesigns.length === 0 ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
-                <Scissors size={40} color="#CCC" />
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#999', textAlign: 'center' }}>No designs yet</p>
-                <p style={{ fontSize: '13px', color: '#BBB', textAlign: 'center' }}>Go to the Studio to create your first bespoke design.</p>
+                <Scissors size={40} color="var(--text-muted)" />
+                <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center' }}>No designs yet</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>Go to the Studio to create your first bespoke design.</p>
                 <button
                   onClick={() => { handleClose(); router.push('/bespoke/studio'); }}
                   className="transition-all hover:opacity-90"
@@ -250,7 +251,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                       key={design._id}
                       onClick={() => handleSelectDesign(design)}
                       className="relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      style={{ aspectRatio: '3/4', borderRadius: '16px', border: '2px solid #E5E5E5', background: '#F5F5F5', cursor: 'pointer', padding: 0 }}
+                      style={{ aspectRatio: '3/4', borderRadius: '16px', border: '2px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', cursor: 'pointer', padding: 0 }}
                     >
                       <Image src={img} alt={design.name || 'Design'} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 45vw, 180px" />
                       <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)' }} />
@@ -271,13 +272,13 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
             {loadingCustom ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
                 <Loader2 size={32} color="#4C1D95" className="animate-spin" />
-                <p style={{ fontSize: '13px', color: '#999' }}>Loading your customizable items…</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Loading your customizable items…</p>
               </div>
             ) : eligibleItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '12px' }}>
-                <Pen size={40} color="#CCC" />
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#999', textAlign: 'center' }}>No eligible items in your wishlist</p>
-                <p style={{ fontSize: '13px', color: '#BBB', textAlign: 'center' }}>Add a customizable item that accepts your own fabric to your wishlist first.</p>
+                <Pen size={40} color="var(--text-muted)" />
+                <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center' }}>No eligible items in your wishlist</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>Add a customizable item that accepts your own fabric to your wishlist first.</p>
                 <button
                   onClick={() => { handleClose(); router.push('/products'); }}
                   className="transition-all hover:opacity-90"
@@ -293,7 +294,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                     key={product._id}
                     onClick={() => handleSelectProduct(product._id)}
                     className="relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] text-left"
-                    style={{ borderRadius: '16px', border: '2px solid #E5E5E5', background: '#F5F5F5', cursor: 'pointer', padding: 0 }}
+                    style={{ borderRadius: '16px', border: '2px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', cursor: 'pointer', padding: 0 }}
                   >
                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
                       <Image src={getProductImage(product)} alt={getProductName(product)} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 45vw, 180px" />
@@ -325,12 +326,12 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
           />
           {/* Bottom Sheet */}
           <div
-            className={`fixed left-3 right-3 bottom-3 z-[100] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-            style={{ maxHeight: '75vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+            className={`fixed left-3 right-3 bottom-3 z-[100] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+            style={{ maxHeight: '75vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
             </div>
             {panelContent}
           </div>
@@ -345,7 +346,8 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
           style={{ right: '48px', top: '48px', bottom: '48px' }}
         >
           <aside
-            className={`h-full w-[420px] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border border-gray-100 overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`h-full w-[420px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            style={{ background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
           >
             {panelContent}
           </aside>

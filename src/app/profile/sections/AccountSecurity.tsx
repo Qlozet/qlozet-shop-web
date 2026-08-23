@@ -28,8 +28,8 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
         {/* Header card */}
         <div style={cardStyle}>
           <div style={{ padding: '24px 20px' }}>
-            <ShieldCheck size={28} color="#462814" strokeWidth={1.5} />
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
+            <ShieldCheck size={28} color="var(--brand-brown)" strokeWidth={1.5} />
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
               Account Security
             </h3>
           </div>
@@ -38,8 +38,8 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
         {/* Password fields */}
         <div className="flex flex-col" style={{ gap: '12px' }}>
           {/* Current Password */}
-          <div style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+          <div style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', padding: '14px 20px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
               Password
             </label>
             <div className="flex items-center justify-between">
@@ -48,21 +48,21 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="flex-1"
-                style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', letterSpacing: '0.1em' }}
+                style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', letterSpacing: '0.1em' }}
               />
               <button
                 onClick={() => setShowPassword(!showPassword)}
                 className="flex items-center justify-center transition-all"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
               >
-                {showPassword ? <EyeOff size={18} color="#999" /> : <Eye size={18} color="#999" />}
+                {showPassword ? <EyeOff size={18} color="var(--text-muted)" /> : <Eye size={18} color="var(--text-muted)" />}
               </button>
             </div>
           </div>
 
           {/* New Password */}
-          <div style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+          <div style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', padding: '14px 20px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
               New Password
             </label>
             <div className="flex items-center justify-between">
@@ -71,21 +71,21 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="flex-1"
-                style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', letterSpacing: '0.1em' }}
+                style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', letterSpacing: '0.1em' }}
               />
               <button
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="flex items-center justify-center transition-all"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
               >
-                {showNewPassword ? <EyeOff size={18} color="#999" /> : <Eye size={18} color="#999" />}
+                {showNewPassword ? <EyeOff size={18} color="var(--text-muted)" /> : <Eye size={18} color="var(--text-muted)" />}
               </button>
             </div>
           </div>
 
           {/* Confirm Password */}
-          <div style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '14px 20px' }}>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+          <div style={{ borderRadius: '16px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', padding: '14px 20px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
               Confirm Password
             </label>
             <div className="flex items-center justify-between">
@@ -94,14 +94,14 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="flex-1"
-                style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A', background: 'none', border: 'none', outline: 'none', letterSpacing: '0.1em' }}
+                style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none', letterSpacing: '0.1em' }}
               />
               <button
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="flex items-center justify-center transition-all"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
               >
-                {showConfirmPassword ? <EyeOff size={18} color="#999" /> : <Eye size={18} color="#999" />}
+                {showConfirmPassword ? <EyeOff size={18} color="var(--text-muted)" /> : <Eye size={18} color="var(--text-muted)" />}
               </button>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
         <button
           onClick={() => setActiveSection('account-security')}
           className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{ padding: '16px', borderRadius: '14px', background: '#2C1810', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
+          style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
         >
           Submit
         </button>
@@ -127,8 +127,8 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
       {/* Header card */}
       <div style={cardStyle}>
         <div style={{ padding: '24px 20px' }}>
-          <ShieldCheck size={28} color="#462814" strokeWidth={1.5} />
-          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
+          <ShieldCheck size={28} color="var(--brand-brown)" strokeWidth={1.5} />
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '12px' }}>
             Account Security
           </h3>
         </div>
@@ -139,19 +139,19 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
         {/* Change Password */}
         <button
           onClick={() => setActiveSection('change-password')}
-          className="w-full flex items-center justify-between transition-all hover:bg-[#FAFAFA]"
-          style={{ padding: '18px 20px', borderRadius: '16px 16px 0 0', border: '1px solid rgba(0,0,0,0.06)', borderBottom: 'none', background: '#FFFFFF', cursor: 'pointer' }}
+          className="w-full flex items-center justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
+          style={{ padding: '18px 20px', borderRadius: '16px 16px 0 0', border: '1px solid var(--border-glass)', borderBottom: 'none', background: 'var(--bg-base)', cursor: 'pointer' }}
         >
-          <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>Change Password</span>
-          <ChevronRight size={18} color="#CCC" />
+          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Change Password</span>
+          <ChevronRight size={18} color="var(--text-muted)" />
         </button>
 
         {/* Face ID / Touch ID */}
         <div
           className="flex items-center justify-between"
-          style={{ padding: '18px 20px', borderRadius: '0 0 16px 16px', border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF' }}
+          style={{ padding: '18px 20px', borderRadius: '0 0 16px 16px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
         >
-          <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>Face ID / Touch ID</span>
+          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Face ID / Touch ID</span>
           <button
             onClick={() => setFaceId(!faceId)}
             className="relative transition-all"
@@ -159,7 +159,7 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
               width: '44px',
               height: '24px',
               borderRadius: '100px',
-              background: faceId ? '#2C1810' : '#E5E5E5',
+              background: faceId ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
               border: 'none',
               cursor: 'pointer',
               padding: 0,
@@ -171,7 +171,7 @@ export default function AccountSecurity({ activeSection, setActiveSection }: Acc
                 width: '20px',
                 height: '20px',
                 borderRadius: '50%',
-                background: '#FFFFFF',
+                background: faceId ? 'var(--brand-fill-text)' : '#FFF',
                 top: '2px',
                 left: faceId ? '22px' : '2px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.15)',

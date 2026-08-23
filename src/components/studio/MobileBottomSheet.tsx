@@ -101,27 +101,27 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-10 h-[5px] bg-white rounded-full" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
+          <div className="w-10 h-[5px] bg-[var(--bg-base)] rounded-full" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
         </div>
 
         {/* Sheet Body */}
-        <div className="flex-1 flex flex-col bg-white rounded-t-[28px] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] w-full overflow-hidden relative">
+        <div className="flex-1 flex flex-col bg-[var(--bg-base)] rounded-t-[28px] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] w-full overflow-hidden relative">
 
           {/* Header */}
           <div className="flex items-center justify-between shrink-0" style={{ padding: '16px 24px 12px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {sectionLabel[expandedSection] || ''}
             </h2>
             <div className="flex items-center gap-4">
-              <ArrowDownUp size={20} color="#1A1A1A" />
-              <RotateCcw size={20} color="#1A1A1A" />
+              <ArrowDownUp size={20} color="var(--text-primary)" />
+              <RotateCcw size={20} color="var(--text-primary)" />
             </div>
           </div>
 
           {/* Tabs */}
           <div
             className="flex items-center overflow-x-auto hide-scrollbar shrink-0"
-            style={{ gap: '24px', padding: '0 24px 14px', borderBottom: '1px solid #F0F0F0', marginTop: '8px' }}
+            style={{ gap: '24px', padding: '0 24px 14px', borderBottom: '1px solid var(--border-glass)', marginTop: '8px' }}
           >
             {STUDIO_TABS.map((tab) => (
               <button
@@ -130,11 +130,11 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                 className="flex flex-col items-center gap-1 shrink-0 relative transition-all"
                 style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
               >
-                <span style={{ fontSize: '12px', fontWeight: expandedSection === tab.id ? 800 : 500, color: expandedSection === tab.id ? '#1A1A1A' : '#999', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '12px', fontWeight: expandedSection === tab.id ? 800 : 500, color: expandedSection === tab.id ? 'var(--text-primary)' : 'var(--text-muted)', letterSpacing: '0.04em' }}>
                   {tab.label}
                 </span>
                 {expandedSection === tab.id && (
-                  <div className="absolute -bottom-[14px] w-full h-[2px] rounded-full" style={{ background: '#1A1A1A' }} />
+                  <div className="absolute -bottom-[14px] w-full h-[2px] rounded-full" style={{ background: 'var(--text-primary)' }} />
                 )}
               </button>
             ))}
@@ -147,7 +147,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
 
           {/* Sticky Generate + Order Buttons */}
           <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
-            <div style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 30%, rgba(255,255,255,1) 60%)', padding: '40px 20px 20px' }}>
+            <div style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--bg-base) 0%, transparent) 0%, color-mix(in srgb, var(--bg-base) 85%, transparent) 30%, var(--bg-base) 60%)', padding: '40px 20px 20px' }}>
               {customization.generationError && (
                 <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', marginBottom: '8px' }}>
                   ⚠ {customization.generationError}

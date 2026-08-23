@@ -13,12 +13,32 @@ interface VendorPromotion {
   color: string;
 }
 
+/** Sheet chrome colours derived from the vendor's theme (matches the vendor
+ *  profile's filter/review sheets). Defaults to a light sheet. */
+interface SheetTheme {
+  bg: string;
+  text: string;
+  subtle: string;
+  border: string;
+  muted: string;
+}
+
+const DEFAULT_THEME: SheetTheme = {
+  bg: '#FFFFFF',
+  text: '#1A1A1A',
+  subtle: 'rgba(0,0,0,0.06)',
+  border: 'rgba(0,0,0,0.08)',
+  muted: 'rgba(0,0,0,0.5)',
+};
+
 interface VendorPromotionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   promotions: VendorPromotion[];
   /** Called when a promotion (or "View items") is clicked. */
   onSelectPromotion?: (discountId?: string) => void;
+  /** Vendor-theme sheet colours; falls back to a light sheet if omitted. */
+  theme?: SheetTheme;
 }
 
 export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
@@ -26,15 +46,17 @@ export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
   onClose,
   promotions,
   onSelectPromotion,
+  theme = DEFAULT_THEME,
 }) => {
   const content = (
     <>
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 24px 16px' }}>
-        <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#1A1A1A' }}>Promotions</h3>
+        <h3 style={{ fontSize: '22px', fontWeight: 900, color: theme.text }}>Promotions</h3>
         <button
           onClick={onClose}
-          className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+          className="transition-colors rounded-full p-2"
+          style={{ background: theme.subtle, color: theme.text }}
         >
           <X size={18} strokeWidth={3} />
         </button>
@@ -111,8 +133,8 @@ export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
 
           {promotions.length === 0 && (
             <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px', gap: '8px' }}>
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#999' }}>No promotions right now</p>
-              <p style={{ fontSize: '12px', color: '#BBB' }}>Check back later for deals!</p>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: theme.text }}>No promotions right now</p>
+              <p style={{ fontSize: '12px', color: theme.muted }}>Check back later for deals!</p>
             </div>
           )}
         </div>
@@ -131,12 +153,12 @@ export const VendorPromotionsModal: React.FC<VendorPromotionsModalProps> = ({
       />
       {/* Sheet */}
       <div
-        className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-[calc(100%+60px)]'}`}
-        style={{ maxHeight: '80vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+        className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-[calc(100%+60px)]'}`}
+        style={{ maxHeight: '80vh', background: theme.bg, border: `1px solid ${theme.border}`, boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
       >
         {/* Mobile drag handle */}
         <div className="flex justify-center pt-3 pb-1 lg:hidden">
-          <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+          <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: theme.border }} />
         </div>
         {content}
       </div>

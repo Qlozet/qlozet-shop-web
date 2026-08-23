@@ -24,9 +24,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           height: '36px',
           borderRadius: '50%',
           background: color,
-          border: selectedColor === color ? '3px solid #2C1810' : '2px solid rgba(0,0,0,0.1)',
+          border: selectedColor === color ? '3px solid var(--brand-fill)' : '2px solid var(--border-glass)',
           cursor: 'pointer',
-          boxShadow: selectedColor === color ? '0 0 0 2px #FFF, 0 0 0 4px #2C1810' : 'none',
+          boxShadow: selectedColor === color ? '0 0 0 2px var(--bg-base), 0 0 0 4px var(--brand-fill)' : 'none',
           padding: 0,
         }}
       />

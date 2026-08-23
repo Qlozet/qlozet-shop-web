@@ -20,15 +20,15 @@ export function DiscoverBreadcrumb({ items }: DiscoverBreadcrumbProps) {
         const isLast = idx === items.length - 1;
         return (
           <React.Fragment key={idx}>
-            {idx > 0 && <ChevronRight size={12} color="#999" />}
+            {idx > 0 && <ChevronRight size={12} color="var(--text-muted)" />}
             {isLast ? (
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#1A1A1A' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {item.label}
               </span>
             ) : (
               <Link
                 href={item.href}
-                style={{ fontSize: '12px', fontWeight: 500, color: '#999', textDecoration: 'none' }}
+                style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', textDecoration: 'none' }}
                 className="hover:underline"
               >
                 {item.label}

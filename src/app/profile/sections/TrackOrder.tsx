@@ -65,13 +65,13 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
       <button
         onClick={() => setActiveSection('order-item-detail')}
         className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90"
-        style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F4F1ED', border: 'none', cursor: 'pointer' }}
+        style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', border: 'none', cursor: 'pointer' }}
       >
-        <ArrowLeft size={18} color="#1A1A1A" />
+        <ArrowLeft size={18} color="var(--text-primary)" />
       </button>
 
       {/* Title */}
-      <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {isReturn ? 'Track Return' : 'Track Order'}
       </h3>
 
@@ -79,16 +79,16 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
       {item && (
         <div style={cardStyle}>
           <div className="flex items-center" style={{ padding: '12px 14px', gap: '12px' }}>
-            <div className="flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ width: '48px', height: '58px', borderRadius: '10px', background: '#F4F1ED' }}>
+            <div className="flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ width: '48px', height: '58px', borderRadius: '10px', background: 'var(--bg-surface-elevated)' }}>
               {item.image
                 ? <Image src={item.image} alt={item.name} width={48} height={58} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-                : <Package size={18} color="#C9BEB2" />}
+                : <Package size={18} color="var(--text-muted)" />}
             </div>
             <div className="flex-1 min-w-0 flex flex-col" style={{ gap: '3px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-              <span style={{ fontSize: '11px', color: '#8A7A6C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orderNum}</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orderNum}</span>
             </div>
-            <span style={{ fontSize: '9px', fontWeight: 800, color: '#8A7A6C', flexShrink: 0 }}>{order.items.length > 1 ? `+${order.items.length - 1} more` : ''}</span>
+            <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-secondary)', flexShrink: 0 }}>{order.items.length > 1 ? `+${order.items.length - 1} more` : ''}</span>
           </div>
         </div>
       )}
@@ -97,21 +97,21 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
       <div style={cardStyle}>
         <div className="flex flex-col" style={{ padding: '20px', gap: '14px' }}>
           <div className="flex items-center" style={{ gap: '12px' }}>
-            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#2C1810' }}>
-              <Truck size={20} color="#FFF" />
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--brand-fill)' }}>
+              <Truck size={20} color="var(--brand-fill-text)" />
             </div>
             <div className="flex flex-col" style={{ minWidth: 0 }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {isReturn ? 'Return in progress' : steps[activeStepIdx]?.label ?? 'Order Placed'}
               </span>
-              <span style={{ fontSize: '12px', color: '#999' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 {order.courier ? `Courier: ${order.courier}` : 'Awaiting courier assignment'}
               </span>
             </div>
           </div>
-          <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px', gap: '12px' }}>
-            <span style={{ fontSize: '12px', color: '#999' }}>Tracking number</span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#2C1810', fontFamily: 'monospace', textAlign: 'right', wordBreak: 'break-all' }}>{order.tracking || 'Pending'}</span>
+          <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '12px', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Tracking number</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-brown)', fontFamily: 'monospace', textAlign: 'right', wordBreak: 'break-all' }}>{order.tracking || 'Pending'}</span>
           </div>
         </div>
       </div>
@@ -120,20 +120,20 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
       <div className="flex" style={{ gap: '12px' }}>
         <div className="flex-1 flex items-center min-w-0" style={{ ...cardStyle, padding: '14px 16px', gap: '12px' }}>
           <div className="flex items-center justify-center flex-shrink-0" style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(44,24,16,0.06)' }}>
-            <Package size={16} color="#2C1810" />
+            <Package size={16} color="var(--brand-brown)" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span style={{ fontSize: '10px', color: '#999' }}>Order ID</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orderNum}</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Order ID</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orderNum}</span>
           </div>
         </div>
         <div className="flex-1 flex items-center min-w-0" style={{ ...cardStyle, padding: '14px 16px', gap: '12px' }}>
           <div className="flex items-center justify-center flex-shrink-0" style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(44,24,16,0.06)' }}>
-            <Clock size={16} color="#2C1810" />
+            <Clock size={16} color="var(--brand-brown)" />
           </div>
           <div className="flex flex-col">
-            <span style={{ fontSize: '10px', color: '#999' }}>Status</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{order.status}</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Status</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{order.status}</span>
           </div>
         </div>
       </div>
@@ -157,18 +157,18 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
                       width: '40px',
                       height: '40px',
                       borderRadius: '50%',
-                      background: done ? '#2C1810' : '#F5F5F5',
-                      border: done ? 'none' : '1px solid #E5E5E5',
+                      background: done ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+                      border: done ? 'none' : '1px solid var(--border-glass)',
                     }}
                   >
-                    <StepIcon size={18} color={done ? '#FFFFFF' : '#CCCCCC'} strokeWidth={done ? 2 : 1.5} />
+                    <StepIcon size={18} color={done ? 'var(--brand-fill-text)' : 'var(--text-muted)'} strokeWidth={done ? 2 : 1.5} />
                   </div>
                   {!isLast && (
                     <div
                       style={{
                         width: '2px',
                         height: '32px',
-                        background: idx < activeStepIdx ? '#2C1810' : '#E5E5E5',
+                        background: idx < activeStepIdx ? 'var(--brand-fill)' : 'var(--border-glass)',
                         borderRadius: '1px',
                       }}
                     />
@@ -181,13 +181,13 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
                     style={{
                       fontSize: '14px',
                       fontWeight: done ? 700 : 500,
-                      color: done ? '#1A1A1A' : '#BBBBBB',
+                      color: done ? 'var(--text-primary)' : 'var(--text-muted)',
                     }}
                   >
                     {step.label}
                   </span>
                   {isActive && (
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#8B7355', background: 'rgba(139,115,85,0.1)', padding: '3px 10px', borderRadius: '100px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--brand-brown)', background: 'rgba(139,115,85,0.1)', padding: '3px 10px', borderRadius: '100px' }}>
                       In progress
                     </span>
                   )}
@@ -202,7 +202,7 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
       <div style={cardStyle}>
         <div className="flex items-center justify-between" style={{ padding: '16px 20px' }}>
           <div className="flex items-center" style={{ gap: '14px' }}>
-            <div className="overflow-hidden flex-shrink-0" style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#F5F5F5' }}>
+            <div className="overflow-hidden flex-shrink-0" style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-surface-elevated)' }}>
               <Image
                 src={item?.vendorLogo || item?.image || '/image/product-1.png'}
                 alt="Support"
@@ -212,10 +212,10 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
               />
             </div>
             <div className="flex flex-col">
-              <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {item?.vendor || 'Obus'}
               </span>
-              <span style={{ fontSize: '12px', color: '#999' }}>Contact Support</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Contact Support</span>
             </div>
           </div>
           <button
@@ -224,12 +224,12 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
               width: '42px',
               height: '42px',
               borderRadius: '50%',
-              background: '#2C1810',
+              background: 'var(--brand-fill)',
               border: 'none',
               cursor: 'pointer',
             }}
           >
-            <Phone size={18} color="#FFFFFF" />
+            <Phone size={18} color="var(--brand-fill-text)" />
           </button>
         </div>
       </div>

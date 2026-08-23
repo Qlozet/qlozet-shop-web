@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/hooks/useWallet';
 import {
   User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
@@ -85,7 +86,7 @@ function ProfilePageContent() {
   }, [searchParams]);
 
   const [pushNotif, setPushNotif] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDark, toggle: toggleTheme } = useTheme();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedItemIdx, setSelectedItemIdx] = useState(0);
   const [returnStep, setReturnStep] = useState(1);
@@ -129,8 +130,8 @@ function ProfilePageContent() {
       style={{
         padding: '64px 32px',
         borderRadius: '20px',
-        background: '#FFFFFF',
-        border: '1px solid rgba(0,0,0,0.06)',
+        background: 'var(--bg-base)',
+        border: '1px solid var(--border-glass)',
         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         minHeight: '420px',
         gap: '24px',
@@ -147,18 +148,18 @@ function ProfilePageContent() {
           border: '1px solid rgba(70,40,20,0.06)',
         }}
       >
-        <Lock size={32} color="#8B5A2B" strokeWidth={1.5} />
+        <Lock size={32} color="var(--brand-brown)" strokeWidth={1.5} />
       </div>
 
       {/* Heading */}
       <div className="flex flex-col" style={{ gap: '8px' }}>
         <h2
           className="font-display font-extrabold uppercase tracking-[0.06em]"
-          style={{ fontSize: '20px', color: '#1A1A1A' }}
+          style={{ fontSize: '20px', color: 'var(--text-primary)' }}
         >
           Sign In Required
         </h2>
-        <p style={{ fontSize: '14px', color: '#888', fontWeight: 500, lineHeight: 1.6, maxWidth: '340px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.6, maxWidth: '340px' }}>
           Please sign in to access your {sectionTitles[activeSection]?.toLowerCase() || 'account settings'}. Your personalized experience awaits.
         </p>
       </div>
@@ -170,8 +171,8 @@ function ProfilePageContent() {
         style={{
           padding: '14px 48px',
           borderRadius: '100px',
-          background: 'linear-gradient(135deg, #462814, #5A3A20)',
-          color: '#FFF',
+          background: 'var(--brand-fill)',
+          color: 'var(--brand-fill-text)',
           fontSize: '13px',
           fontWeight: 700,
           letterSpacing: '0.08em',
@@ -185,14 +186,14 @@ function ProfilePageContent() {
       </button>
 
       {/* Register link */}
-      <p style={{ fontSize: '12px', color: '#AAA', fontWeight: 500 }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
         Don&apos;t have an account?{' '}
         <button
           onClick={() => router.push('/auth/register')}
           style={{
             background: 'none',
             border: 'none',
-            color: '#462814',
+            color: 'var(--brand-brown)',
             fontWeight: 700,
             cursor: 'pointer',
             textDecoration: 'underline',
@@ -307,7 +308,7 @@ function ProfilePageContent() {
 
       {/* ─── Page Title (Desktop always, Mobile only when menu visible) ── */}
       <h1
-        className={`text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A] ${isSubSection ? 'hidden lg:block' : ''}`}
+        className={`text-center font-display font-extrabold uppercase tracking-[0.12em] text-[color:var(--text-primary)] ${isSubSection ? 'hidden lg:block' : ''}`}
         style={{ fontSize: '22px' }}
       >
         My Account
@@ -319,11 +320,11 @@ function ProfilePageContent() {
           <button
             onClick={handleMobileBack}
             className="flex items-center justify-center transition-all active:scale-90"
-            style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F5F5F5', border: 'none', cursor: 'pointer' }}
+            style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', border: 'none', cursor: 'pointer' }}
           >
-            <ChevronLeft size={18} color="#1A1A1A" />
+            <ChevronLeft size={18} color="var(--text-primary)" />
           </button>
-          <h1 className="font-display font-extrabold uppercase tracking-[0.08em] text-[#1A1A1A]" style={{ fontSize: '18px' }}>
+          <h1 className="font-display font-extrabold uppercase tracking-[0.08em] text-[color:var(--text-primary)]" style={{ fontSize: '18px' }}>
             {sectionTitles[activeSection]}
           </h1>
         </div>
@@ -346,20 +347,20 @@ function ProfilePageContent() {
           <div style={cardStyle}>
             <div className="flex items-center justify-between" style={{ padding: '20px' }}>
               <div className="flex items-center" style={{ gap: '14px' }}>
-                <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#F0ECE8', border: '2px solid #E8E0D8' }}>
+                <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', border: '2px solid var(--border-glass)' }}>
                   {user ? (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span style={{ fontSize: '18px', fontWeight: 800, color: '#462814' }}>{user.name.charAt(0)}</span>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--brand-brown)' }}>{user.name.charAt(0)}</span>
                     </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <User size={22} color="#A08C7B" />
+                      <User size={22} color="var(--brand-brown)" />
                     </div>
                   )}
                 </div>
                 <div className="flex flex-col">
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>{user?.name || 'Guest User'}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#999' }}>@{user?.username || (user ? user.name.split(' ')[0].toLowerCase() : 'guest')}</span>
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name || 'Guest User'}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>@{user?.username || (user ? user.name.split(' ')[0].toLowerCase() : 'guest')}</span>
                 </div>
               </div>
 
@@ -377,7 +378,7 @@ function ProfilePageContent() {
               )}
 
               {!user && (
-                <button onClick={handleSignIn} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '8px 20px', borderRadius: '100px', background: '#462814', color: '#FFF', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>
+                <button onClick={handleSignIn} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '8px 20px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>
                   Sign In
                 </button>
               )}
@@ -409,7 +410,7 @@ function ProfilePageContent() {
               <MenuRow icon={Scissors} label="Reserved Fabric" iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED"
                 onClick={() => setActiveSection('reserved-fabric')} isActive={activeSection === 'reserved-fabric'} />
               <MenuRow icon={Moon} label="Dark Mode" iconBg="rgba(107,114,128,0.08)" iconColor="#6B7280"
-                trailing={<Toggle value={darkMode} onChange={setDarkMode} />} />
+                trailing={<Toggle value={isDark} onChange={toggleTheme} />} />
             </div>
           </div>
 

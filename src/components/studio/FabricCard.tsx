@@ -44,8 +44,8 @@ export const FabricCard: React.FC<FabricCardProps> = ({
         style={{
           padding: '10px',
           borderRadius: '14px',
-          border: isSelected ? '2px solid #2C1810' : '1.5px solid rgba(0,0,0,0.08)',
-          background: isSelected ? '#FAF6F1' : '#FAFAFA',
+          border: isSelected ? '2px solid var(--brand-fill)' : '1.5px solid var(--border-glass)',
+          background: 'var(--bg-surface-elevated)',
           cursor: 'pointer',
           gap: '10px',
           height: '60px',
@@ -59,13 +59,13 @@ export const FabricCard: React.FC<FabricCardProps> = ({
         </div>
         <div className="flex-1 text-left" style={{ overflow: 'hidden', minWidth: 0 }}>
           <p style={{
-            fontSize: '10px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3,
+            fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {fabric.name}
           </p>
           {fabric.pricePerYard ? (
-            <p style={{ fontSize: '9px', fontWeight: 700, color: '#1A1A1A', marginTop: '2px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
               ₦{fabric.pricePerYard.toLocaleString()}/yd
               {fabric.extraCost ? (
                 <span style={{ color: '#059669' }}>
@@ -75,7 +75,7 @@ export const FabricCard: React.FC<FabricCardProps> = ({
               ) : null}
             </p>
           ) : fabric.extraCost !== undefined ? (
-            <p style={{ fontSize: '9px', fontWeight: 700, color: fabric.extraCost > 0 ? '#1A1A1A' : '#059669', marginTop: '2px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 700, color: fabric.extraCost > 0 ? 'var(--text-primary)' : '#059669', marginTop: '2px' }}>
               {fabric.extraCost > 0 ? `+₦${fabric.extraCost.toLocaleString()}` : 'Included'}
             </p>
           ) : null}
@@ -83,8 +83,8 @@ export const FabricCard: React.FC<FabricCardProps> = ({
         <div
           style={{
             width: '16px', height: '16px', borderRadius: '50%', flexShrink: 0,
-            border: isSelected ? '4px solid #2C1810' : '2px solid #CCC',
-            background: isSelected ? '#FFF' : 'transparent',
+            border: isSelected ? '4px solid var(--brand-fill)' : '2px solid var(--border-glass)',
+            background: isSelected ? 'var(--bg-surface-elevated)' : 'transparent',
           }}
         />
       </button>

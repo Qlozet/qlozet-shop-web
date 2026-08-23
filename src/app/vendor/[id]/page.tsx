@@ -115,6 +115,9 @@ export default function VendorPage() {
   const [showFilter, setShowFilter] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
+  // Collection gallery: horizontal scroll by default; "View all" expands it
+  // into a wrapped grid showing every collection.
+  const [showAllCollections, setShowAllCollections] = useState(false);
 
   // Vendor reviews (aggregated across the vendor's products) — fetched on open.
   const [vendorReviews, setVendorReviews] = useState<any[]>([]);
@@ -235,8 +238,12 @@ export default function VendorPage() {
   });
 
   return (
-    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, padding: '24px', color: isLightTheme ? '#1a1a1a' : '#ffffff' }}>
+    <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, color: isLightTheme ? '#1a1a1a' : '#ffffff' }}>
       <style>{`
+        /* Padding lives here (not inline) so the mobile bottom clearance for the
+           fixed bottom nav sits INSIDE the themed darkBg area — otherwise the
+           shell's padding shows the brown backdrop below the content. */
+        .vendor-page-root { padding: 24px 24px 104px; }
         @media (min-width: 1024px) { .vendor-page-root { padding: 40px !important; } }
         .vendor-page-bottom::after { content: ''; display: block; height: 100px; }
         ${isLightTheme ? `
@@ -303,7 +310,9 @@ export default function VendorPage() {
           )}
           <div className="text-white/90 text-sm font-semibold flex items-center gap-1.5" style={{ marginTop: '24px' }}>
             <span>{vendorRating.toFixed(1)}</span>
-            <Star size={12} className="fill-white text-white" />
+            {/* Fill is theme-aware: fill-white isn't caught by the light-theme
+                override, so on a light vendor theme it would stay white and vanish. */}
+            <Star size={12} color={isLightTheme ? '#1A1A1A' : '#FFFFFF'} fill={isLightTheme ? '#1A1A1A' : '#FFFFFF'} />
             <span>{vendorReviewCount} Reviews</span>
           </div>
 
@@ -317,7 +326,9 @@ export default function VendorPage() {
                 style={{ padding: '9px 16px', backgroundColor: 'rgba(220,38,38,0.92)', borderColor: 'rgba(255,255,255,0.25)' }}
               >
                 <Tag size={13} color="#FFF" />
-                <span className="text-white text-xs font-bold">
+                {/* Inline white (not .text-white) so the light-theme override
+                    can't flip it dark — it sits on the red deals pill. */}
+                <span className="text-xs font-bold" style={{ color: '#FFFFFF' }}>
                   {promotions.length} {promotions.length === 1 ? 'Deal' : 'Deals'}
                 </span>
               </button>
@@ -349,7 +360,7 @@ export default function VendorPage() {
       {/* ══════ COLLECTION GALLERY ══════ */}
       {collections.length > 0 && (
         <div className="relative z-20 mt-12 px-5 md:px-12">
-          <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pb-6 snap-x">
+          <div className={showAllCollections ? 'flex flex-wrap gap-4 pb-6' : 'flex items-center gap-4 overflow-x-auto hide-scrollbar pb-6 snap-x'}>
             {collections.map((col) => {
               const colImage = col.cover_image || (col.products?.[0] ? getProductImage(col.products[0]) : undefined);
               return (
@@ -369,16 +380,21 @@ export default function VendorPage() {
               );
             })}
           </div>
-          <div className="flex justify-center" style={{ marginTop: '24px' }}>
-            <button className="text-white/50 text-[12px] font-bold hover:text-white/80 transition-colors tracking-wider uppercase">
-              View all collections
-            </button>
-          </div>
+          {collections.length > 3 && (
+            <div className="flex justify-center" style={{ marginTop: '24px' }}>
+              <button
+                onClick={() => setShowAllCollections((v) => !v)}
+                className="text-white/50 text-[12px] font-bold hover:text-white/80 transition-colors tracking-wider uppercase"
+              >
+                {showAllCollections ? 'Show less' : 'View all collections'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* ══════ PRODUCT GRID ══════ */}
-      <div className="relative z-10 w-full px-5 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '0' : '48px' }}>
+      <div className="relative z-10 w-full px-5 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '40px' : '48px' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ marginBottom: '16px' }}>
           <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
             <h2 className="text-white text-lg font-bold mr-4 flex-shrink-0">Products</h2>
@@ -401,7 +417,7 @@ export default function VendorPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 rounded-full px-4 py-2 border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', marginTop: '16px', paddingLeft: '20px' }}>
+          <div className="flex items-center gap-2 rounded-full border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '12px 20px' }}>
             <Search size={14} className="text-white/40" />
             <input
               type="text"
@@ -409,6 +425,9 @@ export default function VendorPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent border-none text-white text-xs outline-none w-full placeholder-white/40"
+              // Inline beats the global input / input:focus stylesheet rule,
+              // which would otherwise re-add a background + border on focus.
+              style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
             />
           </div>
         </div>
@@ -456,17 +475,22 @@ export default function VendorPage() {
                     alt={prodName}
                     aspectRatio="214/264"
                     bg={midBg}
-                    containerClassName="rounded-[14px] lg:rounded-[20px] mb-[14px]"
+                    containerClassName="rounded-[14px] lg:rounded-[20px]"
                     imageClassName="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     stockState={product.availability?.state}
                     customizable={prodTag === 'CUSTOMIZABLE'}
                   >
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product._id); }} className="absolute bottom-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border border-white/15" style={{ backgroundColor: 'rgba(255,255,255,0.15)', zIndex: 3 }}>
-                      <Heart size={14} className={isFav ? "fill-white text-white" : "text-white"} />
+                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product._id); }} className="absolute bottom-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border" style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.15)', zIndex: 3 }}>
+                      {/* Inline white (not .text-white/.border-white) so the light-theme
+                          override can't flip the heart/outline dark — it sits on the product image. */}
+                      <Heart size={14} color="#FFFFFF" fill={isFav ? '#FFFFFF' : 'none'} />
                     </button>
                   </ProductThumb>
 
-                  <div className="flex flex-col gap-1 px-1">
+                  {/* Inline marginTop (not a Tailwind mb-[…] class): Tailwind's
+                      scanner skips this [id] dynamic-route folder, so a class
+                      unique to this file wouldn't generate. Inline always works. */}
+                  <div className="flex flex-col gap-1 px-1" style={{ marginTop: '10px' }}>
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-white text-sm font-bold">₦{prodPrice.toLocaleString()}</span>
@@ -501,6 +525,7 @@ export default function VendorPage() {
         onClose={() => setShowPromo(false)}
         onSelectPromotion={handleSelectPromotion}
         promotions={promotions}
+        theme={{ bg: sheetBg, text: sheetText, subtle: sheetSubtle, border: sheetBorder, muted: sheetMuted }}
       />
 
       {/* ══════ FILTER BOTTOM SHEET ══════ */}

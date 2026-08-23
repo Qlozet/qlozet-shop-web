@@ -2,7 +2,21 @@ import Link from 'next/link';
 import React from 'react';
 import { QlozetLogo } from '@/components/QlozetLogo';
 
+const QUICK_LINKS = [
+  { label: 'Virtual Fitting', href: '/bespoke' },
+  { label: 'About Us', href: '/' },
+  { label: 'Features', href: '/' },
+  { label: 'Help & FAQ', href: '/' },
+  { label: 'Returns', href: '/' },
+  { label: 'Shipping', href: '/' },
+  { label: 'Contact', href: '/' },
+];
+
+const SOCIALS = ['Instagram', 'Twitter', 'LinkedIn'];
+
 export const Footer = () => {
+  const year = new Date().getFullYear();
+
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════
@@ -10,7 +24,7 @@ export const Footer = () => {
           ═══════════════════════════════════════════════════════════ */}
       <footer className="lg:hidden w-full flex flex-col" style={{ gap: '0' }}>
 
-        {/* Newsletter — compact pill */}
+        {/* Newsletter — compact pill (kept as a dark accent card in both themes) */}
         <div
           className="flex flex-col items-center text-center"
           style={{
@@ -40,7 +54,7 @@ export const Footer = () => {
               type="email"
               placeholder="Your email"
               className="flex-1 bg-transparent border-none outline-none text-[13px] text-white placeholder-white/30"
-              style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: '8px 0' }}
+              style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', padding: '8px 0', color: '#FFFFFF' }}
             />
             <button
               className="flex-shrink-0"
@@ -67,23 +81,17 @@ export const Footer = () => {
           className="flex flex-wrap justify-center"
           style={{ gap: '8px', padding: '16px 0' }}
         >
-          {[
-            { label: 'Help & FAQ', href: '/' },
-            { label: 'Returns', href: '/' },
-            { label: 'Virtual Fitting', href: '/bespoke' },
-            { label: 'About Us', href: '/' },
-            { label: 'Features', href: '/' },
-          ].map((link) => (
+          {QUICK_LINKS.slice(0, 5).map((link) => (
             <Link
               key={link.label}
               href={link.href}
               style={{
                 padding: '8px 16px',
                 borderRadius: '100px',
-                background: '#F5F5F5',
+                background: 'var(--bg-surface-elevated)',
                 fontSize: '11px',
                 fontWeight: 600,
-                color: '#666',
+                color: 'var(--text-secondary)',
                 textDecoration: 'none',
                 transition: 'all 0.2s',
               }}
@@ -95,88 +103,81 @@ export const Footer = () => {
 
         {/* Social + Region Row */}
         <div className="flex items-center justify-center" style={{ gap: '20px', padding: '16px 0 8px' }}>
-          <Link href="#" style={{ fontSize: '11px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}>
-            Instagram
-          </Link>
-          <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#DDD' }} />
-          <Link href="#" style={{ fontSize: '11px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}>
-            Twitter
-          </Link>
-          <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#DDD' }} />
-          <Link href="#" style={{ fontSize: '11px', fontWeight: 700, color: '#AAA', textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}>
-            LinkedIn
-          </Link>
+          {SOCIALS.map((s, i) => (
+            <React.Fragment key={s}>
+              {i > 0 && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border-glass)' }} />}
+              <Link href="#" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}>
+                {s}
+              </Link>
+            </React.Fragment>
+          ))}
         </div>
 
         {/* Region + Legal */}
         <div className="flex flex-col items-center" style={{ gap: '10px', padding: '8px 0 20px' }}>
           <div className="flex items-center" style={{ gap: '6px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#888' }}>Nigeria</span>
-            <span style={{ fontSize: '11px', color: '#CCC', margin: '0 4px' }}>·</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#CCC' }}>UK</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>Nigeria</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 4px' }}>·</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>UK</span>
           </div>
           <div className="flex items-center" style={{ gap: '12px' }}>
-            <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: '#BBB', textDecoration: 'none' }}>Privacy</Link>
-            <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: '#BBB', textDecoration: 'none' }}>Terms</Link>
+            <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy</Link>
+            <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</Link>
           </div>
-          <span style={{ fontSize: '9px', fontWeight: 600, color: '#CCC', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            © {new Date().getFullYear()} Qlozet Studios
+          <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            © {year} Qlozet Studios
           </span>
         </div>
       </footer>
 
       {/* ═══════════════════════════════════════════════════════════
-          DESKTOP FOOTER (≥ lg) — Premium refined layout
+          DESKTOP FOOTER (≥ lg) — Clean, airy, theme-aware.
+          No heavy box: sits on the page, separated by hairline rules.
           ═══════════════════════════════════════════════════════════ */}
-      <footer className="hidden lg:flex w-full flex-col overflow-hidden rounded-[2.5rem] text-white relative" style={{ background: 'linear-gradient(145deg, #1E1410 0%, #110A06 50%, #0D0805 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        
-        {/* Ambient glow effects */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2.5rem]">
-          <div className="absolute -top-[40%] -left-[5%] w-[45%] h-[80%] bg-[#D4AF37] opacity-[0.025] blur-[100px] rounded-full" />
-          <div className="absolute -bottom-[30%] -right-[10%] w-[35%] h-[60%] bg-[#8B5E3C] opacity-[0.03] blur-[80px] rounded-full" />
-        </div>
-
-        {/* Top Section — Logo + Description | Newsletter */}
-        <div className="relative z-10 flex items-start justify-between" style={{ padding: '56px 56px 0' }}>
-          
-          {/* Left — Branding */}
-          <div className="flex flex-col" style={{ gap: '20px', maxWidth: '340px' }}>
-            <Link href="/">
-              <QlozetLogo width={72} color="#FFFFFF" className="opacity-90 hover:opacity-100 transition-opacity" />
+      <footer
+        className="hidden lg:flex w-full flex-col"
+        style={{ marginTop: '32px', paddingTop: '44px', borderTop: '1px solid var(--border-glass)' }}
+      >
+        {/* Row 1 — Brand + Newsletter */}
+        <div className="flex items-start justify-between" style={{ gap: '64px', paddingBottom: '36px' }}>
+          {/* Brand */}
+          <div className="flex flex-col" style={{ gap: '16px', maxWidth: '320px' }}>
+            <Link href="/" className="opacity-90 hover:opacity-100 transition-opacity">
+              <QlozetLogo width={64} color="var(--text-primary)" />
             </Link>
-            <p style={{ fontSize: '14px', lineHeight: 1.7, color: 'rgba(255,255,255,0.45)', fontWeight: 400 }}>
+            <p style={{ fontSize: '13.5px', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 400 }}>
               Designing the future of fashion-tech through seamless fit intelligence and curated designer experiences.
             </p>
           </div>
 
-          {/* Right — Newsletter */}
-          <div className="flex flex-col items-end" style={{ gap: '12px', maxWidth: '380px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
+          {/* Newsletter */}
+          <div className="flex flex-col items-end" style={{ gap: '12px', width: '100%', maxWidth: '380px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
               Stay Ahead
             </span>
             <div
-              className="flex items-center w-full transition-all duration-300 focus-within:border-white/20 focus-within:bg-white/[0.07]"
+              className="flex items-center w-full transition-all"
               style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--bg-surface-elevated)',
                 borderRadius: '100px',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--border-glass)',
                 padding: '4px 4px 4px 20px',
               }}
             >
               <input
                 type="email"
                 placeholder="Your email address"
-                className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/25"
-                style={{ fontSize: '13px', padding: '10px 0', background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none' }}
+                className="flex-1 bg-transparent border-none outline-none"
+                style={{ fontSize: '13px', padding: '10px 0', background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', color: 'var(--text-primary)' }}
               />
               <button
-                className="flex-shrink-0 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.97]"
+                className="flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.97]"
                 style={{
-                  padding: '11px 32px',
+                  padding: '11px 30px',
                   borderRadius: '100px',
-                  background: '#FFFFFF',
-                  color: '#1A1A1A',
+                  background: 'var(--brand-fill)',
+                  color: 'var(--brand-fill-text)',
                   fontSize: '11px',
                   fontWeight: 800,
                   letterSpacing: '0.08em',
@@ -191,113 +192,59 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ margin: '40px 56px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }} />
-
-        {/* Link Columns */}
-        <div className="relative z-10 grid grid-cols-4" style={{ padding: '36px 56px 0', gap: '24px' }}>
-          
-          {[
-            {
-              title: 'Solutions',
-              links: [
-                { label: 'Qlozet App', href: '/' },
-                { label: 'AI Engine', href: '/' },
-                { label: 'Virtual Fitting', href: '/bespoke' },
-                { label: 'Size Intelligence', href: '/' },
-              ],
-            },
-            {
-              title: 'Company',
-              links: [
-                { label: 'About Us', href: '/' },
-                { label: 'Customers', href: '/' },
-                { label: 'Features', href: '/' },
-                { label: 'Careers', href: '/' },
-              ],
-            },
-            {
-              title: 'Support',
-              links: [
-                { label: 'Help & FAQ', href: '/' },
-                { label: 'Returns', href: '/' },
-                { label: 'Shipping Info', href: '/' },
-                { label: 'Contact Us', href: '/' },
-              ],
-            },
-            {
-              title: 'Region',
-              links: [],
-              custom: (
-                <ul className="flex flex-col" style={{ gap: '14px' }}>
-                  <li>
-                    <span className="flex items-center cursor-pointer transition-colors hover:text-white" style={{ gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
-                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px rgba(34,197,94,0.5)' }} />
-                      Nigeria
-                    </span>
-                  </li>
-                  <li>
-                    <span className="flex items-center cursor-pointer transition-colors hover:text-white" style={{ gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>
-                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
-                      United Kingdom
-                    </span>
-                  </li>
-                </ul>
-              ),
-            },
-          ].map((col) => (
-            <div key={col.title} className="flex flex-col" style={{ gap: '18px' }}>
-              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
-                {col.title}
-              </span>
-              {col.custom ? col.custom : (
-                <ul className="flex flex-col" style={{ gap: '14px' }}>
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="transition-all duration-300 hover:text-white hover:translate-x-1"
-                        style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', textDecoration: 'none', display: 'inline-block' }}
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom Bar */}
+        {/* Row 2 — Quick links + Social, on one clean line */}
         <div
-          className="relative z-10 flex items-center justify-between"
-          style={{ margin: '40px 56px 0', padding: '24px 0 40px', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          className="flex items-center justify-between flex-wrap"
+          style={{ gap: '20px', padding: '22px 0', borderTop: '1px solid var(--border-glass)' }}
         >
-          {/* Copyright */}
-          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
-            © {new Date().getFullYear()} Qlozet Studios. All rights reserved.
-          </span>
-
-          {/* Social + Legal */}
-          <div className="flex items-center" style={{ gap: '28px' }}>
-            {['Instagram', 'Twitter', 'LinkedIn'].map((s) => (
+          <nav className="flex items-center flex-wrap" style={{ gap: '28px' }}>
+            {QUICK_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="transition-colors"
+                style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', textDecoration: 'none' }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex items-center" style={{ gap: '22px' }}>
+            {SOCIALS.map((s) => (
               <Link
                 key={s}
                 href="#"
-                className="transition-all duration-300 hover:text-[#D4AF37]"
-                style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}
+                className="transition-colors hover:text-[#D4AF37]"
+                style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none' }}
               >
                 {s}
               </Link>
             ))}
-            <span style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.1)' }} />
+          </div>
+        </div>
+
+        {/* Row 3 — Copyright + Region + Legal */}
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: '20px 0 40px', borderTop: '1px solid var(--border-glass)' }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+            © {year} Qlozet Studios. All rights reserved.
+          </span>
+          <div className="flex items-center" style={{ gap: '20px' }}>
+            <span className="flex items-center" style={{ gap: '7px', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
+              Nigeria
+              <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>·</span>
+              <span style={{ color: 'var(--text-muted)' }}>UK</span>
+            </span>
+            <span style={{ width: '1px', height: '14px', background: 'var(--border-glass)' }} />
             {['Privacy', 'Terms'].map((l) => (
               <Link
                 key={l}
                 href="#"
-                className="transition-all duration-300 hover:text-white"
-                style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}
+                className="transition-colors"
+                style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none' }}
               >
                 {l}
               </Link>

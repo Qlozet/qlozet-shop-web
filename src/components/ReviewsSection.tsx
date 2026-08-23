@@ -91,9 +91,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   }, [load, refreshKey]);
 
   return (
-    <div style={{ padding: '32px', borderRadius: '20px', background: '#FAFAFA', border: '1px solid #F0F0F0' }}>
+    <div style={{ padding: '32px', borderRadius: '20px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}>
       {/* Header */}
-      <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px' }}>Reviews</h3>
+      <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Reviews</h3>
 
       {/* Rating Summary */}
       <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
@@ -102,9 +102,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             <Star key={s} size={16} fill={s <= Math.round(avg) ? '#F5A623' : 'none'} stroke={s <= Math.round(avg) ? '#F5A623' : '#D0D0D0'} />
           ))}
         </div>
-        <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>{Number(avg || 0).toFixed(1)}</span>
+        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{Number(avg || 0).toFixed(1)}</span>
       </div>
-      <p style={{ fontSize: '13px', color: '#888', marginBottom: '24px' }}>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
         {total > 0 ? `Overall rating from ${total} customer review${total === 1 ? '' : 's'}` : 'No reviews yet'}
       </p>
 
@@ -113,24 +113,24 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           <Loader2 size={22} className="animate-spin" color="#B0A79C" />
         </div>
       ) : reviews.length === 0 ? (
-        <p style={{ fontSize: '13px', color: '#AAA' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
           Be the first to review this product after your order is delivered.
         </p>
       ) : (
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
           {reviews.map((review) => (
-            <div key={review.id} style={{ padding: '20px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid #F0F0F0' }}>
+            <div key={review.id} style={{ padding: '20px', borderRadius: '16px', background: 'var(--bg-surface)', border: '1px solid var(--border-glass)' }}>
               <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <Star key={s} size={12} fill={s <= review.rating ? '#F5A623' : 'none'} stroke={s <= review.rating ? '#F5A623' : '#D0D0D0'} />
                   ))}
                 </div>
-                {review.date && <span style={{ fontSize: '11px', color: '#AAA' }}>{review.date}</span>}
+                {review.date && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{review.date}</span>}
               </div>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', marginBottom: review.text ? '8px' : 0 }}>{review.name}</h4>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: review.text ? '8px' : 0 }}>{review.name}</h4>
               {review.text && (
-                <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.6 }}>{review.text}</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{review.text}</p>
               )}
             </div>
           ))}

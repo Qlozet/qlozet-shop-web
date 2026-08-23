@@ -123,17 +123,17 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
 
       {/* Modal */}
       <div
-        className="relative w-[92%] max-w-[400px] bg-white rounded-[24px] animate-fade-in overflow-hidden"
-        style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.2)' }}
+        className="relative w-[92%] max-w-[400px] rounded-[24px] animate-fade-in overflow-hidden"
+        style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.2)', background: 'var(--bg-base)' }}
       >
         {/* Close button */}
         {step !== 'purchasing' && step !== 'funding' && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 rounded-full"
+            className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] rounded-full"
             style={{ width: '32px', height: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}
           >
-            <X size={18} color="#999" />
+            <X size={18} color="var(--text-muted)" />
           </button>
         )}
 
@@ -148,11 +148,11 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               >
                 <AlertTriangle size={26} color="#F59E0B" strokeWidth={1.8} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', margin: 0 }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Insufficient Tokens
               </h3>
-              <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.5, maxWidth: '300px' }}>
-                You need <strong style={{ color: '#1A1A1A' }}>{cost} tokens</strong> to generate a design
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '300px' }}>
+                You need <strong style={{ color: 'var(--text-primary)' }}>{cost} tokens</strong> to generate a design
                 but only have <strong style={{ color: '#EF4444' }}>{balance}</strong>.
               </p>
             </div>
@@ -160,19 +160,19 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
             {/* Balance summary */}
             <div
               className="flex items-center justify-between"
-              style={{ padding: '14px 16px', borderRadius: '14px', background: '#FAFAFA', marginBottom: '20px' }}
+              style={{ padding: '14px 16px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', marginBottom: '20px' }}
             >
               <div className="flex items-center" style={{ gap: '8px' }}>
                 <TokenIcon size={16} color="#D4AF37" />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1A1A' }}>Your Balance</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>Your Balance</span>
               </div>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: balance > 0 ? '#1A1A1A' : '#EF4444' }}>
+              <span style={{ fontSize: '16px', fontWeight: 800, color: balance > 0 ? 'var(--text-primary)' : '#EF4444' }}>
                 {balance}
               </span>
             </div>
 
             {/* Quick buy options */}
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
               Top up tokens
             </span>
             <div className="flex flex-col" style={{ gap: '8px', marginBottom: '20px' }}>
@@ -184,21 +184,21 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
                   style={{
                     padding: '14px 16px',
                     borderRadius: '14px',
-                    border: selectedAmount === tokens ? '2px solid #462814' : '1.5px solid #EEEEEE',
-                    background: selectedAmount === tokens ? 'rgba(70,40,20,0.03)' : '#FFFFFF',
+                    border: selectedAmount === tokens ? '2px solid var(--brand-fill)' : '1.5px solid var(--border-glass)',
+                    background: selectedAmount === tokens ? 'rgba(70,40,20,0.03)' : 'var(--bg-surface-elevated)',
                     cursor: 'pointer',
                   }}
                 >
                   <div className="flex items-center" style={{ gap: '10px' }}>
-                    <TokenIcon size={16} color={selectedAmount === tokens ? '#462814' : '#CCC'} />
-                    <span style={{ fontSize: '13px', fontWeight: selectedAmount === tokens ? 800 : 600, color: '#1A1A1A' }}>
+                    <TokenIcon size={16} color={selectedAmount === tokens ? 'var(--brand-fill)' : 'var(--text-muted)'} />
+                    <span style={{ fontSize: '13px', fontWeight: selectedAmount === tokens ? 800 : 600, color: 'var(--text-primary)' }}>
                       {label}
                     </span>
                   </div>
                   <div
                     style={{
                       width: '18px', height: '18px', borderRadius: '50%',
-                      border: selectedAmount === tokens ? '5px solid #462814' : '2px solid #DDD',
+                      border: selectedAmount === tokens ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)',
                     }}
                   />
                 </button>
@@ -212,8 +212,8 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               style={{
                 padding: '15px',
                 borderRadius: '14px',
-                background: '#462814',
-                color: '#FFF',
+                background: 'var(--brand-fill)',
+                color: 'var(--brand-fill-text)',
                 fontSize: '13px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
@@ -237,30 +237,30 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
                 className="flex items-center justify-center"
                 style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(70,40,20,0.06)' }}
               >
-                <TokenIcon size={28} color="#462814" />
+                <TokenIcon size={28} color="var(--brand-fill)" />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', margin: 0 }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Confirm Purchase
               </h3>
             </div>
 
             {/* Summary */}
-            <div className="flex flex-col" style={{ borderRadius: '16px', background: '#FAFAFA', padding: '16px', gap: '12px', marginBottom: '20px' }}>
+            <div className="flex flex-col" style={{ borderRadius: '16px', background: 'var(--bg-surface-elevated)', padding: '16px', gap: '12px', marginBottom: '20px' }}>
               <div className="flex items-center justify-between">
-                <span style={{ fontSize: '13px', color: '#666' }}>Tokens</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>{selectedAmount} tokens</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Tokens</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedAmount} tokens</span>
               </div>
               <div className="flex items-center justify-between">
-                <span style={{ fontSize: '13px', color: '#666' }}>Price</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Price</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {loadingPrice ? '...' : `₦${priceNGN.toLocaleString()}`}
                 </span>
               </div>
-              <div style={{ height: '1px', background: '#EEEEEE' }} />
+              <div style={{ height: '1px', background: 'var(--border-glass)' }} />
               <div className="flex items-center justify-between">
                 <div className="flex items-center" style={{ gap: '6px' }}>
                   <Wallet size={14} color="#2D6A4F" strokeWidth={2} />
-                  <span style={{ fontSize: '13px', color: '#666' }}>Wallet Balance</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Wallet Balance</span>
                 </div>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: hasEnoughWallet ? '#2D6A4F' : '#EF4444' }}>
                   ₦{walletBalance.toLocaleString()}
@@ -283,8 +283,8 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
             <div className="flex items-center" style={{ gap: '10px' }}>
               <button
                 onClick={() => setStep('select')}
-                className="flex-1 transition-all hover:bg-gray-200"
-                style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                className="flex-1 transition-all hover:bg-[var(--bg-surface-elevated)]"
+                style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Back
               </button>
@@ -295,8 +295,8 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
                 style={{
                   padding: '14px',
                   borderRadius: '14px',
-                  background: hasEnoughWallet ? '#2D6A4F' : '#462814',
-                  color: '#FFF',
+                  background: hasEnoughWallet ? '#2D6A4F' : 'var(--brand-fill)',
+                  color: hasEnoughWallet ? '#FFF' : 'var(--brand-fill-text)',
                   fontSize: '13px',
                   fontWeight: 800,
                   textTransform: 'uppercase',
@@ -327,10 +327,10 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               <Loader2 size={28} color="#7C3AED" className="animate-spin" />
             </div>
             <div>
-              <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A' }}>
+              <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
                 {step === 'funding' ? 'Funding Wallet...' : 'Purchasing Tokens...'}
               </p>
-              <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 {step === 'funding' ? 'Complete payment in the new tab' : 'This will take a moment'}
               </p>
             </div>
@@ -347,8 +347,8 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               <CheckCircle2 size={32} color="#2D6A4F" />
             </div>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A' }}>Tokens Added!</h3>
-              <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Tokens Added!</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 You now have enough tokens. Tap below to generate your design.
               </p>
             </div>

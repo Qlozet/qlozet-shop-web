@@ -113,38 +113,38 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
           maxWidth: '440px',
           margin: '20px',
           borderRadius: '24px',
-          background: '#FFFFFF',
+          background: 'var(--bg-base)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.15)',
           overflow: 'hidden',
         }}
       >
         <button
           onClick={onClose}
-          className='absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90'
+          className='absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90'
           style={{
             width: '32px', height: '32px', borderRadius: '50%',
-            border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer',
+            border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', cursor: 'pointer',
           }}
         >
-          <X size={14} color='#666' />
+          <X size={14} color='var(--text-secondary)' />
         </button>
 
         <div style={{ padding: '28px' }}>
           {done ? (
             <div className='flex flex-col items-center justify-center' style={{ gap: '16px', padding: '40px 0' }}>
               <CheckCircle2 size={48} color='#059669' />
-              <p style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>Quotes requested!</p>
-              <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Quotes requested!</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 The tailors will send their quotes. Track them under My Designs.
               </p>
             </div>
           ) : (
             <div className='flex flex-col' style={{ gap: '18px' }}>
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
                   Choose Tailors
                 </h3>
-                <p style={{ fontSize: '13px', color: '#888', marginTop: '8px', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
                   Pick up to {MAX_VENDORS} tailors to send this design to. Each will
                   send you a quote — you choose the one you like.
                 </p>
@@ -158,10 +158,10 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
               >
                 {vendorsLoading ? (
                   <div className='flex items-center justify-center' style={{ padding: '32px 0' }}>
-                    <Loader2 size={20} className='animate-spin' color='#888' />
+                    <Loader2 size={20} className='animate-spin' color='var(--text-muted)' />
                   </div>
                 ) : vendors.length === 0 ? (
-                  <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', padding: '24px 0' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>
                     No tailors available right now.
                   </p>
                 ) : (
@@ -177,31 +177,31 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                         className='flex items-center transition-all'
                         style={{
                           gap: '12px', padding: '10px 12px', borderRadius: '14px',
-                          border: `1.5px solid ${isSel ? '#064E3B' : 'rgba(0,0,0,0.08)'}`,
-                          background: isSel ? 'rgba(6,78,59,0.05)' : '#FFF',
+                          border: `1.5px solid ${isSel ? '#064E3B' : 'var(--border-glass)'}`,
+                          background: isSel ? 'rgba(6,78,59,0.05)' : 'var(--bg-surface-elevated)',
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.5 : 1, textAlign: 'left',
                         }}
                       >
                         <div
                           className='flex-shrink-0 flex items-center justify-center overflow-hidden'
-                          style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F2F2F2' }}
+                          style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-surface-elevated)' }}
                         >
                           {v.business_logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={v.business_logo_url} alt={v.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <Store size={16} color='#999' />
+                            <Store size={16} color='var(--text-muted)' />
                           )}
                         </div>
-                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
+                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {v.business_name}
                         </span>
                         <span
                           className='flex items-center justify-center'
                           style={{
                             width: '22px', height: '22px', borderRadius: '50%',
-                            border: `1.5px solid ${isSel ? '#064E3B' : 'rgba(0,0,0,0.15)'}`,
+                            border: `1.5px solid ${isSel ? '#064E3B' : 'var(--border-glass)'}`,
                             background: isSel ? '#064E3B' : 'transparent',
                           }}
                         >

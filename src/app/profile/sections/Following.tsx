@@ -29,14 +29,14 @@ export default function Following() {
     const vendorName = vendor.business_name;
     const vendorLogo = vendor.business_logo_url;
     const logoInitials = vendorName.slice(0, 2).toUpperCase();
-    const themeColor = vendor.theme_color || '#E0E0E0';
+    const themeColor = vendor.theme_color || 'var(--border-glass)';
 
     return (
       <div
-        className="flex items-center justify-between transition-colors hover:bg-gray-50/50"
+        className="flex items-center justify-between transition-colors hover:bg-[var(--bg-surface-elevated)]"
         style={{
           padding: '14px 20px',
-          borderBottom: showBorder ? '1px solid #F5F5F5' : 'none',
+          borderBottom: showBorder ? '1px solid var(--border-glass)' : 'none',
         }}
       >
         {/* Left: Logo + Name */}
@@ -51,7 +51,7 @@ export default function Following() {
               width: '52px',
               height: '52px',
               borderRadius: '50%',
-              background: '#FFFFFF',
+              background: 'var(--bg-surface-elevated)',
               border: `2px solid ${themeColor}`,
             }}
           >
@@ -69,7 +69,7 @@ export default function Following() {
                 style={{
                   fontSize: '12px',
                   fontWeight: 800,
-                  color: '#1A1A1A',
+                  color: 'var(--text-primary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
                 }}
@@ -85,13 +85,13 @@ export default function Following() {
               style={{
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#1A1A1A',
+                color: 'var(--text-primary)',
                 fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
               }}
             >
               {vendorName}
             </span>
-            <span style={{ fontSize: '12px', color: '#BBB', fontWeight: 500 }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
               {vendor.description 
                 ? vendor.description.replace(/<[^>]*>?/gm, '').slice(0, 40)
                 : `${vendor.total_ratings ?? 0} ratings`}
@@ -108,12 +108,12 @@ export default function Following() {
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              background: '#F0F0F0',
+              background: 'var(--bg-surface-elevated)',
               border: 'none',
               cursor: 'pointer',
             }}
           >
-            <Check size={16} color="#1A1A1A" strokeWidth={2.5} />
+            <Check size={16} color="var(--text-primary)" strokeWidth={2.5} />
           </button>
         ) : (
           <button
@@ -122,8 +122,8 @@ export default function Following() {
             style={{
               padding: '8px 20px',
               borderRadius: '100px',
-              background: '#1A1A1A',
-              color: '#FFFFFF',
+              background: 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)',
               border: 'none',
               fontSize: '12px',
               fontWeight: 700,
@@ -141,11 +141,11 @@ export default function Following() {
     <div className="flex flex-col" style={{ gap: '16px' }}>
       {/* ── Section Header Card ───────────────────────────────── */}
       <div style={{ ...cardStyle, padding: '28px' }}>
-        <Heart size={28} color="#462814" strokeWidth={1.5} />
+        <Heart size={28} color="var(--brand-brown)" strokeWidth={1.5} />
         <h3 style={{
           fontSize: '16px',
           fontWeight: 800,
-          color: '#1A1A1A',
+          color: 'var(--text-primary)',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
           marginTop: '12px',
@@ -157,7 +157,7 @@ export default function Following() {
 
       {/* ── Following List ─────────────────────────────────────── */}
       <div style={cardStyle}>
-        <p style={{ fontSize: '13px', color: '#999', lineHeight: 1.6, padding: '20px 20px 12px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, padding: '20px 20px 12px' }}>
           Vendors and brands you follow.
         </p>
 
@@ -166,12 +166,12 @@ export default function Following() {
             <div className="flex flex-col items-center justify-center" style={{ padding: '48px 20px' }}>
               <div
                 className="flex items-center justify-center"
-                style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#F5F5F5', marginBottom: '14px' }}
+                style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', marginBottom: '14px' }}
               >
-                <UserMinus size={22} color="#CCC" />
+                <UserMinus size={22} color="var(--text-muted)" />
               </div>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#999' }}>You&apos;re not following anyone yet</span>
-              <Link href="/discover" style={{ fontSize: '12px', fontWeight: 700, color: '#462814', marginTop: '8px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>You&apos;re not following anyone yet</span>
+              <Link href="/discover" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-brown)', marginTop: '8px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
                 Discover vendors
               </Link>
             </div>

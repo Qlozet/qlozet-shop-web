@@ -185,21 +185,24 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 24px 12px' }}>
         <div>
-          <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1A1A1A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Customize
           </h3>
-          <p style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
             Personalize this outfit to your taste
           </p>
         </div>
         <div className="flex items-center" style={{ gap: '10px' }}>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '5px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
             <TokenIcon size={14} color="#D4AF37" />
+            {/* Sits on the fixed-light gold chip in both themes, so keep the
+                text fixed dark — the theme token would go white and vanish. */}
             <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A' }}>{customization.tokenBalance.toLocaleString()}</span>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-black transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+            className="hover:text-black transition-colors hover:bg-[var(--bg-surface-elevated)] rounded-full p-2"
+            style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)' }}
           >
             <X size={18} strokeWidth={3} />
           </button>
@@ -212,7 +215,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         style={{
           gap: '20px',
           padding: '8px 24px 14px',
-          borderBottom: '1px solid #F0F0F0',
+          borderBottom: '1px solid var(--border-glass)',
           ...(!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {})
         }}
       >
@@ -242,7 +245,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
                 style={{
                   fontSize: '12px',
                   fontWeight: expandedSection === tab.id ? 800 : 500,
-                  color: expandedSection === tab.id ? '#1A1A1A' : '#999',
+                  color: expandedSection === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
                   letterSpacing: '0.04em',
                 }}
               >
@@ -251,7 +254,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
               {expandedSection === tab.id && (
                 <div
                   className="absolute -bottom-[14px] w-full h-[2px] rounded-full"
-                  style={{ background: '#1A1A1A' }}
+                  style={{ background: 'var(--text-primary)' }}
                 />
               )}
             </button>
@@ -286,7 +289,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
 
       {/* Footer CTAs */}
       {!user ? (
-        <div className="shrink-0 flex flex-col gap-3" style={{ padding: '16px 24px 24px', background: '#FAF6F1', borderTop: '1px solid #F0F0F0' }}>
+        <div className="shrink-0 flex flex-col gap-3" style={{ padding: '16px 24px 24px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-glass)' }}>
           <p style={{ fontSize: '11.5px', color: '#8B5A2B', fontWeight: 600, lineHeight: 1.4, margin: 0, textAlign: 'center', fontFamily: 'Outfit, sans-serif' }}>
             ⚠ You must sign in first to customize this product.
           </p>
@@ -296,8 +299,8 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
             style={{
               padding: '13px',
               borderRadius: '12px',
-              background: '#2C1810',
-              color: '#FFFFFF',
+              background: 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)',
               fontSize: '12px',
               fontWeight: 800,
               textTransform: 'uppercase',
@@ -322,12 +325,12 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         <div className="shrink-0 flex items-center gap-3" style={{ padding: '4px 24px 24px' }}>
           <button
             onClick={onClose}
-            className="flex-1 transition-colors hover:bg-gray-200"
+            className="flex-1 transition-colors hover:bg-[var(--bg-surface-elevated)]"
             style={{
               padding: '14px',
               borderRadius: '14px',
-              background: '#F4F4F4',
-              color: '#1A1A1A',
+              background: 'var(--bg-surface-elevated)',
+              color: 'var(--text-primary)',
               fontSize: '13px',
               fontWeight: 700,
               border: 'none',
@@ -382,12 +385,12 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
 
           {/* Bottom Sheet */}
           <div
-            className={`fixed left-3 right-3 bottom-3 z-[100] bg-white rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-            style={{ maxHeight: '60vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+            className={`fixed left-3 right-3 bottom-3 z-[100] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
+            style={{ maxHeight: '60vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
             </div>
 
             {panelContent}
@@ -403,7 +406,8 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           style={{ right: '48px', top: '48px', bottom: '48px' }}
         >
           <aside
-            className={`h-full w-[420px] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border border-gray-100 overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`h-full w-[420px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            style={{ background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
           >
             {panelContent}
           </aside>

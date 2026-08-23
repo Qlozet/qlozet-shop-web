@@ -102,7 +102,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
           maxWidth: '420px',
           margin: '20px',
           borderRadius: '24px',
-          background: '#FFFFFF',
+          background: 'var(--bg-base)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.15)',
           overflow: 'hidden',
         }}
@@ -110,13 +110,13 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-gray-100 active:scale-90"
+          className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
           style={{
             width: '32px', height: '32px', borderRadius: '50%',
-            border: '1px solid rgba(0,0,0,0.08)', background: '#FFF', cursor: 'pointer',
+            border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', cursor: 'pointer',
           }}
         >
-          <X size={14} color="#666" />
+          <X size={14} color="var(--text-secondary)" />
         </button>
 
         <div style={{ padding: '32px 28px' }}>
@@ -124,16 +124,16 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
           {saved ? (
             <div className="flex flex-col items-center justify-center" style={{ gap: '16px', padding: '40px 0' }}>
               <CheckCircle2 size={48} color="#059669" />
-              <p style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>Design Saved!</p>
-              <p style={{ fontSize: '12px', color: '#888' }}>View it in your My Designs collection</p>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Design Saved!</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>View it in your My Designs collection</p>
             </div>
           ) : (
             <div className="flex flex-col" style={{ gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
                   Save Your<br />Design
                 </h3>
-                <p style={{ fontSize: '13px', color: '#888', marginTop: '8px', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
                   Save this design to your collection and request quotes from tailors
                 </p>
               </div>
@@ -145,7 +145,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
                     <div
                       key={idx}
                       className="flex-shrink-0 overflow-hidden"
-                      style={{ width: '72px', height: '90px', borderRadius: '12px', background: '#F5F5F5' }}
+                      style={{ width: '72px', height: '90px', borderRadius: '12px', background: 'var(--bg-surface-elevated)' }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt={`Design ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -156,7 +156,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
 
               {/* Name input */}
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
                   Design Name
                 </label>
                 <input
@@ -165,8 +165,8 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. My Wedding Agbada"
                   style={{
-                    width: '100%', fontSize: '14px', fontWeight: 600, color: '#1A1A1A',
-                    background: 'none', border: 'none', borderBottom: '1.5px solid #E5E5E5',
+                    width: '100%', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)',
+                    background: 'none', border: 'none', borderBottom: '1.5px solid var(--border-glass)',
                     outline: 'none', padding: '10px 0',
                   }}
                 />
@@ -174,7 +174,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
 
               {/* Description */}
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
                   Notes (optional)
                 </label>
                 <textarea
@@ -183,8 +183,8 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
                   placeholder="Any notes for the tailor..."
                   rows={2}
                   style={{
-                    width: '100%', fontSize: '13px', color: '#333',
-                    background: '#FAFAFA', border: '1.5px solid rgba(0,0,0,0.1)',
+                    width: '100%', fontSize: '13px', color: 'var(--text-primary)',
+                    background: 'var(--bg-surface-elevated)', border: '1.5px solid var(--border-glass)',
                     borderRadius: '12px', outline: 'none', padding: '12px 14px',
                     resize: 'none', fontFamily: 'inherit', lineHeight: 1.5,
                   }}
@@ -205,8 +205,8 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
                 className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{
                   padding: '16px', borderRadius: '14px',
-                  background: isSaving ? '#666' : '#2C1810',
-                  color: '#FFF', fontSize: '12px', fontWeight: 800,
+                  background: isSaving ? 'var(--text-secondary)' : 'var(--brand-fill)',
+                  color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800,
                   textTransform: 'uppercase', letterSpacing: '0.12em',
                   border: 'none', cursor: isSaving ? 'not-allowed' : 'pointer',
                   gap: '8px', opacity: !name.trim() ? 0.5 : 1,

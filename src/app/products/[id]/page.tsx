@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -62,21 +63,21 @@ function ProductDetailSkeleton() {
         <div className="rounded-[20px] bg-[#F0EBE4]" style={{ aspectRatio: '3/4' }} />
         {/* Info panel */}
         <div className="flex flex-col" style={{ gap: '20px' }}>
-          <div className="h-3 w-20 bg-[#E5E5E5] rounded" />
-          <div className="h-6 w-48 bg-[#E5E5E5] rounded" />
-          <div className="h-4 w-64 bg-[#E5E5E5] rounded" />
-          <div className="h-7 w-32 bg-[#E5E5E5] rounded" />
+          <div className="h-3 w-20 rounded" style={{ background: 'var(--border-glass)' }} />
+          <div className="h-6 w-48 rounded" style={{ background: 'var(--border-glass)' }} />
+          <div className="h-4 w-64 rounded" style={{ background: 'var(--border-glass)' }} />
+          <div className="h-7 w-32 rounded" style={{ background: 'var(--border-glass)' }} />
           <div className="flex" style={{ gap: '8px' }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-[#E5E5E5]" />
+              <div key={i} className="w-8 h-8 rounded-full" style={{ background: 'var(--border-glass)' }} />
             ))}
           </div>
           <div className="flex" style={{ gap: '8px' }}>
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="rounded-[10px] bg-[#E5E5E5]" style={{ width: '42px', height: '42px' }} />
+              <div key={i} className="rounded-[10px]" style={{ width: '42px', height: '42px', background: 'var(--border-glass)' }} />
             ))}
           </div>
-          <div className="h-12 w-full bg-[#E5E5E5] rounded-[14px]" />
+          <div className="h-12 w-full rounded-[14px]" style={{ background: 'var(--border-glass)' }} />
         </div>
       </div>
     </div>
@@ -797,6 +798,14 @@ export default function ProductDetailsPage() {
           }
         : {}),
     });
+
+    // Confirm the core action — without this the tap gave no visible signal.
+    toast.success('Added to your cart', {
+      description: [productName, selectedSize && `Size ${selectedSize}`, selectedColor]
+        .filter(Boolean)
+        .join(' · '),
+      action: { label: 'View cart', onClick: () => router.push('/cart') },
+    });
   };
 
   const handleCustomize = () => {
@@ -897,8 +906,8 @@ export default function ProductDetailsPage() {
   if (productError || !product) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in" style={{ gap: '16px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1A1A' }}>Product Not Found</h2>
-        <p style={{ fontSize: '14px', color: '#888' }}>{productError || 'This product may have been removed or is no longer available.'}</p>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>Product Not Found</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{productError || 'This product may have been removed or is no longer available.'}</p>
         <button
           onClick={() => router.push('/products')}
           className="btn-primary"
@@ -926,17 +935,17 @@ export default function ProductDetailsPage() {
         {/* ─── Back Button (sticky, matches studio style) ─────────── */}
         <button
           onClick={() => router.back()}
-          className="sticky top-4 z-40 flex items-center justify-center transition-all hover:bg-white/80 backdrop-blur-md shadow-sm"
+          className="sticky top-4 z-40 flex items-center justify-center transition-all backdrop-blur-md shadow-sm"
           style={{
             width: '40px',
             height: '40px',
             borderRadius: '12px',
-            background: 'rgba(255,255,255,0.9)',
-            border: '1px solid #F0F0F0',
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--border-glass)',
             cursor: 'pointer',
           }}
         >
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} style={{ color: 'var(--text-primary)' }} />
         </button>
 
         {/* ─── Product Hero: Image + Info ──────────────────────────── */}
@@ -1215,7 +1224,7 @@ export default function ProductDetailsPage() {
                     className="relative overflow-hidden transition-all"
                     style={{
                       width: '72px', height: '72px', borderRadius: '12px',
-                      border: idx === activeImageIdx && !viewingAi ? '2px solid #1A1A1A' : '2px solid #E5E5E5',
+                      border: idx === activeImageIdx && !viewingAi ? '2px solid var(--brand-fill)' : '2px solid var(--border-glass)',
                       background: '#F5F5F5', cursor: 'pointer',
                       opacity: idx === activeImageIdx && !viewingAi ? 1 : 0.7, flexShrink: 0,
                     }}
@@ -1246,11 +1255,11 @@ export default function ProductDetailsPage() {
                       style={{
                         padding: '6px 12px 6px 6px', borderRadius: '24px',
                         border: style ? '1.5px solid #2C1810' : '1.5px dashed #CCC',
-                        background: style ? '#FAF6F1' : '#FAFAFA',
+                        background: style ? '#FAF6F1' : 'var(--bg-surface-elevated)',
                         cursor: 'pointer', gap: '8px',
                       }}
                     >
-                      <div className="flex items-center justify-center overflow-hidden" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
+                      <div className="flex items-center justify-center overflow-hidden" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', flexShrink: 0 }}>
                         {style?.imageUrl ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1258,7 +1267,7 @@ export default function ProductDetailsPage() {
                           <span style={{ fontSize: '14px' }}>{fallbackEmoji}</span>
                         )}
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: style ? '#2C1810' : '#999', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: style ? 'var(--brand-fill)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {style?.label || cat}
                       </span>
                     </button>
@@ -1274,18 +1283,18 @@ export default function ProductDetailsPage() {
                       style={{
                         padding: '6px 12px 6px 6px', borderRadius: '24px',
                         border: selFab ? '1.5px solid #2C1810' : '1.5px dashed #CCC',
-                        background: selFab ? '#FAF6F1' : '#FAFAFA',
+                        background: selFab ? '#FAF6F1' : 'var(--bg-surface-elevated)',
                         cursor: 'pointer', gap: '8px',
                       }}
                     >
-                      <div className="relative overflow-hidden flex-shrink-0" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F5F5F5' }}>
+                      <div className="relative overflow-hidden flex-shrink-0" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)' }}>
                         {selFab ? (
                           <Image src={selFab.image} alt={selFab.name} fill style={{ objectFit: 'cover' }} sizes="28px" />
                         ) : (
                           <span className="flex items-center justify-center w-full h-full" style={{ fontSize: '14px' }}>🧵</span>
                         )}
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: selFab ? '#2C1810' : '#999', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: selFab ? 'var(--brand-fill)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {selFab?.name || 'Fabric'}
                       </span>
                     </button>
@@ -1301,14 +1310,14 @@ export default function ProductDetailsPage() {
                       style={{
                         padding: '6px 12px 6px 6px', borderRadius: '24px',
                         border: selAccCount > 0 ? '1.5px solid #7C3AED' : '1.5px dashed #CCC',
-                        background: selAccCount > 0 ? '#F0EDFF' : '#FAFAFA',
+                        background: selAccCount > 0 ? '#F0EDFF' : 'var(--bg-surface-elevated)',
                         cursor: 'pointer', gap: '8px',
                       }}
                     >
-                      <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F5F5F5', flexShrink: 0 }}>
+                      <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', flexShrink: 0 }}>
                         <span style={{ fontSize: '14px' }}>🪢</span>
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: selAccCount > 0 ? '#5B21B6' : '#999', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: selAccCount > 0 ? '#5B21B6' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {selAccCount > 0 ? `${selAccCount} selected` : 'Accessories'}
                       </span>
                     </button>
@@ -1321,10 +1330,10 @@ export default function ProductDetailsPage() {
           {/* ── RIGHT: Product Info Panel ─────────────────────────── */}
           <div className="flex flex-col" style={{ gap: '20px' }}>
             {/* Breadcrumb */}
-            <div className="flex items-center" style={{ gap: '6px', fontSize: '12px', color: '#AAA' }}>
-              <Link href="/" className="hover:text-gray-600 transition-colors" style={{ color: '#AAA', textDecoration: 'none' }}>Home</Link>
+            <div className="flex items-center" style={{ gap: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <Link href="/" className="hover:text-gray-600 transition-colors" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Home</Link>
               <span>/</span>
-              <Link href="/products" className="hover:text-gray-600 transition-colors" style={{ color: '#AAA', textDecoration: 'none' }}>{kindLabel}</Link>
+              <Link href="/products" className="hover:text-gray-600 transition-colors" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{kindLabel}</Link>
             </div>
 
             {/* Rating + Wishlist */}
@@ -1337,17 +1346,23 @@ export default function ProductDetailsPage() {
                     </svg>
                   ))}
                 </div>
-                <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>{rating.toFixed(1)}</span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{rating.toFixed(1)}</span>
                 {totalReviews > 0 && (
-                  <span style={{ fontSize: '12px', color: '#888' }}>({totalReviews})</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({totalReviews})</span>
                 )}
               </div>
               <button
-                onClick={() => toggleWishlist(product._id)}
+                type="button"
+                aria-label={isWish ? 'Remove from wishlist' : 'Add to wishlist'}
+                onClick={() => {
+                  toggleWishlist(product._id);
+                  if (isWish) toast('Removed from wishlist');
+                  else toast.success('Saved to wishlist');
+                }}
                 className="flex items-center justify-center transition-all hover:scale-110"
                 style={{
                   width: '40px', height: '40px', borderRadius: '50%',
-                  border: '1px solid #E5E5E5', background: 'white', cursor: 'pointer',
+                  border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer',
                 }}
               >
                 <Heart
@@ -1365,7 +1380,7 @@ export default function ProductDetailsPage() {
                 <h2
                   className="hover:opacity-70 transition-opacity"
                   style={{
-                    fontSize: '16px', fontWeight: 800, color: '#1A1A1A',
+                    fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)',
                     textTransform: 'uppercase', letterSpacing: '0.15em',
                     margin: 0, lineHeight: 1.2, cursor: 'pointer',
                   }}
@@ -1374,13 +1389,13 @@ export default function ProductDetailsPage() {
                 </h2>
               </Link>
             ) : (
-              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0, lineHeight: 1.2 }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0, lineHeight: 1.2 }}>
                 {vendorName}
               </h2>
             )}
 
             {/* Title */}
-            <p style={{ fontSize: '14px', color: '#666', margin: 0, lineHeight: 1.4 }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
               {productName}
             </p>
 
@@ -1389,20 +1404,20 @@ export default function ProductDetailsPage() {
                 the selector). Other kinds show the (discounted) item price. */}
             {isFabric ? (
               <div className="flex items-baseline flex-wrap" style={{ gap: '8px' }}>
-                <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
+                <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                   ₦{displayPrice.toLocaleString()}
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#888' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
                   for {fabricYards} yd{fabricPricePerYard > 0 ? ` · ₦${fabricPricePerYard.toLocaleString()}/yd` : ''}
                 </span>
               </div>
             ) : (
               <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
-                <span style={{ fontSize: '22px', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em' }}>
+                <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                   ₦{discountedPrice.toLocaleString()}
                 </span>
                 {showOriginalPrice && originalPrice > discountedPrice + 0.5 && (
-                  <span style={{ fontSize: '15px', fontWeight: 500, color: '#AAA', textDecoration: 'line-through' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-muted)', textDecoration: 'line-through' }}>
                     ₦{originalPrice.toLocaleString()}
                   </span>
                 )}
@@ -1422,27 +1437,27 @@ export default function ProductDetailsPage() {
               className="flex items-center"
               style={{
                 gap: '8px', padding: '10px 14px', borderRadius: '10px',
-                background: '#FAFAFA', border: '1px solid #F0F0F0',
+                background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)',
               }}
             >
-              <Clock size={14} color="#999" />
-              <span style={{ fontSize: '12px', color: '#888' }}>
+              <Clock size={14} style={{ color: 'var(--text-muted)' }} />
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 {turnaroundDays != null ? (
-                  <>If you order within the next hour, you will get it in <strong style={{ color: '#1A1A1A' }}>{turnaroundDays} days</strong>.</>
+                  <>If you order within the next hour, you will get it in <strong style={{ color: 'var(--text-primary)' }}>{turnaroundDays} days</strong>.</>
                 ) : (
-                  <>If you order within the next hour, you will get it in <strong style={{ color: '#1A1A1A' }}>2 weeks</strong>.</>
+                  <>If you order within the next hour, you will get it in <strong style={{ color: 'var(--text-primary)' }}>2 weeks</strong>.</>
                 )}
               </span>
             </div>
 
             {/* Divider */}
-            <div style={{ height: '1px', background: '#F0F0F0' }} />
+            <div style={{ height: '1px', background: 'var(--border-glass)' }} />
 
             {/* Colour Swatches */}
             {colors.length > 0 && (
               <div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A', marginBottom: '10px', display: 'block' }}>
-                  Colour: <span style={{ fontWeight: 400, color: '#666' }}>{selectedColor}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '10px', display: 'block' }}>
+                  Colour: <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{selectedColor}</span>
                 </span>
                 <div className="flex items-center" style={{ gap: '8px' }}>
                   {colors.map((color) => (
@@ -1453,7 +1468,7 @@ export default function ProductDetailsPage() {
                       style={{
                         width: '32px', height: '32px', borderRadius: '50%',
                         background: color.hex || '#CCC',
-                        border: color.name === selectedColor ? '3px solid #1A1A1A' : '2px solid #E5E5E5',
+                        border: color.name === selectedColor ? '3px solid var(--brand-fill)' : '2px solid var(--border-glass)',
                         cursor: 'pointer',
                         outline: color.name === selectedColor ? '2px solid white' : 'none',
                         outlineOffset: '-4px',
@@ -1468,7 +1483,7 @@ export default function ProductDetailsPage() {
             {/* Selected Customizations Summary — only for customizable clothing */}
             {isCustomizable && (
               <div className="flex flex-col" style={{ gap: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Selected Customizations
                 </span>
                 <div className="flex flex-wrap" style={{ gap: '8px' }}>
@@ -1487,7 +1502,7 @@ export default function ProductDetailsPage() {
                       <div key={`${cat}-${id}`} className="flex flex-col items-center" style={{ gap: '4px' }}>
                         <div
                           className="flex items-center justify-center overflow-hidden"
-                          style={{ width: '52px', height: '52px', borderRadius: '12px', background: '#F5F5F5', border: '2px solid #1A1A1A' }}
+                          style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--bg-surface-elevated)', border: '2px solid var(--brand-fill)' }}
                         >
                           {style.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
@@ -1496,7 +1511,7 @@ export default function ProductDetailsPage() {
                             <span style={{ fontSize: '22px' }}>{style.emoji}</span>
                           )}
                         </div>
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#666', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{style.label}</span>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '56px', lineHeight: 1.2 }}>{style.label}</span>
                       </div>
                     );
                   })}
@@ -1523,7 +1538,7 @@ export default function ProductDetailsPage() {
 
                   {/* Empty state */}
                   {!customization.selectedSilhouette && !customization.selectedNeckline && !customization.selectedSleeve && !customization.selectedCollar && !customization.selectedSkirt && !customization.selectedTrouser && !customization.selectedFullBody && customization.selectedAccessories.length === 0 && (
-                    <span style={{ fontSize: '12px', color: '#AAA', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                       Tap &quot;Customize Outfit&quot; to select styles
                     </span>
                   )}
@@ -1538,7 +1553,7 @@ export default function ProductDetailsPage() {
                 className="flex items-center self-start hover:text-gray-800 transition-colors"
                 style={{
                   gap: '6px', background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: '13px', fontWeight: 600, color: '#1A1A1A',
+                  fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
                   textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0,
                 }}
               >
@@ -1558,9 +1573,9 @@ export default function ProductDetailsPage() {
                     style={{
                       minWidth: '42px', height: '42px', padding: '0 14px',
                       borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      background: size === selectedSize ? '#1A1A1A' : '#FFFFFF',
-                      color: size === selectedSize ? '#FFFFFF' : '#1A1A1A',
-                      border: size === selectedSize ? '2px solid #1A1A1A' : '1px solid #E0E0E0',
+                      background: size === selectedSize ? 'var(--brand-fill)' : 'var(--bg-surface)',
+                      color: size === selectedSize ? 'var(--brand-fill-text)' : 'var(--text-primary)',
+                      border: size === selectedSize ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
                     }}
                   >
                     {size}
@@ -1577,9 +1592,9 @@ export default function ProductDetailsPage() {
                       style={{
                         minWidth: '42px', height: '42px', padding: '0 12px',
                         borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                        background: sizeRec ? 'linear-gradient(135deg, #7C3AED, #4F46E5)' : '#F5F5F5',
-                        color: sizeRec ? '#FFF' : '#666',
-                        border: sizeRec ? '2px solid #7C3AED' : '1px solid #E0E0E0', gap: '4px',
+                        background: sizeRec ? 'linear-gradient(135deg, #7C3AED, #4F46E5)' : 'var(--bg-surface-elevated)',
+                        color: sizeRec ? '#FFF' : 'var(--text-secondary)',
+                        border: sizeRec ? '2px solid #7C3AED' : '1px solid var(--border-glass)', gap: '4px',
                         opacity: sizeRecLoading ? 0.6 : 1,
                       }}
                       title="AI-powered size recommendation"
@@ -1598,20 +1613,20 @@ export default function ProductDetailsPage() {
                         className="animate-fade-in"
                         style={{
                           position: 'absolute', top: '100%', marginTop: '8px',
-                          background: 'white', borderRadius: '16px', border: '1px solid #E5E5E5',
+                          background: 'var(--bg-surface)', borderRadius: '16px', border: '1px solid var(--border-glass)',
                           boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50,
                           minWidth: '280px', maxWidth: '320px', overflow: 'hidden',
                           ...(aiPopoverAlign === 'right' ? { right: 0 } : { left: 0 }),
                         }}
                       >
                         {/* Header */}
-                        <div className="flex items-center justify-between" style={{ padding: '14px 16px 10px', borderBottom: '1px solid #F0F0F0' }}>
+                        <div className="flex items-center justify-between" style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--border-glass)' }}>
                           <div className="flex items-center gap-2">
                             <Sparkles size={14} color="#7C3AED" />
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>AI Size Recommendation</span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>AI Size Recommendation</span>
                           </div>
                           <button onClick={() => setShowSizeRecPopover(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
-                            <X size={14} color="#999" />
+                            <X size={14} style={{ color: 'var(--text-muted)' }} />
                           </button>
                         </div>
 
@@ -1641,8 +1656,8 @@ export default function ProductDetailsPage() {
 
                           {/* Loading State */}
                           {sizeRecLoading && !sizeRecError && (
-                            <div className="flex items-center gap-2" style={{ fontSize: '12px', color: '#888' }}>
-                              <span className="animate-spin" style={{ width: 14, height: 14, border: '2px solid #E5E5E5', borderTopColor: '#7C3AED', borderRadius: '50%', display: 'inline-block' }} />
+                            <div className="flex items-center gap-2" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                              <span className="animate-spin" style={{ width: 14, height: 14, border: '2px solid var(--border-glass)', borderTopColor: '#7C3AED', borderRadius: '50%', display: 'inline-block' }} />
                               Analyzing your measurements…
                             </div>
                           )}
@@ -1652,9 +1667,9 @@ export default function ProductDetailsPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                               {/* Recommended Size */}
                               <div className="flex items-center justify-between">
-                                <span style={{ fontSize: '12px', color: '#666' }}>Your size</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Your size</span>
                                 <div className="flex items-center gap-2">
-                                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#1A1A1A' }}>{sizeRec.recommended_size}</span>
+                                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{sizeRec.recommended_size}</span>
                                   <span style={{
                                     fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
                                     background: sizeRec.confidence >= 0.8 ? '#DCFCE7' : sizeRec.confidence >= 0.6 ? '#FEF9C3' : '#FEE2E2',
@@ -1669,10 +1684,10 @@ export default function ProductDetailsPage() {
                               {sizeRec.breakdown && sizeRec.breakdown.length > 0 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                   {sizeRec.breakdown.map(b => (
-                                    <div key={b.body_part} className="flex items-center justify-between" style={{ fontSize: '11px', padding: '6px 10px', borderRadius: '8px', background: '#FAFAFA' }}>
-                                      <span style={{ color: '#555', textTransform: 'capitalize' }}>{b.body_part.replace(/_/g, ' ')}</span>
+                                    <div key={b.body_part} className="flex items-center justify-between" style={{ fontSize: '11px', padding: '6px 10px', borderRadius: '8px', background: 'var(--bg-surface-elevated)' }}>
+                                      <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{b.body_part.replace(/_/g, ' ')}</span>
                                       <div className="flex items-center gap-2">
-                                        <span style={{ color: '#888' }}>{b.customer_value} → {b.range}</span>
+                                        <span style={{ color: 'var(--text-muted)' }}>{b.customer_value} → {b.range}</span>
                                         <span style={{ fontSize: '10px', color: b.fits ? '#16A34A' : '#DC2626' }}>
                                           {b.fits ? '✓' : '✗'}
                                         </span>
@@ -1762,7 +1777,10 @@ export default function ProductDetailsPage() {
                           Math.max(appliedFabricMinCut, Number(e.target.value) || appliedFabricMinCut)
                         )
                       }
-                      style={{ width: '90px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #C4B5FD', fontSize: '13px' }}
+                      // Fixed colours: this card is fixed-light purple in both
+                      // themes, so the input can't inherit the (white-in-dark)
+                      // global input text colour or the number vanishes.
+                      style={{ width: '90px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #C4B5FD', fontSize: '13px', background: '#FFFFFF', color: '#3B0764' }}
                     />
                     <span style={{ fontSize: '12px', color: '#7C6BA0' }}>min {appliedFabricMinCut} yd</span>
                   </label>
@@ -1775,15 +1793,15 @@ export default function ProductDetailsPage() {
                   style={{
                     display: 'flex', flexDirection: 'column', gap: '10px',
                     padding: '14px 16px', borderRadius: '14px',
-                    background: '#FAF8F5', border: '1px solid #EDE7DF',
+                    background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)',
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Yards
                     </span>
                     {fabricPricePerYard > 0 && (
-                      <span style={{ fontSize: '12px', color: '#888' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                         ₦{fabricPricePerYard.toLocaleString()}/yd
                       </span>
                     )}
@@ -1793,8 +1811,8 @@ export default function ProductDetailsPage() {
                       type="button"
                       onClick={() => setFabricYards((y) => Math.max(fabricMinCut, Math.round(((y || fabricMinCut) - 0.5) * 2) / 2))}
                       aria-label="Decrease yards"
-                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5"
-                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#FFF', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-[var(--border-glass)]"
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
                     >
                       −
                     </button>
@@ -1810,7 +1828,7 @@ export default function ProductDetailsPage() {
                         setFabricYards(fabricYardsLeft > 0 ? Math.min(v, fabricYardsLeft) : v);
                       }}
                       className="text-center"
-                      style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1px solid #E0E0E0', fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}
+                      style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}
                     />
                     <button
                       type="button"
@@ -1819,14 +1837,14 @@ export default function ProductDetailsPage() {
                         return fabricYardsLeft > 0 ? Math.min(next, fabricYardsLeft) : next;
                       })}
                       aria-label="Increase yards"
-                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-[var(--border-glass)] disabled:opacity-40 disabled:cursor-not-allowed"
                       disabled={fabricYardsLeft > 0 && fabricYards >= fabricYardsLeft}
-                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#FFF', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
                     >
                       +
                     </button>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#AAA' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     Minimum cut: {fabricMinCut} yd
                     {lowStock && fabricYardsLeft > 0 ? ` · only ${fabricYardsLeft} yd left` : ''}
                   </span>
@@ -1891,7 +1909,7 @@ export default function ProductDetailsPage() {
                   className="w-full flex items-center justify-center transition-all hover:opacity-90"
                   style={{
                     padding: '15px', borderRadius: '14px',
-                    background: '#2C1810', color: '#FFFFFF', border: 'none',
+                    background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none',
                     fontSize: '13px', fontWeight: 700, textTransform: 'uppercase',
                     letterSpacing: '0.08em', cursor: 'pointer', gap: '8px',
                   }}
@@ -1941,17 +1959,17 @@ export default function ProductDetailsPage() {
             )}
 
             {/* Free Delivery Note */}
-            <div className="flex flex-col items-center" style={{ gap: '6px', padding: '14px 0', borderTop: '1px solid #F0F0F0' }}>
+            <div className="flex flex-col items-center" style={{ gap: '6px', padding: '14px 0', borderTop: '1px solid var(--border-glass)' }}>
               <div className="flex items-center" style={{ gap: '8px' }}>
-                <Truck size={16} color="#666" />
-                <span style={{ fontSize: '13px', fontWeight: 500, color: '#444' }}>
+                <Truck size={16} style={{ color: 'var(--text-secondary)' }} />
+                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
                   Free delivery on qualifying orders
                 </span>
               </div>
               <button
                 className="hover:text-gray-800 transition-colors"
                 style={{
-                  background: 'none', border: 'none', fontSize: '12px', color: '#999',
+                  background: 'none', border: 'none', fontSize: '12px', color: 'var(--text-muted)',
                   cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px',
                 }}
               >
@@ -1966,18 +1984,18 @@ export default function ProductDetailsPage() {
               style={{
                 padding: '16px 0',
                 background: 'transparent', border: 'none',
-                borderTopWidth: '1px', borderTopStyle: 'solid', borderTopColor: '#F0F0F0',
-                borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: '#F0F0F0',
+                borderTopWidth: '1px', borderTopStyle: 'solid', borderTopColor: 'var(--border-glass)',
+                borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: 'var(--border-glass)',
                 cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 Product details
               </span>
               <ChevronDown
                 size={18}
-                color="#999"
                 style={{
+                  color: 'var(--text-muted)',
                   transform: showDetails ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.3s',
                 }}
@@ -1989,7 +2007,7 @@ export default function ProductDetailsPage() {
                 {productDesc && (
                   <div 
                     className="prose"
-                    style={{ fontSize: '13px', color: '#666', lineHeight: 1.7, marginBottom: '16px' }}
+                    style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '16px' }}
                     dangerouslySetInnerHTML={{ __html: productDesc }}
                   />
                 )}
@@ -2001,7 +2019,7 @@ export default function ProductDetailsPage() {
         {/* ─── More from this Vendor ───────────────────────────────── */}
         {recommendedProducts.length > 0 && (
           <section>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
               More from this Vendor
             </h3>
             <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '12px', paddingBottom: '8px' }}>
@@ -2025,7 +2043,7 @@ export default function ProductDetailsPage() {
         {/* ─── Bought Together (Recommendation Engine) ──────────── */}
         {feedToProducts(boughtTogetherItems).length > 0 && (
           <section>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
               Frequently Bought Together
             </h3>
             <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '12px', paddingBottom: '8px' }}>
@@ -2049,7 +2067,7 @@ export default function ProductDetailsPage() {
         {/* ─── Complete the Look (Recommendation Engine) ────────── */}
         {feedToProducts(completeTheLookItems).length > 0 && (
           <section>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px' }}>
               Complete the Look
             </h3>
             <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '12px', paddingBottom: '8px' }}>

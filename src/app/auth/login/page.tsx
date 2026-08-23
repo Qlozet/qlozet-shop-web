@@ -94,7 +94,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#F7F7F7' }}>
+    <div className="flex min-h-screen" style={{ background: 'var(--bg-base)' }}>
       
       {/* ═══════════════════════════════════════════════════════════════
           MOBILE: Full-Screen Hero Splash (< lg)
@@ -208,7 +208,7 @@ export default function LoginPage() {
           </div>
         ) : (
           /* Mobile Login Form View */
-          <div className="flex-1 flex flex-col" style={{ background: '#F7F7F7' }}>
+          <div className="flex-1 flex flex-col" style={{ background: 'var(--bg-base)' }}>
             {/* Ankara Header Band */}
             <div className="relative overflow-hidden" style={{ height: '120px', background: '#3A1F0B' }}>
               <Image
@@ -228,7 +228,7 @@ export default function LoginPage() {
                 onClick={() => setShowMobileForm(false)}
                 style={{
                   fontSize: '13px',
-                  color: '#462814',
+                  color: 'var(--brand-brown)',
                   fontWeight: 600,
                   background: 'none',
                   border: 'none',
@@ -245,7 +245,7 @@ export default function LoginPage() {
                 style={{
                   fontSize: '24px',
                   fontWeight: 800,
-                  color: '#1A1A1A',
+                  color: 'var(--text-primary)',
                   fontFamily: 'var(--font-display)',
                   marginBottom: '8px',
                   textTransform: 'uppercase',
@@ -253,7 +253,7 @@ export default function LoginPage() {
               >
                 Welcome back
               </h1>
-              <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '28px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '28px' }}>
                 Enter your credentials to explore custom fits.
               </p>
 
@@ -276,7 +276,7 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '18px' }}>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
                   <input
                     type="email"
                     placeholder="e.g. kemi.ayomi@gmail.com"
@@ -284,26 +284,26 @@ export default function LoginPage() {
                       width: '100%',
                       padding: '12px 0',
                       border: 'none',
-                      borderBottom: '1px solid #E5E5E5',
+                      borderBottom: '1px solid var(--border-glass)',
                       background: 'transparent',
                       fontSize: '14px',
-                      color: '#1A1A1A',
+                      color: 'var(--text-primary)',
                       outline: 'none',
                     }}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onFocus={(e) => e.target.style.borderBottomColor = '#462814'}
-                    onBlur={(e) => e.target.style.borderBottomColor = '#E5E5E5'}
+                    onFocus={(e) => e.target.style.borderBottomColor = 'var(--brand-brown)'}
+                    onBlur={(e) => e.target.style.borderBottomColor = 'var(--border-glass)'}
                     required
                   />
                 </div>
 
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <div className="flex justify-between items-center">
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#462814', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
                     <Link
                       href="/auth/forgot"
-                      style={{ fontSize: '11px', color: '#462814', fontWeight: 500, textDecoration: 'underline' }}
+                      style={{ fontSize: '11px', color: 'var(--brand-brown)', fontWeight: 500, textDecoration: 'underline' }}
                     >
                       Forgot?
                     </Link>
@@ -316,16 +316,16 @@ export default function LoginPage() {
                         width: '100%',
                         padding: '12px 40px 12px 0',
                         border: 'none',
-                        borderBottom: '1px solid #E5E5E5',
+                        borderBottom: '1px solid var(--border-glass)',
                         background: 'transparent',
                         fontSize: '14px',
-                        color: '#1A1A1A',
+                        color: 'var(--text-primary)',
                         outline: 'none',
                       }}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      onFocus={(e) => e.target.style.borderBottomColor = '#462814'}
-                      onBlur={(e) => e.target.style.borderBottomColor = '#E5E5E5'}
+                      onFocus={(e) => e.target.style.borderBottomColor = 'var(--brand-brown)'}
+                      onBlur={(e) => e.target.style.borderBottomColor = 'var(--border-glass)'}
                       required
                     />
                     <button
@@ -339,7 +339,7 @@ export default function LoginPage() {
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#999',
+                        color: 'var(--text-muted)',
                         padding: 0,
                       }}
                     >
@@ -355,8 +355,8 @@ export default function LoginPage() {
                   style={{
                     padding: '15px',
                     borderRadius: '12px',
-                    background: '#462814',
-                    color: '#FFFFFF',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
                     border: 'none',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -366,15 +366,15 @@ export default function LoginPage() {
                   }}
                 >
                   {isLoading ? (
-                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#FFFFFF', display: 'inline-block' }}></span>
+                    <span className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--brand-fill-text)', display: 'inline-block' }}></span>
                   ) : 'CONTINUE →'}
                 </button>
               </form>
 
               {/* Demo Login */}
               <div className="relative" style={{ margin: '28px 0', textAlign: 'center' }}>
-                <span style={{ position: 'absolute', inset: '0', top: '50%', transform: 'translateY(-50%)', borderTop: '1px solid #EFEFEF' }}></span>
-                <span style={{ position: 'relative', background: '#F7F7F7', padding: '0 16px', fontSize: '11px', fontWeight: 600, color: '#CCC', textTransform: 'uppercase', letterSpacing: '0.08em' }}>or</span>
+                <span style={{ position: 'absolute', inset: '0', top: '50%', transform: 'translateY(-50%)', borderTop: '1px solid var(--border-glass)' }}></span>
+                <span style={{ position: 'relative', background: 'var(--bg-base)', padding: '0 16px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>or</span>
               </div>
 
               <button
@@ -383,22 +383,22 @@ export default function LoginPage() {
                 style={{
                   padding: '14px',
                   borderRadius: '12px',
-                  background: '#F7F7F7',
-                  border: '1px solid #E5E5E5',
-                  color: '#1A1A1A',
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-glass)',
+                  color: 'var(--text-primary)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   gap: '10px',
                 }}
               >
-                <Sparkles size={14} style={{ color: '#462814' }} />
+                <Sparkles size={14} style={{ color: 'var(--brand-brown)' }} />
                 <span>DEMO CUSTOMER LOGIN</span>
               </button>
 
-              <p style={{ fontSize: '12px', color: '#999', textAlign: 'center', marginTop: '28px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '28px' }}>
                 Don&apos;t have an account?{' '}
-                <Link href="/auth/register" style={{ color: '#462814', fontWeight: 600, textDecoration: 'underline' }}>
+                <Link href="/auth/register" style={{ color: 'var(--brand-brown)', fontWeight: 600, textDecoration: 'underline' }}>
                   SIGN UP
                 </Link>
               </p>
@@ -463,7 +463,7 @@ export default function LoginPage() {
       {/* RIGHT SCREEN - Clean White Form Panel */}
       <div
         className="hidden lg:flex w-1/2 items-center justify-center relative"
-        style={{ padding: '48px 32px', background: '#F7F7F7' }}
+        style={{ padding: '48px 32px', background: 'var(--bg-base)' }}
       >
         <div
           className="w-full animate-fade-in"
@@ -475,7 +475,7 @@ export default function LoginPage() {
               style={{
                 fontSize: '28px',
                 fontWeight: 700,
-                color: '#1A1A1A',
+                color: 'var(--text-primary)',
                 fontFamily: 'var(--font-display)',
                 letterSpacing: '-0.01em',
                 marginBottom: '8px',
@@ -483,7 +483,7 @@ export default function LoginPage() {
             >
               Welcome back
             </h1>
-            <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               Enter your credentials to explore custom fits.
             </p>
           </div>
@@ -509,27 +509,27 @@ export default function LoginPage() {
             
             {/* Email Field */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Email Address
               </label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 placeholder="e.g. kemi.ayomi@gmail.com"
                 style={{
                   width: '100%',
                   padding: '14px 16px',
                   borderRadius: '12px',
-                  border: '1px solid #E5E5E5',
-                  background: '#FAFAFA',
+                  border: '1px solid var(--border-glass)',
+                  background: 'var(--bg-surface-elevated)',
                   fontSize: '14px',
-                  color: '#1A1A1A',
+                  color: 'var(--text-primary)',
                   outline: 'none',
                   transition: 'border-color 0.2s',
                 }}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onFocus={(e) => e.target.style.borderColor = '#462814'}
-                onBlur={(e) => e.target.style.borderColor = '#E5E5E5'}
+                onFocus={(e) => e.target.style.borderColor = 'var(--brand-brown)'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--border-glass)'}
                 required
               />
             </div>
@@ -537,12 +537,12 @@ export default function LoginPage() {
             {/* Password Field */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
               <div className="flex justify-between items-center">
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#444' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                   Password
                 </label>
                 <Link
                   href="/auth/forgot"
-                  style={{ fontSize: '12px', color: '#462814', fontWeight: 500, textDecoration: 'none' }}
+                  style={{ fontSize: '12px', color: 'var(--brand-brown)', fontWeight: 500, textDecoration: 'none' }}
                   className="hover:underline"
                 >
                   Forgot Password?
@@ -556,17 +556,17 @@ export default function LoginPage() {
                     width: '100%',
                     padding: '14px 48px 14px 16px',
                     borderRadius: '12px',
-                    border: '1px solid #E5E5E5',
-                    background: '#FAFAFA',
+                    border: '1px solid var(--border-glass)',
+                    background: 'var(--bg-surface-elevated)',
                     fontSize: '14px',
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     outline: 'none',
                     transition: 'border-color 0.2s',
                   }}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onFocus={(e) => e.target.style.borderColor = '#462814'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E5E5'}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--brand-brown)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--border-glass)'}
                   required
                 />
                 <button
@@ -580,7 +580,7 @@ export default function LoginPage() {
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#999',
+                    color: 'var(--text-muted)',
                     padding: 0,
                   }}
                 >
@@ -597,8 +597,8 @@ export default function LoginPage() {
               style={{
                 padding: '15px',
                 borderRadius: '12px',
-                background: '#462814',
-                color: '#FFFFFF',
+                background: 'var(--brand-fill)',
+                color: 'var(--brand-fill-text)',
                 border: 'none',
                 fontSize: '14px',
                 fontWeight: 700,
@@ -615,7 +615,7 @@ export default function LoginPage() {
                     height: '20px',
                     borderRadius: '50%',
                     border: '2px solid rgba(255,255,255,0.2)',
-                    borderTopColor: '#FFFFFF',
+                    borderTopColor: 'var(--brand-fill-text)',
                     display: 'inline-block',
                   }}
                 ></span>
@@ -627,15 +627,15 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="relative" style={{ margin: '32px 0', textAlign: 'center' }}>
-            <span style={{ position: 'absolute', inset: '0', top: '50%', transform: 'translateY(-50%)', borderTop: '1px solid #EFEFEF' }}></span>
+            <span style={{ position: 'absolute', inset: '0', top: '50%', transform: 'translateY(-50%)', borderTop: '1px solid var(--border-glass)' }}></span>
             <span
               style={{
                 position: 'relative',
-                background: '#F7F7F7',
+                background: 'var(--bg-base)',
                 padding: '0 16px',
                 fontSize: '12px',
                 fontWeight: 600,
-                color: '#CCC',
+                color: 'var(--text-muted)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
               }}
@@ -651,25 +651,25 @@ export default function LoginPage() {
             style={{
               padding: '14px',
               borderRadius: '12px',
-              background: '#FAFAFA',
-              border: '1px solid #E5E5E5',
-              color: '#1A1A1A',
+              background: 'var(--bg-surface-elevated)',
+              border: '1px solid var(--border-glass)',
+              color: 'var(--text-primary)',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
               gap: '10px',
             }}
           >
-            <Sparkles size={16} style={{ color: '#462814' }} />
+            <Sparkles size={16} style={{ color: 'var(--brand-brown)' }} />
             <span>DEMO CUSTOMER LOGIN</span>
           </button>
 
           {/* Sign up link */}
-          <p style={{ fontSize: '13px', color: '#999', textAlign: 'center', marginTop: '32px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '32px' }}>
             Don&apos;t have an account?{' '}
             <Link
               href="/auth/register"
-              style={{ color: '#462814', fontWeight: 600, textDecoration: 'none' }}
+              style={{ color: 'var(--brand-brown)', fontWeight: 600, textDecoration: 'none' }}
               className="hover:underline"
             >
               SIGN UP

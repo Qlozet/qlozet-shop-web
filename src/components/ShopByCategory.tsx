@@ -151,14 +151,14 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
           style={{
             fontSize: '12px',
             fontWeight: 900,
-            color: '#1A1A1A',
+            color: 'var(--text-primary)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
         >
           Shop by Category
         </h3>
-        <div style={{ height: '1px', flex: 1, background: '#EBEBEB' }} />
+        <div style={{ height: '1px', flex: 1, background: 'var(--border-glass)' }} />
       </div>
 
       {/* Scrollable row */}
@@ -188,7 +188,7 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
                   style={{
                     fontSize: '14px',
                     fontWeight: 800,
-                    color: '#1A1A1A',
+                    color: 'var(--text-primary)',
                     fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
                   }}
                 >
@@ -196,7 +196,7 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
                 </span>
                 <ChevronRight
                   size={16}
-                  color="#1A1A1A"
+                  color="var(--text-primary)"
                   className="transition-transform group-hover/title:translate-x-1"
                 />
               </Link>
@@ -294,13 +294,13 @@ export function ShopByCategory({ products = [] }: ShopByCategoryProps) {
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: '#FFFFFF',
-            border: '1px solid #E5E5E5',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-glass)',
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           }}
         >
-          <ChevronRight size={18} color="#1A1A1A" />
+          <ChevronRight size={18} color="var(--text-primary)" />
         </button>
       </div>
     </div>

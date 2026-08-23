@@ -59,7 +59,7 @@ export default function WishlistPage() {
     return (
       <div className="flex flex-col gap-6 lg:gap-8 py-4 lg:py-8 animate-fade-in">
         <h1
-          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px' }}
         >
           Wishlist
@@ -69,13 +69,13 @@ export default function WishlistPage() {
             className="flex items-center justify-center"
             style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(44,24,16,0.06)' }}
           >
-            <Heart size={32} color="#8B5A2B" strokeWidth={1.5} />
+            <Heart size={32} color="var(--brand-brown)" strokeWidth={1.5} />
           </div>
           <div className="flex flex-col" style={{ gap: '8px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A1A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Sign In Required
             </h3>
-            <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, maxWidth: '400px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '400px' }}>
               You must sign in first before being able to view or manage your wishlist.
             </p>
           </div>
@@ -85,8 +85,8 @@ export default function WishlistPage() {
             style={{
               padding: '14px 32px',
               borderRadius: '100px',
-              background: '#2C1810',
-              color: '#FFF',
+              background: 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)',
               fontSize: '12px',
               fontWeight: 800,
               textTransform: 'uppercase',
@@ -128,7 +128,7 @@ export default function WishlistPage() {
 
       {/* ─── Header ─────────────────────────────────────────────── */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[#1A1A1A]"
+        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         Wishlist
@@ -140,15 +140,15 @@ export default function WishlistPage() {
         <div className="relative">
           <button
             onClick={() => setShowSortMenu(!showSortMenu)}
-            className="flex items-center gap-2 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-2 transition-colors hover:bg-[var(--bg-surface-elevated)]"
             style={{
               padding: '10px 18px',
               borderRadius: '100px',
-              border: '1px solid #E5E5E5',
+              border: '1px solid var(--border-glass)',
               fontSize: '13px',
               fontWeight: 500,
-              color: '#1A1A1A',
-              background: '#FFFFFF',
+              color: 'var(--text-primary)',
+              background: 'var(--bg-base)',
               cursor: 'pointer',
             }}
           >
@@ -162,21 +162,21 @@ export default function WishlistPage() {
           {/* Dropdown Menu */}
           {showSortMenu && (
             <div
-              className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-lg border border-gray-100 z-30 animate-fade-in"
+              className="absolute top-full left-0 mt-2 bg-[var(--bg-base)] rounded-2xl shadow-lg border border-[var(--border-glass)] z-30 animate-fade-in"
               style={{ minWidth: '200px', padding: '8px' }}
             >
               {(Object.entries(sortLabels) as [SortOption, string][]).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => { setSortBy(key); setShowSortMenu(false); }}
-                  className="w-full text-left transition-colors hover:bg-gray-50"
+                  className="w-full text-left transition-colors hover:bg-[var(--bg-surface-elevated)]"
                   style={{
                     padding: '10px 14px',
                     borderRadius: '12px',
                     fontSize: '13px',
                     fontWeight: sortBy === key ? 700 : 400,
-                    color: sortBy === key ? '#1A1A1A' : '#666',
-                    background: sortBy === key ? '#F7F7F7' : 'transparent',
+                    color: sortBy === key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    background: sortBy === key ? 'var(--bg-surface-elevated)' : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
                   }}
@@ -193,7 +193,7 @@ export default function WishlistPage() {
           style={{
             fontSize: '13px',
             fontWeight: 600,
-            color: '#999',
+            color: 'var(--text-muted)',
             letterSpacing: '0.02em',
           }}
         >
@@ -206,11 +206,11 @@ export default function WishlistPage() {
         <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="w-full animate-pulse" style={{ maxWidth: '260px' }}>
-              <div className="bg-gray-100 rounded-[14px] lg:rounded-[20px]" style={{ aspectRatio: '214/264' }} />
+              <div className="bg-[var(--bg-surface-elevated)] rounded-[14px] lg:rounded-[20px]" style={{ aspectRatio: '214/264' }} />
               <div className="flex flex-col" style={{ gap: '6px', marginTop: '12px' }}>
-                <div className="bg-gray-100 rounded-md" style={{ height: '10px', width: '40%' }} />
-                <div className="bg-gray-100 rounded-md" style={{ height: '14px', width: '70%' }} />
-                <div className="bg-gray-100 rounded-md" style={{ height: '12px', width: '30%' }} />
+                <div className="bg-[var(--bg-surface-elevated)] rounded-md" style={{ height: '10px', width: '40%' }} />
+                <div className="bg-[var(--bg-surface-elevated)] rounded-md" style={{ height: '14px', width: '70%' }} />
+                <div className="bg-[var(--bg-surface-elevated)] rounded-md" style={{ height: '12px', width: '30%' }} />
               </div>
             </div>
           ))}
@@ -254,7 +254,7 @@ export default function WishlistPage() {
             style={{
               fontSize: '18px',
               fontWeight: 700,
-              color: '#1A1A1A',
+              color: 'var(--text-primary)',
               fontFamily: 'var(--font-display)',
             }}
           >
@@ -263,7 +263,7 @@ export default function WishlistPage() {
           <p
             style={{
               fontSize: '14px',
-              color: '#999',
+              color: 'var(--text-muted)',
               maxWidth: '300px',
               lineHeight: 1.6,
             }}

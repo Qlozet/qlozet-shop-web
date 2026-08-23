@@ -24,8 +24,8 @@ export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
         <p style={{ fontSize: '32px', marginBottom: '12px' }}>✨</p>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: '#666' }}>No accessories</p>
-        <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>No accessories</p>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
           This product doesn&apos;t have add-on options.
         </p>
       </div>
@@ -49,7 +49,7 @@ export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
   return (
     <div style={{ padding: '20px' }}>
       <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Embellishments
         </span>
       </div>

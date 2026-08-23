@@ -43,14 +43,14 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
             style={{
               fontSize: '12px',
               fontWeight: 900,
-              color: '#1A1A1A',
+              color: 'var(--text-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
             }}
           >
             {title}
           </h3>
-          <ChevronRight size={14} color="#1A1A1A" />
+          <ChevronRight size={14} color="var(--text-primary)" />
         </Link>
       ) : (
         <div className="flex items-center" style={{ gap: '8px' }}>
@@ -58,14 +58,14 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
             style={{
               fontSize: '12px',
               fontWeight: 900,
-              color: '#1A1A1A',
+              color: 'var(--text-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
             }}
           >
             {title}
           </h3>
-          <ChevronRight size={14} color="#1A1A1A" />
+          <ChevronRight size={14} color="var(--text-primary)" />
         </div>
       )}
 
@@ -106,13 +106,13 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '1px solid #E5E5E5',
+              background: 'var(--bg-base)',
+              border: '1px solid var(--border-glass)',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             }}
           >
-            <ChevronRight size={16} color="#1A1A1A" />
+            <ChevronRight size={16} color="var(--text-primary)" />
           </button>
         )}
       </div>

@@ -12,11 +12,11 @@ import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 
 // ─── Tokens ──────────────────────────────────────────────────
-const INK = '#1A1A1A';
-const ESPRESSO = '#2C1810';
-const BROWN = '#462814';
-const MUTE = '#8A7A6C';
-const FAINT = '#A79A8C';
+const INK = 'var(--text-primary)';
+const ESPRESSO = 'var(--brand-fill)';
+const BROWN = 'var(--brand-brown)';
+const MUTE = 'var(--text-secondary)';
+const FAINT = 'var(--text-muted)';
 
 const TYPE_META: Record<ProductType, { label: string; bg: string; text: string }> = {
   'custom': { label: 'Custom', bg: 'rgba(249,115,22,0.1)', text: '#EA6A0E' },
@@ -34,10 +34,10 @@ function Thumb({ src, alt, w, h, radius = 12, icon = 18 }: {
 }) {
   return (
     <div className="flex-shrink-0 overflow-hidden flex items-center justify-center"
-      style={{ width: w, height: h, borderRadius: radius, background: '#F4F1ED' }}>
+      style={{ width: w, height: h, borderRadius: radius, background: 'var(--bg-surface-elevated)' }}>
       {src
         ? <Image src={src} alt={alt} width={w} height={h} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-        : <Package size={icon} color="#C9BEB2" />}
+        : <Package size={icon} color="var(--text-muted)" />}
     </div>
   );
 }
@@ -52,7 +52,7 @@ function TypePill({ type }: { type: ProductType }) {
 }
 
 function StatusPill({ status, big }: { status: OrderStatus; big?: boolean }) {
-  const c = statusColors[status] ?? { bg: '#EEE', text: '#666' };
+  const c = statusColors[status] ?? { bg: 'var(--bg-surface-elevated)', text: 'var(--text-secondary)' };
   return (
     <span style={{ fontSize: big ? '11px' : '9px', fontWeight: 800, color: c.text, background: c.bg, padding: big ? '5px 12px' : '3px 10px', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
       {status}
@@ -62,7 +62,7 @@ function StatusPill({ status, big }: { status: OrderStatus; big?: boolean }) {
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ fontSize: '10px', fontWeight: 600, color: '#6B5D50', background: '#F4F1ED', padding: '4px 10px', borderRadius: '8px', textTransform: 'capitalize' }}>
+    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-surface-elevated)', padding: '4px 10px', borderRadius: '8px', textTransform: 'capitalize' }}>
       {children}
     </span>
   );
@@ -117,12 +117,12 @@ function Progress({ status }: { status: OrderStatus }) {
         return (
           <React.Fragment key={step}>
             <div className="flex flex-col items-center" style={{ gap: '5px', flex: 'none', width: 56 }}>
-              <div style={{ width: 22, height: 22, borderRadius: '50%', background: done ? ESPRESSO : '#ECE6DF', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>
-                {done && <span style={{ color: '#FFF', fontSize: '10px', fontWeight: 800 }}>✓</span>}
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: done ? ESPRESSO : 'var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>
+                {done && <span style={{ color: 'var(--brand-fill-text)', fontSize: '10px', fontWeight: 800 }}>✓</span>}
               </div>
               <span style={{ fontSize: '9px', fontWeight: done ? 700 : 500, color: done ? INK : FAINT, textAlign: 'center' }}>{step}</span>
             </div>
-            {i < 3 && <div style={{ flex: 1, height: 2, background: i < reached ? ESPRESSO : '#ECE6DF', marginBottom: 18, borderRadius: 2 }} />}
+            {i < 3 && <div style={{ flex: 1, height: 2, background: i < reached ? ESPRESSO : 'var(--border-glass)', marginBottom: 18, borderRadius: 2 }} />}
           </React.Fragment>
         );
       })}
@@ -133,7 +133,7 @@ function Progress({ status }: { status: OrderStatus }) {
 function BackBtn({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick} className="hidden lg:flex items-center justify-center self-start transition-all active:scale-90"
-      style={{ width: 36, height: 36, borderRadius: '50%', background: '#F4F1ED', border: 'none', cursor: 'pointer' }}>
+      style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-surface-elevated)', border: 'none', cursor: 'pointer' }}>
       <ArrowLeft size={18} color={INK} />
     </button>
   );
@@ -235,7 +235,7 @@ export default function OrdersSection({
         <Section title="Order Progress">
           <Progress status={order.status} />
           {(order.tracking || order.courier) && (
-            <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '10px', gap: '12px' }}>
+            <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '10px', gap: '12px' }}>
               <span style={{ fontSize: '11px', color: MUTE }}>{order.courier || 'Courier'}</span>
               <span style={{ fontSize: '11px', fontWeight: 700, color: BROWN, fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'right' }}>{order.tracking || 'Pending'}</span>
             </div>
@@ -252,15 +252,15 @@ export default function OrdersSection({
                 {designChoices.length > 0 && (
                   <div className="flex flex-col" style={{ gap: '2px' }}>
                     {designChoices.map((c, i) => (
-                      <div key={`${c.kind}-${i}`} className="flex items-center" style={{ gap: '11px', padding: '7px 0', borderTop: i > 0 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
+                      <div key={`${c.kind}-${i}`} className="flex items-center" style={{ gap: '11px', padding: '7px 0', borderTop: i > 0 ? '1px solid var(--border-glass)' : 'none' }}>
                         {c.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.image} alt={c.name} style={{ width: 42, height: 42, borderRadius: 9, objectFit: 'cover', background: '#F4F1ED', flexShrink: 0 }} />
+                          <img src={c.image} alt={c.name} style={{ width: 42, height: 42, borderRadius: 9, objectFit: 'cover', background: 'var(--bg-surface-elevated)', flexShrink: 0 }} />
                         ) : c.swatch ? (
-                          <div style={{ width: 42, height: 42, borderRadius: 9, background: c.swatch, border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }} />
+                          <div style={{ width: 42, height: 42, borderRadius: 9, background: c.swatch, border: '1px solid var(--border-glass)', flexShrink: 0 }} />
                         ) : (
-                          <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 9, background: '#F4F1ED', flexShrink: 0, fontSize: 18 }}>
-                            {c.emoji || <Package size={16} color="#C9BEB2" />}
+                          <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 9, background: 'var(--bg-surface-elevated)', flexShrink: 0, fontSize: 18 }}>
+                            {c.emoji || <Package size={16} color="var(--text-muted)" />}
                           </div>
                         )}
                         <div className="flex flex-col min-w-0">
@@ -274,7 +274,7 @@ export default function OrdersSection({
 
                 {/* Customer note (bespoke) */}
                 {isBespoke && order.bespoke?.notes && (
-                  <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6, borderTop: designChoices.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none', paddingTop: designChoices.length > 0 ? '10px' : 0 }}>{order.bespoke.notes}</p>
+                  <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6, borderTop: designChoices.length > 0 ? '1px solid var(--border-glass)' : 'none', paddingTop: designChoices.length > 0 ? '10px' : 0 }}>{order.bespoke.notes}</p>
                 )}
 
                 {/* Design + reference image galleries (bespoke) */}
@@ -296,12 +296,12 @@ export default function OrdersSection({
               <Section title="Measurements">
                 <div className="flex items-center" style={{ gap: '10px' }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: ESPRESSO, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Ruler size={16} color="#FFF" />
+                    <Ruler size={16} color="var(--brand-fill-text)" />
                   </div>
                   <span style={{ fontSize: '11px', color: MUTE, lineHeight: 1.5 }}>The measurements saved to your profile are used to tailor this order.</span>
                 </div>
                 <button onClick={() => setActiveSection('measurements')} className="w-full transition-all hover:opacity-90"
-                  style={{ padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   View Measurements
                 </button>
               </Section>
@@ -311,7 +311,7 @@ export default function OrdersSection({
             {isFabric && (
               <Section title="Fabric">
                 <div className="flex items-start" style={{ gap: '12px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: item.fabric, flexShrink: 0, border: '1px solid rgba(0,0,0,0.06)' }} />
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: item.fabric, flexShrink: 0, border: '1px solid var(--border-glass)' }} />
                   <div className="flex flex-col" style={{ gap: '2px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: INK }}>{item.size}</span>
                     <span style={{ fontSize: '10px', color: FAINT }}>Includes cutting allowance</span>
@@ -325,7 +325,7 @@ export default function OrdersSection({
               <Section>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center min-w-0" style={{ gap: '10px' }}>
-                    <div className="overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: 34, height: 34, borderRadius: '50%', background: '#F4F1ED' }}>
+                    <div className="overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--bg-surface-elevated)' }}>
                       {item.vendorLogo
                         ? <Image src={item.vendorLogo} alt={item.vendor} width={34} height={34} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                         : <Store size={15} color={MUTE} />}
@@ -336,7 +336,7 @@ export default function OrdersSection({
                     </div>
                   </div>
                   <button className="flex items-center transition-all hover:opacity-80 flex-shrink-0"
-                    style={{ gap: '6px', padding: '7px 14px', borderRadius: '100px', border: '1px solid rgba(0,0,0,0.1)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: INK }}>
+                    style={{ gap: '6px', padding: '7px 14px', borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: INK }}>
                     <MessageCircle size={13} /> Message
                   </button>
                 </div>
@@ -347,7 +347,7 @@ export default function OrdersSection({
           <div className="flex-1 flex flex-col min-w-0" style={{ gap: '16px' }}>
             <Section title="Payment">
               {rows.map(([l, v]) => <KV key={l} label={l} value={v} />)}
-              <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '8px' }}>
+              <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
                 <KV label="Total" value={ngn(item.price)} strong />
               </div>
             </Section>
@@ -358,16 +358,16 @@ export default function OrdersSection({
                 <button
                   onClick={() => setReviewFor({ productId: item.productId!, name: item.name, image: item.image })}
                   className="w-full flex items-center justify-center transition-opacity hover:opacity-90"
-                  style={{ gap: '8px', padding: '12px', borderRadius: '12px', background: BROWN, color: '#FFF', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                  style={{ gap: '8px', padding: '12px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                 >
-                  <Star size={15} fill="#FFF" /> Write a review
+                  <Star size={15} fill="var(--brand-fill-text)" /> Write a review
                 </button>
               </Section>
             )}
 
             <Section title="Support">
               <button className="w-full transition-all hover:opacity-90"
-                style={{ padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Report an Issue
               </button>
               {!hasTailoring && order.status !== 'Refused' && (
@@ -383,7 +383,7 @@ export default function OrdersSection({
         {/* Track button */}
         <button onClick={() => setActiveSection('track-order')}
           className="flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.99]"
-          style={{ gap: '8px', padding: '14px', borderRadius: '14px', background: ESPRESSO, color: '#FFF', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
+          style={{ gap: '8px', padding: '14px', borderRadius: '14px', background: ESPRESSO, color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
           <Truck size={16} /> Track Order
         </button>
 
@@ -418,7 +418,7 @@ export default function OrdersSection({
               </div>
               <StatusPill status={order.status} big />
             </div>
-            <div className="flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px' }}>
+            <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '12px' }}>
               <div className="flex items-center" style={{ gap: '6px' }}>
                 <ShoppingBag size={14} color={MUTE} />
                 <span style={{ fontSize: '12px', color: MUTE }}>{order.items.length} item{order.items.length === 1 ? '' : 's'}</span>
@@ -445,7 +445,7 @@ export default function OrdersSection({
               </div>
               <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: INK }}>{ngn(item.price)}</span>
-                <ChevronRight size={16} color="#CBBFB2" />
+                <ChevronRight size={16} color="var(--text-muted)" />
               </div>
             </div>
           </button>
@@ -455,14 +455,14 @@ export default function OrdersSection({
         <Section title="Payment" right={<span style={{ fontSize: '10px', fontWeight: 800, color: pay.text, background: pay.bg, padding: '3px 10px', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{pay.label}</span>}>
           <KV label="Items total" value={ngn(order.subtotal ?? order.total)} />
           <KV label="Delivery fees" value={ngn(order.shippingFee ?? 0)} />
-          <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '8px' }}>
+          <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
             <KV label="Total" value={ngn(order.total)} strong />
           </div>
         </Section>
 
         <Section title="Support">
           <button className="w-full transition-all hover:opacity-90"
-            style={{ padding: '10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Report an Issue
           </button>
         </Section>
@@ -491,8 +491,8 @@ export default function OrdersSection({
             <button key={f} onClick={() => setOrderFilter(f)}
               className="transition-all active:scale-95"
               style={{ flex: 'none', padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                background: active ? ESPRESSO : '#FFF', color: active ? '#FFF' : MUTE,
-                border: active ? 'none' : '1px solid rgba(0,0,0,0.08)' }}>
+                background: active ? ESPRESSO : 'var(--bg-surface-elevated)', color: active ? 'var(--brand-fill-text)' : MUTE,
+                border: active ? 'none' : '1px solid var(--border-glass)' }}>
               {f}
             </button>
           );
@@ -514,8 +514,8 @@ export default function OrdersSection({
 
       {!loading && !error && filtered.length === 0 && (
         <div style={{ ...cardStyle, padding: '52px 28px', textAlign: 'center' }}>
-          <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: '50%', background: '#F4F1ED', margin: '0 auto 14px' }}>
-            <Package size={24} color="#C9BEB2" />
+          <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-surface-elevated)', margin: '0 auto 14px' }}>
+            <Package size={24} color="var(--text-muted)" />
           </div>
           <p style={{ fontSize: '14px', fontWeight: 700, color: INK, marginBottom: '4px' }}>
             {orderFilter === 'All' ? 'No orders yet' : `No ${orderFilter.toLowerCase()} orders`}
@@ -547,7 +547,7 @@ export default function OrdersSection({
               </div>
               <div className="flex flex-col items-end flex-shrink-0" style={{ gap: '10px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: INK }}>{ngn(order.total)}</span>
-                <ChevronRight size={16} color="#CBBFB2" />
+                <ChevronRight size={16} color="var(--text-muted)" />
               </div>
             </div>
           </button>
