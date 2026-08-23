@@ -175,7 +175,7 @@ function CatalogContent() {
         {loading && (
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 animate-pulse justify-items-center">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-[20px] bg-[#F0EBE4]" style={{ width: '100%', aspectRatio: '3/4' }} />
+              <div key={i} className="rounded-[20px] bg-[var(--bg-surface-elevated)]" style={{ width: '100%', aspectRatio: '3/4' }} />
             ))}
           </div>
         )}
@@ -183,9 +183,9 @@ function CatalogContent() {
         {/* Error State */}
         {error && !loading && (
           <div className="glass-panel border border-white/5 p-12 text-center flex flex-col items-center justify-center gap-4">
-            <SlidersHorizontal size={36} className="text-[#999]" />
-            <h3 className="text-base font-bold text-[#1A1A1A]">Something went wrong</h3>
-            <p className="text-xs text-[#888] max-w-[280px]">{error}</p>
+            <SlidersHorizontal size={36} className="text-[var(--text-muted)]" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">Something went wrong</h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-[280px]">{error}</p>
             <button onClick={refetch} className="btn-primary" style={{ padding: '10px 20px', fontSize: '11px' }}>
               Try Again
             </button>
@@ -224,15 +224,15 @@ function CatalogContent() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: '#F5F5F5',
-                    border: '1px solid #E5E5E5',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-glass)',
                     cursor: pagination.hasPrevious ? 'pointer' : 'default',
                   }}
                 >
-                  <ChevronLeft size={16} color="#1A1A1A" />
+                  <ChevronLeft size={16} color="var(--text-primary)" />
                 </button>
 
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
 
@@ -244,12 +244,12 @@ function CatalogContent() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: '#F5F5F5',
-                    border: '1px solid #E5E5E5',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-glass)',
                     cursor: pagination.hasNext ? 'pointer' : 'default',
                   }}
                 >
-                  <ChevronRight size={16} color="#1A1A1A" />
+                  <ChevronRight size={16} color="var(--text-primary)" />
                 </button>
               </div>
             )}
@@ -259,9 +259,9 @@ function CatalogContent() {
         {/* Empty State */}
         {!loading && !error && sortedProducts.length === 0 && (
           <div className="glass-panel border border-white/5 p-12 text-center flex flex-col items-center justify-center gap-4">
-            <SlidersHorizontal size={36} className="text-[#999]" />
-            <h3 className="text-base font-bold text-[#1A1A1A]">No products match your filters</h3>
-            <p className="text-xs text-[#888] max-w-[280px]">
+            <SlidersHorizontal size={36} className="text-[var(--text-muted)]" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">No products match your filters</h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-[280px]">
               Try searching with broader keywords, adjusting the price sliders, or resetting categories.
             </p>
             <button onClick={handleClearFilters} className="btn-primary" style={{ padding: '10px 20px', fontSize: '11px' }}>
