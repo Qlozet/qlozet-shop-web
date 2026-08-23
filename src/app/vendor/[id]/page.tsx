@@ -307,7 +307,9 @@ export default function VendorPage() {
           )}
           <div className="text-white/90 text-sm font-semibold flex items-center gap-1.5" style={{ marginTop: '24px' }}>
             <span>{vendorRating.toFixed(1)}</span>
-            <Star size={12} className="fill-white text-white" />
+            {/* Fill is theme-aware: fill-white isn't caught by the light-theme
+                override, so on a light vendor theme it would stay white and vanish. */}
+            <Star size={12} color={isLightTheme ? '#1A1A1A' : '#FFFFFF'} fill={isLightTheme ? '#1A1A1A' : '#FFFFFF'} />
             <span>{vendorReviewCount} Reviews</span>
           </div>
 
