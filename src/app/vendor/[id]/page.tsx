@@ -467,7 +467,7 @@ export default function VendorPage() {
                     alt={prodName}
                     aspectRatio="214/264"
                     bg={midBg}
-                    containerClassName="rounded-[14px] lg:rounded-[20px] mb-[20px]"
+                    containerClassName="rounded-[14px] lg:rounded-[20px]"
                     imageClassName="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     stockState={product.availability?.state}
                     customizable={prodTag === 'CUSTOMIZABLE'}
@@ -479,7 +479,10 @@ export default function VendorPage() {
                     </button>
                   </ProductThumb>
 
-                  <div className="flex flex-col gap-1 px-1">
+                  {/* Inline marginTop (not a Tailwind mb-[…] class): Tailwind's
+                      scanner skips this [id] dynamic-route folder, so a class
+                      unique to this file wouldn't generate. Inline always works. */}
+                  <div className="flex flex-col gap-1 px-1" style={{ marginTop: '20px' }}>
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-white text-sm font-bold">₦{prodPrice.toLocaleString()}</span>
