@@ -467,7 +467,7 @@ export default function VendorPage() {
                     alt={prodName}
                     aspectRatio="214/264"
                     bg={midBg}
-                    containerClassName="rounded-[14px] lg:rounded-[20px] mb-[14px]"
+                    containerClassName="rounded-[14px] lg:rounded-[20px] mb-[20px]"
                     imageClassName="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     stockState={product.availability?.state}
                     customizable={prodTag === 'CUSTOMIZABLE'}
