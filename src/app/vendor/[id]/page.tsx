@@ -115,6 +115,9 @@ export default function VendorPage() {
   const [showFilter, setShowFilter] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
+  // Collection gallery: horizontal scroll by default; "View all" expands it
+  // into a wrapped grid showing every collection.
+  const [showAllCollections, setShowAllCollections] = useState(false);
 
   // Vendor reviews (aggregated across the vendor's products) — fetched on open.
   const [vendorReviews, setVendorReviews] = useState<any[]>([]);
@@ -357,7 +360,7 @@ export default function VendorPage() {
       {/* ══════ COLLECTION GALLERY ══════ */}
       {collections.length > 0 && (
         <div className="relative z-20 mt-12 px-5 md:px-12">
-          <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pb-6 snap-x">
+          <div className={showAllCollections ? 'flex flex-wrap gap-4 pb-6' : 'flex items-center gap-4 overflow-x-auto hide-scrollbar pb-6 snap-x'}>
             {collections.map((col) => {
               const colImage = col.cover_image || (col.products?.[0] ? getProductImage(col.products[0]) : undefined);
               return (
@@ -377,16 +380,21 @@ export default function VendorPage() {
               );
             })}
           </div>
-          <div className="flex justify-center" style={{ marginTop: '24px' }}>
-            <button className="text-white/50 text-[12px] font-bold hover:text-white/80 transition-colors tracking-wider uppercase">
-              View all collections
-            </button>
-          </div>
+          {collections.length > 3 && (
+            <div className="flex justify-center" style={{ marginTop: '24px' }}>
+              <button
+                onClick={() => setShowAllCollections((v) => !v)}
+                className="text-white/50 text-[12px] font-bold hover:text-white/80 transition-colors tracking-wider uppercase"
+              >
+                {showAllCollections ? 'Show less' : 'View all collections'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* ══════ PRODUCT GRID ══════ */}
-      <div className="relative z-10 w-full px-5 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '0' : '48px' }}>
+      <div className="relative z-10 w-full px-5 md:px-12 pb-24" style={{ marginTop: collections.length > 0 ? '40px' : '48px' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ marginBottom: '16px' }}>
           <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
             <h2 className="text-white text-lg font-bold mr-4 flex-shrink-0">Products</h2>
@@ -482,7 +490,7 @@ export default function VendorPage() {
                   {/* Inline marginTop (not a Tailwind mb-[…] class): Tailwind's
                       scanner skips this [id] dynamic-route folder, so a class
                       unique to this file wouldn't generate. Inline always works. */}
-                  <div className="flex flex-col gap-1 px-1" style={{ marginTop: '12px' }}>
+                  <div className="flex flex-col gap-1 px-1" style={{ marginTop: '10px' }}>
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-white text-sm font-bold">₦{prodPrice.toLocaleString()}</span>
