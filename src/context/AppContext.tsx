@@ -38,6 +38,24 @@ export interface CartItem {
   note?: string;
 }
 
+/**
+ * Identity of a cart LINE. Two entries of the same product but a different
+ * size / colour / selections / applied fabric are distinct lines — keying by
+ * product `id` alone would merge them and drop the second variant. The order
+ * payload still sends the bare product `id`; only line identity uses this.
+ */
+export function cartLineId(
+  item: Pick<CartItem, 'id' | 'size' | 'color' | 'applied_fabric_id' | 'selections'>,
+): string {
+  return [
+    item.id,
+    item.size ?? '',
+    item.color ?? '',
+    item.applied_fabric_id ?? '',
+    item.selections ? JSON.stringify(item.selections) : '',
+  ].join('|');
+}
+
 export interface TryOnJob {
   id: string;
   type: 'prediction' | 'outfit' | 'mask';
@@ -206,8 +224,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const backendItems: CartItem[] = (backendCartData?.items ?? []).map(mapBackendCartItem);
 
               // Merge local guest items that aren't already in the backend cart
-              const backendIds = new Set(backendItems.map((i: CartItem) => i.id));
-              const guestOnly = localCart.filter((i) => !backendIds.has(i.id));
+              // (compare by full line identity, not just product id, so distinct
+              // variants of the same product aren't wrongly treated as dupes).
+              const backendLineIds = new Set(backendItems.map((i: CartItem) => cartLineId(i)));
+              const guestOnly = localCart.filter((i) => !backendLineIds.has(cartLineId(i)));
 
               // Push guest-only items to backend silently (include selections)
               for (const item of guestOnly) {
@@ -428,12 +448,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Cart Handlers
   const addToCart = (newItem: Omit<CartItem, 'quantity'>) => {
+    const newLineId = cartLineId(newItem);
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === newItem.id);
+      const existing = prev.find((i) => cartLineId(i) === newLineId);
       let updated;
       if (existing) {
-        updated = prev.map((i) => (i.id === newItem.id ? { ...i, quantity: i.quantity + 1 } : i));
+        // Same product AND same variant/selections → bump quantity.
+        updated = prev.map((i) => (cartLineId(i) === newLineId ? { ...i, quantity: i.quantity + 1 } : i));
       } else {
+        // Same product but a different size/colour/selection → its own line.
         updated = [...prev, { ...newItem, quantity: 1 }];
       }
       saveState('qlozet_cart', updated);
@@ -460,7 +483,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (backendItem && typeof backendItem.unit_price === 'number') {
           setCart((prev) => {
             const updated = prev.map((i) =>
-              i.id === newItem.id ? { ...i, price: backendItem.unit_price } : i,
+              cartLineId(i) === newLineId ? { ...i, price: backendItem.unit_price } : i,
             );
             saveState('qlozet_cart', updated);
             return updated;
@@ -482,28 +505,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = (lineId: string) => {
+    let removedProductId: string | undefined;
     setCart((prev) => {
-      const updated = prev.filter((i) => i.id !== id);
+      removedProductId = prev.find((i) => cartLineId(i) === lineId)?.id;
+      const updated = prev.filter((i) => cartLineId(i) !== lineId);
       saveState('qlozet_cart', updated);
       return updated;
     });
-    // Sync to backend
-    if (isAuthenticated.current) {
-      api.delete(`/cart/remove/${id}`).catch(() => {});
+    // Sync to backend (backend cart is keyed by product id — best-effort).
+    if (isAuthenticated.current && removedProductId) {
+      api.delete(`/cart/remove/${removedProductId}`).catch(() => {});
     }
     // Track remove_from_cart event
     if (user?.id) {
       trackEventDirect(user.id, {
         eventType: 'remove_from_cart',
-        properties: { itemId: id },
+        properties: { itemId: removedProductId ?? lineId },
       });
     }
   };
 
-  const updateQuantity = (id: string, qty: number) => {
+  const updateQuantity = (lineId: string, qty: number) => {
     setCart((prev) => {
-      const updated = prev.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, qty) } : i));
+      const updated = prev.map((i) => (cartLineId(i) === lineId ? { ...i, quantity: Math.max(1, qty) } : i));
       saveState('qlozet_cart', updated);
       return updated;
     });

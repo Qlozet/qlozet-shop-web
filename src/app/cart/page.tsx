@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useApp } from '@/context/AppContext';
+import { useApp, cartLineId } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
@@ -59,7 +59,7 @@ export default function CartPage() {
           // API wrapper double-nests the service's { data } under its own data.
           const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
           const b = payload?.breakdown;
-          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
+          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [cartLineId(item)]: b }));
         })
         .catch(() => {
           // Don't fail silently — but dedupe to a single toast across all items
@@ -111,7 +111,7 @@ export default function CartPage() {
 
   // Total discount savings across the cart (§11).
   const totalDiscount = cart.reduce(
-    (acc, item) => acc + (breakdowns[item.id]?.discount ?? 0) * item.quantity,
+    (acc, item) => acc + (breakdowns[cartLineId(item)]?.discount ?? 0) * item.quantity,
     0,
   );
 
@@ -120,7 +120,7 @@ export default function CartPage() {
   // be stale if the configuration changed. Falls back to item.price until the
   // breakdown loads.
   const effectivePrice = (item: { id: string; price: number }) =>
-    breakdowns[item.id]?.final ?? item.price;
+    breakdowns[cartLineId(item)]?.final ?? item.price;
 
   // Computations
   const subtotal = cart.reduce((acc, item) => acc + effectivePrice(item) * item.quantity, 0);
@@ -248,7 +248,7 @@ export default function CartPage() {
           {/* ── Cart Items Card ────────────────────────────────── */}
           <div style={cardStyle}>
             {cart.map((item, idx) => (
-              <div key={item.id}>
+              <div key={cartLineId(item)}>
                 <div className="flex gap-4">
                   {/* Product Image */}
                   <Link
@@ -287,7 +287,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          removeFromCart(item.id);
+                          removeFromCart(cartLineId(item));
                           toast('Removed from cart', { description: item.title });
                         }}
                         aria-label={`Remove ${item.title} from cart`}
@@ -309,17 +309,17 @@ export default function CartPage() {
                     </div>
 
                     {/* Pricing breakdown (§8) */}
-                    {breakdowns[item.id] && (
+                    {breakdowns[cartLineId(item)] && (
                       <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', fontSize: '11px' }}>
                         {(
                           [
-                            ['Base', breakdowns[item.id].base],
-                            ['Styles', breakdowns[item.id].styles_total],
-                            ['Fabric', breakdowns[item.id].fabric_total],
-                            ['Variant', breakdowns[item.id].variant_total],
-                            ['Accessories', breakdowns[item.id].accessories_total],
-                            ['Add-ons', breakdowns[item.id].addons_total],
-                            ['Applied fabric', breakdowns[item.id].external_fabric],
+                            ['Base', breakdowns[cartLineId(item)].base],
+                            ['Styles', breakdowns[cartLineId(item)].styles_total],
+                            ['Fabric', breakdowns[cartLineId(item)].fabric_total],
+                            ['Variant', breakdowns[cartLineId(item)].variant_total],
+                            ['Accessories', breakdowns[cartLineId(item)].accessories_total],
+                            ['Add-ons', breakdowns[cartLineId(item)].addons_total],
+                            ['Applied fabric', breakdowns[cartLineId(item)].external_fabric],
                           ] as [string, number][]
                         )
                           .filter(([label, v]) => label === 'Base' || v > 0)
@@ -331,17 +331,17 @@ export default function CartPage() {
                           ))}
                         <div className="flex items-center justify-between" style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid var(--border-glass)', color: 'var(--text-primary)', fontWeight: 600 }}>
                           <span>Before discount</span>
-                          <span>₦{breakdowns[item.id].before_discount.toLocaleString()}</span>
+                          <span>₦{breakdowns[cartLineId(item)].before_discount.toLocaleString()}</span>
                         </div>
-                        {breakdowns[item.id].discount > 0 && (
+                        {breakdowns[cartLineId(item)].discount > 0 && (
                           <div className="flex items-center justify-between" style={{ color: '#059669' }}>
                             <span>Discount</span>
-                            <span>-₦{breakdowns[item.id].discount.toLocaleString()}</span>
+                            <span>-₦{breakdowns[cartLineId(item)].discount.toLocaleString()}</span>
                           </div>
                         )}
                         <div className="flex items-center justify-between" style={{ marginTop: '2px', color: 'var(--text-primary)', fontWeight: 700 }}>
                           <span>Final</span>
-                          <span>₦{breakdowns[item.id].final.toLocaleString()}</span>
+                          <span>₦{breakdowns[cartLineId(item)].final.toLocaleString()}</span>
                         </div>
                       </div>
                     )}

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useApp } from '@/context/AppContext';
+import { useApp, cartLineId } from '@/context/AppContext';
 import { useCheckout } from '@/hooks/useCheckout';
 import { api } from '@/lib/api';
 import { openPaystackModal } from '@/lib/paystack';
@@ -143,7 +143,7 @@ export default function CheckoutPage() {
   // Authoritative per-unit price: the server breakdown final (exactly what the
   // order will charge) when loaded, else the price stored at add-to-cart time.
   const effectivePrice = (item: { id: string; price: number }) =>
-    breakdowns[item.id]?.final ?? item.price;
+    breakdowns[cartLineId(item)]?.final ?? item.price;
 
   // Computations — sum the authoritative per-item finals so the displayed
   // subtotal matches what createOrder will actually charge (the checkout preview
@@ -171,7 +171,7 @@ export default function CheckoutPage() {
           // API wrapper double-nests the service's { data } under its own data.
           const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
           const b = payload?.breakdown;
-          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [item.id]: b }));
+          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [cartLineId(item)]: b }));
         })
         .catch(() => {});
     });
@@ -180,7 +180,7 @@ export default function CheckoutPage() {
     };
   }, [cart]);
   const itemSavings = cart.reduce(
-    (acc, item) => acc + (breakdowns[item.id]?.discount ?? 0) * item.quantity,
+    (acc, item) => acc + (breakdowns[cartLineId(item)]?.discount ?? 0) * item.quantity,
     0,
   );
 
@@ -801,7 +801,7 @@ export default function CheckoutPage() {
             {/* Item List */}
             <div className="flex flex-col gap-3" style={{ marginBottom: '20px' }}>
               {cart.map((item) => (
-                <div key={item.id} className="flex gap-3">
+                <div key={cartLineId(item)} className="flex gap-3">
                   <div className="relative flex-shrink-0 rounded-lg overflow-hidden bg-[var(--bg-surface-elevated)]" style={{ width: '56px', height: '66px' }}>
                     <Image
                       src={item.image}
