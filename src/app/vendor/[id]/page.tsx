@@ -409,7 +409,7 @@ export default function VendorPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 rounded-full px-4 py-2 border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', marginTop: '16px', paddingLeft: '20px' }}>
+          <div className="flex items-center gap-2 rounded-full px-4 py-2 w-full md:w-56 transition-colors" style={{ marginTop: '16px', paddingLeft: '20px' }}>
             <Search size={14} className="text-white/40" />
             <input
               type="text"
