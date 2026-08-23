@@ -417,7 +417,7 @@ export default function VendorPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', marginTop: '16px', padding: '12px 20px' }}>
+          <div className="flex items-center gap-2 rounded-full border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '12px 20px' }}>
             <Search size={14} className="text-white/40" />
             <input
               type="text"
