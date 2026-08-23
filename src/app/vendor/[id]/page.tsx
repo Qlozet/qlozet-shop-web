@@ -505,6 +505,7 @@ export default function VendorPage() {
         onClose={() => setShowPromo(false)}
         onSelectPromotion={handleSelectPromotion}
         promotions={promotions}
+        theme={{ bg: sheetBg, text: sheetText, subtle: sheetSubtle, border: sheetBorder, muted: sheetMuted }}
       />
 
       {/* ══════ FILTER BOTTOM SHEET ══════ */}
