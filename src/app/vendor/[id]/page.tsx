@@ -566,7 +566,7 @@ export default function VendorPage() {
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '0 24px 24px' }}>
+            <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '0 24px 24px', minHeight: 0, overscrollBehavior: 'contain' }}>
               <div style={{ marginBottom: '28px' }}>
                 <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Category</p>
                 <div className="flex flex-wrap gap-2">
@@ -695,7 +695,7 @@ export default function VendorPage() {
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '20px 24px' }}>
+            <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '20px 24px', minHeight: 0, overscrollBehavior: 'contain' }}>
               {!reviewsLoaded ? (
                 <p style={{ color: sheetMuted, fontSize: '13px' }}>Loading reviews…</p>
               ) : vendorReviews.length === 0 ? (
