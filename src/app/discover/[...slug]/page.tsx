@@ -185,7 +185,7 @@ export default function DiscoverSlugPage() {
 
       {/* ── Dynamic Product Type Tabs ─────────────────────────────── */}
       {dynamicProductTypes.length > 0 && (
-        <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
+        <div className="flex items-center justify-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
           {dynamicProductTypes.map((pt) => (
             <button
               key={pt}
