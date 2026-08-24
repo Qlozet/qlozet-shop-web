@@ -146,6 +146,10 @@ export default function VendorPage() {
   // '__deal__:<discountId>' (or '__deal__:all') when filtering by an offer.
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  // Filter & sort (applies to the product grid, on top of category/deal + search)
+  const [sortOption, setSortOption] = useState<'featured' | 'newest' | 'top_rated' | 'price_asc' | 'price_desc'>('featured');
+  const [priceBucket, setPriceBucket] = useState<string | null>(null);
+  const [inStockOnly, setInStockOnly] = useState(false);
   const isDealFilter = activeFilter.startsWith('__deal__');
 
   // Fetch collection specific products (skip while in All / deal mode)
@@ -232,10 +236,28 @@ export default function VendorPage() {
       ? vendorProducts
       : collectionProducts;
 
-  const filteredProducts = activeProductsList.filter((p) => {
-    const name = getProductName(p);
-    return name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const PRICE_BUCKETS: Record<string, [number, number]> = {
+    'Under ₦50K': [0, 50000],
+    '₦50K - ₦100K': [50000, 100000],
+    '₦100K - ₦200K': [100000, 200000],
+    'Over ₦200K': [200000, Infinity],
+  };
+  const filteredProducts = (() => {
+    let list = activeProductsList.filter((p) =>
+      getProductName(p).toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+    if (inStockOnly) list = list.filter((p) => p.availability?.state !== 'out_of_stock');
+    if (priceBucket && PRICE_BUCKETS[priceBucket]) {
+      const [lo, hi] = PRICE_BUCKETS[priceBucket];
+      list = list.filter((p) => { const pr = getProductPrice(p); return pr >= lo && pr < hi; });
+    }
+    const ts = (p: any) => new Date(p?.createdAt ?? 0).getTime();
+    if (sortOption === 'newest') list = [...list].sort((a, b) => ts(b) - ts(a));
+    else if (sortOption === 'top_rated') list = [...list].sort((a, b) => ((b as any).average_rating ?? 0) - ((a as any).average_rating ?? 0));
+    else if (sortOption === 'price_asc') list = [...list].sort((a, b) => getProductPrice(a) - getProductPrice(b));
+    else if (sortOption === 'price_desc') list = [...list].sort((a, b) => getProductPrice(b) - getProductPrice(a));
+    return list;
+  })();
 
   return (
     <div className="min-h-screen font-sans lg:rounded-[40px] vendor-page-root" style={{ backgroundColor: darkBg, color: isLightTheme ? '#1a1a1a' : '#ffffff' }}>
@@ -401,20 +423,22 @@ export default function VendorPage() {
             <button onClick={() => setShowFilter(true)} className="flex items-center justify-center text-white/70 hover:text-white flex-shrink-0 border border-white/10 transition-colors" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.06)' }}>
               <SlidersHorizontal size={16} />
             </button>
-            {['Sort by', 'On sale', 'Price', 'In-stock'].map((filter, i) => {
-              const onSaleActive = filter === 'On sale' && dealFilterId === 'all';
-              return (
-                <button
-                  key={i}
-                  onClick={filter === 'On sale' ? () => handleSelectPromotion(undefined) : undefined}
-                  className="flex items-center gap-1.5 text-white/70 rounded-full text-[11px] font-bold hover:text-white flex-shrink-0 border border-white/10 transition-colors"
-                  style={{ backgroundColor: onSaleActive ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.06)', color: onSaleActive ? '#FFF' : undefined, padding: '10px 18px' }}
-                >
-                  {filter}
-                  {(filter === 'Sort by' || filter === 'Price') && <ChevronDown size={12} />}
-                </button>
-              );
-            })}
+            {[
+              { label: 'Sort by', onClick: () => setShowFilter(true), active: sortOption !== 'featured', chevron: true },
+              { label: 'On sale', onClick: () => setActiveFilter(dealFilterId === 'all' ? 'All' : '__deal__:all'), active: dealFilterId === 'all', chevron: false },
+              { label: 'Price', onClick: () => setShowFilter(true), active: !!priceBucket, chevron: true },
+              { label: 'In-stock', onClick: () => setInStockOnly((v) => !v), active: inStockOnly, chevron: false },
+            ].map((ctrl) => (
+              <button
+                key={ctrl.label}
+                onClick={ctrl.onClick}
+                className="flex items-center gap-1.5 text-white/70 rounded-full text-[11px] font-bold hover:text-white flex-shrink-0 border border-white/10 transition-colors"
+                style={{ backgroundColor: ctrl.active ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.06)', color: ctrl.active ? '#FFF' : undefined, padding: '10px 18px' }}
+              >
+                {ctrl.label}
+                {ctrl.chevron && <ChevronDown size={12} />}
+              </button>
+            ))}
           </div>
 
           <div className="flex items-center gap-2 rounded-full border border-white/10 w-full md:w-56 focus-within:border-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '12px 20px' }}>
@@ -556,26 +580,73 @@ export default function VendorPage() {
               <div style={{ marginBottom: '28px' }}>
                 <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Sort by</p>
                 <div className="flex flex-col gap-1">
-                  {['Newest', 'Price: Low to High', 'Price: High to Low', 'Most Popular'].map((opt) => (
-                    <button key={opt} className="w-full text-left transition-colors" style={{ color: sheetText, fontSize: '14px', fontWeight: 500, padding: '12px 16px', borderRadius: '12px' }}>
-                      {opt}
-                    </button>
-                  ))}
+                  {[
+                    { id: 'featured', label: 'Featured' },
+                    { id: 'newest', label: 'Newest' },
+                    { id: 'top_rated', label: 'Top Rated' },
+                    { id: 'price_asc', label: 'Price: Low to High' },
+                    { id: 'price_desc', label: 'Price: High to Low' },
+                  ].map((opt) => {
+                    const active = sortOption === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => setSortOption(opt.id as typeof sortOption)}
+                        className="w-full text-left transition-colors"
+                        style={{ color: sheetText, fontSize: '14px', fontWeight: active ? 800 : 500, padding: '12px 16px', borderRadius: '12px', backgroundColor: active ? (isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.18)') : 'transparent' }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div style={{ marginBottom: '28px' }}>
+                <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Price Range</p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(PRICE_BUCKETS).map((range) => {
+                    const active = priceBucket === range;
+                    return (
+                      <button
+                        key={range}
+                        onClick={() => setPriceBucket(active ? null : range)}
+                        style={{ color: sheetText, fontSize: '12px', fontWeight: 700, padding: '10px 20px', borderRadius: '9999px', backgroundColor: active ? (isLightTheme ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.25)') : sheetSubtle, border: active ? `1px solid ${isLightTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}` : `1px solid ${sheetBorder}`, transition: 'all 0.2s' }}
+                      >
+                        {range}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div>
                 <p style={{ color: sheetMuted, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Availability</p>
                 <div className="flex flex-wrap gap-2">
-                  {['In-stock', 'On sale', 'New arrivals'].map((opt) => (
-                    <button key={opt} style={{ color: sheetText, fontSize: '12px', fontWeight: 700, padding: '10px 20px', borderRadius: '9999px', backgroundColor: sheetSubtle, border: `1px solid ${sheetBorder}`, transition: 'all 0.2s' }}>
-                      {opt}
+                  {[
+                    { label: 'In-stock', active: inStockOnly, toggle: () => setInStockOnly((v) => !v) },
+                    { label: 'On sale', active: dealFilterId === 'all', toggle: () => setActiveFilter(dealFilterId === 'all' ? 'All' : '__deal__:all') },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={opt.toggle}
+                      style={{ color: sheetText, fontSize: '12px', fontWeight: 700, padding: '10px 20px', borderRadius: '9999px', backgroundColor: opt.active ? (isLightTheme ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.25)') : sheetSubtle, border: opt.active ? `1px solid ${isLightTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}` : `1px solid ${sheetBorder}`, transition: 'all 0.2s' }}
+                    >
+                      {opt.label}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="shrink-0" style={{ padding: '0 24px 24px' }}>
-              <button onClick={() => setShowFilter(false)} className="w-full text-sm font-bold transition-colors hover:opacity-90" style={{ padding: '14px', borderRadius: '16px', backgroundColor: isLightTheme ? '#1a1a1a' : (vendor.theme_color || '#8D7F72'), color: '#ffffff' }}>
+            <div className="shrink-0 flex items-center gap-3" style={{ padding: '0 24px 24px' }}>
+              <button
+                onClick={() => { setSortOption('featured'); setPriceBucket(null); setInStockOnly(false); setActiveFilter('All'); }}
+                className="text-sm font-bold transition-colors"
+                style={{ flex: 1, padding: '14px', borderRadius: '16px', backgroundColor: sheetSubtle, color: sheetText, border: `1px solid ${sheetBorder}` }}
+              >
+                Reset
+              </button>
+              <button onClick={() => setShowFilter(false)} className="text-sm font-bold transition-colors hover:opacity-90" style={{ flex: 1, padding: '14px', borderRadius: '16px', backgroundColor: isLightTheme ? '#1a1a1a' : (vendor.theme_color || '#8D7F72'), color: '#ffffff', border: 'none' }}>
                 Apply Filters
               </button>
             </div>
