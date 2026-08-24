@@ -101,7 +101,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-10 h-[5px] bg-[var(--bg-base)] rounded-full" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
+          <div className="w-10 h-[5px] rounded-full" style={{ background: 'var(--drag-handle)', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
         </div>
 
         {/* Sheet Body */}

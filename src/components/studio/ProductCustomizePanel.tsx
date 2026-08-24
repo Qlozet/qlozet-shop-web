@@ -390,7 +390,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
             </div>
 
             {panelContent}

@@ -333,7 +333,7 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
           style={{ maxHeight: '85vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)' }}
         >
           <div className="flex justify-center pt-3 pb-1">
-            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
+            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
           </div>
           <div className="flex-1 overflow-y-auto hide-scrollbar relative" style={{ padding: '20px 24px 24px' }}>
             <button

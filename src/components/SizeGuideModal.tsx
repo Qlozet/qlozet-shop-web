@@ -317,7 +317,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
 
           {/* Drag Handle */}
           <div className="flex justify-center pt-3 pb-1">
-            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: '#DDD' }} />
+            <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
           </div>
 
           {/* Header */}
@@ -349,7 +349,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
             <button
               onClick={handleReset}
               className="flex-1 hover:bg-gray-200 transition-colors"
-              style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Reset
             </button>
@@ -371,13 +371,14 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           style={{ left: '120px', top: '48px', bottom: '48px' }}
         >
           <aside
-            className={`h-full w-[400px] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col border border-gray-100 overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            className={`h-full w-[400px] rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex flex-col overflow-hidden ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            style={{ background: 'var(--bg-base)', border: '1px solid var(--border-glass)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between shrink-0" style={{ padding: '24px 24px 20px 24px' }}>
               <div>
-                <h3 className="text-lg font-bold text-[#111111]">Size Guide</h3>
-                <span style={{ fontSize: '12px', color: '#888888' }}>{category}</span>
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">Size Guide</h3>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{category}</span>
               </div>
               <button
                 onClick={onClose}
@@ -402,7 +403,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
               <button
                 onClick={handleReset}
                 className="flex-1 hover:bg-gray-200 transition-colors"
-                style={{ padding: '14px', borderRadius: '14px', background: '#F4F4F4', color: '#1A1A1A', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Reset
               </button>
