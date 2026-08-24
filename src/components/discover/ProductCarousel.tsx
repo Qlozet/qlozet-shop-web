@@ -54,8 +54,8 @@ export function ProductCarousel({ title, products, href, onHeaderClick }: Produc
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
-      {/* Section header */}
-      {onHeaderClick ? (
+      {/* Section header — omitted when no title (caller renders its own) */}
+      {!title ? null : onHeaderClick ? (
         <button onClick={onHeaderClick} className="flex items-center hover:opacity-70 transition-opacity" style={{ gap: '8px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
           {headerInner}
         </button>

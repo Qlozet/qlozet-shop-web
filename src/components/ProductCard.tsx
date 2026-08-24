@@ -21,6 +21,9 @@ export interface ProductCardProps {
   onFavoriteToggle?: (id: string | number) => void;
   /** Computed stock state — badges + dims the card when sold out. */
   stockState?: StockState;
+  /** Optional personalization "why" — renders a small chip above the brand
+   *  (e.g. "Your style", "Fits you", "In your budget"). Used on the For You page. */
+  reason?: string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -34,6 +37,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isFavorite = false,
   onFavoriteToggle,
   stockState,
+  reason,
 }) => {
   const soldOut = stockState === 'out_of_stock';
   const toggleFavorite = (e: React.MouseEvent) => {
@@ -121,7 +125,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Details Section */}
       <div className="flex flex-col" style={{ gap: '4px' }}>
-        
+
+        {/* Personalization "why" chip (For You) */}
+        {reason && (
+          <span
+            className="inline-flex items-center self-start uppercase"
+            style={{
+              gap: '4px',
+              fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+              fontWeight: 800,
+              fontSize: '9px',
+              letterSpacing: '0.05em',
+              color: 'var(--brand-brown)',
+              background: 'var(--brand-brown-tint, rgba(139,90,43,0.1))',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              lineHeight: 1.2,
+              marginBottom: '2px',
+            }}
+          >
+            <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
+            {reason}
+          </span>
+        )}
+
         {/* Brand Name */}
         <span 
           className="uppercase truncate text-left" 
