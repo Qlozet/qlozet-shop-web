@@ -23,6 +23,7 @@ import {
   useRecommendedVendors,
 } from '@/hooks/useRecommendations';
 import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
+import { useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 import {
@@ -136,10 +137,15 @@ export default function ForYouPage() {
   const { user, gender, wishlist, toggleWishlist, recentlyViewed } = useApp();
 
   const { items: personalizedItems, loading: feedLoading } = usePersonalizedFeed({ limit: 24, gender });
-  const { items: trendingItems, loading: trendingLoading } = useTrendingProducts(12);
+  const { items: trendingItems } = useTrendingProducts(12);
   const { items: newItems } = useNewArrivals(12);
   const { vendors } = useRecommendedVendors(8);
   const { designs, isLoading: designsLoading } = useBespokeDesigns();
+
+  // Real product listing — robust fallback when the recommendation
+  // engine returns nothing (same approach as the home page).
+  const audience = gender === 'male' ? 'men' : 'women';
+  const { products: allProducts, loading: productsLoading } = useProducts({ size: 50, audience });
 
   const firstName = user?.name?.trim().split(/\s+/)[0] || '';
 
@@ -155,20 +161,25 @@ export default function ForYouPage() {
     [personalizedItems],
   );
 
-  const trendingProducts = useMemo<ApiProduct[]>(
-    () => trendingItems.map((it) => it.product).filter((p): p is ApiProduct => !!p),
-    [trendingItems],
-  );
-  const newProducts = useMemo<ApiProduct[]>(
-    () => newItems.map((it) => it.product).filter((p): p is ApiProduct => !!p),
-    [newItems],
-  );
+  // Recommendation feeds → products, each with a listing fallback.
+  const trendingProducts = useMemo<ApiProduct[]>(() => {
+    const fromFeed = trendingItems.map((it) => it.product).filter((p): p is ApiProduct => !!p);
+    return fromFeed.length > 0 ? fromFeed : allProducts.slice(0, 12);
+  }, [trendingItems, allProducts]);
 
+  const newProducts = useMemo<ApiProduct[]>(() => {
+    const fromFeed = newItems.map((it) => it.product).filter((p): p is ApiProduct => !!p);
+    return fromFeed.length > 0 ? fromFeed : [...allProducts].reverse().slice(0, 12);
+  }, [newItems, allProducts]);
+
+  // Main grid: personalized feed when we have it, otherwise real products so
+  // the page is never empty for a signed-in user.
   const usingPersonal = !!user && feedCards.length > 0;
   const gridCards: GridCard[] = usingPersonal
     ? feedCards
-    : trendingProducts.map((product) => ({ product }));
-  const gridLoading = user ? feedLoading && feedCards.length === 0 : trendingLoading && trendingProducts.length === 0;
+    : allProducts.slice(0, 24).map((product) => ({ product }));
+  const gridLoading =
+    gridCards.length === 0 && (productsLoading || (!!user && feedLoading));
 
   const validRecent = recentlyViewed.filter(
     (item) => typeof item === 'object' && !!item?.id && !!item?.image && !!item?.href,
@@ -271,8 +282,14 @@ export default function ForYouPage() {
       {/* ─────────────────────── PICKED FOR YOU ─────────────────────── */}
       <section className="flex flex-col" style={{ gap: '16px' }}>
         <SectionHead
-          title={usingPersonal ? 'Picked for you' : 'Popular right now'}
-          subtitle={usingPersonal ? 'The pieces we think are most you' : 'Loved across Qlozet this week'}
+          title={user ? 'Picked for you' : 'Popular right now'}
+          subtitle={
+            usingPersonal
+              ? 'The pieces we think are most you'
+              : user
+                ? 'Curated around your style and fit'
+                : 'Loved across Qlozet this week'
+          }
         />
         {gridLoading ? (
           <GridSkeleton />
