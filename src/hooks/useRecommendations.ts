@@ -162,6 +162,9 @@ export function usePersonalizedFeed(
           cleanParams[key] = value;
         }
       }
+      // The /feed endpoint keys personalization off userId. Newer backends read
+      // it from the JWT, but older ones require it as a query param — send both.
+      if (user?.id) cleanParams.userId = user.id;
 
       const res = await api.get('/recommends/feed', { params: cleanParams });
       const payload: ApiFeedResponse = res.data?.data ?? res.data;
@@ -219,7 +222,7 @@ export function useRecommendedVendors(
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const res = await api.get('/recommends/vendors', {
-        params: { limit },
+        params: { limit, ...(user?.id ? { userId: user.id } : {}) },
       });
       const payload: ApiVendorFeedResponse = res.data?.data ?? res.data;
       setState({ data: payload, loading: false, error: null });
