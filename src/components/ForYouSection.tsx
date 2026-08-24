@@ -33,7 +33,7 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
     >
       {/* ── FOR YOU Card ────────────────────────────────────── */}
       <Link
-        href="/discover"
+        href="/for-you"
         className="relative overflow-hidden group transition-all hover:shadow-xl"
         style={{
           borderRadius: '20px',
