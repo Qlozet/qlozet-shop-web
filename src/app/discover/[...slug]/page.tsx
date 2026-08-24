@@ -14,15 +14,16 @@ import {
 import { useProducts } from '@/hooks/useProducts';
 import { useTrendingProducts, useNewArrivals } from '@/hooks/useRecommendations';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
-import { getProductTag, getProductImage } from '@/lib/api-types';
+import { getProductTag, getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
+import { ProductCard } from '@/components/ProductCard';
 
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 
 export default function DiscoverSlugPage() {
   const params = useParams();
-  const { gender, setGender } = useApp();
+  const { gender, setGender, wishlist, toggleWishlist } = useApp();
   const [showFilter, setShowFilter] = useState(false);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -299,39 +300,48 @@ export default function DiscoverSlugPage() {
             </div>
           ))}
         </div>
-      ) : (
-        showProducts && (
-          <>
-            <ProductCarousel 
-              title="Trending" 
-              products={getTrending(products)} 
-              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=relevance`} 
-            />
-            <ProductCarousel 
-              title="Top Rated" 
-              products={getTopRated(products)} 
-              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
-            />
-
-            {/* Show What's New only at root category level */}
-            {!selectedProductType && (
-              <ProductCarousel 
-                title="What's New" 
-                products={getWhatsNew(products)} 
-                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=date`} 
-              />
-            )}
-
-            {/* Extra top rated row for visual density */}
-            {products.length > 4 && (
-              <ProductCarousel 
-                title="Top Rated" 
-                products={getTopRated(products).reverse()} 
-                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
-              />
-            )}
-          </>
+      ) : selectedProductType ? (
+        /* ── Product-type view: a grid of that type's products ── */
+        products.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center">
+            {products.map((product) => (
+              <div key={product._id} className="w-full">
+                <ProductCard
+                  id={product._id}
+                  imageUrl={getProductImage(product)}
+                  title={getProductName(product)}
+                  brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+                  price={getProductPrice(product)}
+                  originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+                  tag={getProductTag(product)}
+                  stockState={product.availability?.state}
+                  isFavorite={wishlist.includes(product._id)}
+                  onFavoriteToggle={() => toggleWishlist(product._id)}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16" style={{ gap: '10px' }}>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>No products here yet</p>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Try another type or category.</p>
+          </div>
         )
+      ) : (
+        /* ── Kind view: one carousel per product type; header opens that type ── */
+        <>
+          {dynamicProductTypes.map((pt) => {
+            const typeProducts = filteredProducts.filter((p) => getProductType(p) === pt);
+            return (
+              <ProductCarousel
+                key={pt}
+                title={pt}
+                products={typeProducts}
+                onHeaderClick={() => { setSelectedProductType(pt); setSelectedCategory(null); }}
+              />
+            );
+          })}
+        </>
       )}
 
       {/* ══════ FILTER BOTTOM SHEET (reused vendor pattern) ══════ */}

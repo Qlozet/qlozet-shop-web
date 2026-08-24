@@ -19,9 +19,11 @@ interface ProductCarouselProps {
   title: string;
   products: ApiProduct[];
   href?: string;
+  /** When set, the header acts as a button (e.g. select a tab) instead of a link. */
+  onHeaderClick?: () => void;
 }
 
-export function ProductCarousel({ title, products, href }: ProductCarouselProps) {
+export function ProductCarousel({ title, products, href, onHeaderClick }: ProductCarouselProps) {
   const { wishlist, toggleWishlist } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -33,39 +35,37 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
     }
   };
 
+  const headerInner = (
+    <>
+      <h3
+        style={{
+          fontSize: '12px',
+          fontWeight: 900,
+          color: 'var(--text-primary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+        }}
+      >
+        {title}
+      </h3>
+      <ChevronRight size={14} color="var(--text-primary)" />
+    </>
+  );
+
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
       {/* Section header */}
-      {/* Section header */}
-      {href ? (
+      {onHeaderClick ? (
+        <button onClick={onHeaderClick} className="flex items-center hover:opacity-70 transition-opacity" style={{ gap: '8px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+          {headerInner}
+        </button>
+      ) : href ? (
         <Link href={href} className="flex items-center hover:opacity-70 transition-opacity" style={{ gap: '8px' }}>
-          <h3
-            style={{
-              fontSize: '12px',
-              fontWeight: 900,
-              color: 'var(--text-primary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-            }}
-          >
-            {title}
-          </h3>
-          <ChevronRight size={14} color="var(--text-primary)" />
+          {headerInner}
         </Link>
       ) : (
         <div className="flex items-center" style={{ gap: '8px' }}>
-          <h3
-            style={{
-              fontSize: '12px',
-              fontWeight: 900,
-              color: 'var(--text-primary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-            }}
-          >
-            {title}
-          </h3>
-          <ChevronRight size={14} color="var(--text-primary)" />
+          {headerInner}
         </div>
       )}
 
