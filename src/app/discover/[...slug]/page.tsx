@@ -12,20 +12,27 @@ import {
   HERO_BANNERS,
 } from '@/data/taxonomy';
 import { useProducts } from '@/hooks/useProducts';
-import { useTrendingProducts, useNewArrivals } from '@/hooks/useRecommendations';
+import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
-import { getProductTag } from '@/lib/api-types';
+import { getProductTag, getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
+import { ProductCard } from '@/components/ProductCard';
 
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 
 export default function DiscoverSlugPage() {
   const params = useParams();
-  const { gender, setGender } = useApp();
+  const { gender, setGender, wishlist, toggleWishlist, user } = useApp();
   const [showFilter, setShowFilter] = useState(false);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // ── Filter & sort state (applies to the product-type grid) ──
+  const [sortOption, setSortOption] = useState<'for_you' | 'trending' | 'top_rated' | 'newest' | 'price_asc' | 'price_desc'>('trending');
+  const [priceBucket, setPriceBucket] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [availInStock, setAvailInStock] = useState(false);
+  const [availOnSale, setAvailOnSale] = useState(false);
 
   // Parse slug
   const rawSlug = params?.slug;
@@ -95,6 +102,16 @@ export default function DiscoverSlugPage() {
     new Set(filteredProducts.map(getProductType).filter(Boolean))
   ).sort();
 
+  // First product image per type — shown as a small thumbnail on each type tab.
+  const typeImage: Record<string, string> = {};
+  for (const p of filteredProducts) {
+    const t = getProductType(p);
+    if (t && !typeImage[t]) {
+      const img = getProductImage(p);
+      if (img) typeImage[t] = img;
+    }
+  }
+
   // ── Step 3: Apply product type filter ──────────────────────────
   let products = [...filteredProducts];
 
@@ -118,31 +135,62 @@ export default function DiscoverSlugPage() {
     );
   }
 
-  // ── Recommendation engine feeds ─────────────────────────────────
-  const { items: trendingItems } = useTrendingProducts(8);
-  const { items: newArrivalItems } = useNewArrivals(8);
+  // ── Recommendation feeds (rank the For You / Trending / What's New sorts) ──
+  const { items: trendingItems } = useTrendingProducts(20);
+  const { items: newArrivalItems } = useNewArrivals(20);
+  const { items: personalizedItems } = usePersonalizedFeed({ limit: 20, gender });
+  const feedIds = (items: ApiFeedItem[]): string[] =>
+    items.map((i) => i.product?._id).filter((id): id is string => !!id);
+  const trendingRank = feedIds(trendingItems);
+  const newRank = feedIds(newArrivalItems);
+  const forYouRank = feedIds(personalizedItems);
 
-  // Helper: extract ApiProduct[] from feed items, filtered to current kind
-  const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
-    items
-      .map(i => i.product)
-      .filter((p): p is ApiProduct => !!p && (!kindFilter || p.kind === kindFilter));
-
-  const getTrending = (ps: ApiProduct[], limit = 8) => {
-    const recProducts = feedToProducts(trendingItems);
-    return recProducts.length > 0 ? recProducts.slice(0, limit) : ps.slice(0, limit);
+  // ── Filter + sort for the product-type grid (over the fetched set) ──
+  const businessName = (p: ApiProduct) =>
+    typeof p.business === 'object' ? p.business?.business_name ?? '' : '';
+  const brands = Array.from(new Set(products.map(businessName).filter(Boolean))).sort();
+  const PRICE_BUCKETS: Record<string, [number, number]> = {
+    'Under ₦50K': [0, 50000],
+    '₦50K - ₦100K': [50000, 100000],
+    '₦100K - ₦200K': [100000, 200000],
+    'Over ₦200K': [200000, Infinity],
   };
-  const getTopRated = (ps: ApiProduct[], limit = 8) => [...ps].reverse().slice(0, limit);
-  const getWhatsNew = (ps: ApiProduct[], limit = 8) => {
-    const recProducts = feedToProducts(newArrivalItems);
-    return recProducts.length > 0 ? recProducts.slice(0, limit) : ps.slice(Math.max(0, ps.length - limit));
+  const SORT_OPTIONS: { id: typeof sortOption; label: string }[] = [
+    // "For You" only when signed in (the personalized feed is empty otherwise).
+    ...(user ? [{ id: 'for_you' as const, label: 'For You' }] : []),
+    { id: 'trending', label: 'Trending' },
+    { id: 'top_rated', label: 'Top Rated' },
+    { id: 'newest', label: "What's New" },
+    { id: 'price_asc', label: 'Price: Low to High' },
+    { id: 'price_desc', label: 'Price: High to Low' },
+  ];
+
+  const displayProducts = (() => {
+    let list = [...products];
+    if (selectedBrand) list = list.filter((p) => businessName(p) === selectedBrand);
+    if (priceBucket && PRICE_BUCKETS[priceBucket]) {
+      const [lo, hi] = PRICE_BUCKETS[priceBucket];
+      list = list.filter((p) => { const pr = getProductPrice(p); return pr >= lo && pr < hi; });
+    }
+    if (availInStock) list = list.filter((p) => p.availability?.state !== 'out_of_stock');
+    if (availOnSale) list = list.filter((p) => hasDiscount(p));
+    const rankIn = (arr: string[], id: string) => { const i = arr.indexOf(id); return i === -1 ? Number.MAX_SAFE_INTEGER : i; };
+    if (sortOption === 'for_you') list.sort((a, b) => rankIn(forYouRank, a._id) - rankIn(forYouRank, b._id));
+    else if (sortOption === 'trending') list.sort((a, b) => rankIn(trendingRank, a._id) - rankIn(trendingRank, b._id));
+    else if (sortOption === 'newest') list.sort((a, b) => rankIn(newRank, a._id) - rankIn(newRank, b._id));
+    else if (sortOption === 'top_rated') list.sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0));
+    else if (sortOption === 'price_asc') list.sort((a, b) => getProductPrice(a) - getProductPrice(b));
+    else if (sortOption === 'price_desc') list.sort((a, b) => getProductPrice(b) - getProductPrice(a));
+    return list;
+  })();
+
+  const resetFilters = () => {
+    setSortOption('trending'); setPriceBucket(null); setSelectedBrand(null);
+    setAvailInStock(false); setAvailOnSale(false);
   };
 
   // Page title
   const pageTitle = current?.label || slugParts[slugParts.length - 1]?.toUpperCase() || 'DISCOVER';
-
-  // Whether to show product carousels — always show when we have a current node
-  const showProducts = true;
 
   // 404-like fallback
   if (!current) {
@@ -163,7 +211,7 @@ export default function DiscoverSlugPage() {
       </div>
 
       {/* Page Title */}
-      <div className="text-center">
+      <div className="text-left lg:text-center">
         <h1
           className="font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px', marginBottom: '8px' }}
@@ -175,7 +223,7 @@ export default function DiscoverSlugPage() {
 
       {/* ── Dynamic Product Type Tabs ─────────────────────────────── */}
       {dynamicProductTypes.length > 0 && (
-        <div className="flex items-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
+        <div className="flex items-center justify-start lg:justify-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
           {dynamicProductTypes.map((pt) => (
             <button
               key={pt}
@@ -188,10 +236,11 @@ export default function DiscoverSlugPage() {
                   setSelectedCategory(null);
                 }
               }}
-              className="flex-shrink-0 transition-all"
+              className="flex-shrink-0 flex items-center transition-all"
               style={{
-                height: '38px',
-                padding: '0 20px',
+                height: '40px',
+                gap: '8px',
+                padding: typeImage[pt] ? '0 16px 0 6px' : '0 20px',
                 borderRadius: '12px',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -204,6 +253,14 @@ export default function DiscoverSlugPage() {
                 whiteSpace: 'nowrap',
               }}
             >
+              {typeImage[pt] && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={typeImage[pt]}
+                  alt=""
+                  style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+                />
+              )}
               {pt}
             </button>
           ))}
@@ -280,39 +337,48 @@ export default function DiscoverSlugPage() {
             </div>
           ))}
         </div>
-      ) : (
-        showProducts && (
-          <>
-            <ProductCarousel 
-              title="Trending" 
-              products={getTrending(products)} 
-              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=relevance`} 
-            />
-            <ProductCarousel 
-              title="Top Rated" 
-              products={getTopRated(products)} 
-              href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
-            />
-
-            {/* Show What's New only at root category level */}
-            {!selectedProductType && (
-              <ProductCarousel 
-                title="What's New" 
-                products={getWhatsNew(products)} 
-                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=date`} 
-              />
-            )}
-
-            {/* Extra top rated row for visual density */}
-            {products.length > 4 && (
-              <ProductCarousel 
-                title="Top Rated" 
-                products={getTopRated(products).reverse()} 
-                href={`/products?search=${encodeURIComponent(searchHint || '')}&sort=rating`} 
-              />
-            )}
-          </>
+      ) : selectedProductType ? (
+        /* ── Product-type view: a grid of that type's products ── */
+        displayProducts.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6 justify-items-center">
+            {displayProducts.map((product) => (
+              <div key={product._id} className="w-full">
+                <ProductCard
+                  id={product._id}
+                  imageUrl={getProductImage(product)}
+                  title={getProductName(product)}
+                  brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+                  price={getProductPrice(product)}
+                  originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+                  tag={getProductTag(product)}
+                  stockState={product.availability?.state}
+                  isFavorite={wishlist.includes(product._id)}
+                  onFavoriteToggle={() => toggleWishlist(product._id)}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16" style={{ gap: '10px' }}>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>No products here yet</p>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Try another type or category.</p>
+          </div>
         )
+      ) : (
+        /* ── Kind view: one carousel per product type; header opens that type ── */
+        <>
+          {dynamicProductTypes.map((pt) => {
+            const typeProducts = filteredProducts.filter((p) => getProductType(p) === pt);
+            return (
+              <ProductCarousel
+                key={pt}
+                title={pt}
+                products={typeProducts}
+                onHeaderClick={() => { setSelectedProductType(pt); setSelectedCategory(null); }}
+              />
+            );
+          })}
+        </>
       )}
 
       {/* ══════ FILTER BOTTOM SHEET (reused vendor pattern) ══════ */}
@@ -336,7 +402,7 @@ export default function DiscoverSlugPage() {
           >
             {/* Drag Handle (mobile) */}
             <div className="flex justify-center pt-3 pb-1 lg:hidden">
-              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--border-glass)' }} />
+              <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
             </div>
 
             {/* Header */}
@@ -357,65 +423,79 @@ export default function DiscoverSlugPage() {
               <div style={{ marginBottom: '28px' }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Sort by</p>
                 <div className="flex flex-col gap-1">
-                  {['Newest', 'Price: Low to High', 'Price: High to Low', 'Most Popular'].map((opt) => (
-                    <button
-                      key={opt}
-                      className="w-full text-left transition-colors hover:bg-[var(--bg-surface-elevated)]"
-                      style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500, padding: '12px 16px', borderRadius: '12px', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+                  {SORT_OPTIONS.map((opt) => {
+                    const active = sortOption === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => setSortOption(opt.id)}
+                        className="w-full text-left transition-colors hover:bg-[var(--bg-surface-elevated)]"
+                        style={{ color: active ? 'var(--brand-fill-text)' : 'var(--text-primary)', fontSize: '14px', fontWeight: active ? 800 : 500, padding: '12px 16px', borderRadius: '12px', background: active ? 'var(--brand-fill)' : 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Brand */}
-              <div style={{ marginBottom: '28px' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Brand</p>
-                <div className="flex flex-wrap gap-2">
-                  {['AFRICANA COUTURE', 'GARM ISLAND', 'FRUCHÉ', 'EJIRO AMOS TAFIRI'].map((brand) => (
-                    <button
-                      key={brand}
-                      className="transition-all"
-                      style={{
-                        padding: '10px 20px',
-                        borderRadius: '9999px',
-                        backgroundColor: 'var(--bg-surface-elevated)',
-                        border: '1px solid var(--border-glass)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {brand}
-                    </button>
-                  ))}
+              {/* Brand — dynamic from the fetched products */}
+              {brands.length > 0 && (
+                <div style={{ marginBottom: '28px' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Brand</p>
+                  <div className="flex flex-wrap gap-2">
+                    {brands.map((brand) => {
+                      const active = selectedBrand === brand;
+                      return (
+                        <button
+                          key={brand}
+                          onClick={() => setSelectedBrand(active ? null : brand)}
+                          className="transition-all"
+                          style={{
+                            padding: '10px 20px',
+                            borderRadius: '9999px',
+                            backgroundColor: active ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+                            border: '1px solid var(--border-glass)',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            color: active ? 'var(--brand-fill-text)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {brand}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Price Range */}
               <div style={{ marginBottom: '28px' }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Price Range</p>
                 <div className="flex flex-wrap gap-2">
-                  {['Under ₦50K', '₦50K - ₦100K', '₦100K - ₦200K', 'Over ₦200K'].map((range) => (
-                    <button
-                      key={range}
-                      className="transition-all"
-                      style={{
-                        padding: '10px 20px',
-                        borderRadius: '9999px',
-                        backgroundColor: 'var(--bg-surface-elevated)',
-                        border: '1px solid var(--border-glass)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {range}
-                    </button>
-                  ))}
+                  {Object.keys(PRICE_BUCKETS).map((range) => {
+                    const active = priceBucket === range;
+                    return (
+                      <button
+                        key={range}
+                        onClick={() => setPriceBucket(active ? null : range)}
+                        className="transition-all"
+                        style={{
+                          padding: '10px 20px',
+                          borderRadius: '9999px',
+                          backgroundColor: active ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+                          border: '1px solid var(--border-glass)',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: active ? 'var(--brand-fill-text)' : 'var(--text-primary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {range}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -423,33 +503,44 @@ export default function DiscoverSlugPage() {
               <div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Availability</p>
                 <div className="flex flex-wrap gap-2">
-                  {['In-stock', 'On sale', 'New arrivals'].map((opt) => (
+                  {[
+                    { label: 'In-stock', active: availInStock, toggle: () => setAvailInStock((v) => !v) },
+                    { label: 'On sale', active: availOnSale, toggle: () => setAvailOnSale((v) => !v) },
+                  ].map((opt) => (
                     <button
-                      key={opt}
+                      key={opt.label}
+                      onClick={opt.toggle}
                       className="transition-all"
                       style={{
                         padding: '10px 20px',
                         borderRadius: '9999px',
-                        backgroundColor: 'var(--bg-surface-elevated)',
+                        backgroundColor: opt.active ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
                         border: '1px solid var(--border-glass)',
                         fontSize: '12px',
                         fontWeight: 700,
-                        color: 'var(--text-primary)',
+                        color: opt.active ? 'var(--brand-fill-text)' : 'var(--text-primary)',
                         cursor: 'pointer',
                       }}
                     >
-                      {opt}
+                      {opt.label}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Apply Button */}
-            <div className="shrink-0" style={{ padding: '0 24px 24px' }}>
+            {/* Footer — Reset + Apply */}
+            <div className="shrink-0 flex items-center gap-3" style={{ padding: '0 24px 24px' }}>
+              <button
+                onClick={resetFilters}
+                className="flex-1 text-sm font-bold transition-colors hover:bg-[var(--bg-surface-elevated)]"
+                style={{ padding: '14px', borderRadius: '16px', backgroundColor: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }}
+              >
+                Reset
+              </button>
               <button
                 onClick={() => setShowFilter(false)}
-                className="w-full text-sm font-bold transition-colors hover:opacity-90"
+                className="flex-1 text-sm font-bold transition-colors hover:opacity-90"
                 style={{ padding: '14px', borderRadius: '16px', backgroundColor: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer' }}
               >
                 Apply Filters

@@ -15,7 +15,7 @@ interface DiscoverBreadcrumbProps {
 
 export function DiscoverBreadcrumb({ items }: DiscoverBreadcrumbProps) {
   return (
-    <nav className="flex items-center flex-wrap" style={{ gap: '6px' }}>
+    <nav className="flex items-center justify-start lg:justify-center flex-wrap" style={{ gap: '6px' }}>
       {items.map((item, idx) => {
         const isLast = idx === items.length - 1;
         return (

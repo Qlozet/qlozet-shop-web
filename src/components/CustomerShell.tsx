@@ -58,8 +58,13 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
     let timeoutId: NodeJS.Timeout | null = null;
 
     const setupObserver = () => {
-      const el = document.getElementById('homepage-top-search');
       const container = scrollContainerRef.current;
+      // The home page's children render in BOTH the mobile and desktop layout
+      // branches, so #homepage-top-search exists twice. getElementById would
+      // return the first (mobile) copy, which is display:none on desktop and thus
+      // never intersects. Query WITHIN the desktop scroll container to observe the
+      // visible one.
+      const el = container?.querySelector('#homepage-top-search') ?? null;
       if (el && container) {
         observer = new IntersectionObserver(
           ([entry]) => {
@@ -497,7 +502,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                   placeholder="What are you looking for today?"
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999]"
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999] text-center focus:text-left"
                   style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
                 />
                 <button

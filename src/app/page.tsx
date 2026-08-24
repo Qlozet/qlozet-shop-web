@@ -239,7 +239,7 @@ export default function HomePage() {
 
         {/* 1. TOP LOGO — hidden on mobile (shell header has it) */}
         <div className="hidden lg:flex items-center justify-center">
-          <QlozetLogo width={80} color="#2C1810" />
+          <QlozetLogo width={80} color="var(--brand-fill)" />
         </div>
 
         {/* 2. SEARCH BAR & DROPDOWN — hidden on mobile (shell header has search) */}
@@ -247,7 +247,7 @@ export default function HomePage() {
           <form
             onSubmit={handleSearchSubmit}
             className={`w-full rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center transition-all duration-300 relative z-40 ${isSearchFocused ? 'shadow-[0_14px_45px_rgba(0,0,0,0.12)]' : ''}`}
-            style={{ padding: '8px 8px 8px 32px', background: 'var(--bg-surface)' }}
+            style={{ padding: '8px 8px 8px 32px', background: 'var(--bg-base)', border: '1px solid var(--border-glass)' }}
           >
             <input
               type="text"
@@ -262,8 +262,8 @@ export default function HomePage() {
             <button
               type="submit"
               aria-label="Search"
-              className="w-[48px] h-[48px] rounded-full bg-[#381F10] text-white flex items-center justify-center hover:bg-[#201007] transition-transform active:scale-95 shrink-0 shadow-[0_4px_15px_rgba(56,31,16,0.5)]"
-              style={{ marginLeft: '16px' }}
+              className="w-[48px] h-[48px] rounded-full flex items-center justify-center transition-transform active:scale-95 shrink-0 hover:opacity-90"
+              style={{ marginLeft: '16px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)' }}
             >
               <ArrowRight size={20} strokeWidth={2.5} />
             </button>
@@ -272,7 +272,7 @@ export default function HomePage() {
           {/* Search Dropdown */}
           <div
             className={`absolute top-full left-0 w-full rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.1)] border flex flex-col transition-all duration-400 origin-top z-30 ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 -translate-y-2 pointer-events-none'}`}
-            style={{ padding: '24px', gap: '20px', marginTop: '12px', background: 'var(--bg-surface)', borderColor: 'var(--border-glass)' }}
+            style={{ padding: '24px', gap: '20px', marginTop: '12px', background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
           >
             <div className="flex flex-col text-left" style={{ gap: '12px' }}>
               <span className="text-[13px] font-extrabold tracking-wide ml-2" style={{ color: 'var(--text-primary)' }}>Suggestions</span>
