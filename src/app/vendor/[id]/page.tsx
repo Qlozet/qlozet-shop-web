@@ -559,7 +559,7 @@ export default function VendorPage() {
       {typeof document !== 'undefined' && createPortal(
         <>
           <div className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${showFilter ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowFilter(false)} />
-          <div className={`vendor-sheet fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showFilter ? 'translate-y-0 lg:translate-x-0 opacity-100' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'}`} style={{ maxHeight: '70vh', overflow: 'hidden', backgroundColor: sheetBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: `1px solid ${sheetBorder}` }}>
+          <div className={`vendor-sheet fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showFilter ? 'translate-y-0 lg:translate-x-0 opacity-100 pointer-events-auto' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0 pointer-events-none'}`} style={{ maxHeight: '70vh', overflow: 'hidden', backgroundColor: sheetBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: `1px solid ${sheetBorder}` }}>
             <div className="flex justify-center pt-3 pb-1 lg:hidden">
               <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: handleColor }} />
             </div>
@@ -662,7 +662,7 @@ export default function VendorPage() {
       {typeof document !== 'undefined' && createPortal(
         <>
           <div className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${showReviews ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowReviews(false)} />
-          <div className={`vendor-sheet fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[420px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showReviews ? 'translate-y-0 lg:translate-x-0 opacity-100' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'}`} style={{ maxHeight: '80vh', overflow: 'hidden', backgroundColor: sheetBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: `1px solid ${sheetBorder}` }}>
+          <div className={`vendor-sheet fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[420px] z-[100] rounded-[24px] flex flex-col transition-all duration-500 ease-out ${showReviews ? 'translate-y-0 lg:translate-x-0 opacity-100 pointer-events-auto' : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0 pointer-events-none'}`} style={{ maxHeight: '80vh', overflow: 'hidden', backgroundColor: sheetBg, boxShadow: '0 -4px 40px rgba(0,0,0,0.2), 0 8px 30px rgba(0,0,0,0.15)', border: `1px solid ${sheetBorder}` }}>
             <div className="flex justify-center pt-3 pb-1 lg:hidden">
               <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: handleColor }} />
             </div>
