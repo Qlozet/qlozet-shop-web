@@ -239,7 +239,7 @@ export default function HomePage() {
 
         {/* 1. TOP LOGO — hidden on mobile (shell header has it) */}
         <div className="hidden lg:flex items-center justify-center">
-          <QlozetLogo width={80} color="#2C1810" />
+          <QlozetLogo width={80} color="var(--brand-fill)" />
         </div>
 
         {/* 2. SEARCH BAR & DROPDOWN — hidden on mobile (shell header has search) */}
@@ -262,8 +262,8 @@ export default function HomePage() {
             <button
               type="submit"
               aria-label="Search"
-              className="w-[48px] h-[48px] rounded-full bg-[#381F10] text-white flex items-center justify-center hover:bg-[#201007] transition-transform active:scale-95 shrink-0 shadow-[0_4px_15px_rgba(56,31,16,0.5)]"
-              style={{ marginLeft: '16px' }}
+              className="w-[48px] h-[48px] rounded-full flex items-center justify-center transition-transform active:scale-95 shrink-0 hover:opacity-90"
+              style={{ marginLeft: '16px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)' }}
             >
               <ArrowRight size={20} strokeWidth={2.5} />
             </button>
