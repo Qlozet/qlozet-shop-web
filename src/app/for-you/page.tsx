@@ -185,17 +185,17 @@ export default function ForYouPage() {
         style={{
           borderRadius: '24px',
           padding: '32px 24px',
-          background: 'linear-gradient(135deg, #2C1810 0%, #43281a 55%, #5a3a24 100%)',
+          background: 'linear-gradient(135deg, #26262a 0%, #313035 55%, #3b3a40 100%)',
         }}
       >
-        {/* decorative glow */}
-        <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,175,55,0.16), transparent 70%)' }} />
-        <div style={{ position: 'absolute', bottom: '-70px', left: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.05), transparent 70%)' }} />
+        {/* decorative glow — soft neutral light */}
+        <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%)' }} />
+        <div style={{ position: 'absolute', bottom: '-70px', left: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.04), transparent 70%)' }} />
 
         <div className="relative flex flex-col" style={{ gap: '16px', maxWidth: '640px' }}>
           <div className="flex items-center" style={{ gap: '8px' }}>
-            <Sparkles size={14} color="#D4AF37" />
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#D4AF37', textTransform: 'uppercase', letterSpacing: '0.16em' }}>
+            <Sparkles size={14} color="#CFC9BE" />
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#CFC9BE', textTransform: 'uppercase', letterSpacing: '0.16em' }}>
               Curated for you
             </span>
           </div>
@@ -238,7 +238,7 @@ export default function ForYouPage() {
                     letterSpacing: '0.02em',
                   }}
                 >
-                  <Icon size={12} color="#D4AF37" />
+                  <Icon size={12} color="#CFC9BE" />
                   {label}
                 </span>
               ))}
@@ -252,7 +252,7 @@ export default function ForYouPage() {
                 padding: '13px 26px',
                 borderRadius: '100px',
                 background: '#FFFFFF',
-                color: '#2C1810',
+                color: '#26262a',
                 fontSize: '12px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
