@@ -223,11 +223,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const backendCartData = rawCart?.data ?? rawCart;
               const backendItems: CartItem[] = (backendCartData?.items ?? []).map(mapBackendCartItem);
 
-              // Merge local guest items that aren't already in the backend cart
-              // (compare by full line identity, not just product id, so distinct
-              // variants of the same product aren't wrongly treated as dupes).
-              const backendLineIds = new Set(backendItems.map((i: CartItem) => cartLineId(i)));
-              const guestOnly = localCart.filter((i) => !backendLineIds.has(cartLineId(i)));
+              // Merge local guest items that aren't already in the backend cart.
+              // NOTE: the backend cart is keyed by product id ONLY (its addItem
+              // merges variants and does quantity += quantity). A composite
+              // lineId therefore never round-trips — mapBackendCartItem can't
+              // reconstruct size/colour — so comparing by lineId re-flagged every
+              // already-synced variant as "guest-only" on each page load and
+              // re-POSTed it, inflating quantity without bound (the "200 items"
+              // bug). Dedupe by product id to match the backend's real identity.
+              const backendProductIds = new Set(backendItems.map((i: CartItem) => i.id));
+              const guestOnly = localCart.filter((i) => !backendProductIds.has(i.id));
 
               // Push guest-only items to backend silently (include selections)
               for (const item of guestOnly) {
