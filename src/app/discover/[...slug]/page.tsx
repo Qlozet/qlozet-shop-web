@@ -14,7 +14,7 @@ import {
 import { useProducts } from '@/hooks/useProducts';
 import { useTrendingProducts, useNewArrivals } from '@/hooks/useRecommendations';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
-import { getProductTag } from '@/lib/api-types';
+import { getProductTag, getProductImage } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 
@@ -94,6 +94,16 @@ export default function DiscoverSlugPage() {
   const dynamicProductTypes = Array.from(
     new Set(filteredProducts.map(getProductType).filter(Boolean))
   ).sort();
+
+  // First product image per type — shown as a small thumbnail on each type tab.
+  const typeImage: Record<string, string> = {};
+  for (const p of filteredProducts) {
+    const t = getProductType(p);
+    if (t && !typeImage[t]) {
+      const img = getProductImage(p);
+      if (img) typeImage[t] = img;
+    }
+  }
 
   // ── Step 3: Apply product type filter ──────────────────────────
   let products = [...filteredProducts];
@@ -188,10 +198,11 @@ export default function DiscoverSlugPage() {
                   setSelectedCategory(null);
                 }
               }}
-              className="flex-shrink-0 transition-all"
+              className="flex-shrink-0 flex items-center transition-all"
               style={{
-                height: '38px',
-                padding: '0 20px',
+                height: '40px',
+                gap: '8px',
+                padding: typeImage[pt] ? '0 16px 0 6px' : '0 20px',
                 borderRadius: '12px',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -204,6 +215,14 @@ export default function DiscoverSlugPage() {
                 whiteSpace: 'nowrap',
               }}
             >
+              {typeImage[pt] && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={typeImage[pt]}
+                  alt=""
+                  style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+                />
+              )}
               {pt}
             </button>
           ))}
