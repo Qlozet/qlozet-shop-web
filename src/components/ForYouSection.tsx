@@ -94,7 +94,7 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
           <div style={{ padding: '20px 20px 6px' }}>
             <span
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 900,
                 color: '#FFFFFF',
                 textTransform: 'uppercase',
@@ -149,8 +149,8 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
           >
             <span
               style={{
-                fontSize: '12px',
-                fontWeight: 800,
+                fontSize: '20px',
+                fontWeight: 900,
                 color: '#FFFFFF',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
@@ -159,7 +159,7 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
             >
               View All
             </span>
-            <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} />
+            <ArrowRight size={22} color="#FFFFFF" strokeWidth={2.5} />
           </Link>
         </div>
       )}
