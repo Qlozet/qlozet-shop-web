@@ -149,7 +149,7 @@ export default function CartPage() {
     return (
       <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in">
         <h1
-          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+          className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px' }}
         >
           My Cart
@@ -205,7 +205,7 @@ export default function CartPage() {
     return (
       <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in">
         <h1
-          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+          className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px' }}
         >
           My Cart
@@ -233,7 +233,7 @@ export default function CartPage() {
 
       {/* ─── Title ────────────────────────────────────────────────── */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+        className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         My Cart

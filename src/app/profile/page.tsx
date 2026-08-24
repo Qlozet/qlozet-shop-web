@@ -308,7 +308,7 @@ function ProfilePageContent() {
 
       {/* ─── Page Title (Desktop always, Mobile only when menu visible) ── */}
       <h1
-        className={`text-center font-display font-extrabold uppercase tracking-[0.12em] text-[color:var(--text-primary)] ${isSubSection ? 'hidden lg:block' : ''}`}
+        className={`text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[color:var(--text-primary)] ${isSubSection ? 'hidden lg:block' : ''}`}
         style={{ fontSize: '22px' }}
       >
         My Account

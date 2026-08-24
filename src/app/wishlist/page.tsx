@@ -59,7 +59,7 @@ export default function WishlistPage() {
     return (
       <div className="flex flex-col gap-6 lg:gap-8 py-4 lg:py-8 animate-fade-in">
         <h1
-          className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+          className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px' }}
         >
           Wishlist
@@ -128,7 +128,7 @@ export default function WishlistPage() {
 
       {/* ─── Header ─────────────────────────────────────────────── */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+        className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         Wishlist

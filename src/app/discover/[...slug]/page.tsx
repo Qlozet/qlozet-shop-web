@@ -173,7 +173,7 @@ export default function DiscoverSlugPage() {
       </div>
 
       {/* Page Title */}
-      <div className="text-center">
+      <div className="text-left lg:text-center">
         <h1
           className="font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
           style={{ fontSize: '22px', marginBottom: '8px' }}
@@ -185,7 +185,7 @@ export default function DiscoverSlugPage() {
 
       {/* ── Dynamic Product Type Tabs ─────────────────────────────── */}
       {dynamicProductTypes.length > 0 && (
-        <div className="flex items-center justify-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
+        <div className="flex items-center justify-start lg:justify-center overflow-x-auto hide-scrollbar" style={{ gap: '8px' }}>
           {dynamicProductTypes.map((pt) => (
             <button
               key={pt}

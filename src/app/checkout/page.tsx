@@ -306,7 +306,7 @@ export default function CheckoutPage() {
 
       {/* ─── Title ────────────────────────────────────────────────── */}
       <h1
-        className="text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+        className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         Checkout
