@@ -12,7 +12,7 @@ import {
   HERO_BANNERS,
 } from '@/data/taxonomy';
 import { useProducts } from '@/hooks/useProducts';
-import { useTrendingProducts, useNewArrivals } from '@/hooks/useRecommendations';
+import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 import { getProductTag, getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
@@ -23,12 +23,12 @@ import { ProductCarousel } from '@/components/discover/ProductCarousel';
 
 export default function DiscoverSlugPage() {
   const params = useParams();
-  const { gender, setGender, wishlist, toggleWishlist } = useApp();
+  const { gender, setGender, wishlist, toggleWishlist, user } = useApp();
   const [showFilter, setShowFilter] = useState(false);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   // ── Filter & sort state (applies to the product-type grid) ──
-  const [sortOption, setSortOption] = useState<'trending' | 'top_rated' | 'newest' | 'price_asc' | 'price_desc'>('trending');
+  const [sortOption, setSortOption] = useState<'for_you' | 'trending' | 'top_rated' | 'newest' | 'price_asc' | 'price_desc'>('trending');
   const [priceBucket, setPriceBucket] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [availInStock, setAvailInStock] = useState(false);
@@ -135,13 +135,15 @@ export default function DiscoverSlugPage() {
     );
   }
 
-  // ── Recommendation feeds (rank the Trending / What's New sorts) ──
+  // ── Recommendation feeds (rank the For You / Trending / What's New sorts) ──
   const { items: trendingItems } = useTrendingProducts(20);
   const { items: newArrivalItems } = useNewArrivals(20);
+  const { items: personalizedItems } = usePersonalizedFeed({ limit: 20, gender });
   const feedIds = (items: ApiFeedItem[]): string[] =>
     items.map((i) => i.product?._id).filter((id): id is string => !!id);
   const trendingRank = feedIds(trendingItems);
   const newRank = feedIds(newArrivalItems);
+  const forYouRank = feedIds(personalizedItems);
 
   // ── Filter + sort for the product-type grid (over the fetched set) ──
   const businessName = (p: ApiProduct) =>
@@ -154,6 +156,8 @@ export default function DiscoverSlugPage() {
     'Over ₦200K': [200000, Infinity],
   };
   const SORT_OPTIONS: { id: typeof sortOption; label: string }[] = [
+    // "For You" only when signed in (the personalized feed is empty otherwise).
+    ...(user ? [{ id: 'for_you' as const, label: 'For You' }] : []),
     { id: 'trending', label: 'Trending' },
     { id: 'top_rated', label: 'Top Rated' },
     { id: 'newest', label: "What's New" },
@@ -171,7 +175,8 @@ export default function DiscoverSlugPage() {
     if (availInStock) list = list.filter((p) => p.availability?.state !== 'out_of_stock');
     if (availOnSale) list = list.filter((p) => hasDiscount(p));
     const rankIn = (arr: string[], id: string) => { const i = arr.indexOf(id); return i === -1 ? Number.MAX_SAFE_INTEGER : i; };
-    if (sortOption === 'trending') list.sort((a, b) => rankIn(trendingRank, a._id) - rankIn(trendingRank, b._id));
+    if (sortOption === 'for_you') list.sort((a, b) => rankIn(forYouRank, a._id) - rankIn(forYouRank, b._id));
+    else if (sortOption === 'trending') list.sort((a, b) => rankIn(trendingRank, a._id) - rankIn(trendingRank, b._id));
     else if (sortOption === 'newest') list.sort((a, b) => rankIn(newRank, a._id) - rankIn(newRank, b._id));
     else if (sortOption === 'top_rated') list.sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0));
     else if (sortOption === 'price_asc') list.sort((a, b) => getProductPrice(a) - getProductPrice(b));
