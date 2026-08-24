@@ -497,7 +497,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                   placeholder="What are you looking for today?"
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999]"
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder-[#999] text-center focus:text-left"
                   style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none' }}
                 />
                 <button
