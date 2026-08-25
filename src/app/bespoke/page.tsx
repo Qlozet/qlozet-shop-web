@@ -431,7 +431,7 @@ function BespokeContent() {
       {/* ─── Top Navigation Tabs ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: '12px' }}>
         <div
-          className="inline-flex items-center overflow-x-auto no-scrollbar self-start"
+          className="flex items-center overflow-x-auto no-scrollbar w-full min-w-0 max-w-full sm:w-auto sm:inline-flex"
           style={{ gap: '4px', padding: '4px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {([
