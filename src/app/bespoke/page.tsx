@@ -428,55 +428,57 @@ function BespokeContent() {
         Bespoke
       </h1>
 
-      {/* ─── Top Navigation Tabs ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: '12px' }}>
+      {/* ─── Top Navigation Tabs (underline style) ─── */}
+      <div className="flex items-end" style={{ gap: '16px' }}>
+        {/* Tab rail — full-width bottom rule; active tab's border sits on it */}
         <div
-          className="flex items-center overflow-x-auto no-scrollbar w-full min-w-0 max-w-full sm:w-auto sm:inline-flex"
-          style={{ gap: '4px', padding: '4px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden no-scrollbar"
+          style={{ borderBottom: '1px solid var(--border-glass)', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {([
-            { id: 'designs', label: 'Designs', Icon: Scissors },
-            { id: 'templates', label: 'Templates', Icon: Layout },
-            { id: 'community', label: 'Community', Icon: Users },
-            { id: 'quotes', label: 'Quotes', Icon: Quote },
-          ] as const).map(({ id, label, Icon }) => {
-            const active = activeTab === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className="flex items-center transition-all flex-shrink-0 active:scale-[0.98]"
-                style={{
-                  gap: '7px',
-                  padding: '9px 15px',
-                  borderRadius: '10px',
-                  fontSize: '12px',
-                  fontWeight: active ? 700 : 600,
-                  color: active ? 'var(--brand-brown)' : 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  background: active ? 'var(--bg-base)' : 'transparent',
-                  boxShadow: active ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <Icon size={14} strokeWidth={active ? 2.4 : 2} />
-                {label}
-              </button>
-            );
-          })}
+          <div className="flex" style={{ gap: '24px', marginBottom: '-1px' }}>
+            {([
+              { id: 'designs', label: 'Designs', Icon: Scissors },
+              { id: 'templates', label: 'Templates', Icon: Layout },
+              { id: 'community', label: 'Community', Icon: Users },
+              { id: 'quotes', label: 'Quotes', Icon: Quote },
+            ] as const).map(({ id, label, Icon }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className="flex items-center flex-shrink-0 transition-colors"
+                  style={{
+                    gap: '7px',
+                    padding: '0 2px 10px',
+                    fontSize: '13px',
+                    fontWeight: active ? 700 : 500,
+                    color: active ? 'var(--brand-brown)' : 'var(--text-muted)',
+                    background: 'none',
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    borderBottom: active ? '2px solid var(--brand-brown)' : '2px solid transparent',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Icon size={15} strokeWidth={active ? 2.4 : 2} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* New Design button */}
+        {/* New Design button (desktop) */}
         <button
           onClick={() => {
             if (!user) return;
             setModalStep('start');
           }}
           disabled={!user}
-          className="hidden sm:flex items-center transition-all hover:opacity-90 active:scale-[0.98] sm:w-auto justify-center sm:justify-start"
+          className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
           style={{
             padding: '10px 20px',
             borderRadius: '10px',
@@ -490,6 +492,7 @@ function BespokeContent() {
             cursor: !user ? 'not-allowed' : 'pointer',
             gap: '6px',
             opacity: !user ? 0.4 : 1,
+            marginBottom: '6px',
           }}
         >
           <Plus size={14} />
