@@ -470,34 +470,6 @@ function BespokeContent() {
             })}
           </div>
         </div>
-
-        {/* New Design button (desktop) */}
-        <button
-          onClick={() => {
-            if (!user) return;
-            setModalStep('start');
-          }}
-          disabled={!user}
-          className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{
-            padding: '10px 20px',
-            borderRadius: '10px',
-            background: 'var(--brand-fill)',
-            color: 'var(--brand-fill-text)',
-            fontSize: '11px',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            border: 'none',
-            cursor: !user ? 'not-allowed' : 'pointer',
-            gap: '6px',
-            opacity: !user ? 0.4 : 1,
-            marginBottom: '6px',
-          }}
-        >
-          <Plus size={14} />
-          New Design
-        </button>
       </div>
 
       {/* ═══ DESIGNS TAB ═══ */}
@@ -604,7 +576,7 @@ function BespokeContent() {
                 </div>
 
                 {/* Category chips */}
-                <div className="flex items-center overflow-x-auto no-scrollbar w-full" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex items-center overflow-x-auto no-scrollbar w-full lg:flex-1 lg:w-auto min-w-0" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat}
@@ -629,6 +601,33 @@ function BespokeContent() {
                     </button>
                   ))}
                 </div>
+
+                {/* New Design button (desktop) — on the search + filter line */}
+                <button
+                  onClick={() => {
+                    if (!user) return;
+                    setModalStep('start');
+                  }}
+                  disabled={!user}
+                  className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '10px',
+                    background: 'var(--brand-fill)',
+                    color: 'var(--brand-fill-text)',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    border: 'none',
+                    cursor: !user ? 'not-allowed' : 'pointer',
+                    gap: '6px',
+                    opacity: !user ? 0.4 : 1,
+                  }}
+                >
+                  <Plus size={14} />
+                  New Design
+                </button>
               </div>
 
               {/* Loading Skeleton */}
