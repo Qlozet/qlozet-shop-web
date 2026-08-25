@@ -460,7 +460,7 @@ export default function ForYouPage() {
                       )}
                     </div>
                     <div className="flex flex-col" style={{ gap: '2px', minWidth: 0, flex: 1 }}>
-                      <span className="truncate" style={{ fontSize: '13px', fontWeight: 800, color: '#FFF' }}>{vendorName}</span>
+                      <span className="truncate" style={{ fontFamily: "var(--font-outfit), 'Outfit', sans-serif", fontSize: '13px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{vendorName}</span>
                       {v.explanations?.[0] && (
                         <span className="truncate" style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.7)' }}>{v.explanations[0]}</span>
                       )}
