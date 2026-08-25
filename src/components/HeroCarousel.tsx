@@ -50,7 +50,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ slides, interval = 5
 
   return (
     <div
-      className="relative overflow-hidden w-full rounded-[30px] h-[380px] lg:h-[360px]"
+      className="relative overflow-hidden w-full rounded-[30px] h-[440px] lg:h-[420px]"
       style={{ background: 'var(--bg-surface-elevated)', boxShadow: '0 4px 24px rgba(0,0,0,0.14)' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
