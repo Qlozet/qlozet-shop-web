@@ -47,7 +47,7 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
           alt="For You"
           fill
           quality={90}
-          className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
+          className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
           sizes="(max-width: 768px) 100vw, 60vw"
         />
         {/* Dark gradient overlay */}
