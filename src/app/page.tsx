@@ -373,8 +373,14 @@ export default function HomePage() {
     return <FeedSkeleton />;
   }
 
-  // First product image for "For You" hero
-  const forYouHeroImage = allProducts[0] ? getProductImage(allProducts[0]) : undefined;
+  // "For You" hero image — prefer a recommended product, fall back to the
+  // first catalog product so the card always has an image.
+  const recommendedProducts = feedToProducts(personalizedItems);
+  const forYouHeroImage = recommendedProducts[0]
+    ? getProductImage(recommendedProducts[0])
+    : allProducts[0]
+      ? getProductImage(allProducts[0])
+      : undefined;
 
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '36px' }}>
@@ -437,15 +443,8 @@ export default function HomePage() {
       })}
 
       {/* ── Recommendation Engine Rows ──────────────────────────── */}
-
-      {/* Personalized "For You" — logged-in only */}
-      {user && feedToProducts(personalizedItems).length > 0 && (
-        <ProductCarousel
-          title="For You"
-          products={feedToProducts(personalizedItems)}
-          href="/discover"
-        />
-      )}
+      {/* NOTE: the personalized "For You" carousel now lives on the Explore
+          page (/discover); the home surfaces For You via the hero card below. */}
 
       {/* Trending — powered by recommendation engine, fallback to generic */}
       {(() => {
