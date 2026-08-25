@@ -535,17 +535,52 @@ function BespokeContent() {
             </div>
           ) : (
             <>
-              {/* Search + filter */}
-              <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
-                <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
-                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '1px 14px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', gap: '8px', maxWidth: '300px' }}>
+              {/* Search + filter — styled like the vendor storefront products header:
+                  filter pills on the left, a bordered search pill on the right. */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between" style={{ gap: '16px' }}>
+                {/* Category chips (left, scrollable pills) */}
+                <div className="flex items-center overflow-x-auto no-scrollbar w-full md:flex-1 min-w-0" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {CATEGORIES.map((cat) => {
+                    const active = activeCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className="transition-all flex-shrink-0"
+                        style={{
+                          height: '34px',
+                          padding: '0 16px',
+                          borderRadius: '100px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          color: active ? 'var(--bg-base)' : 'var(--text-secondary)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          background: active ? 'var(--text-primary)' : 'var(--bg-surface-elevated)',
+                          border: `1px solid ${active ? 'var(--text-primary)' : 'var(--border-glass)'}`,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Search + New Design (right) */}
+                <div className="flex items-center w-full md:w-auto flex-shrink-0" style={{ gap: '8px' }}>
+                  <div
+                    className="flex items-center flex-1 md:flex-none md:w-56"
+                    style={{ padding: '7px 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
+                  >
                     <Search size={14} color="var(--text-muted)" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search bespoke"
-                      className="flex-1 bg-transparent border-none outline-none"
+                      className="flex-1 bg-transparent border-none outline-none min-w-0"
                       style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', background: 'transparent', border: 'none', outline: 'none' }}
                     />
                   </div>
@@ -559,75 +594,40 @@ function BespokeContent() {
                         setModalStep('start');
                       }
                     }}
-                    className="flex sm:hidden items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+                    className="flex sm:hidden items-center justify-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
+                    style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Plus size={20} />
+                  </button>
+
+                  {/* Desktop New Design button */}
+                  <button
+                    onClick={() => {
+                      if (!user) return;
+                      setModalStep('start');
+                    }}
+                    disabled={!user}
+                    className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
                     style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
+                      padding: '9px 20px',
+                      borderRadius: '100px',
                       background: 'var(--brand-fill)',
                       color: 'var(--brand-fill-text)',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
                       border: 'none',
-                      cursor: 'pointer',
-                      flexShrink: 0,
+                      cursor: !user ? 'not-allowed' : 'pointer',
+                      gap: '6px',
+                      opacity: !user ? 0.4 : 1,
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <Plus size={22} />
+                    <Plus size={14} />
+                    New Design
                   </button>
                 </div>
-
-                {/* Category chips */}
-                <div className="flex items-center overflow-x-auto no-scrollbar w-full lg:flex-1 lg:w-auto min-w-0" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className="transition-all"
-                      style={{
-                        height: '36px',
-                        padding: '0 16px',
-                        borderRadius: '100px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        color: activeCategory === cat ? 'var(--bg-base)' : 'var(--text-primary)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        background: activeCategory === cat ? 'var(--text-primary)' : 'var(--bg-surface-elevated)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                {/* New Design button (desktop) — on the search + filter line */}
-                <button
-                  onClick={() => {
-                    if (!user) return;
-                    setModalStep('start');
-                  }}
-                  disabled={!user}
-                  className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '10px',
-                    background: 'var(--brand-fill)',
-                    color: 'var(--brand-fill-text)',
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    border: 'none',
-                    cursor: !user ? 'not-allowed' : 'pointer',
-                    gap: '6px',
-                    opacity: !user ? 0.4 : 1,
-                  }}
-                >
-                  <Plus size={14} />
-                  New Design
-                </button>
               </div>
 
               {/* Loading Skeleton */}
