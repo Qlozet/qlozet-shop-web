@@ -7,7 +7,7 @@ import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { QlozetLogo } from '@/components/QlozetLogo';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Check, Crown, Palette, Shirt, Star, Briefcase, Zap, Scissors, ShoppingBag, type LucideIcon } from 'lucide-react';
 
 type OnboardStep = 1 | 2 | 3;
 
@@ -22,21 +22,52 @@ export default function OnboardingPage() {
 
   // STEP 3: Aesthetics
   const [selectedAesthetics, setSelectedAesthetics] = useState<string[]>([]);
+  const [savingAesthetics, setSavingAesthetics] = useState(false);
 
-  const aestheticsList = [
-    { id: 'traditional', label: 'Traditional', image: '/image/agbada-outfit.png' },
-    { id: 'ankara', label: 'Ankara Prints', image: '/image/ankara.png' },
-    { id: 'kaftan', label: 'Kaftans', image: '/image/bespoke-kaftan-brown-1.png' },
-    { id: 'evening', label: 'Evening Wear', image: '/image/bespoke-dress-1.png' },
-    { id: 'corporate', label: 'Corporate', image: '/image/bespoke-kaftan-milk-1.png' },
-    { id: 'streetwear', label: 'Streetwear', image: '/image/bespoke-ankara-2.png' },
-    { id: 'fabrics', label: 'Fabrics', image: '/image/fabric-1.jpg' },
-    { id: 'accessories', label: 'Accessories', image: '/image/qlozet-bag.png' },
+  const aestheticsList: { id: string; label: string; icon: LucideIcon }[] = [
+    { id: 'traditional', label: 'Traditional', icon: Crown },
+    { id: 'ankara', label: 'Ankara Prints', icon: Palette },
+    { id: 'kaftan', label: 'Kaftans', icon: Shirt },
+    { id: 'evening', label: 'Evening Wear', icon: Star },
+    { id: 'corporate', label: 'Corporate', icon: Briefcase },
+    { id: 'streetwear', label: 'Streetwear', icon: Zap },
+    { id: 'fabrics', label: 'Fabrics', icon: Scissors },
+    { id: 'accessories', label: 'Accessories', icon: ShoppingBag },
   ];
 
   const handleToggleAesthetic = (id: string) => {
     setSelectedAesthetics(prev =>
       prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  };
+
+  // Clean icon tile — no dummy imagery; label + icon + check when selected.
+  const renderAestheticTile = (aes: { id: string; label: string; icon: LucideIcon }) => {
+    const isActive = selectedAesthetics.includes(aes.id);
+    const Icon = aes.icon;
+    return (
+      <button
+        key={aes.id}
+        type="button"
+        onClick={() => handleToggleAesthetic(aes.id)}
+        className="relative flex flex-col items-center justify-center text-center transition-all active:scale-[0.98] hover:opacity-95"
+        style={{
+          padding: '22px 12px',
+          borderRadius: '16px',
+          gap: '10px',
+          cursor: 'pointer',
+          border: isActive ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+          background: isActive ? 'var(--brand-brown-tint, rgba(139,90,43,0.1))' : 'var(--bg-surface-elevated)',
+        }}
+      >
+        {isActive && (
+          <span className="absolute" style={{ top: '8px', right: '8px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--brand-fill)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Check size={12} color="var(--brand-fill-text)" strokeWidth={3} />
+          </span>
+        )}
+        <Icon size={26} color={isActive ? 'var(--brand-brown)' : 'var(--text-secondary)'} strokeWidth={1.5} />
+        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{aes.label}</span>
+      </button>
     );
   };
 
@@ -54,15 +85,21 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleFinishOnboarding = () => {
-    // Save aesthetic preferences to user profile
+  const handleFinishOnboarding = async () => {
+    // Save aesthetic preferences to user profile (these feed the recommendation
+    // engine's style vector). Await so it actually persists before we leave.
     if (selectedAesthetics.length > 0) {
-      api.patch('/users/me/profile', { aesthetic_preferences: selectedAesthetics }).catch(() => {});
-      // Fire recommendation event via tracking hook
+      setSavingAesthetics(true);
+      try {
+        await api.patch('/users/me/profile', { aesthetic_preferences: selectedAesthetics });
+      } catch {
+        /* non-blocking — still let the user into the app */
+      }
       trackEvent({
         eventType: 'preferred_aesthetic',
         properties: { aesthetics: selectedAesthetics },
       });
+      setSavingAesthetics(false);
     }
     router.push('/');
   };
@@ -288,41 +325,18 @@ export default function OnboardingPage() {
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 overflow-y-auto hide-scrollbar" style={{ maxHeight: '380px' }}>
-                  {aestheticsList.map((aes) => {
-                    const isActive = selectedAesthetics.includes(aes.id);
-                    return (
-                      <div
-                        key={aes.id}
-                        onClick={() => handleToggleAesthetic(aes.id)}
-                        className="relative overflow-hidden cursor-pointer transition-all"
-                        style={{
-                          aspectRatio: '3/4',
-                          borderRadius: '16px',
-                          border: isActive ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
-                        }}
-                      >
-                        <Image src={aes.image} alt={aes.label} fill style={{ objectFit: 'cover' }} />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent" style={{ padding: '12px' }}>
-                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{aes.label}</span>
-                        </div>
-                        {isActive && (
-                          <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
-                            <span style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#462814', fontWeight: 800, fontSize: '16px' }}>✓</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {aestheticsList.map(renderAestheticTile)}
                 </div>
 
                 <div className="flex flex-col" style={{ gap: '10px', marginTop: '20px' }}>
                   <button
                     onClick={handleFinishOnboarding}
+                    disabled={savingAesthetics}
                     className="w-full flex items-center justify-center transition-all hover:opacity-90"
-                    style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', gap: '8px' }}
+                    style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: savingAesthetics ? 'not-allowed' : 'pointer', gap: '8px', opacity: savingAesthetics ? 0.6 : 1 }}
                   >
                     <Sparkles size={14} />
-                    FINISH
+                    {savingAesthetics ? 'SAVING…' : 'FINISH'}
                   </button>
                   <button
                     onClick={handleSkipAesthetics}
@@ -546,41 +560,18 @@ export default function OnboardingPage() {
 
                 {/* Aesthetics Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-y-auto max-h-[380px] pr-1">
-                  {aestheticsList.map((aes) => {
-                    const isActive = selectedAesthetics.includes(aes.id);
-                    return (
-                      <div
-                        key={aes.id}
-                        onClick={() => handleToggleAesthetic(aes.id)}
-                        className="relative overflow-hidden cursor-pointer transition-all hover:scale-[1.02]"
-                        style={{
-                          aspectRatio: '3/4',
-                          borderRadius: '16px',
-                          border: isActive ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
-                        }}
-                      >
-                        <Image src={aes.image} alt={aes.label} fill style={{ objectFit: 'cover' }} />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent" style={{ padding: '10px' }}>
-                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{aes.label}</span>
-                        </div>
-                        {isActive && (
-                          <div className="absolute inset-0 bg-black/35 flex items-center justify-center animate-fade-in">
-                            <span style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#462814', fontWeight: 800, fontSize: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>✓</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {aestheticsList.map(renderAestheticTile)}
                 </div>
 
                 <div className="flex flex-col" style={{ gap: '10px', marginTop: '4px' }}>
                   <button
                     onClick={handleFinishOnboarding}
+                    disabled={savingAesthetics}
                     className="w-full flex items-center justify-center transition-all hover:opacity-90"
-                    style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: 'pointer', gap: '8px' }}
+                    style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', cursor: savingAesthetics ? 'not-allowed' : 'pointer', gap: '8px', opacity: savingAesthetics ? 0.6 : 1 }}
                   >
                     <Sparkles size={14} />
-                    FINISH PERSONALIZATION
+                    {savingAesthetics ? 'SAVING…' : 'FINISH PERSONALIZATION'}
                   </button>
                   <button
                     onClick={handleSkipAesthetics}

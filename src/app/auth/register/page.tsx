@@ -8,6 +8,9 @@ import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
 import { Mail, Check, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
+import { PhoneField } from '@/components/auth/PhoneField';
+import { AddressAutocomplete } from '@/components/auth/AddressAutocomplete';
+import { OtpInputs } from '@/components/auth/OtpInputs';
 
 type RegisterStep = 'email' | 'personal' | 'password' | 'otp';
 
@@ -21,6 +24,7 @@ export default function RegisterPage() {
   // Form Fields
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [dialCode, setDialCode] = useState('+234');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [dob, setDob] = useState('');
@@ -123,7 +127,9 @@ export default function RegisterPage() {
     api.post('/auth/register/customer', {
       full_name: fullName,
       email,
-      phone_number: phone,
+      // Combine the selected country dial code with the local number
+      // (dropping any leading zero, e.g. +234 + 0801… → +234801…).
+      phone_number: `${dialCode}${phone.replace(/\D/g, '').replace(/^0+/, '')}`,
       password,
       dob,
     })
@@ -137,56 +143,12 @@ export default function RegisterPage() {
       });
   };
 
-  // Form Handler Step 4 (OTP Verification)
-  const handleOtpChange = (val: string, index: number) => {
-    if (isNaN(Number(val))) return;
-    const newOtp = [...otp];
-    newOtp[index] = val.substring(val.length - 1);
-    setOtp(newOtp);
-
-    // Focus next cell automatically
-    if (val && index < 5) {
-      const nextEl = document.getElementById(`otp-${index + 1}`) || document.getElementById(`otp-m-${index + 1}`);
-      if (nextEl) nextEl.focus();
-    }
-
-    // Auto-submit when all 6 digits are filled
-    if (newOtp.every(cell => cell !== '')) {
-      const code = newOtp.join('');
-      setError('');
-      setIsLoading(true);
-      api.post('/auth/verify-email', { token: code })
-        .then(async () => {
-          await authenticateUser(email, password);
-          setIsLoading(false);
-          router.push('/auth/onboarding');
-        })
-        .catch((err: any) => {
-          setIsLoading(false);
-          setError(err.response?.data?.message || 'Verification failed. Please check the code.');
-        });
-    }
-  };
-
-  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevEl = document.getElementById(`otp-${index - 1}`);
-      if (prevEl) {
-        prevEl.focus();
-      }
-    }
-  };
-
-  const handleOtpSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.some(cell => !cell)) {
-      setError('Please enter the full 6-digit code.');
-      return;
-    }
+  // Form Handler Step 4 (OTP Verification) — shared by typing/paste (onComplete)
+  // and the submit button. Focus + paste handling lives in <OtpInputs />.
+  const verifyOtp = (code: string) => {
+    if (code.length < 6) return;
     setError('');
     setIsLoading(true);
-    
-    const code = otp.join('');
     api.post('/auth/verify-email', { token: code })
       .then(async () => {
         await authenticateUser(email, password);
@@ -197,6 +159,15 @@ export default function RegisterPage() {
         setIsLoading(false);
         setError(err.response?.data?.message || 'Verification failed. Please check the code.');
       });
+  };
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.some(cell => !cell)) {
+      setError('Please enter the full 6-digit code.');
+      return;
+    }
+    verifyOtp(otp.join(''));
   };
 
   return (
@@ -304,15 +275,15 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
-                  <input type="tel" placeholder="08112345677" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                  <PhoneField variant="underline" dialCode={dialCode} onDialCodeChange={setDialCode} value={phone} onChange={setPhone} />
                 </div>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Address</label>
-                  <input type="text" placeholder="13c Hallen Estate, Abuja" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={address} onChange={(e) => setAddress(e.target.value)} required />
+                  <AddressAutocomplete variant="underline" value={address} onChange={setAddress} placeholder="13c Hallen Estate, Abuja" />
                 </div>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date of Birth</label>
-                  <input type="text" placeholder="May 20, 1995" style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={dob} onChange={(e) => setDob(e.target.value)} required />
+                  <input type="date" max={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1px solid var(--border-glass)', background: 'transparent', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} value={dob} onChange={(e) => setDob(e.target.value)} required />
                 </div>
                 <button type="submit" className="w-full flex items-center justify-center" style={{ padding: '15px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', marginTop: '12px' }}>CONTINUE</button>
               </form>
@@ -392,45 +363,7 @@ export default function RegisterPage() {
 
               <form onSubmit={handleOtpSubmit} className="flex flex-col items-center w-full" style={{ gap: '28px' }}>
                 {/* 4 OTP underline inputs */}
-                <div className="flex justify-center" style={{ gap: '16px' }}>
-                  {otp.map((cell, idx) => (
-                    <input
-                      key={idx}
-                      id={`otp-m-${idx}`}
-                      type="text"
-                      style={{
-                        width: '56px',
-                        height: '48px',
-                        border: 'none',
-                        borderBottom: cell ? '2px solid var(--text-primary)' : '2px solid var(--border-glass)',
-                        background: 'transparent',
-                        fontSize: '20px',
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        textAlign: 'center',
-                        outline: 'none',
-                        fontFamily: 'var(--font-display)',
-                      }}
-                      value={cell}
-                      onChange={(e) => {
-                        handleOtpChange(e.target.value, idx);
-                        // Auto-focus next on mobile
-                        if (e.target.value && idx < 5) {
-                          const nextEl = document.getElementById(`otp-m-${idx + 1}`);
-                          if (nextEl) nextEl.focus();
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
-                          const prevEl = document.getElementById(`otp-m-${idx - 1}`);
-                          if (prevEl) prevEl.focus();
-                        }
-                      }}
-                      maxLength={1}
-                      required
-                    />
-                  ))}
-                </div>
+                <OtpInputs value={otp} onChange={setOtp} onComplete={verifyOtp} idPrefix="otp-m" />
 
                 <button type="button" onClick={() => setStep('otp')} style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
                   Verify from email
@@ -725,39 +658,21 @@ export default function RegisterPage() {
                 {/* Phone */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Phone Number</label>
-                  <input 
-                    type="tel" 
-                    placeholder="08112345677" 
-                    style={inputStyle}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    onFocus={handleFocus}
-                    onBlur={handleBlur}
-                    required
-                  />
+                  <PhoneField dialCode={dialCode} onDialCodeChange={setDialCode} value={phone} onChange={setPhone} />
                 </div>
 
                 {/* Address */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Address</label>
-                  <input 
-                    type="text" 
-                    placeholder="13c Hallen Estate, Abuja, Nigeria" 
-                    style={inputStyle}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    onFocus={handleFocus}
-                    onBlur={handleBlur}
-                    required
-                  />
+                  <AddressAutocomplete value={address} onChange={setAddress} placeholder="Start typing your address…" />
                 </div>
 
                 {/* DOB */}
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Date of Birth</label>
-                  <input 
-                    type="text" 
-                    placeholder="May 20, 1995" 
+                  <input
+                    type="date"
+                    max={new Date().toISOString().split('T')[0]}
                     style={inputStyle}
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
@@ -981,36 +896,7 @@ export default function RegisterPage() {
 
               <form onSubmit={handleOtpSubmit} className="flex flex-col" style={{ gap: '28px' }}>
                 {/* 4 Cells grid */}
-                <div className="flex justify-center" style={{ gap: '12px' }}>
-                  {otp.map((cell, idx) => (
-                    <input
-                      key={idx}
-                      id={`otp-${idx}`}
-                      type="text"
-                      style={{
-                        width: '56px',
-                        height: '64px',
-                        borderRadius: '14px',
-                        border: cell ? '2px solid var(--brand-brown)' : '1px solid var(--border-glass)',
-                        background: 'var(--bg-surface-elevated)',
-                        fontSize: '22px',
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        textAlign: 'center',
-                        outline: 'none',
-                        transition: 'border-color 0.2s, box-shadow 0.2s',
-                        fontFamily: 'var(--font-display)',
-                      }}
-                      value={cell}
-                      onChange={(e) => handleOtpChange(e.target.value, idx)}
-                      onKeyDown={(e) => handleOtpKeyDown(e, idx)}
-                      onFocus={(e) => { e.target.style.borderColor = 'var(--brand-brown)'; e.target.style.boxShadow = '0 0 0 3px rgba(70,40,20,0.08)'; }}
-                      onBlur={(e) => { e.target.style.borderColor = cell ? 'var(--brand-brown)' : 'var(--border-glass)'; e.target.style.boxShadow = 'none'; }}
-                      maxLength={1}
-                      required
-                    />
-                  ))}
-                </div>
+                <OtpInputs value={otp} onChange={setOtp} onComplete={verifyOtp} idPrefix="otp" />
 
                 <button
                   type="submit"
