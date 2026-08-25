@@ -9,10 +9,11 @@ import { useVendors } from '@/hooks/useVendors';
 import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
-import { useAskFashion } from '@/hooks/useRecommendations';
+import { useAskFashion, useTrendingProducts } from '@/hooks/useRecommendations';
 import { Markdown } from '@/components/Markdown';
 import {
   Search,
+  SearchX,
   List,
   Clock,
   PenLine,
@@ -40,7 +41,7 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
-  const { wishlist, toggleWishlist } = useApp();
+  const { wishlist, toggleWishlist, gender } = useApp();
   const trackEvent = useTrackEvent();
   const { ask, response: aiResponse, loading: aiLoading, error: aiError, reset: resetAI, history: chatHistory } = useAskFashion();
 
@@ -72,6 +73,18 @@ function SearchContent() {
   // or by having products that match the query.
   const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 6, search: query || undefined });
 
+  // ── Fallback pool for zero-result searches ──────────────────
+  // When the exact query returns nothing we never leave the user on a blank
+  // screen: show a clearly-labelled "you might also like" set from trending,
+  // with an unfiltered product listing as a guaranteed backup.
+  const audience = gender === 'male' ? 'men' : 'women';
+  const { products: browsePool } = useProducts({ size: 20, audience });
+  const { items: trendingItems } = useTrendingProducts(12);
+  const trendingProducts = trendingItems
+    .map((i) => i.product)
+    .filter((p): p is ApiProduct => !!p);
+  const fallbackProducts: ApiProduct[] = (trendingProducts.length > 0 ? trendingProducts : browsePool).slice(0, 12);
+
   // Map vendors for display
   const DEMO_VENDORS = allVendors.slice(0, 6).map((v) => ({
     id: v._id,
@@ -89,6 +102,25 @@ function SearchContent() {
   // ═══════════════════════════════════════════════════════════
   //  SEARCH RESULTS VIEW
   // ═══════════════════════════════════════════════════════════
+  const renderProductGrid = (products: ApiProduct[]) => (
+    <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 lg:gap-5">
+      {products.map((product) => (
+        <ProductCard
+          key={product._id}
+          id={product._id}
+          imageUrl={getProductImage(product)}
+          title={getProductName(product)}
+          brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
+          price={getProductPrice(product)}
+          originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
+          tag={getProductTag(product)}
+          isFavorite={wishlist.includes(product._id)}
+          onFavoriteToggle={(id) => toggleWishlist(id as string)}
+        />
+      ))}
+    </div>
+  );
+
   const renderSearchResults = () => (
     <div className="animate-fade-in flex flex-col" style={{ gap: '32px' }}>
       {/* Vendor Results — only shown when the search matches vendors */}
@@ -216,22 +248,57 @@ function SearchContent() {
         <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
           Item Results
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 lg:gap-5">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product._id}
-              id={product._id}
-              imageUrl={getProductImage(product)}
-              title={getProductName(product)}
-              brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
-              price={getProductPrice(product)}
-              originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
-              tag={getProductTag(product)}
-              isFavorite={wishlist.includes(product._id)}
-              onFavoriteToggle={(id) => toggleWishlist(id as string)}
-            />
-          ))}
-        </div>
+
+        {productsLoading ? (
+          /* Loading skeleton */
+          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 lg:gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex flex-col animate-pulse" style={{ gap: '10px' }}>
+                <div style={{ aspectRatio: '214/264', borderRadius: '16px', background: 'var(--bg-surface-elevated)' }} />
+                <div style={{ height: '11px', width: '60%', borderRadius: '6px', background: 'var(--bg-surface-elevated)' }} />
+                <div style={{ height: '13px', width: '80%', borderRadius: '6px', background: 'var(--bg-surface-elevated)' }} />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          renderProductGrid(filteredProducts)
+        ) : (
+          /* No exact matches — never leave a blank screen */
+          <div className="flex flex-col" style={{ gap: '28px' }}>
+            <div
+              className="flex flex-col items-center text-center"
+              style={{ padding: '28px 24px', gap: '12px', borderRadius: '20px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)' }}
+            >
+              <SearchX size={28} color="var(--brand-brown)" strokeWidth={1.5} />
+              <div className="flex flex-col" style={{ gap: '4px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  No exact matches for &ldquo;{query}&rdquo;
+                </p>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '360px' }}>
+                  We couldn&apos;t find items matching that exactly. Try our AI stylist for a smarter search, or explore the picks below.
+                </p>
+              </div>
+              <button
+                onClick={() => handleSetViewMode('ai')}
+                className="inline-flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{ marginTop: '4px', padding: '11px 22px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', border: 'none', cursor: 'pointer', gap: '8px' }}
+              >
+                <Wand2 size={14} />
+                Ask the stylist
+              </button>
+            </div>
+
+            {/* Labelled fallback — clearly separated from real matches */}
+            {fallbackProducts.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '14px' }}>
+                  You might also like
+                </h3>
+                {renderProductGrid(fallbackProducts)}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
