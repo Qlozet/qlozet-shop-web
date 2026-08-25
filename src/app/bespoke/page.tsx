@@ -430,29 +430,43 @@ function BespokeContent() {
 
       {/* ─── Top Navigation Tabs ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: '12px' }}>
-        <div className="flex items-center overflow-x-auto no-scrollbar" style={{ gap: '2px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {(['designs', 'templates', 'community', 'quotes'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="transition-all flex-shrink-0"
-              style={{
-                padding: '8px 14px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: activeTab === tab ? 800 : 600,
-                color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                background: activeTab === tab ? 'rgba(44,24,16,0.06)' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tab}
-            </button>
-          ))}
+        <div
+          className="inline-flex items-center overflow-x-auto no-scrollbar self-start"
+          style={{ gap: '4px', padding: '4px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {([
+            { id: 'designs', label: 'Designs', Icon: Scissors },
+            { id: 'templates', label: 'Templates', Icon: Layout },
+            { id: 'community', label: 'Community', Icon: Users },
+            { id: 'quotes', label: 'Quotes', Icon: Quote },
+          ] as const).map(({ id, label, Icon }) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className="flex items-center transition-all flex-shrink-0 active:scale-[0.98]"
+                style={{
+                  gap: '7px',
+                  padding: '9px 15px',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  fontWeight: active ? 700 : 600,
+                  color: active ? 'var(--brand-brown)' : 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  background: active ? 'var(--bg-base)' : 'transparent',
+                  boxShadow: active ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Icon size={14} strokeWidth={active ? 2.4 : 2} />
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* New Design button */}
