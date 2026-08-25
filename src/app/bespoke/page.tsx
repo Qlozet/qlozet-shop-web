@@ -428,59 +428,48 @@ function BespokeContent() {
         Bespoke
       </h1>
 
-      {/* ─── Top Navigation Tabs ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: '12px' }}>
-        <div className="flex items-center overflow-x-auto no-scrollbar" style={{ gap: '2px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {(['designs', 'templates', 'community', 'quotes'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="transition-all flex-shrink-0"
-              style={{
-                padding: '8px 14px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: activeTab === tab ? 800 : 600,
-                color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                background: activeTab === tab ? 'rgba(44,24,16,0.06)' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* New Design button */}
-        <button
-          onClick={() => {
-            if (!user) return;
-            setModalStep('start');
-          }}
-          disabled={!user}
-          className="hidden sm:flex items-center transition-all hover:opacity-90 active:scale-[0.98] sm:w-auto justify-center sm:justify-start"
-          style={{
-            padding: '10px 20px',
-            borderRadius: '10px',
-            background: 'var(--brand-fill)',
-            color: 'var(--brand-fill-text)',
-            fontSize: '11px',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            border: 'none',
-            cursor: !user ? 'not-allowed' : 'pointer',
-            gap: '6px',
-            opacity: !user ? 0.4 : 1,
-          }}
+      {/* ─── Top Navigation Tabs (underline style) ─── */}
+      <div className="flex items-end" style={{ gap: '16px' }}>
+        {/* Tab rail — full-width bottom rule; active tab's border sits on it */}
+        <div
+          className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden no-scrollbar"
+          style={{ borderBottom: '1px solid var(--border-glass)', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          <Plus size={14} />
-          New Design
-        </button>
+          <div className="flex" style={{ gap: '24px', marginBottom: '-1px' }}>
+            {([
+              { id: 'designs', label: 'Designs', Icon: Scissors },
+              { id: 'templates', label: 'Templates', Icon: Layout },
+              { id: 'community', label: 'Community', Icon: Users },
+              { id: 'quotes', label: 'Quotes', Icon: Quote },
+            ] as const).map(({ id, label, Icon }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className="flex items-center flex-shrink-0 transition-colors"
+                  style={{
+                    gap: '7px',
+                    padding: '0 2px 10px',
+                    fontSize: '13px',
+                    fontWeight: active ? 700 : 500,
+                    color: active ? 'var(--brand-fill)' : 'var(--text-muted)',
+                    background: 'none',
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    borderBottom: active ? '2px solid var(--brand-fill)' : '2px solid transparent',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Icon size={15} strokeWidth={active ? 2.4 : 2} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* ═══ DESIGNS TAB ═══ */}
@@ -546,17 +535,52 @@ function BespokeContent() {
             </div>
           ) : (
             <>
-              {/* Search + filter */}
-              <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
-                <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
-                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', gap: '8px', maxWidth: '300px' }}>
+              {/* Search + filter — styled like the vendor storefront products header:
+                  filter pills on the left, a bordered search pill on the right. */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between" style={{ gap: '16px' }}>
+                {/* Category chips (left, scrollable pills) */}
+                <div className="flex items-center overflow-x-auto no-scrollbar w-full md:flex-1 min-w-0" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {CATEGORIES.map((cat) => {
+                    const active = activeCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className="transition-all flex-shrink-0"
+                        style={{
+                          height: '34px',
+                          padding: '0 16px',
+                          borderRadius: '100px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          color: active ? 'var(--bg-base)' : 'var(--text-secondary)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          background: active ? 'var(--text-primary)' : 'var(--bg-surface-elevated)',
+                          border: `1px solid ${active ? 'var(--text-primary)' : 'var(--border-glass)'}`,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Search + New Design (right) */}
+                <div className="flex items-center w-full md:w-auto flex-shrink-0" style={{ gap: '8px' }}>
+                  <div
+                    className="flex items-center flex-1 md:flex-none md:w-56"
+                    style={{ height: '42px', boxSizing: 'border-box', padding: '0 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
+                  >
                     <Search size={14} color="var(--text-muted)" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search bespoke"
-                      className="flex-1 bg-transparent border-none outline-none"
+                      className="flex-1 bg-transparent border-none outline-none min-w-0"
                       style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', background: 'transparent', border: 'none', outline: 'none' }}
                     />
                   </div>
@@ -570,47 +594,41 @@ function BespokeContent() {
                         setModalStep('start');
                       }
                     }}
-                    className="flex sm:hidden items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+                    className="flex sm:hidden items-center justify-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
+                    style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Plus size={20} />
+                  </button>
+
+                  {/* Desktop New Design button */}
+                  <button
+                    onClick={() => {
+                      if (!user) return;
+                      setModalStep('start');
+                    }}
+                    disabled={!user}
+                    className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
                     style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
+                      height: '42px',
+                      boxSizing: 'border-box',
+                      padding: '0 20px',
+                      borderRadius: '100px',
                       background: 'var(--brand-fill)',
                       color: 'var(--brand-fill-text)',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
                       border: 'none',
-                      cursor: 'pointer',
-                      flexShrink: 0,
+                      cursor: !user ? 'not-allowed' : 'pointer',
+                      gap: '6px',
+                      opacity: !user ? 0.4 : 1,
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <Plus size={22} />
+                    <Plus size={14} />
+                    New Design
                   </button>
-                </div>
-
-                {/* Category chips */}
-                <div className="flex items-center overflow-x-auto no-scrollbar w-full" style={{ gap: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className="transition-all"
-                      style={{
-                        height: '36px',
-                        padding: '0 16px',
-                        borderRadius: '100px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        color: activeCategory === cat ? 'var(--bg-base)' : 'var(--text-primary)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        background: activeCategory === cat ? 'var(--text-primary)' : 'var(--bg-surface-elevated)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  ))}
                 </div>
               </div>
 
