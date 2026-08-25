@@ -572,7 +572,7 @@ function BespokeContent() {
                 <div className="flex items-center w-full md:w-auto flex-shrink-0" style={{ gap: '8px' }}>
                   <div
                     className="flex items-center flex-1 md:flex-none md:w-56"
-                    style={{ padding: '7px 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
+                    style={{ padding: '3px 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
                   >
                     <Search size={14} color="var(--text-muted)" />
                     <input
