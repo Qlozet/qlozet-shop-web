@@ -572,7 +572,7 @@ function BespokeContent() {
                 <div className="flex items-center w-full md:w-auto flex-shrink-0" style={{ gap: '8px' }}>
                   <div
                     className="flex items-center flex-1 md:flex-none md:w-56"
-                    style={{ height: '32px', boxSizing: 'border-box', padding: '0 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
+                    style={{ height: '38px', boxSizing: 'border-box', padding: '0 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
                   >
                     <Search size={14} color="var(--text-muted)" />
                     <input
@@ -609,7 +609,9 @@ function BespokeContent() {
                     disabled={!user}
                     className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
                     style={{
-                      padding: '9px 20px',
+                      height: '38px',
+                      boxSizing: 'border-box',
+                      padding: '0 20px',
                       borderRadius: '100px',
                       background: 'var(--brand-fill)',
                       color: 'var(--brand-fill-text)',
