@@ -8,7 +8,7 @@ import { ArrowRight, ChevronRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
 import { GenderToggle } from '@/components/GenderToggle';
-import { TrendingBanner } from '@/components/TrendingBanner';
+import { HeroCarousel, type HeroSlide } from '@/components/HeroCarousel';
 import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
 import { PromoBanner } from '@/components/PromoBanner';
 import { ShopByCategory } from '@/components/ShopByCategory';
@@ -18,7 +18,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
 import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
-import { getProductImage } from '@/lib/api-types';
+import { getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
 import type { ApiProduct, ApiBusinessPublic, ApiFeedItem } from '@/lib/api-types';
 
 // ─── Category Section Config ──────────────────────────────────────
@@ -382,6 +382,60 @@ export default function HomePage() {
       ? getProductImage(allProducts[0])
       : undefined;
 
+  // ── Home hero carousel — real, clickable "front doors" ordered by value ──
+  const heroFirstName = user?.name?.trim().split(/\s+/)[0] || '';
+  const heroTrending = feedToProducts(trendingItems).length > 0
+    ? feedToProducts(trendingItems)
+    : allProducts;
+  const heroDeal = allProducts.find((p) => hasDiscount(p));
+  const heroSlides: HeroSlide[] = [];
+
+  // 1. Auth-aware lead: signed-in shoppers get their personalized edit.
+  if (user && recommendedProducts[0]) {
+    heroSlides.push({
+      eyebrow: 'Curated for you',
+      title: heroFirstName ? `${heroFirstName}, your edit is ready` : 'Your edit is ready',
+      cta: 'View your edit',
+      href: '/for-you',
+      image: getProductImage(recommendedProducts[0]),
+    });
+  }
+
+  // 2. Bespoke Studio — the differentiator (guests see this first).
+  heroSlides.push({
+    eyebrow: 'Bespoke Studio',
+    title: 'Design something one-of-a-kind',
+    cta: 'Open the Studio',
+    href: '/bespoke',
+    image: '/image/bespoke-agbada-orange.webp',
+  });
+
+  // 3. Trending — a real product.
+  if (heroTrending[0]) {
+    heroSlides.push({
+      eyebrow: 'Trending now',
+      title: getProductName(heroTrending[0]),
+      cta: 'Shop trending',
+      href: `/products/${heroTrending[0]._id}`,
+      image: getProductImage(heroTrending[0]),
+    });
+  }
+
+  // 4. Best live deal — a real discounted product with the % badge.
+  if (heroDeal) {
+    const price = getProductPrice(heroDeal);
+    const original = getProductOriginalPrice(heroDeal);
+    const pct = original > 0 && price < original ? Math.round((1 - price / original) * 100) : 0;
+    heroSlides.push({
+      eyebrow: 'Limited-time deal',
+      title: getProductName(heroDeal),
+      cta: 'Grab the deal',
+      href: `/products/${heroDeal._id}`,
+      image: getProductImage(heroDeal),
+      badge: pct > 0 ? `${pct}% off` : undefined,
+    });
+  }
+
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '36px' }}>
 
@@ -395,8 +449,8 @@ export default function HomePage() {
         <FollowingBar followedVendorIds={followedVendors} vendors={allVendors} />
       )}
 
-      {/* Trending Banner */}
-      <TrendingBanner />
+      {/* Home hero carousel */}
+      <HeroCarousel slides={heroSlides} />
 
       {/* Shop by Category — Amazon-style grid */}
       <ShopByCategory products={allProducts} />
