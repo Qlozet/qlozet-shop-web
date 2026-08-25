@@ -572,7 +572,7 @@ function BespokeContent() {
                 <div className="flex items-center w-full md:w-auto flex-shrink-0" style={{ gap: '8px' }}>
                   <div
                     className="flex items-center flex-1 md:flex-none md:w-56"
-                    style={{ height: '38px', boxSizing: 'border-box', padding: '0 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
+                    style={{ height: '42px', boxSizing: 'border-box', padding: '0 16px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', gap: '8px' }}
                   >
                     <Search size={14} color="var(--text-muted)" />
                     <input
@@ -595,7 +595,7 @@ function BespokeContent() {
                       }
                     }}
                     className="flex sm:hidden items-center justify-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
-                    style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer' }}
+                    style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer' }}
                   >
                     <Plus size={20} />
                   </button>
@@ -609,7 +609,7 @@ function BespokeContent() {
                     disabled={!user}
                     className="hidden sm:flex items-center flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.98]"
                     style={{
-                      height: '38px',
+                      height: '42px',
                       boxSizing: 'border-box',
                       padding: '0 20px',
                       borderRadius: '100px',
