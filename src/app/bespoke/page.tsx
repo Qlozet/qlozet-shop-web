@@ -566,7 +566,7 @@ function BespokeContent() {
               {/* Search + filter */}
               <div className="flex flex-col lg:flex-row items-start lg:items-center" style={{ gap: '12px' }}>
                 <div className="flex items-center w-full lg:w-auto" style={{ gap: '8px' }}>
-                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '5px 14px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', gap: '8px', maxWidth: '300px' }}>
+                  <div className="flex items-center flex-1 lg:w-auto" style={{ padding: '3px 14px', borderRadius: '100px', background: 'var(--bg-surface-elevated)', gap: '8px', maxWidth: '300px' }}>
                     <Search size={14} color="var(--text-muted)" />
                     <input
                       type="text"
