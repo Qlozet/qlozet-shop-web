@@ -152,7 +152,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="flex items-center" style={{ gap: '12px' }}>
           <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '6px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
             <TokenIcon size={14} color="#D4AF37" />
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{tokenBalance}</span>
+            {/* Pill background is a fixed cream, so the count stays dark in both
+                themes (var(--text-primary) would turn white in dark mode). */}
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#2C1810' }}>{tokenBalance}</span>
           </div>
 
           {/* 3-dot menu trigger */}
