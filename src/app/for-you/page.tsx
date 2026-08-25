@@ -418,6 +418,13 @@ export default function ForYouPage() {
           <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '14px', paddingBottom: '4px' }}>
             {vendors.map((v) => {
               const cover = v.products?.find((p) => p.product)?.product;
+              // The hydrated product carries the real vendor info; fall back to
+              // the feed's own fields. (The feed's vendorName was "Unknown
+              // Vendor" because the backend read business.name — the field is
+              // business_name.)
+              const biz = cover && typeof cover.business === 'object' ? cover.business : undefined;
+              const vendorName = biz?.business_name || v.vendorName || 'Vendor';
+              const logo = biz?.business_logo_url || v.vendorLogo;
               return (
                 <Link
                   key={v.vendorId}
@@ -428,7 +435,7 @@ export default function ForYouPage() {
                   {cover ? (
                     <Image
                       src={getProductImage(cover)}
-                      alt={v.vendorName}
+                      alt={vendorName}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                       sizes="210px"
@@ -439,9 +446,21 @@ export default function ForYouPage() {
                     </div>
                   )}
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
-                  <div className="relative flex items-center justify-between" style={{ padding: '14px' }}>
-                    <div className="flex flex-col" style={{ gap: '2px', minWidth: 0 }}>
-                      <span className="truncate" style={{ fontSize: '13px', fontWeight: 800, color: '#FFF' }}>{v.vendorName}</span>
+                  <div className="relative flex items-center" style={{ padding: '14px', gap: '10px' }}>
+                    {/* Vendor logo avatar */}
+                    <div
+                      className="flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#FFF', border: '1.5px solid rgba(255,255,255,0.8)' }}
+                    >
+                      {logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={logo} alt={vendorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Store size={15} color="var(--brand-brown)" />
+                      )}
+                    </div>
+                    <div className="flex flex-col" style={{ gap: '2px', minWidth: 0, flex: 1 }}>
+                      <span className="truncate" style={{ fontFamily: "var(--font-outfit), 'Outfit', sans-serif", fontSize: '13px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{vendorName}</span>
                       {v.explanations?.[0] && (
                         <span className="truncate" style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.7)' }}>{v.explanations[0]}</span>
                       )}

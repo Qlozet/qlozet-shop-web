@@ -370,6 +370,7 @@ export interface ApiFeedItem {
 export interface ApiVendorFeedItem {
   vendorId: string;
   vendorName: string;
+  vendorLogo?: string;
   vendorScore: number;
   reasonCodes: string[];
   explanations: string[];

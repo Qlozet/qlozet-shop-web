@@ -229,7 +229,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 py-4 lg:py-8 animate-fade-in w-full">
+    <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in w-full">
 
       {/* ─── Title ────────────────────────────────────────────────── */}
       <h1

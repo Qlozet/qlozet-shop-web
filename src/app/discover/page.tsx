@@ -10,13 +10,15 @@ import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid';
 import { VendorShowcaseCarousel } from '@/components/discover/VendorShowcaseCarousel';
 import { DealCarousel } from '@/components/discover/DealCarousel';
+import { ProductCarousel } from '@/components/discover/ProductCarousel';
 import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
-import type { ApiBusinessPublic } from '@/lib/api-types';
+import { usePersonalizedFeed } from '@/hooks/useRecommendations';
+import type { ApiBusinessPublic, ApiFeedItem, ApiProduct } from '@/lib/api-types';
 import { getProductImage, getProductTag, hasDiscount } from '@/lib/api-types';
 
 export default function DiscoverPage() {
-  const { gender, setGender } = useApp();
+  const { gender, setGender, user } = useApp();
   const { isDark } = useTheme();
   // Match the real panels: mute the rich category colours in dark mode.
   const panelBg = (color: string) => (isDark ? `color-mix(in srgb, ${color} 72%, var(--bg-surface))` : color);
@@ -25,6 +27,12 @@ export default function DiscoverPage() {
   const audience = gender === 'male' ? 'men' : 'women';
   const { products: allProducts, loading: productsLoading } = useProducts({ size: 50, audience });
   const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 50 });
+
+  // Personalized "For You" row (logged-in). Header links to the full For You page.
+  const { items: personalizedItems } = usePersonalizedFeed({ limit: 12, gender });
+  const forYouProducts: ApiProduct[] = (personalizedItems as ApiFeedItem[])
+    .map((i) => i.product)
+    .filter((p): p is ApiProduct => !!p);
 
   const isLoading = productsLoading || vendorsLoading;
 
@@ -116,6 +124,11 @@ export default function DiscoverPage() {
 
       {/* Hero Banners (static UI config — not from API) */}
       <DiscoverHeroBanners banners={HERO_BANNERS} />
+
+      {/* Personalized "For You" — logged-in only; header opens the For You page */}
+      {user && forYouProducts.length > 0 && (
+        <ProductCarousel title="For You" products={forYouProducts} href="/for-you" />
+      )}
 
       {/* Categories & Collections — show skeletons while loading */}
       {isLoading ? (
