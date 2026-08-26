@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import type { ApiCollection } from '@/lib/api-types';
 
 interface CollectionsGridProps {
@@ -11,9 +11,9 @@ interface CollectionsGridProps {
 }
 
 /**
- * Platform-collection cards for the explore pages. Each card is a cover image +
- * title that links to /collections/{slug} (the collection's product list).
- * Self-hides when there are no collections.
+ * Platform-collection cards for the explore pages — styled like the discover
+ * hero banners (cover image + label + description + circular arrow) and laid
+ * out as a horizontal scroll row. Each card links to /collections/{slug}.
  */
 export function CollectionsGrid({ collections, title = 'Collections', loading }: CollectionsGridProps) {
   if (!loading && (!collections || collections.length === 0)) return null;
@@ -27,36 +27,72 @@ export function CollectionsGrid({ collections, title = 'Collections', loading }:
         <ChevronRight size={14} color="var(--text-primary)" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '16px', paddingBottom: '4px' }}>
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="animate-pulse" style={{ aspectRatio: '4/5', borderRadius: '20px', background: 'var(--bg-surface-elevated)' }} />
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="animate-pulse snap-start"
+                style={{ flex: '1 0 0%', minWidth: '220px', height: '200px', borderRadius: '20px', background: 'var(--bg-surface-elevated)' }}
+              />
             ))
           : collections.map((c) => {
               const slug = c.slug || c._id;
               const name = c.title || c.name || 'Collection';
+              const desc = c.description || '';
               const cover = c.cover_image || (c as { image?: { url?: string } }).image?.url;
               return (
                 <Link
                   key={c._id}
                   href={`/collections/${slug}`}
-                  className="relative overflow-hidden group flex flex-col justify-end"
-                  style={{ aspectRatio: '4/5', borderRadius: '20px', background: cover ? 'var(--bg-surface-elevated)' : 'var(--brand-fill)', textDecoration: 'none' }}
+                  className="relative overflow-hidden group snap-start"
+                  style={{ flex: '1 0 0%', minWidth: '220px', height: '200px', borderRadius: '20px', textDecoration: 'none', background: 'var(--bg-surface-elevated)' }}
                 >
                   {cover && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={cover}
                       alt={name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                   )}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 55%, transparent 100%)' }} />
-                  <div className="relative flex items-center justify-between" style={{ padding: '14px' }}>
-                    <span className="truncate" style={{ fontSize: '12px', fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {name}
-                    </span>
-                    <ChevronRight size={16} color="#FFFFFF" className="opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 flex-shrink-0" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
+                    <div className="flex flex-col" style={{ gap: '2px', minWidth: 0, flex: 1 }}>
+                      <span
+                        style={{
+                          fontSize: '15px',
+                          fontWeight: 900,
+                          color: '#FFFFFF',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+                        }}
+                      >
+                        {name}
+                      </span>
+                      {desc && (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            color: 'rgba(255,255,255,0.8)',
+                            lineHeight: 1.3,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {desc}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="flex items-center justify-center transition-transform group-hover:translate-x-1 flex-shrink-0"
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', marginLeft: '8px' }}
+                    >
+                      <ArrowRight size={16} color="#FFF" />
+                    </div>
                   </div>
                 </Link>
               );
