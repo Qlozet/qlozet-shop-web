@@ -506,7 +506,7 @@ export default function HomePage() {
           ? feedToProducts(trendingItems)
           : allProducts.slice(0, 10);
         return trendingProducts.length > 0 ? (
-          <ProductCarousel title="Trending" products={trendingProducts} href="/products?sort=relevance" />
+          <ProductCarousel title="Trending" products={trendingProducts} href="/trending" />
         ) : null;
       })()}
 
@@ -516,7 +516,7 @@ export default function HomePage() {
           ? feedToProducts(newArrivalItems)
           : [...allProducts].reverse().slice(0, 10);
         return newProducts.length > 0 ? (
-          <ProductCarousel title="What's New" products={newProducts} href="/products?sort=date" />
+          <ProductCarousel title="What's New" products={newProducts} href="/whats-new" />
         ) : null;
       })()}
 

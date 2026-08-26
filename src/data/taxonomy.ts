@@ -191,10 +191,10 @@ export const BROWSE_CATEGORIES: BrowseCategory[] = [
   { label: 'ACCESSORIES', href: '/discover/accessories', images: ['/image/qlozet-bag.png', '/image/bag.webp', '/image/bespoke-outfit-4.webp'], productIds: ['prod_7', 'prod_8', 'prod_27'], color: '#4A6741', size: 'medium' },
   { label: 'FABRIC', href: '/discover/fabric', images: ['/image/fabric-1.jpg', '/image/ankara.png', '/image/fabric-swatch-1.jpg'], productIds: ['prod_6', 'prod_5', 'prod_21'], color: '#5B4A6B', size: 'medium' },
   { label: 'DESIGNS', href: '/bespoke', images: ['/image/bespoke-dress-2.png', '/image/bespoke-ankara-1.png', '/image/bespoke-outfit-3.webp'], productIds: ['prod_16', 'prod_10', 'prod_12'], color: '#2E4A62', size: 'large' },
-  { label: "WHAT'S NEW", href: '/discover/clothing', images: ['/image/bespoke-outfit-4.webp', '/image/pattern-bespoke-1.png', '/image/bespoke-ankara-2.png'], productIds: ['prod_27', 'prod_20', 'prod_19'], color: '#B04A4A', size: 'medium' },
-  { label: 'DISCOUNTS', href: '/discover/clothing', images: ['/image/bespoke-agbada-lime.webp', '/image/bag.webp', '/image/bespoke-kaftan-milk-1.png'], productIds: ['prod_2', 'prod_8', 'prod_4'], color: '#C48B3F', size: 'medium' },
-  { label: 'TOP RATED', href: '/discover/clothing', images: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-milk-1.png', '/image/bespoke-dress-1.png'], productIds: ['prod_1', 'prod_4', 'prod_9'], color: '#3A7A6A', size: 'large' },
-  { label: 'TRENDING', href: '/products?sort=relevance', images: ['/image/bespoke-outfit-1.webp', '/image/bespoke-dress-2.png', '/image/ankara.png'], color: '#6B5B4A', size: 'medium' },
+  { label: "WHAT'S NEW", href: '/whats-new', images: ['/image/bespoke-outfit-4.webp', '/image/pattern-bespoke-1.png', '/image/bespoke-ankara-2.png'], productIds: ['prod_27', 'prod_20', 'prod_19'], color: '#B04A4A', size: 'medium' },
+  { label: 'DISCOUNTS', href: '/discounts', images: ['/image/bespoke-agbada-lime.webp', '/image/bag.webp', '/image/bespoke-kaftan-milk-1.png'], productIds: ['prod_2', 'prod_8', 'prod_4'], color: '#C48B3F', size: 'medium' },
+  { label: 'TOP RATED', href: '/top-rated', images: ['/image/bespoke-agbada-orange.webp', '/image/bespoke-kaftan-milk-1.png', '/image/bespoke-dress-1.png'], productIds: ['prod_1', 'prod_4', 'prod_9'], color: '#3A7A6A', size: 'large' },
+  { label: 'TRENDING', href: '/trending', images: ['/image/bespoke-outfit-1.webp', '/image/bespoke-dress-2.png', '/image/ankara.png'], color: '#6B5B4A', size: 'medium' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
