@@ -16,6 +16,8 @@ import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hook
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 import { getProductTag, getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
+import { CollectionsGrid } from '@/components/discover/CollectionsGrid';
+import { usePlatformCollections } from '@/hooks/useCollections';
 import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { ProductCard } from '@/components/ProductCard';
 
@@ -55,6 +57,12 @@ export default function DiscoverSlugPage() {
     kind: kindFilter,
     audience: audienceValue,
     size: 50,
+  });
+
+  // Platform collections scoped to THIS page's kind (clothing pages show
+  // clothing collections, etc.). Collections with no kind scope show anywhere.
+  const { collections: platformCollections, loading: collectionsLoading } = usePlatformCollections({
+    kind: kindFilter,
   });
 
   // ── Step 1: Apply tag-based filtering (include/exclude) ────────
@@ -220,6 +228,9 @@ export default function DiscoverSlugPage() {
         </h1>
         <DiscoverBreadcrumb items={breadcrumbs} />
       </div>
+
+      {/* Platform collections scoped to this page's kind */}
+      <CollectionsGrid title="Collections" collections={platformCollections} loading={collectionsLoading} />
 
       {/* ── Dynamic Product Type Tabs ─────────────────────────────── */}
       {dynamicProductTypes.length > 0 && (

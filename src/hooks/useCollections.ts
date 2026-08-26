@@ -25,17 +25,26 @@ export interface UsePlatformCollectionsReturn {
   refetch: () => void;
 }
 
-export function usePlatformCollections(): UsePlatformCollectionsReturn {
+export function usePlatformCollections(
+  scope: { kind?: string; product_type?: string } = {}
+): UsePlatformCollectionsReturn {
   const [state, setState] = useState<UseAsyncState<ApiCollection[]>>({
     data: null,
     loading: true,
     error: null,
   });
 
+  const { kind, product_type } = scope;
+
   const fetchCollections = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const res = await api.get('/collections/platform');
+      // Optional kind / product_type scope the list to the current explore
+      // page; collections with no scope come back on every page.
+      const params: Record<string, string> = {};
+      if (kind) params.kind = kind;
+      if (product_type) params.product_type = product_type;
+      const res = await api.get('/collections/platform', { params });
       // Backend may wrap in { data: [...] } or return array directly
       const payload: ApiCollection[] = Array.isArray(res.data)
         ? res.data
@@ -50,7 +59,8 @@ export function usePlatformCollections(): UsePlatformCollectionsReturn {
 
   useEffect(() => {
     fetchCollections();
-  }, [fetchCollections]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, product_type]);
 
   return {
     collections: state.data ?? [],
