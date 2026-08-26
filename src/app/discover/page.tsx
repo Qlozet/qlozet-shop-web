@@ -11,6 +11,8 @@ import { BrowseCategoriesGrid } from '@/components/discover/BrowseCategoriesGrid
 import { VendorShowcaseCarousel } from '@/components/discover/VendorShowcaseCarousel';
 import { DealCarousel } from '@/components/discover/DealCarousel';
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
+import { CollectionsGrid } from '@/components/discover/CollectionsGrid';
+import { usePlatformCollections } from '@/hooks/useCollections';
 import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
 import { usePersonalizedFeed } from '@/hooks/useRecommendations';
@@ -27,6 +29,9 @@ export default function DiscoverPage() {
   const audience = gender === 'male' ? 'men' : 'women';
   const { products: allProducts, loading: productsLoading } = useProducts({ size: 50, audience });
   const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 50 });
+
+  // Platform collections (admin-curated) — all of them on the main explore page.
+  const { collections: platformCollections, loading: collectionsLoading } = usePlatformCollections();
 
   // Personalized "For You" row (logged-in). Header links to the full For You page.
   const { items: personalizedItems } = usePersonalizedFeed({ limit: 12, gender });
@@ -124,6 +129,9 @@ export default function DiscoverPage() {
 
       {/* Hero Banners (static UI config — not from API) */}
       <DiscoverHeroBanners banners={HERO_BANNERS} />
+
+      {/* Platform collections — admin-curated, click through to their products */}
+      <CollectionsGrid title="Collections" collections={platformCollections} loading={collectionsLoading} />
 
       {/* Personalized "For You" — logged-in only; header opens the For You page */}
       {user && forYouProducts.length > 0 && (
