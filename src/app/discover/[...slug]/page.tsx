@@ -9,7 +9,6 @@ import { GenderToggle } from '@/components/GenderToggle';
 import {
   resolveSlug,
   buildBreadcrumbs,
-  HERO_BANNERS,
 } from '@/data/taxonomy';
 import { useProducts } from '@/hooks/useProducts';
 import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
@@ -18,7 +17,6 @@ import { getProductTag, getProductImage, getProductName, getProductPrice, getPro
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { CollectionsGrid } from '@/components/discover/CollectionsGrid';
 import { usePlatformCollections } from '@/hooks/useCollections';
-import { DiscoverHeroBanners } from '@/components/discover/DiscoverHeroBanners';
 import { ProductCard } from '@/components/ProductCard';
 
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
@@ -277,9 +275,6 @@ export default function DiscoverSlugPage() {
           ))}
         </div>
       )}
-
-      {/* Hero Banners — only when no product type tab selected */}
-      {!selectedProductType && <DiscoverHeroBanners banners={HERO_BANNERS} />}
 
       {/* ── Dynamic Category Chips (shown when a product type is selected) ── */}
       {dynamicCategories.length > 0 && (

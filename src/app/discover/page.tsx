@@ -127,11 +127,13 @@ export default function DiscoverPage() {
         Discover
       </h1>
 
-      {/* Hero Banners (static UI config — not from API) */}
-      <DiscoverHeroBanners banners={HERO_BANNERS} />
-
-      {/* Platform collections — admin-curated, click through to their products */}
-      <CollectionsGrid title="Collections" collections={platformCollections} loading={collectionsLoading} />
+      {/* Platform collections (admin-curated) in the hero-banner style. Falls
+          back to the static banners only while there are no collections yet. */}
+      {collectionsLoading || platformCollections.length > 0 ? (
+        <CollectionsGrid title="Collections" collections={platformCollections} loading={collectionsLoading} />
+      ) : (
+        <DiscoverHeroBanners banners={HERO_BANNERS} />
+      )}
 
       {/* Personalized "For You" — logged-in only; header opens the For You page */}
       {user && forYouProducts.length > 0 && (
