@@ -229,11 +229,13 @@ export default function CartPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-4 lg:py-8 animate-fade-in w-full">
+    <div className="flex flex-col items-center gap-6 py-4 lg:py-8 animate-fade-in w-full">
 
       {/* ─── Title ────────────────────────────────────────────────── */}
+      {/* w-full so text-left (mobile) / text-center (desktop) applies even
+          though the parent is items-center (which otherwise shrinks the h1). */}
       <h1
-        className="text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+        className="w-full text-left lg:text-center font-display font-extrabold uppercase tracking-[0.12em] text-[var(--text-primary)]"
         style={{ fontSize: '22px' }}
       >
         My Cart
