@@ -81,13 +81,12 @@ export const OrderChatModal: React.FC<OrderChatModalProps> = ({
 
       {/* Floating sheet — bottom on mobile, right panel on desktop */}
       <div
-        className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col overflow-hidden transition-all duration-500 ease-out ${
+        className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col overflow-hidden transition-all duration-500 ease-out max-h-[70vh] lg:max-h-[640px] ${
           visible
             ? 'translate-y-0 lg:translate-x-0 opacity-100'
             : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'
         }`}
         style={{
-          maxHeight: '70vh',
           backgroundColor: 'var(--bg-base)',
           boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.08)',
           border: '1px solid var(--border-glass)',
