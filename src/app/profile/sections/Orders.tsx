@@ -12,6 +12,7 @@ import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
+import { OrderChatModal } from '@/components/chat/OrderChatModal';
 
 // ─── Tokens ──────────────────────────────────────────────────
 const INK = 'var(--text-primary)';
@@ -160,7 +161,12 @@ export default function OrdersSection({
   const [reviewFor, setReviewFor] = useState<{ productId: string; name: string; image: string } | null>(null);
   const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string } | null>(null);
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
+  const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
   const { orders, loading, error, refetch } = useCustomerOrders();
+
+  // Chat is a bespoke-only channel; sending opens while the order is in
+  // production ("Processing") or in transit ("Shipped").
+  const chatCanSend = (o: Order) => o.status === 'Processing' || o.status === 'Shipped';
 
   // Cancellation is only offered before an order ships.
   const canCancel = (o: Order) => o.status === 'Pending' || o.status === 'Processing';
@@ -359,10 +365,14 @@ export default function OrdersSection({
                       <span style={{ fontSize: '10px', color: FAINT }}>Vendor</span>
                     </div>
                   </div>
-                  <button className="flex items-center transition-all hover:opacity-80 flex-shrink-0"
-                    style={{ gap: '6px', padding: '7px 14px', borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: INK }}>
-                    <MessageCircle size={13} /> Message
-                  </button>
+                  {order.bespoke && (
+                    <button
+                      onClick={() => setChatFor({ orderReference: order.orderNumber, vendorName: item.vendor, canSend: chatCanSend(order) })}
+                      className="flex items-center transition-all hover:opacity-80 flex-shrink-0"
+                      style={{ gap: '6px', padding: '7px 14px', borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: INK }}>
+                      <MessageCircle size={13} /> Message
+                    </button>
+                  )}
                 </div>
               </Section>
             )}
@@ -440,6 +450,16 @@ export default function OrdersSection({
             businessId={disputeFor.businessId}
             productName={disputeFor.name}
             productImage={disputeFor.image}
+          />
+        )}
+
+        {chatFor && (
+          <OrderChatModal
+            isOpen
+            onClose={() => setChatFor(null)}
+            orderReference={chatFor.orderReference}
+            vendorName={chatFor.vendorName}
+            canSend={chatFor.canSend}
           />
         )}
       </div>
