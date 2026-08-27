@@ -235,6 +235,12 @@ function mapItem(
         : typeof item.product === 'string'
           ? item.product
           : undefined,
+    businessId:
+      item.business && typeof item.business === 'object'
+        ? item.business._id
+        : typeof item.business === 'string'
+          ? item.business
+          : undefined,
   };
 }
 

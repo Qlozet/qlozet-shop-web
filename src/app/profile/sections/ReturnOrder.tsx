@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle2 } from 'lucide-react';
+import { api } from '@/lib/api';
 import { cardStyle } from '../styles';
 import { conditionOptions, reasonOptions, returnShipOptions, returnPayOptions } from '../data';
 import type { ActiveSection, Order } from '../types';
@@ -15,15 +16,63 @@ interface ReturnOrderProps {
   setReturnStep: (s: number) => void;
 }
 
+// Map the wizard's human-readable reasons onto the backend ReturnReason enum.
+const REASON_MAP: Record<string, string> = {
+  'The product quality is unsatisfactory.': 'not_as_described',
+  'The product was not my size.': 'wrong_size',
+  'I changed my mind or the product was not as expected.': 'changed_mind',
+  'The product information was misleading.': 'not_as_described',
+  'The product was not delivered.': 'other',
+};
+
 export default function ReturnOrder({ setActiveSection, selectedOrder, selectedItemIdx, returnStep, setReturnStep }: ReturnOrderProps) {
   const [returnCondition, setReturnCondition] = useState('');
   const [returnReasons, setReturnReasons] = useState<string[]>([]);
   const [returnShipMethod, setReturnShipMethod] = useState('standard');
   const [returnPayMethod, setReturnPayMethod] = useState('voucher');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const order = selectedOrder;
   if (!order) return null;
   const item = order.items[selectedItemIdx] || order.items[0];
+
+  const handleSubmit = async () => {
+    if (!item.productId || !item.businessId) {
+      setSubmitError('This item cannot be returned (missing product or vendor reference).');
+      return;
+    }
+    const primaryReason = returnReasons[0];
+    const reason = (primaryReason && REASON_MAP[primaryReason]) || 'other';
+    // Fold the condition + any extra reasons the customer picked into the note.
+    const description = [returnCondition, ...returnReasons]
+      .filter(Boolean)
+      .join(' | ');
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await api.post('/returns', {
+        order_reference: order.orderNumber,
+        business_id: item.businessId,
+        item_ids: [item.productId],
+        reason,
+        description,
+        evidence_urls: [],
+      });
+      setSubmitted(true);
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { message?: string | string[] } } };
+      const msg = anyErr?.response?.data?.message;
+      setSubmitError(
+        (Array.isArray(msg) ? msg[0] : msg) ||
+          'Could not submit your return. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const ReturnProductCard = () => (
     <div style={cardStyle}>
@@ -52,11 +101,30 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
     </div>
   );
 
-  const ContinueButton = ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
+  const ContinueButton = ({ onClick, disabled, label = 'Continue' }: { onClick: () => void; disabled?: boolean; label?: string }) => (
     <button onClick={onClick} disabled={disabled} className="w-full transition-all hover:opacity-90 active:scale-[0.98]" style={{ padding: '16px', borderRadius: '12px', background: disabled ? '#CCC' : 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', border: 'none', cursor: disabled ? 'default' : 'pointer' }}>
-      Continue
+      {label}
     </button>
   );
+
+  if (submitted) {
+    return (
+      <div className="animate-fade-in flex flex-col items-center justify-center text-center" style={{ gap: '20px', padding: '48px 24px', ...cardStyle }}>
+        <div className="flex items-center justify-center" style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(45,106,79,0.1)' }}>
+          <CheckCircle2 size={40} color="#2D6A4F" />
+        </div>
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Return Requested</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '360px' }}>
+            Your return request for <b>{item.name}</b> has been sent to {item.vendor || 'the vendor'}. You&apos;ll be notified once they review it, and your refund is processed after the item is received.
+          </p>
+        </div>
+        <button onClick={() => setActiveSection('orders')} className="transition-all hover:opacity-90 active:scale-[0.98]" style={{ padding: '14px 40px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', border: 'none', cursor: 'pointer' }}>
+          Back to Orders
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in flex flex-col" style={{ gap: '20px' }}>
@@ -214,7 +282,10 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
               </div>
             </div>
           </div>
-          <ContinueButton onClick={() => { setActiveSection('order-item-detail'); }} />
+          {submitError && (
+            <p style={{ fontSize: '12px', color: '#EF4444', fontWeight: 600, textAlign: 'center' }}>{submitError}</p>
+          )}
+          <ContinueButton onClick={handleSubmit} disabled={submitting} label={submitting ? 'Submitting…' : 'Submit Return'} />
         </div>
       )}
     </div>

@@ -370,7 +370,9 @@ export default function OrdersSection({
                 style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Report an Issue
               </button>
-              {!hasTailoring && order.status !== 'Refused' && (
+              {/* Returns are only valid after delivery (backend also enforces a
+                  return window) and never for tailored/bespoke items. */}
+              {!hasTailoring && order.status === 'Delivered' && (
                 <button onClick={onRequestReturn} className="w-full transition-all hover:opacity-90"
                   style={{ padding: '10px', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', background: 'rgba(239,68,68,0.04)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Request Return
