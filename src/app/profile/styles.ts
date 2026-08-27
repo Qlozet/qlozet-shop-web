@@ -51,5 +51,6 @@ export const statusColors: Record<string, { bg: string; text: string }> = {
   'Processing': { bg: 'rgba(59,130,246,0.1)', text: '#3B82F6' },
   'Shipped': { bg: 'rgba(234,179,8,0.1)', text: '#CA8A04' },
   'Delivered': { bg: 'rgba(34,197,94,0.1)', text: '#22C55E' },
+  'Returned': { bg: 'rgba(168,85,247,0.1)', text: '#A855F7' },
   'Refused': { bg: 'rgba(239,68,68,0.1)', text: '#EF4444' },
 };

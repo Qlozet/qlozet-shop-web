@@ -35,6 +35,7 @@ export type OrderStatus =
   | 'Processing'
   | 'Shipped'
   | 'Delivered'
+  | 'Returned'
   | 'Refused';
 
 // ─── Measurement Types (aligned with backend MeasurementInputDto) ──
