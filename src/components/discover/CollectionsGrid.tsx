@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { ApiCollection } from '@/lib/api-types';
 
 interface CollectionsGridProps {
@@ -15,18 +15,11 @@ interface CollectionsGridProps {
  * hero banners (cover image + label + description + circular arrow) and laid
  * out as a horizontal scroll row. Each card links to /collections/{slug}.
  */
-export function CollectionsGrid({ collections, title = 'Collections', loading }: CollectionsGridProps) {
+export function CollectionsGrid({ collections, loading }: CollectionsGridProps) {
   if (!loading && (!collections || collections.length === 0)) return null;
 
   return (
     <div className="flex flex-col" style={{ gap: '16px' }}>
-      <div className="flex items-center" style={{ gap: '8px' }}>
-        <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {title}
-        </h2>
-        <ChevronRight size={14} color="var(--text-primary)" />
-      </div>
-
       <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '16px', paddingBottom: '4px' }}>
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
