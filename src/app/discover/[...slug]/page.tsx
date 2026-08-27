@@ -88,7 +88,9 @@ export default function DiscoverSlugPage() {
     return (
       p.clothing?.taxonomy?.product_type ||
       p.accessory?.taxonomy?.product_type ||
+      // Fabric stores product_type at the top level, not under taxonomy.
       p.fabric?.taxonomy?.product_type ||
+      p.fabric?.product_type ||
       ''
     );
   };
@@ -99,6 +101,8 @@ export default function DiscoverSlugPage() {
       p.clothing?.taxonomy?.categories ||
       p.accessory?.taxonomy?.categories ||
       p.fabric?.taxonomy?.categories ||
+      // Fabric has no categories array — group by its pattern instead.
+      (p.fabric?.pattern ? [p.fabric.pattern] : []) ||
       []
     );
   };
