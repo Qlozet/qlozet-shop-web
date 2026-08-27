@@ -22,6 +22,24 @@ function socketOrigin(): string {
   return base.replace(/\/api\/?$/, '');
 }
 
+// The response interceptor wraps the service's `{ data: ... }` return inside its
+// own `data`, so the payload sits a couple of `.data` levels deep. Dig down to
+// the array (thread) / message object regardless of nesting depth.
+function digArray(v: unknown): ChatMessage[] {
+  if (Array.isArray(v)) return v as ChatMessage[];
+  if (v && typeof v === 'object' && 'data' in v) {
+    return digArray((v as { data: unknown }).data);
+  }
+  return [];
+}
+function digMessage(v: unknown): ChatMessage | null {
+  if (v && typeof v === 'object') {
+    if ('_id' in v) return v as ChatMessage;
+    if ('data' in v) return digMessage((v as { data: unknown }).data);
+  }
+  return null;
+}
+
 interface UseOrderChatOptions {
   /** Only load/connect when the thread is actually open. */
   enabled: boolean;
@@ -53,8 +71,7 @@ export function useOrderChat(
     setError(null);
     try {
       const res = await api.get(`/orders/${reference}/messages`);
-      const list = res.data?.data ?? res.data ?? [];
-      setMessages(Array.isArray(list) ? list : []);
+      setMessages(digArray(res.data));
     } catch {
       setError('Could not load messages.');
     } finally {
@@ -101,7 +118,7 @@ export function useOrderChat(
         const res = await api.post(`/orders/${reference}/messages`, {
           content: body,
         });
-        const msg: ChatMessage | undefined = res.data?.data ?? res.data;
+        const msg = digMessage(res.data);
         if (msg?._id) append(msg);
       } catch (err: unknown) {
         const anyErr = err as {
