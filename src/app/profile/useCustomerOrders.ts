@@ -77,8 +77,9 @@ function mapStatus(status: ApiOrderStatus): OrderStatus {
     case 'in_review':
     case 'processing':
       return 'Processing';
-    case 'cancelled':
     case 'returned':
+      return 'Returned';
+    case 'cancelled':
       return 'Refused';
     case 'pending':
     default:

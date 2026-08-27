@@ -541,7 +541,7 @@ export default function OrdersSection({
 
       {/* Filter chips */}
       <div className="flex items-center" style={{ gap: '8px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
-        {(['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Refused'] as const).map((f) => {
+        {(['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Returned', 'Refused'] as const).map((f) => {
           const active = f === orderFilter;
           return (
             <button key={f} onClick={() => setOrderFilter(f)}
