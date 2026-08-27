@@ -126,7 +126,7 @@ export const Footer = () => {
             <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</Link>
           </div>
           <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            © {year} Qlozet Studios
+            © {year} Qlozet, Inc.
           </span>
         </div>
       </footer>
@@ -229,7 +229,7 @@ export const Footer = () => {
           style={{ padding: '20px 0 40px', borderTop: '1px solid var(--border-glass)' }}
         >
           <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-            © {year} Qlozet Studios. All rights reserved.
+            © {year} Qlozet, Inc. All rights reserved.
           </span>
           <div className="flex items-center" style={{ gap: '20px' }}>
             <span className="flex items-center" style={{ gap: '7px', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>

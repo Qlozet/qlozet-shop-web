@@ -6,10 +6,12 @@ import {
   Package, ChevronRight, ArrowLeft, MessageCircle, Ruler, Truck,
   RotateCcw, Loader2, Store, ShoppingBag, Star,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 import { cardStyle, statusColors } from '../styles';
 import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
+import { ReportProblemModal } from '@/components/ReportProblemModal';
 
 // ─── Tokens ──────────────────────────────────────────────────
 const INK = 'var(--text-primary)';
@@ -156,7 +158,29 @@ export default function OrdersSection({
 }: OrdersSectionProps) {
   const [orderFilter, setOrderFilter] = useState<'All' | OrderStatus>('All');
   const [reviewFor, setReviewFor] = useState<{ productId: string; name: string; image: string } | null>(null);
-  const { orders, loading, error } = useCustomerOrders();
+  const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string } | null>(null);
+  const [cancellingRef, setCancellingRef] = useState<string | null>(null);
+  const { orders, loading, error, refetch } = useCustomerOrders();
+
+  // Cancellation is only offered before an order ships.
+  const canCancel = (o: Order) => o.status === 'Pending' || o.status === 'Processing';
+
+  const handleCancelOrder = async (o: Order) => {
+    if (!canCancel(o)) return;
+    if (!window.confirm(`Cancel order ${o.orderNumber}? You'll be refunded to your wallet.`)) return;
+    setCancellingRef(o.orderNumber);
+    try {
+      await api.patch(`/orders/customer/cancel/${o.orderNumber}`);
+      refetch();
+      setActiveSection('orders');
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { message?: string | string[] } } };
+      const msg = anyErr?.response?.data?.message;
+      window.alert((Array.isArray(msg) ? msg[0] : msg) || 'Could not cancel this order. Please try again.');
+    } finally {
+      setCancellingRef(null);
+    }
+  };
   const filtered = orderFilter === 'All' ? orders : orders.filter((o) => o.status === orderFilter);
 
   const paymentLabel = (o: Order) => {
@@ -366,11 +390,22 @@ export default function OrdersSection({
             )}
 
             <Section title="Support">
-              <button className="w-full transition-all hover:opacity-90"
-                style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Report an Issue
+              {/* Disputes can only be filed once the order is delivered
+                  (backend requires completed + unreleased payout). */}
+              <button
+                onClick={() => {
+                  if (order.status === 'Delivered' && item.businessId) {
+                    setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image });
+                  }
+                }}
+                disabled={!(order.status === 'Delivered' && item.businessId)}
+                className="w-full transition-all hover:opacity-90 disabled:opacity-50"
+                style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: order.status === 'Delivered' && item.businessId ? 'pointer' : 'not-allowed', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Report a Problem
               </button>
-              {!hasTailoring && order.status !== 'Refused' && (
+              {/* Returns are only valid after delivery (backend also enforces a
+                  return window) and never for tailored/bespoke items. */}
+              {!hasTailoring && order.status === 'Delivered' && (
                 <button onClick={onRequestReturn} className="w-full transition-all hover:opacity-90"
                   style={{ padding: '10px', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', background: 'rgba(239,68,68,0.04)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Request Return
@@ -394,6 +429,17 @@ export default function OrdersSection({
             productId={reviewFor.productId}
             productName={reviewFor.name}
             productImage={reviewFor.image}
+          />
+        )}
+
+        {disputeFor && (
+          <ReportProblemModal
+            isOpen
+            onClose={() => setDisputeFor(null)}
+            orderReference={disputeFor.orderReference}
+            businessId={disputeFor.businessId}
+            productName={disputeFor.name}
+            productImage={disputeFor.image}
           />
         )}
       </div>
@@ -461,6 +507,16 @@ export default function OrdersSection({
         </Section>
 
         <Section title="Support">
+          {canCancel(order) && (
+            <button
+              onClick={() => handleCancelOrder(order)}
+              disabled={cancellingRef === order.orderNumber}
+              className="w-full flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-60"
+              style={{ padding: '10px', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', background: 'rgba(239,68,68,0.04)', cursor: cancellingRef === order.orderNumber ? 'wait' : 'pointer', fontSize: '11px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {cancellingRef === order.orderNumber && <Loader2 size={13} className="animate-spin" />}
+              {cancellingRef === order.orderNumber ? 'Cancelling…' : 'Cancel Order'}
+            </button>
+          )}
           <button className="w-full transition-all hover:opacity-90"
             style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Report an Issue

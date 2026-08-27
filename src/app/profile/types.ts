@@ -118,6 +118,8 @@ export interface OrderItem {
   choices?: DesignChoice[];
   /** Catalog product id — used to review the item after delivery. */
   productId?: string;
+  /** Vendor business id — used to scope a return request to the right vendor. */
+  businessId?: string;
 }
 
 export interface Order {
