@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, CalendarDays, Users, Copy, Check, Minus, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // ═══════════════════════════════════════════════════════════════
 //  ReserveFabricModal
@@ -44,6 +45,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   minCut = 0,
   soldOut = false,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const floor = Math.max(RESERVE_MIN, Math.ceil(minCut));
   // Can't reserve more than what's left; can't reserve at all below the floor.
   const cap = yardsAvailable > 0 ? Math.floor(yardsAvailable) : 0;
@@ -162,7 +164,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
               </div>
               <div>
                 <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{fabricName}</p>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>₦{fabricPrice.toLocaleString()} per yard</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{fmtMoney(fabricPrice)} per yard</p>
               </div>
             </div>
 
@@ -253,7 +255,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
             <div className="rounded-[16px]" style={{ background: 'var(--bg-surface-elevated)', padding: '16px', border: '1px solid var(--border-glass)' }}>
               <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total fabric value</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>₦{totalFabricCost.toLocaleString()}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{fmtMoney(totalFabricCost)}</span>
               </div>
               <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Reservation fee (10%)</span>
@@ -282,7 +284,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
 
             <div className="text-center">
               <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{eventName}</p>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{yards} yards reserved \u00B7 ₦{fabricPrice.toLocaleString()}/yard</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{yards} yards reserved \u00B7 {fmtMoney(fabricPrice)}/yard</p>
             </div>
 
             {/* Share Link */}

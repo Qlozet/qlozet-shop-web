@@ -17,6 +17,7 @@ import {
 import type { ApiProduct } from '@/lib/api-types';
 import { ProductThumb } from '@/components/ProductThumb';
 import { api } from '@/lib/api';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // Relative date from a Mongo ObjectId's embedded timestamp.
 function reviewDate(id?: string): string {
@@ -59,6 +60,7 @@ function darkenHex(hex: string, amount: number = 0.65): string {
 }
 
 export default function VendorPage() {
+  const { fmt: fmtMoney } = useCurrency();
   const params = useParams();
   const vendorId = params.id as string;
   const { wishlist, toggleWishlist, followedVendors, toggleFollowVendor, addRecentlyViewed } = useApp();
@@ -89,7 +91,7 @@ export default function VendorPage() {
       const isPercent =
         type.includes('percentage') || d.value_type === 'percentage';
       const value = Number(d.value) || 0;
-      const label = isPercent ? `${value}% off` : `₦${value.toLocaleString()} off`;
+      const label = isPercent ? `${value}% off` : `${fmtMoney(value)} off`;
       map.set(String(d._id), { title: d.title || 'Special offer', label, type, count: 1 });
     }
     return Array.from(map.entries()).map(([id, v]) => ({
@@ -520,9 +522,9 @@ export default function VendorPage() {
                   <div className="flex flex-col gap-1 px-1" style={{ marginTop: '10px' }}>
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-white text-sm font-bold">₦{prodPrice.toLocaleString()}</span>
+                      <span className="text-white text-sm font-bold">{fmtMoney(prodPrice)}</span>
                       {prodOrigPrice && (
-                        <span className="text-white/35 text-xs line-through">₦{prodOrigPrice.toLocaleString()}</span>
+                        <span className="text-white/35 text-xs line-through">{fmtMoney(prodOrigPrice)}</span>
                       )}
                     </div>
                   </div>
@@ -722,7 +724,7 @@ export default function VendorPage() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p style={{ color: sheetText, fontSize: '12px', fontWeight: 700 }} className="truncate">{reviewProduct ? getProductName(reviewProduct) : review.product_name}</p>
-                              {reviewProduct && <p style={{ color: sheetMuted, fontSize: '10px' }}>₦{getProductPrice(reviewProduct).toLocaleString()}</p>}
+                              {reviewProduct && <p style={{ color: sheetMuted, fontSize: '10px' }}>{fmtMoney(getProductPrice(reviewProduct))}</p>}
                             </div>
                           </div>
                         )}

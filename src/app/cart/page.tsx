@@ -43,36 +43,52 @@ export default function CartPage() {
 
   // Per-item pricing breakdown (authoritative, from the server) for the §8 ladder.
   const [breakdowns, setBreakdowns] = useState<Record<string, any>>({});
+  // Selection-signature → 'ok' | 'failed'. The effect refires on every cart
+  // identity change (quantity bump, etc.), which used to re-POST price-item for
+  // EVERY customized line in parallel — bursting the backend throttler into
+  // 429s. Price sequentially and never re-ask for a signature we've already
+  // priced (or that the server rejected with a 4xx).
+  const pricedRef = React.useRef<Record<string, 'ok' | 'failed'>>({});
   useEffect(() => {
     let cancelled = false;
-    cart.forEach((item) => {
-      const hasSel =
-        item.selections &&
-        Object.values(item.selections).some((a: any) => Array.isArray(a) && a.length > 0);
-      if (!hasSel && !item.applied_fabric_id) return;
-      api
-        .post('/orders/price-item', {
-          product_id: item.id,
-          selections: item.selections,
-          ...(item.applied_fabric_id ? { applied_fabric_id: item.applied_fabric_id } : {}),
-          ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
-        })
-        .then((res) => {
+    (async () => {
+      for (const item of cart) {
+        const hasSel =
+          item.selections &&
+          Object.values(item.selections).some((a: any) => Array.isArray(a) && a.length > 0);
+        if (!hasSel && !item.applied_fabric_id) continue;
+        const signature = `${cartLineId(item)}:${JSON.stringify(item.selections ?? {})}:${item.applied_fabric_id ?? ''}:${item.applied_fabric_yards ?? ''}`;
+        if (pricedRef.current[signature]) continue;
+        try {
+          const res = await api.post('/orders/price-item', {
+            product_id: item.id,
+            selections: item.selections,
+            ...(item.applied_fabric_id ? { applied_fabric_id: item.applied_fabric_id } : {}),
+            ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
+          });
           // API wrapper double-nests the service's { data } under its own data.
           const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
           const b = payload?.breakdown;
-          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [cartLineId(item)]: b }));
-        })
-        .catch(() => {
-          // Don't fail silently — but dedupe to a single toast across all items
-          // via a stable id (sonner updates rather than stacks).
+          pricedRef.current[signature] = 'ok';
+          if (cancelled) return;
+          if (b) setBreakdowns((prev) => ({ ...prev, [cartLineId(item)]: b }));
+        } catch (err: unknown) {
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          // A 4xx means the server rejected THESE selections — retrying the
+          // same payload can only fail again, so remember it. 429/5xx may
+          // succeed later; leave those unmarked.
+          if (status && status >= 400 && status < 500 && status !== 429) {
+            pricedRef.current[signature] = 'failed';
+          }
           if (!cancelled)
             toast.error("Couldn't refresh prices", {
               id: 'cart-price-refresh',
               description: 'Showing the last known price for now.',
             });
-        });
-    });
+        }
+        if (cancelled) return;
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -563,7 +579,7 @@ export default function CartPage() {
             {totalDiscount > 0 && (
               <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
                 <span style={{ fontSize: '13px', color: '#059669' }}>Discount savings</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#059669' }}>−₦{totalDiscount.toLocaleString()}</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#059669' }}>−{fmtMoney(totalDiscount)}</span>
               </div>
             )}
 
@@ -574,7 +590,7 @@ export default function CartPage() {
                 <Info size={12} color="var(--text-muted)" />
               </div>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}
+                {shipping === 0 ? 'Free' : fmtMoney(shipping)}
               </span>
             </div>
 

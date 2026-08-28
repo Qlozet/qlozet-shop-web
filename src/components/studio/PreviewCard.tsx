@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // ─── Types ──────────────────────────────────────────────────
 export interface PreviewInfo {
@@ -77,6 +78,7 @@ export function PreviewCard({
   info: PreviewInfo;
   anchorRef: React.RefObject<HTMLElement | null>;
 }) {
+  const { fmt: fmtMoney } = useCurrency();
   const [layout, setLayout] = useState<{ x: number; y: number; direction: 'above' | 'below' } | null>(null);
   const CARD_W = 220;
   const CARD_H_EST = 280;
@@ -167,7 +169,7 @@ export function PreviewCard({
         )}
         {info.extraCost !== undefined && (
           <p style={{ fontSize: '11px', fontWeight: 700, color: info.extraCost > 0 ? 'var(--brand-fill)' : '#059669' }}>
-            {info.extraCost > 0 ? `+₦${info.extraCost.toLocaleString()}` : '✓ Included'}
+            {info.extraCost > 0 ? `+${fmtMoney(info.extraCost)}` : '✓ Included'}
           </p>
         )}
       </div>

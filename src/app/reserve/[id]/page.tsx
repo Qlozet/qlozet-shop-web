@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useCurrency } from '@/context/CurrencyContext';
 import {
   ArrowLeft,
   CalendarDays,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function ReservationPage() {
+  const { fmt: fmtMoney } = useCurrency();
   const params = useParams();
   const reservationId = params.id as string;
 
@@ -198,7 +200,7 @@ export default function ReservationPage() {
               </div>
               <div className="flex-1">
                 <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{reservation.fabricName}</p>
-                <p style={{ fontSize: '13px', color: '#888' }}>₦{reservation.fabricPrice.toLocaleString()} per yard</p>
+                <p style={{ fontSize: '13px', color: '#888' }}>{fmtMoney(reservation.fabricPrice)} per yard</p>
               </div>
             </div>
 
@@ -283,7 +285,7 @@ export default function ReservationPage() {
             <div className="flex items-center justify-between" style={{ marginBottom: '20px' }}>
               <span style={{ fontSize: '14px', color: '#666' }}>Total</span>
               <span style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A' }}>
-                ₦{(reservation.fabricPrice * selectedYards).toLocaleString()}
+                {fmtMoney(reservation.fabricPrice * selectedYards)}
               </span>
             </div>
 
