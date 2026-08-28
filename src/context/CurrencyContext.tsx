@@ -79,7 +79,12 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       .then((res) => {
         const body = res.data?.data ?? res.data;
         const r = body?.rates?.[currency];
-        if (!cancelled && typeof r === 'number' && r > 0) setRate(r);
+        // Sanity-guard: a cross-currency rate of exactly 1 (or an NGN→X rate
+        // that isn't a small fraction) is a broken upstream fallback, not a
+        // real rate — showing "$20,000" for ₦20,000 is worse than showing ₦.
+        const plausible =
+          typeof r === 'number' && r > 0 && r !== 1 && r < 0.5;
+        if (!cancelled && plausible) setRate(r);
       })
       .catch(() => {
         /* keep null — prices fall back to ₦ rather than showing wrong numbers */
