@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Outfit, Inter } from 'next/font/google';
 import { AppProvider } from '@/context/AppContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 import { ThemeProvider, THEME_INIT_SCRIPT } from '@/context/ThemeContext';
 import { CustomerShell } from '@/components/CustomerShell';
 import { AppToaster } from '@/components/AppToaster';
@@ -37,10 +38,12 @@ export default function RootLayout({
       <body style={{ background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
         <ThemeProvider>
           <AppProvider>
-            <CustomerShell>
-              {children}
-            </CustomerShell>
-            <AppToaster />
+            <CurrencyProvider>
+              <CustomerShell>
+                {children}
+              </CustomerShell>
+              <AppToaster />
+            </CurrencyProvider>
           </AppProvider>
         </ThemeProvider>
       </body>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp, cartLineId } from '@/context/AppContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { useCheckout } from '@/hooks/useCheckout';
 import { api } from '@/lib/api';
 import { openPaystackModal } from '@/lib/paystack';
@@ -31,6 +32,8 @@ const SHOW_PROMO = false;
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, clearCart, user } = useApp();
+  // Display conversion only — the charge itself stays ₦ via Paystack (Phase 2).
+  const { fmt: fmtMoney, isConverted } = useCurrency();
   const checkout = useCheckout();
 
   // Promo section
@@ -524,7 +527,7 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          ₦{rate.rate_amount.toLocaleString()}
+                          {fmtMoney(rate.rate_amount)}
                         </span>
                       </button>
                     ))}
@@ -568,7 +571,7 @@ export default function CheckoutPage() {
                           <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{rate.delivery_eta_time}</div>
                         </div>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          ₦{rate.rate_amount.toLocaleString()}
+                          {fmtMoney(rate.rate_amount)}
                         </span>
                       </button>
                     ))}
@@ -579,7 +582,7 @@ export default function CheckoutPage() {
 
             {!checkout.loading && shipping > 0 && (
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '8px' }}>
-                Total Shipping: ₦{shipping.toLocaleString()}
+                Total Shipping: {fmtMoney(shipping)}
               </div>
             )}
 
@@ -780,7 +783,7 @@ export default function CheckoutPage() {
             ) : !checkout.isReady ? (
               'Select Shipping to Continue'
             ) : (
-              `Pay ₦${total.toLocaleString()}`
+              `Pay ₦${total.toLocaleString()}${isConverted ? ` (≈ ${fmtMoney(total)})` : ''}`
             )}
           </button>
         </div>
@@ -817,7 +820,7 @@ export default function CheckoutPage() {
                         <p className="truncate" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Qty: {item.quantity}</p>
                       </div>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>
-                        ₦{(effectivePrice(item) * item.quantity).toLocaleString()}
+                        {fmtMoney(effectivePrice(item) * item.quantity)}
                       </span>
                     </div>
                     {/* Discount tags */}
@@ -839,24 +842,24 @@ export default function CheckoutPage() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sub-total</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>₦{subtotal.toLocaleString()}</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtMoney(subtotal)}</span>
               </div>
               {itemSavings > 0 && (
                 <div className="flex items-center justify-between">
                   <span style={{ fontSize: '12px', color: '#2D6A4F' }}>Item savings</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-₦{itemSavings.toLocaleString()}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-{fmtMoney(itemSavings)}</span>
                 </div>
               )}
               {discount > 0 && (
                 <div className="flex items-center justify-between">
                   <span style={{ fontSize: '12px', color: '#2D6A4F' }}>Discount</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-₦{discount.toLocaleString()}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-{fmtMoney(discount)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Delivery</span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}
+                  {shipping === 0 ? 'Free' : fmtMoney(shipping)}
                 </span>
               </div>
             </div>
@@ -865,8 +868,14 @@ export default function CheckoutPage() {
 
             <div className="flex items-center justify-between">
               <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total</span>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>₦{total.toLocaleString()}</span>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{fmtMoney(total)}</span>
             </div>
+            {isConverted && (
+              <p style={{ marginTop: '8px', fontSize: '10.5px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+                Prices are shown in your selected currency at today&apos;s rate as an estimate.
+                You&apos;ll be charged <b>₦{total.toLocaleString()}</b> (Nigerian Naira).
+              </p>
+            )}
           </div>
         </div>
 
