@@ -156,6 +156,8 @@ export function useCheckout() {
   const placeOrder = useCallback(async (
     paymentMethod: 'paystack' | 'wallet' = 'paystack',
     addressId?: string,
+    /** Charge currency for card payments — 'USD' routes to Stripe. */
+    currency?: string,
   ) => {
     if (unavailableItems.length > 0) {
       setError('Some items are no longer available. Please remove them before checking out.');
@@ -210,6 +212,10 @@ export function useCheckout() {
         shipping_fee: s.courier.rate_amount,
       }));
 
+      const chargeCurrency =
+        paymentMethod === 'paystack' && currency && currency !== 'NGN'
+          ? currency
+          : undefined;
       const payload: CreateOrderPayload = {
         items,
         selected_shipping,
@@ -218,9 +224,23 @@ export function useCheckout() {
           : undefined,
         address_id: addressId,
         payment_method: paymentMethod,
+        ...(chargeCurrency ? { currency: chargeCurrency } : {}),
       };
 
-      const res = await api.post('/orders', payload);
+      let res;
+      try {
+        res = await api.post('/orders', payload);
+      } catch (err: any) {
+        // International charging not enabled yet — fall back to a ₦ card
+        // charge via Paystack so checkout keeps working. The page detects the
+        // fallback via payment.processor and tells the customer.
+        const msg: string = err?.response?.data?.message ?? '';
+        if (chargeCurrency && /not available|not enabled|not configured/i.test(String(msg))) {
+          res = await api.post('/orders', { ...payload, currency: undefined });
+        } else {
+          throw err;
+        }
+      }
       const data: OrderResponse = res.data?.data ?? res.data;
       setOrderResult(data);
 

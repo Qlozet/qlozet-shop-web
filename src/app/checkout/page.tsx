@@ -32,8 +32,9 @@ const SHOW_PROMO = false;
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, clearCart, user } = useApp();
-  // Display conversion only — the charge itself stays ₦ via Paystack (Phase 2).
-  const { fmt: fmtMoney, isConverted } = useCurrency();
+  // Display conversion + charge currency: USD card payments route to Stripe
+  // when enabled; otherwise the hook falls back to a ₦/Paystack charge.
+  const { fmt: fmtMoney, isConverted, currency } = useCurrency();
   const checkout = useCheckout();
 
   // Promo section
@@ -223,10 +224,19 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     const method = paymentMethod === 'wallet' ? 'wallet' : 'paystack';
-    const result = await checkout.placeOrder(method);
+    // Card payments charge in the selected display currency where available
+    // (USD → Stripe); the hook falls back to a ₦/Paystack charge if
+    // international payment isn't enabled yet.
+    const result = await checkout.placeOrder(method, undefined, currency);
 
     if (!result) {
       setIsProcessing(false);
+      return;
+    }
+
+    // International card (Stripe): redirect to the hosted checkout session.
+    if (result.payment?.processor === 'stripe' && result.payment?.authorization_url) {
+      window.location.href = result.payment.authorization_url;
       return;
     }
 
@@ -885,8 +895,10 @@ export default function CheckoutPage() {
             </div>
             {isConverted && (
               <p style={{ marginTop: '8px', fontSize: '10.5px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
-                Prices are shown in your selected currency at today&apos;s rate as an estimate.
-                You&apos;ll be charged <b>₦{total.toLocaleString()}</b> (Nigerian Naira).
+                Prices are shown in your selected currency at today&apos;s rate.
+                Your card is charged in {currency} where international payment is
+                available (≈ {fmtMoney(total)}); otherwise you&apos;ll be charged{' '}
+                <b>₦{total.toLocaleString()}</b> (Nigerian Naira).
               </p>
             )}
           </div>

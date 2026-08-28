@@ -796,6 +796,8 @@ export interface CreateOrderPayload {
   selected_fabric_transfers?: SelectedFabricTransfer[];
   address_id?: string;
   payment_method?: 'paystack' | 'wallet';
+  /** Charge currency — 'USD' routes the card charge to Stripe (Phase 3). */
+  currency?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -832,6 +834,11 @@ export interface OrderResponse {
     method?: string;
     paid?: boolean;
     wallet_balance_after?: number;
+    // Stripe (international card) branch
+    processor?: string;
+    authorization_url?: string;
+    charge_currency?: string;
+    charge_amount_minor?: number;
   };
   // Legacy top-level fields — kept optional for backward-compat only.
   reference?: string;
