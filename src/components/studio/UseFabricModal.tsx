@@ -8,6 +8,7 @@ import { X, ArrowLeft, Scissors, Pen, Sparkles, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getProductName, getProductImage, getProductPrice, type ApiProduct } from '@/lib/api-types';
 import { useBespokeDesigns, type BespokeDesign } from '@/hooks/useBespokeDesigns';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // ═══════════════════════════════════════════════════════════════
 //  UseFabricModal
@@ -36,6 +37,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
   fabricId,
   soldOut = false,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const router = useRouter();
   const [step, setStep] = useState<Step>('choose');
 
@@ -302,7 +304,7 @@ export const UseFabricModal: React.FC<UseFabricModalProps> = ({
                     </div>
                     <div className="absolute bottom-0 left-0 right-0" style={{ padding: '10px 12px' }}>
                       <p className="text-white" style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.3 }}>{getProductName(product)}</p>
-                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>₦{getProductPrice(product).toLocaleString()}</p>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>{fmtMoney(getProductPrice(product))}</p>
                     </div>
                   </button>
                 ))}

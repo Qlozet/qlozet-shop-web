@@ -3,6 +3,7 @@
 import React, { useRef } from 'react';
 import { type StyleOption } from '@/data/studio-options';
 import { useLongPress, PreviewCard } from './PreviewCard';
+import { useCurrency } from '@/context/CurrencyContext';
 
 interface StyleOptionButtonProps {
   option: StyleOption;
@@ -15,6 +16,7 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const { showPreview, handlers, wasLongPress } = useLongPress();
 
@@ -68,7 +70,7 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
           </p>
           {option.extraCost !== undefined && (
             <p style={{ fontSize: '10px', fontWeight: 700, color: option.extraCost > 0 ? 'var(--text-primary)' : '#059669', marginTop: '2px' }}>
-              {option.extraCost > 0 ? `+₦${option.extraCost.toLocaleString()}` : 'Included'}
+              {option.extraCost > 0 ? `+${fmtMoney(option.extraCost)}` : 'Included'}
             </p>
           )}
         </div>

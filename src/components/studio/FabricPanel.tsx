@@ -7,6 +7,7 @@ import { ColorPicker } from './ColorPicker';
 import { useFabricLibrary } from '@/hooks/useFabricLibrary';
 
 import { type ApiProduct } from '@/lib/api-types';
+import { useCurrency } from '@/context/CurrencyContext';
 
 interface FabricPanelProps {
   selectedFabric: string | null;
@@ -28,6 +29,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
   product,
   appliedFabric,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const productFabrics = product?.clothing?.fabrics || [];
   const colorVariants = product?.clothing?.color_variants || [];
   // Real fabrics vendors have for sale — used in studio mode (no product) so
@@ -287,7 +289,7 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
                     </div>
                     {minPrice > 0 ? (
                       <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-                        from ₦{minPrice.toLocaleString()}
+                        from {fmtMoney(minPrice)}
                       </p>
                     ) : null}
                   </div>

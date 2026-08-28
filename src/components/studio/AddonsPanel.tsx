@@ -3,6 +3,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { type ApiProduct, type ApiAddon, type ApiAddonVariant } from '@/lib/api-types';
+import { useCurrency } from '@/context/CurrencyContext';
 
 interface AddonsPanelProps {
   selectedAddons: Record<string, string>;  // addonName -> selectedVariantName
@@ -15,6 +16,7 @@ export const AddonsPanel: React.FC<AddonsPanelProps> = ({
   onSelectAddon,
   product,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const addons = product?.clothing?.addons || [];
 
   if (addons.length === 0) {
@@ -73,6 +75,7 @@ function ColorAddonVariants({
   selectedVariant?: string;
   onSelect: (name: string) => void;
 }) {
+  const { fmt: fmtMoney } = useCurrency();
   return (
     <div className="flex flex-wrap" style={{ gap: '8px' }}>
       {addon.variants.map((v: ApiAddonVariant) => {
@@ -111,7 +114,7 @@ function ColorAddonVariants({
               {v.name}
             </span>
             <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              ₦{v.price.toLocaleString()}
+              {fmtMoney(v.price)}
             </span>
           </button>
         );
@@ -130,6 +133,7 @@ function PictureAddonVariants({
   selectedVariant?: string;
   onSelect: (name: string) => void;
 }) {
+  const { fmt: fmtMoney } = useCurrency();
   return (
     <div className="grid grid-cols-2" style={{ gap: '8px' }}>
       {addon.variants.map((v: ApiAddonVariant) => {
@@ -176,7 +180,7 @@ function PictureAddonVariants({
                 {v.name}
               </p>
               <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-                ₦{v.price.toLocaleString()}
+                {fmtMoney(v.price)}
               </p>
             </div>
 

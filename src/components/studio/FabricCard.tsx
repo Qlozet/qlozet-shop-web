@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 import Image from 'next/image';
 import { type FabricOption } from '@/data/studio-options';
 import { useLongPress, PreviewCard } from './PreviewCard';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // ── Fabric descriptions ─────────────────────────────────────
 const FABRIC_DESC: Record<string, string> = {
@@ -26,6 +27,7 @@ export const FabricCard: React.FC<FabricCardProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const { showPreview, handlers, wasLongPress } = useLongPress();
 
@@ -66,17 +68,17 @@ export const FabricCard: React.FC<FabricCardProps> = ({
           </p>
           {fabric.pricePerYard ? (
             <p style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-              ₦{fabric.pricePerYard.toLocaleString()}/yd
+              {fmtMoney(fabric.pricePerYard)}/yd
               {fabric.extraCost ? (
                 <span style={{ color: '#059669' }}>
-                  {' '}· ≈ ₦{fabric.extraCost.toLocaleString()}
+                  {' '}· ≈ {fmtMoney(fabric.extraCost)}
                   {fabric.yards ? ` (${fabric.yards} yd)` : ''}
                 </span>
               ) : null}
             </p>
           ) : fabric.extraCost !== undefined ? (
             <p style={{ fontSize: '9px', fontWeight: 700, color: fabric.extraCost > 0 ? 'var(--text-primary)' : '#059669', marginTop: '2px' }}>
-              {fabric.extraCost > 0 ? `+₦${fabric.extraCost.toLocaleString()}` : 'Included'}
+              {fabric.extraCost > 0 ? `+${fmtMoney(fabric.extraCost)}` : 'Included'}
             </p>
           ) : null}
         </div>

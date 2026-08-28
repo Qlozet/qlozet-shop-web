@@ -563,7 +563,7 @@ export default function CartPage() {
             {totalDiscount > 0 && (
               <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
                 <span style={{ fontSize: '13px', color: '#059669' }}>Discount savings</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#059669' }}>−₦{totalDiscount.toLocaleString()}</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#059669' }}>−{fmtMoney(totalDiscount)}</span>
               </div>
             )}
 
@@ -574,7 +574,7 @@ export default function CartPage() {
                 <Info size={12} color="var(--text-muted)" />
               </div>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {shipping === 0 ? 'Free' : `₦${shipping.toLocaleString()}`}
+                {shipping === 0 ? 'Free' : fmtMoney(shipping)}
               </span>
             </div>
 

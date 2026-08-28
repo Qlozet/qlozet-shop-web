@@ -1165,7 +1165,7 @@ export default function ProductDetailsPage() {
                             <div className="flex-1" style={{ overflow: 'hidden', minWidth: 0 }}>
                               <p className="text-white whitespace-nowrap" style={{ fontSize: '13px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</p>
                               <p className="text-white/70 whitespace-nowrap" style={{ fontSize: '10px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {displayCost > 0 ? `+ ₦${displayCost.toLocaleString()}` : 'Included'}
+                                {displayCost > 0 ? `+ ${fmtMoney(displayCost)}` : 'Included'}
                               </p>
                             </div>
                             <div className="flex items-center justify-center bg-white rounded-[8px] flex-shrink-0 overflow-hidden" style={{ width: '32px', height: '32px' }}>
@@ -1804,7 +1804,7 @@ export default function ProductDetailsPage() {
                     </span>
                     {fabricPricePerYard > 0 && (
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        ₦{fabricPricePerYard.toLocaleString()}/yd
+                        {fmtMoney(fabricPricePerYard)}/yd
                       </span>
                     )}
                   </div>

@@ -6,9 +6,10 @@ import { Star, ChevronRight, Store } from 'lucide-react';
 import { useVendorDiscountedProducts } from '@/hooks/useVendors';
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
+import { useCurrency } from '@/context/CurrencyContext';
 
 /** Distinct "20% OFF" / "₦5,000 OFF" labels from the products' applied discounts. */
-function discountLabels(products: ApiProduct[]): string[] {
+function discountLabels(products: ApiProduct[], fmtMoney: (n: number) => string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const p of products) {
@@ -18,7 +19,7 @@ function discountLabels(products: ApiProduct[]): string[] {
     const isPercent = type.includes('percentage') || d.value_type === 'percentage';
     const value = Number(d.value) || 0;
     if (!value) continue;
-    const label = isPercent ? `${value}% OFF` : `₦${value.toLocaleString()} OFF`;
+    const label = isPercent ? `${value}% OFF` : `${fmtMoney(value)} OFF`;
     if (!seen.has(label)) {
       seen.add(label);
       out.push(label);
@@ -33,6 +34,7 @@ function discountLabels(products: ApiProduct[]): string[] {
  * that vendor's discounted products. Self-hides when the vendor has none.
  */
 export function VendorDiscountRow({ vendor }: { vendor: ApiBusinessPublic }) {
+  const { fmt: fmtMoney } = useCurrency();
   const { products, loading } = useVendorDiscountedProducts(vendor._id);
 
   if (loading) {
@@ -53,7 +55,7 @@ export function VendorDiscountRow({ vendor }: { vendor: ApiBusinessPublic }) {
 
   if (products.length === 0) return null;
 
-  const labels = discountLabels(products);
+  const labels = discountLabels(products, fmtMoney);
   const rating = vendor.average_rating ?? 0;
 
   return (

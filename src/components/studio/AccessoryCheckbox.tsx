@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 import { Check } from 'lucide-react';
 import { type AccessoryOption } from '@/data/studio-options';
 import { useLongPress, PreviewCard } from './PreviewCard';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // ── Accessory descriptions ──────────────────────────────────
 const ACCESSORY_DESC: Record<string, string> = {
@@ -26,6 +27,7 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
   isSelected,
   onToggle,
 }) => {
+  const { fmt: fmtMoney } = useCurrency();
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const { showPreview, handlers, wasLongPress } = useLongPress();
 
@@ -76,7 +78,7 @@ export const AccessoryCheckbox: React.FC<AccessoryCheckboxProps> = ({
           </p>
           {accessory.extraCost && (
             <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-              +₦{accessory.extraCost.toLocaleString()}
+              +{fmtMoney(accessory.extraCost)}
             </p>
           )}
         </div>
