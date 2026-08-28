@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp, cartLineId } from '@/context/AppContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
@@ -29,6 +30,7 @@ const SHOW_PREMIERE = false;
 
 export default function CartPage() {
   const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
+  const { fmt: fmtMoney } = useCurrency();
   const router = useRouter();
   const { fetchPreview, loading: previewLoading, error: previewError } = useCheckout();
 
@@ -301,11 +303,11 @@ export default function CartPage() {
 
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        ₦{(effectivePrice(item) * item.quantity).toLocaleString()}
+                        {fmtMoney(effectivePrice(item) * item.quantity)}
                       </span>
                       {item.quantity > 1 && (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                          (₦{effectivePrice(item).toLocaleString()} each)
+                          ({fmtMoney(effectivePrice(item))} each)
                         </span>
                       )}
                     </div>
@@ -328,22 +330,22 @@ export default function CartPage() {
                           .map(([label, v]) => (
                             <div key={label} className="flex items-center justify-between" style={{ color: 'var(--text-secondary)' }}>
                               <span>{label}</span>
-                              <span>₦{v.toLocaleString()}</span>
+                              <span>{fmtMoney(v)}</span>
                             </div>
                           ))}
                         <div className="flex items-center justify-between" style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid var(--border-glass)', color: 'var(--text-primary)', fontWeight: 600 }}>
                           <span>Before discount</span>
-                          <span>₦{breakdowns[cartLineId(item)].before_discount.toLocaleString()}</span>
+                          <span>{fmtMoney(breakdowns[cartLineId(item)].before_discount)}</span>
                         </div>
                         {breakdowns[cartLineId(item)].discount > 0 && (
                           <div className="flex items-center justify-between" style={{ color: '#059669' }}>
                             <span>Discount</span>
-                            <span>-₦{breakdowns[cartLineId(item)].discount.toLocaleString()}</span>
+                            <span>-{fmtMoney(breakdowns[cartLineId(item)].discount)}</span>
                           </div>
                         )}
                         <div className="flex items-center justify-between" style={{ marginTop: '2px', color: 'var(--text-primary)', fontWeight: 700 }}>
                           <span>Final</span>
-                          <span>₦{breakdowns[cartLineId(item)].final.toLocaleString()}</span>
+                          <span>{fmtMoney(breakdowns[cartLineId(item)].final)}</span>
                         </div>
                       </div>
                     )}
@@ -554,7 +556,7 @@ export default function CartPage() {
             {/* Sub-total */}
             <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Sub-total</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>₦{subtotal.toLocaleString()}</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtMoney(subtotal)}</span>
             </div>
 
             {/* Discount savings (§11) */}

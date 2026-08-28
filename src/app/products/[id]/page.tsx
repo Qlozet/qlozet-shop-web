@@ -6,6 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { ProductCard } from '@/components/ProductCard';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { ReviewsSection } from '@/components/ReviewsSection';
@@ -88,6 +89,7 @@ export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { wishlist, toggleWishlist, addToCart, addRecentlyViewed, user } = useApp();
+  const { fmt: fmtMoney } = useCurrency();
   const trackEvent = useTrackEvent();
 
   const productId = params.id as string;
@@ -1405,20 +1407,20 @@ export default function ProductDetailsPage() {
             {isFabric ? (
               <div className="flex items-baseline flex-wrap" style={{ gap: '8px' }}>
                 <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                  ₦{displayPrice.toLocaleString()}
+                  {fmtMoney(displayPrice)}
                 </span>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  for {fabricYards} yd{fabricPricePerYard > 0 ? ` · ₦${fabricPricePerYard.toLocaleString()}/yd` : ''}
+                  for {fabricYards} yd{fabricPricePerYard > 0 ? ` · ${fmtMoney(fabricPricePerYard)}/yd` : ''}
                 </span>
               </div>
             ) : (
               <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
                 <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                  ₦{discountedPrice.toLocaleString()}
+                  {fmtMoney(discountedPrice)}
                 </span>
                 {showOriginalPrice && originalPrice > discountedPrice + 0.5 && (
                   <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                    ₦{originalPrice.toLocaleString()}
+                    {fmtMoney(originalPrice)}
                   </span>
                 )}
                 {extrasCost > 0 && (
@@ -1426,7 +1428,7 @@ export default function ProductDetailsPage() {
                     fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px',
                     background: '#EDE9FE', color: '#6D28D9',
                   }}>
-                    +₦{extrasCost.toLocaleString()} styling
+                    +{fmtMoney(extrasCost)} styling
                   </span>
                 )}
               </div>

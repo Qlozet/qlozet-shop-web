@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
+import { useCurrency } from '@/context/CurrencyContext';
 import type { StockState } from '@/lib/api-types';
 import { StockBadge, soldOutImageStyle } from '@/components/StockBadge';
 import { CustomizableBadge } from '@/components/ProductThumb';
@@ -50,9 +51,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const formattedPrice = typeof price === 'number' ? `₦${price.toLocaleString()}` : price;
-  const formattedOriginalPrice = originalPrice 
-    ? (typeof originalPrice === 'number' ? `₦${originalPrice.toLocaleString()}` : originalPrice)
+  // Numeric prices are ₦ amounts — render in the selected display currency.
+  // Pre-formatted string prices pass through untouched.
+  const { fmt } = useCurrency();
+  const formattedPrice = typeof price === 'number' ? fmt(price) : price;
+  const formattedOriginalPrice = originalPrice
+    ? (typeof originalPrice === 'number' ? fmt(originalPrice) : originalPrice)
     : null;
 
   const trackEvent = useTrackEvent();

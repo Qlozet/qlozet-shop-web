@@ -1,6 +1,39 @@
+'use client';
+
 import Link from 'next/link';
 import React from 'react';
 import { QlozetLogo } from '@/components/QlozetLogo';
+import { useCurrency, type DisplayCurrency } from '@/context/CurrencyContext';
+
+// Currency selector — shared by both footer variants. Switching re-renders all
+// prices via useCurrency(); checkout still charges ₦ (Phase 2 is display-only).
+const CurrencySelect = () => {
+  const { currency, setCurrency, supported } = useCurrency();
+  return (
+    <select
+      value={currency}
+      onChange={(e) => setCurrency(e.target.value as DisplayCurrency)}
+      aria-label="Display currency"
+      style={{
+        fontSize: '11px',
+        fontWeight: 700,
+        color: 'var(--text-secondary)',
+        background: 'var(--bg-surface-elevated)',
+        border: '1px solid var(--border-glass)',
+        borderRadius: '8px',
+        padding: '6px 10px',
+        cursor: 'pointer',
+        outline: 'none',
+      }}
+    >
+      {supported.map((s) => (
+        <option key={s.code} value={s.code}>
+          {s.label}
+        </option>
+      ))}
+    </select>
+  );
+};
 
 const QUICK_LINKS = [
   { label: 'Virtual Fitting', href: '/bespoke' },
@@ -121,6 +154,7 @@ export const Footer = () => {
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 4px' }}>·</span>
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>UK</span>
           </div>
+          <CurrencySelect />
           <div className="flex items-center" style={{ gap: '12px' }}>
             <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy</Link>
             <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</Link>
@@ -232,6 +266,7 @@ export const Footer = () => {
             © {year} Qlozet, Inc. All rights reserved.
           </span>
           <div className="flex items-center" style={{ gap: '20px' }}>
+            <CurrencySelect />
             <span className="flex items-center" style={{ gap: '7px', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
               Nigeria
