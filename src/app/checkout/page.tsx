@@ -156,28 +156,41 @@ export default function CheckoutPage() {
   const shipping = checkout.totalShipping;
   const total = subtotal - discount + shipping;
 
+  // Sequential + signature-cached pricing — the parallel refire on every cart
+  // change burst the backend throttler into 429s (see cart page note).
+  const pricedRef = React.useRef<Record<string, 'ok' | 'failed'>>({});
   useEffect(() => {
     let cancelled = false;
-    cart.forEach((item) => {
-      const hasSel =
-        item.selections &&
-        Object.values(item.selections).some((a: any) => Array.isArray(a) && a.length > 0);
-      if (!hasSel && !item.applied_fabric_id) return;
-      api
-        .post('/orders/price-item', {
-          product_id: item.id,
-          selections: item.selections,
-          ...(item.applied_fabric_id ? { applied_fabric_id: item.applied_fabric_id } : {}),
-          ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
-        })
-        .then((res) => {
+    (async () => {
+      for (const item of cart) {
+        const hasSel =
+          item.selections &&
+          Object.values(item.selections).some((a: any) => Array.isArray(a) && a.length > 0);
+        if (!hasSel && !item.applied_fabric_id) continue;
+        const signature = `${cartLineId(item)}:${JSON.stringify(item.selections ?? {})}:${item.applied_fabric_id ?? ''}:${item.applied_fabric_yards ?? ''}`;
+        if (pricedRef.current[signature]) continue;
+        try {
+          const res = await api.post('/orders/price-item', {
+            product_id: item.id,
+            selections: item.selections,
+            ...(item.applied_fabric_id ? { applied_fabric_id: item.applied_fabric_id } : {}),
+            ...(item.applied_fabric_yards ? { applied_fabric_yards: item.applied_fabric_yards } : {}),
+          });
           // API wrapper double-nests the service's { data } under its own data.
           const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
           const b = payload?.breakdown;
-          if (!cancelled && b) setBreakdowns((prev) => ({ ...prev, [cartLineId(item)]: b }));
-        })
-        .catch(() => {});
-    });
+          pricedRef.current[signature] = 'ok';
+          if (cancelled) return;
+          if (b) setBreakdowns((prev) => ({ ...prev, [cartLineId(item)]: b }));
+        } catch (err: unknown) {
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          if (status && status >= 400 && status < 500 && status !== 429) {
+            pricedRef.current[signature] = 'failed';
+          }
+        }
+        if (cancelled) return;
+      }
+    })();
     return () => {
       cancelled = true;
     };
