@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Upload, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle2, Loader2, X } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useUpload } from '@/hooks/useUpload';
 import { cardStyle } from '../styles';
-import { conditionOptions, reasonOptions, returnShipOptions, returnPayOptions } from '../data';
+import { conditionOptions, reasonOptions } from '../data';
 import type { ActiveSection, Order } from '../types';
 
 interface ReturnOrderProps {
@@ -25,18 +26,35 @@ const REASON_MAP: Record<string, string> = {
   'The product was not delivered.': 'other',
 };
 
+// Honest 3-step wizard: reason → evidence → summary. Earlier versions had two
+// extra steps (return shipping method, payout preference) that the backend
+// neither accepts nor honours — a return always refunds to the original
+// payment method once the vendor receives the items — so they were removed
+// rather than promising choices that don't exist.
 export default function ReturnOrder({ setActiveSection, selectedOrder, selectedItemIdx, returnStep, setReturnStep }: ReturnOrderProps) {
   const [returnCondition, setReturnCondition] = useState('');
   const [returnReasons, setReturnReasons] = useState<string[]>([]);
-  const [returnShipMethod, setReturnShipMethod] = useState('standard');
-  const [returnPayMethod, setReturnPayMethod] = useState('voucher');
+  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { uploadOutfitImages, isUploading, uploadError } = useUpload();
 
   const order = selectedOrder;
   if (!order) return null;
   const item = order.items[selectedItemIdx] || order.items[0];
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const room = 3 - evidenceUrls.length;
+    const list = Array.from(files).slice(0, Math.max(0, room));
+    if (list.length === 0) return;
+    const results = await uploadOutfitImages(list);
+    if (results.length) {
+      setEvidenceUrls((prev) => [...prev, ...results.map((r) => r.imageUrl)]);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!item.productId || !item.businessId) {
@@ -45,10 +63,7 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
     }
     const primaryReason = returnReasons[0];
     const reason = (primaryReason && REASON_MAP[primaryReason]) || 'other';
-    // Fold the condition + any extra reasons the customer picked into the note.
-    const description = [returnCondition, ...returnReasons]
-      .filter(Boolean)
-      .join(' | ');
+    const description = [returnCondition, ...returnReasons].filter(Boolean).join(' | ');
 
     setSubmitting(true);
     setSubmitError(null);
@@ -59,15 +74,14 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
         item_ids: [item.productId],
         reason,
         description,
-        evidence_urls: [],
+        evidence_urls: evidenceUrls,
       });
       setSubmitted(true);
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string | string[] } } };
       const msg = anyErr?.response?.data?.message;
       setSubmitError(
-        (Array.isArray(msg) ? msg[0] : msg) ||
-          'Could not submit your return. Please try again.',
+        (Array.isArray(msg) ? msg[0] : msg) || 'Could not submit your return. Please try again.',
       );
     } finally {
       setSubmitting(false);
@@ -81,11 +95,11 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
           <Image src={item.image} alt={item.name} width={100} height={120} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
         </div>
         <div className="flex-1 flex flex-col" style={{ gap: '6px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.vendor || 'Miskay Boutique'}</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.vendor || 'Vendor'}</span>
           <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display), serif' }}>{item.name}</span>
           <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>₦{item.price.toLocaleString()}</span>
           <div className="flex flex-col" style={{ marginTop: '8px', gap: '4px', padding: '10px 14px', background: 'var(--bg-surface-elevated)', borderRadius: '10px' }}>
-            {[['Order:', order.orderNumber], ['Placed on:', '12 Oct, 2023'], ['No of Items:', String(item.qty)]].map(([l, v]) => (
+            {[['Order:', order.orderNumber], ['Placed on:', order.date], ['No of Items:', String(item.qty)]].map(([l, v]) => (
               <div key={l} className="flex items-center justify-between">
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{l}</span>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>{v}</span>
@@ -116,11 +130,13 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
         <div className="flex flex-col" style={{ gap: '8px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Return Requested</h3>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '360px' }}>
-            Your return request for <b>{item.name}</b> has been sent to {item.vendor || 'the vendor'}. You&apos;ll be notified once they review it, and your refund is processed after the item is received.
+            Your return request for <b>{item.name}</b> has been sent to {item.vendor || 'the vendor'}.
+            Once they approve it and receive the items back, your refund is processed to your original
+            payment method. You can follow progress under <b>Track Return</b> on the item.
           </p>
         </div>
-        <button onClick={() => setActiveSection('orders')} className="transition-all hover:opacity-90 active:scale-[0.98]" style={{ padding: '14px 40px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', border: 'none', cursor: 'pointer' }}>
-          Back to Orders
+        <button onClick={() => setActiveSection('order-item-detail')} className="transition-all hover:opacity-90 active:scale-[0.98]" style={{ padding: '14px 40px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', border: 'none', cursor: 'pointer' }}>
+          Back to Item
         </button>
       </div>
     );
@@ -175,90 +191,61 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
         </div>
       )}
 
-      {/* Step 2: Upload Evidence */}
+      {/* Step 2: Upload Evidence (real uploads — optional, up to 3 images) */}
       {returnStep === 2 && (
         <div className="flex flex-col" style={{ gap: '20px' }}>
           <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>Upload Your Photo/Video Evidence</h4>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>To help us process your request quickly, please upload image or video proof.</p>
+            <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>Upload Photo Evidence</h4>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>Photos of the issue help the vendor approve your return faster. Optional — up to 3 images.</p>
           </div>
           <div style={cardStyle}>
             <div className="flex flex-col" style={{ padding: '20px', gap: '14px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Upload Default Images/Videos</span>
               <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                {['/image/product-1.png', '/image/product-2.png', '/image/product-3.png', '/image/product-4.png'].map((img, i) => (
-                  <div key={i} className="overflow-hidden" style={{ width: '72px', height: '72px', borderRadius: '10px', background: 'var(--bg-surface-elevated)' }}>
-                    <Image src={img} alt="" width={72} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                {evidenceUrls.map((url, i) => (
+                  <div key={url} className="relative overflow-hidden" style={{ width: '72px', height: '72px', borderRadius: '10px', background: 'var(--bg-surface-elevated)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Evidence ${i + 1}`} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                    <button
+                      onClick={() => setEvidenceUrls((prev) => prev.filter((u) => u !== url))}
+                      className="absolute top-1 right-1 flex items-center justify-center"
+                      style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer' }}
+                      aria-label="Remove image"
+                    >
+                      <X size={11} color="#FFF" />
+                    </button>
                   </div>
                 ))}
-                <button className="flex flex-col items-center justify-center transition-all hover:border-[var(--brand-fill)]" style={{ width: '72px', height: '72px', borderRadius: '10px', border: '2px dashed var(--border-glass)', background: 'none', cursor: 'pointer', gap: '4px' }}>
-                  <Upload size={16} color="var(--text-muted)" />
-                  <span style={{ fontSize: '8px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.2, textAlign: 'center' }}>Add image/<br/>video</span>
-                </button>
+                {evidenceUrls.length < 3 && (
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={isUploading}
+                    className="flex flex-col items-center justify-center transition-all hover:border-[var(--brand-fill)]"
+                    style={{ width: '72px', height: '72px', borderRadius: '10px', border: '2px dashed var(--border-glass)', background: 'none', cursor: isUploading ? 'wait' : 'pointer', gap: '4px' }}
+                  >
+                    {isUploading
+                      ? <Loader2 size={16} color="var(--text-muted)" className="animate-spin" />
+                      : <Upload size={16} color="var(--text-muted)" />}
+                    <span style={{ fontSize: '8px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.2, textAlign: 'center' }}>{isUploading ? 'Uploading…' : 'Add image'}</span>
+                  </button>
+                )}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
+                />
               </div>
-              <button style={{ fontSize: '11px', fontWeight: 600, color: 'var(--brand-brown)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, alignSelf: 'flex-start', textDecoration: 'underline' }}>Add from URL</button>
+              {uploadError && <p style={{ fontSize: '11px', color: '#DC2626' }}>{uploadError}</p>}
             </div>
           </div>
-          <ContinueButton onClick={() => setReturnStep(3)} />
+          <ContinueButton onClick={() => setReturnStep(3)} disabled={isUploading} label={evidenceUrls.length ? 'Continue' : 'Continue without photos'} />
         </div>
       )}
 
-      {/* Step 3: Choose Return Method */}
+      {/* Step 3: Summary + submit */}
       {returnStep === 3 && (
-        <div className="flex flex-col" style={{ gap: '20px' }}>
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>Choose Your Preferred Method of Return</h4>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>To help us process your request quickly, please select a shipping method.</p>
-          </div>
-          <div className="flex flex-col" style={{ gap: '10px' }}>
-            {returnShipOptions.map((opt) => {
-              const selected = returnShipMethod === opt.id;
-              return (
-                <button key={opt.id} onClick={() => setReturnShipMethod(opt.id)} className="flex items-center w-full transition-all" style={{ ...cardStyle, padding: '16px 20px', gap: '14px', cursor: 'pointer', textAlign: 'left', border: selected ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)' }}>
-                  <div className="flex items-center justify-center flex-shrink-0" style={{ width: '36px', height: '36px', borderRadius: '10px', background: selected ? 'rgba(70,40,20,0.08)' : 'var(--bg-surface-elevated)' }}>
-                    <opt.icon size={18} color={selected ? 'var(--brand-brown)' : 'var(--text-muted)'} />
-                  </div>
-                  <div className="flex-1 flex flex-col" style={{ gap: '2px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{opt.title}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{opt.desc}</span>
-                  </div>
-                  <div className="flex-shrink-0" style={{ width: '18px', height: '18px', borderRadius: '50%', border: selected ? '2px solid var(--brand-fill)' : '2px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {selected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--brand-fill)' }} />}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <ContinueButton onClick={() => setReturnStep(4)} />
-        </div>
-      )}
-
-      {/* Step 4: Choose Payment Method */}
-      {returnStep === 4 && (
-        <div className="flex flex-col" style={{ gap: '20px' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Choose The Method For Receiving Payment</h4>
-          <div className="flex flex-col" style={{ gap: '10px' }}>
-            {returnPayOptions.map((opt) => {
-              const selected = returnPayMethod === opt.id;
-              return (
-                <button key={opt.id} onClick={() => setReturnPayMethod(opt.id)} className="flex items-center w-full transition-all" style={{ ...cardStyle, padding: '16px 20px', gap: '14px', cursor: 'pointer', textAlign: 'left', border: selected ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)' }}>
-                  <div className="flex-1 flex flex-col" style={{ gap: '2px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{opt.title}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{opt.desc}</span>
-                  </div>
-                  <div className="flex-shrink-0" style={{ width: '18px', height: '18px', borderRadius: '50%', border: selected ? '2px solid var(--brand-fill)' : '2px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {selected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--brand-fill)' }} />}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <ContinueButton onClick={() => setReturnStep(5)} />
-        </div>
-      )}
-
-      {/* Step 5: Return Summary */}
-      {returnStep === 5 && (
         <div className="flex flex-col" style={{ gap: '20px' }}>
           <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Return Summary</h4>
           <div style={cardStyle}>
@@ -269,17 +256,19 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', paddingLeft: '12px' }}>{returnCondition}</span>
               </div>
               <div className="flex flex-col" style={{ gap: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• Main reason for returning the product:</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', paddingLeft: '12px' }}>{returnReasons[0] || '-'}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• Reason{returnReasons.length > 1 ? 's' : ''}:</span>
+                {returnReasons.map((r) => (
+                  <span key={r} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', paddingLeft: '12px' }}>{r}</span>
+                ))}
               </div>
               <div className="flex flex-col" style={{ gap: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• Method for returning the product:</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', paddingLeft: '12px' }}>{returnShipMethod === 'standard' ? 'Standard Shipping - ₦10,000' : 'In-store pickup - Free'}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• Photo evidence:</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', paddingLeft: '12px' }}>{evidenceUrls.length ? `${evidenceUrls.length} image${evidenceUrls.length > 1 ? 's' : ''} attached` : 'None'}</span>
               </div>
-              <div className="flex flex-col" style={{ gap: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• Method for receiving the product:</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', paddingLeft: '12px' }}>{returnPayOptions.find(o => o.id === returnPayMethod)?.title}</span>
-              </div>
+              <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.6, borderTop: '1px solid var(--border-glass)', paddingTop: '12px', margin: 0 }}>
+                Once the vendor approves your return and receives the items back, your refund of{' '}
+                <b style={{ color: 'var(--text-primary)' }}>₦{item.price.toLocaleString()}</b> is processed to your original payment method.
+              </p>
             </div>
           </div>
           {submitError && (
