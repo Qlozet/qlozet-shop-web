@@ -7,12 +7,14 @@ import {
   RotateCcw, Loader2, Store, ShoppingBag, Star,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import { cardStyle, statusColors } from '../styles';
 import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
 import { OrderChatModal } from '@/components/chat/OrderChatModal';
+import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS } from '@/hooks/useCustomerReturns';
 
 // ─── Tokens ──────────────────────────────────────────────────
 const INK = 'var(--text-primary)';
@@ -163,6 +165,8 @@ export default function OrdersSection({
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
   const { orders, loading, error, refetch } = useCustomerOrders();
+  // Return requests — powers the item-level return-status banner.
+  const { returns: myReturns } = useCustomerReturns();
 
   // Chat is a bespoke-only channel; sending opens while the order is in
   // production ("Processing") or in transit ("Shipped").
@@ -413,9 +417,32 @@ export default function OrdersSection({
                 style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: order.status === 'Delivered' && item.businessId ? 'pointer' : 'not-allowed', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Report a Problem
               </button>
+              {/* Live return status for THIS item (from GET /returns/my). */}
+              {(() => {
+                const activeReturn = item.productId
+                  ? findReturnFor(myReturns, order.orderNumber, item.productId)
+                  : undefined;
+                if (!activeReturn) return null;
+                const done = activeReturn.status === 'refund_processed' || activeReturn.status === 'closed';
+                const rejected = activeReturn.status === 'vendor_rejected';
+                return (
+                  <div style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)' }}>
+                    <p style={{ fontSize: '11.5px', fontWeight: 700, margin: 0, color: rejected ? '#EF4444' : done ? '#2D6A4F' : 'var(--text-primary)' }}>
+                      {RETURN_STATUS_LABELS[activeReturn.status] ?? 'Return in progress'}
+                    </p>
+                    {!rejected && (
+                      <button onClick={() => setActiveSection('track-return')}
+                        style={{ marginTop: '6px', padding: 0, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: BROWN, textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                        Track Return
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               {/* Returns are only valid after delivery (backend also enforces a
-                  return window) and never for tailored/bespoke items. */}
-              {!hasTailoring && order.status === 'Delivered' && (
+                  return window), never for tailored/bespoke items, and not
+                  while a return is already in flight for this item. */}
+              {!hasTailoring && order.status === 'Delivered' && !(item.productId && findReturnFor(myReturns, order.orderNumber, item.productId) && ['requested','vendor_approved','return_shipped','received'].includes(findReturnFor(myReturns, order.orderNumber, item.productId)!.status)) && (
                 <button onClick={onRequestReturn} className="w-full transition-all hover:opacity-90"
                   style={{ padding: '10px', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', background: 'rgba(239,68,68,0.04)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Request Return
@@ -527,6 +554,23 @@ export default function OrdersSection({
         </Section>
 
         <Section title="Support">
+          {/* Disputes are per-vendor: a single-vendor order can be reported
+              directly; a multi-vendor order needs the specific item opened. */}
+          {order.status === 'Delivered' && (
+            <button
+              onClick={() => {
+                const vendorIds = Array.from(new Set(order.items.map((i) => i.businessId).filter(Boolean)));
+                if (vendorIds.length === 1 && vendorIds[0]) {
+                  setDisputeFor({ orderReference: order.orderNumber, businessId: vendorIds[0]!, name: `Order ${order.orderNumber}`, image: order.images[0] ?? '' });
+                } else {
+                  toast('This order has multiple vendors', { description: 'Open the item you have an issue with to report it.' });
+                }
+              }}
+              className="w-full transition-all hover:opacity-90"
+              style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Report a Problem
+            </button>
+          )}
           {canCancel(order) && (
             <button
               onClick={() => handleCancelOrder(order)}
@@ -537,10 +581,6 @@ export default function OrdersSection({
               {cancellingRef === order.orderNumber ? 'Cancelling…' : 'Cancel Order'}
             </button>
           )}
-          <button className="w-full transition-all hover:opacity-90"
-            style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Report an Issue
-          </button>
         </Section>
       </div>
     );

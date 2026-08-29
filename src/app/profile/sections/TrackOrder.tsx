@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ArrowLeft, Package, ClipboardCheck, Settings, Truck, PackageCheck, Clock, Phone, RotateCcw, CheckCircle2, Box, RefreshCw, Wrench } from 'lucide-react';
 import { cardStyle } from '../styles';
 import type { ActiveSection, Order } from '../types';
+import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS, type CustomerReturn } from '@/hooks/useCustomerReturns';
 
 // ─── Step definitions ────────────────────────────────────
 const ORDER_STEPS = [
@@ -16,29 +17,32 @@ const ORDER_STEPS = [
   { label: 'Delivered', icon: PackageCheck, key: 'delivered' },
 ];
 
+// Mirrors the backend ReturnStatus lifecycle exactly — earlier versions showed
+// fictional "adjustment" stages that don't exist.
 const RETURN_STEPS = [
   { label: 'Return Requested', icon: RotateCcw, key: 'requested' },
-  { label: 'Return Approved', icon: CheckCircle2, key: 'approved' },
-  { label: 'Items Picked', icon: Box, key: 'picked' },
-  { label: 'Return Processing', icon: Settings, key: 'processing' },
-  { label: 'Adjustment Initiated', icon: Wrench, key: 'adjustment' },
-  { label: 'Adjustment Processed', icon: RefreshCw, key: 'adj-processed' },
-  { label: 'Adjustment Delivered', icon: PackageCheck, key: 'adj-delivered' },
+  { label: 'Vendor Approved', icon: CheckCircle2, key: 'vendor_approved' },
+  { label: 'Shipped Back', icon: Box, key: 'return_shipped' },
+  { label: 'Items Received', icon: Settings, key: 'received' },
+  { label: 'Refund Processed', icon: RefreshCw, key: 'refund_processed' },
 ];
 
+const RETURN_STEP_INDEX: Record<string, number> = {
+  requested: 0,
+  vendor_approved: 1,
+  return_shipped: 2,
+  received: 3,
+  refund_processed: 4,
+  closed: 4,
+};
+
 // ─── Compute which step is "active" based on order status ─
-function getActiveStep(status: string, isReturn: boolean): number {
-  if (isReturn) {
-    if (status === 'Delivered') return 1; // Return Approved
-    if (status === 'Shipped') return 1;
-    if (status === 'Pending') return 0;
-    return 1;
-  }
-  if (status === 'Delivered') return 5;
+function getActiveStep(status: string): number {
+  if (status === 'Delivered' || status === 'Returned') return 5;
   if (status === 'Shipped') return 4;
   if (status === 'Processing') return 2; // Order Processed (paid / vendor confirmed)
   if (status === 'Pending') return 0;
-  return 1; // Confirmed by default
+  return 1; // Confirmed by default (Refused shows a terminal banner instead)
 }
 
 // ─── Component ────────────────────────────────────────────
@@ -52,10 +56,19 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
   const isReturn = activeSection === 'track-return';
   const order = selectedOrder;
 
+  // Real return state from GET /returns/my (only fetched on the return view).
+  const { returns } = useCustomerReturns(isReturn);
+  const ret: CustomerReturn | undefined = order
+    ? findReturnFor(returns, order.orderNumber)
+    : undefined;
+
   if (!order) return null;
 
+  const rejected = isReturn && ret?.status === 'vendor_rejected';
   const steps = isReturn ? RETURN_STEPS : ORDER_STEPS;
-  const activeStepIdx = getActiveStep(order.status, isReturn);
+  const activeStepIdx = isReturn
+    ? (ret ? (RETURN_STEP_INDEX[ret.status] ?? 0) : 0)
+    : getActiveStep(order.status);
   const orderNum = order.orderNumber || '#1234567890';
   const item = order.items[0];
 
@@ -102,7 +115,9 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
             </div>
             <div className="flex flex-col" style={{ minWidth: 0 }}>
               <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {isReturn ? 'Return in progress' : steps[activeStepIdx]?.label ?? 'Order Placed'}
+                {isReturn
+                  ? (ret ? RETURN_STATUS_LABELS[ret.status] ?? 'Return in progress' : 'Return in progress')
+                  : steps[activeStepIdx]?.label ?? 'Order Placed'}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 {order.courier ? `Courier: ${order.courier}` : 'Awaiting courier assignment'}
@@ -137,6 +152,29 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
           </div>
         </div>
       </div>
+
+      {/* ─── Terminal-state banners ─── */}
+      {rejected && (
+        <div style={{ ...cardStyle, borderColor: 'rgba(239,68,68,0.25)' }}>
+          <div style={{ padding: '14px 16px' }}>
+            <p style={{ fontSize: '12.5px', fontWeight: 700, color: '#EF4444', margin: 0 }}>Return rejected by the vendor</p>
+            {ret?.vendor_rejection_reason && (
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>Reason: {ret.vendor_rejection_reason}</p>
+            )}
+            <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '6px 0 0' }}>If you disagree, you can report a problem on the item to open a dispute.</p>
+          </div>
+        </div>
+      )}
+      {!isReturn && order.status === 'Refused' && (
+        <div style={{ ...cardStyle, borderColor: 'rgba(239,68,68,0.25)' }}>
+          <p style={{ padding: '14px 16px', fontSize: '12.5px', fontWeight: 700, color: '#EF4444', margin: 0 }}>This order was cancelled — any payment has been refunded.</p>
+        </div>
+      )}
+      {!isReturn && order.status === 'Returned' && (
+        <div style={{ ...cardStyle, borderColor: 'rgba(168,85,247,0.25)' }}>
+          <p style={{ padding: '14px 16px', fontSize: '12.5px', fontWeight: 700, color: '#A855F7', margin: 0 }}>This order was returned and refunded.</p>
+        </div>
+      )}
 
       {/* ─── Tracking Steps ─── */}
       <div style={cardStyle}>
