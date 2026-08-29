@@ -589,13 +589,19 @@ export default function OrdersSection({
   // ═══════════════ ORDERS LIST ═══════════════
   return (
     <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between" style={{ paddingLeft: '2px' }}>
-        <div className="flex items-center" style={{ gap: '10px' }}>
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>My Orders</h3>
-          {!loading && !error && (
-            <span style={{ fontSize: '11px', fontWeight: 800, color: BROWN, background: 'rgba(70,40,20,0.08)', padding: '3px 9px', borderRadius: '100px' }}>{filtered.length}</span>
-          )}
+      {/* Header card — mirrors the My Measurement landing header */}
+      <div style={cardStyle}>
+        <div className="flex flex-col" style={{ padding: '24px 20px' }}>
+          <Package size={32} color={INK} strokeWidth={1.5} style={{ marginBottom: '12px' }} />
+          <div className="flex items-center" style={{ gap: '10px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.02em' }}>My Orders</h3>
+            {!loading && !error && (
+              <span style={{ fontSize: '11px', fontWeight: 800, color: BROWN, background: 'rgba(70,40,20,0.08)', padding: '3px 9px', borderRadius: '100px' }}>{filtered.length}</span>
+            )}
+          </div>
+          <p style={{ fontSize: '13px', color: MUTE, lineHeight: 1.6, marginTop: '4px', marginBottom: 0 }}>
+            Track deliveries, request returns and review your purchases.
+          </p>
         </div>
       </div>
 
