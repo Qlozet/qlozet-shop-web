@@ -84,7 +84,7 @@ export const OrderChatModal: React.FC<OrderChatModalProps> = ({
         className={`fixed left-3 right-3 bottom-3 lg:left-auto lg:right-12 lg:top-12 lg:bottom-12 lg:w-[400px] z-[100] rounded-[24px] flex flex-col overflow-hidden transition-all duration-500 ease-out max-h-[70vh] lg:max-h-[640px] ${
           visible
             ? 'translate-y-0 lg:translate-x-0 opacity-100'
-            : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0'
+            : 'translate-y-[calc(100%+20px)] lg:translate-y-0 lg:translate-x-8 lg:opacity-0 pointer-events-none'
         }`}
         style={{
           backgroundColor: 'var(--bg-base)',
