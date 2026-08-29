@@ -310,11 +310,26 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
 
   return (
     <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
-      <div className="flex items-center justify-between">
-        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Address Book</h3>
-        <button onClick={() => setActiveSection('add-address')} className="transition-all hover:opacity-90 active:scale-95" style={{ padding: '10px 24px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}>
-          Add Address
-        </button>
+      {/* Header card — mirrors the My Measurement landing header */}
+      <div style={cardStyle}>
+        <div className="flex flex-col" style={{ padding: '24px 20px' }}>
+          <MapPin size={32} color="var(--text-primary)" strokeWidth={1.5} style={{ marginBottom: '12px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '4px' }}>
+            Address Book
+          </h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '16px' }}>
+            {addresses.length > 0
+              ? `${addresses.length} saved address${addresses.length === 1 ? '' : 'es'} — your default is used at checkout.`
+              : 'Save a delivery address to speed up checkout.'}
+          </p>
+          <button
+            onClick={() => setActiveSection('add-address')}
+            className="self-start transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ padding: '12px 24px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', border: 'none', cursor: 'pointer' }}
+          >
+            Add Address
+          </button>
+        </div>
       </div>
 
       {isLoading && addresses.length === 0 && (
