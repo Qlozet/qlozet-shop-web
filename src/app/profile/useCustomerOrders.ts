@@ -302,39 +302,66 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
 export interface UseCustomerOrdersReturn {
   orders: Order[];
   loading: boolean;
+  /** True while an additional page is being appended. */
+  loadingMore: boolean;
   error: string | null;
+  /** Total order count on the server (all pages). */
+  totalItems: number;
+  /** Whether another page exists beyond what's loaded. */
+  hasMore: boolean;
+  /** Append the next page to the list. */
+  loadMore: () => void;
+  /** Reload from page 1 (after cancel/return/etc.). */
   refetch: () => void;
 }
 
 export function useCustomerOrders(params: { size?: number } = {}): UseCustomerOrdersReturn {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const size = params.size ?? 50;
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const size = params.size ?? 15;
 
-  const fetchOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchPage = useCallback(async (pageToLoad: number, append: boolean) => {
+    if (append) setLoadingMore(true);
+    else { setLoading(true); setError(null); }
     try {
-      const res = await api.get('/orders/customer', { params: { page: 1, size } });
+      const res = await api.get('/orders/customer', { params: { page: pageToLoad, size } });
       // API wrapper may nest the paginated payload under data.
       const payload: ApiCustomerOrdersPaginated =
         res.data?.data ?? res.data;
       const list = Array.isArray(payload?.data) ? payload.data : [];
-      setOrders(list.map(mapApiOrder));
+      const mapped = list.map(mapApiOrder);
+      setOrders((prev) => (append ? [...prev, ...mapped] : mapped));
+      setPage(pageToLoad);
+      const meta: any = payload;
+      setTotalItems(meta?.total_items ?? (append ? undefined : mapped.length) ?? 0);
+      setHasMore(
+        typeof meta?.has_next_page === 'boolean'
+          ? meta.has_next_page
+          : mapped.length === size // fallback when meta is absent
+      );
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Failed to load orders';
-      setError(message);
-      setOrders([]);
+      if (!append) { setError(message); setOrders([]); }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [size]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  const refetch = useCallback(() => { fetchPage(1, false); }, [fetchPage]);
+  const loadMore = useCallback(() => {
+    if (!loading && !loadingMore && hasMore) fetchPage(page + 1, true);
+  }, [fetchPage, page, loading, loadingMore, hasMore]);
 
-  return { orders, loading, error, refetch: fetchOrders };
+  useEffect(() => {
+    fetchPage(1, false);
+  }, [fetchPage]);
+
+  return { orders, loading, loadingMore, error, totalItems, hasMore, loadMore, refetch };
 }

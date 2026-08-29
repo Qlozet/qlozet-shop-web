@@ -164,7 +164,7 @@ export default function OrdersSection({
   const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string } | null>(null);
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
-  const { orders, loading, error, refetch } = useCustomerOrders();
+  const { orders, loading, loadingMore, error, totalItems, hasMore, loadMore, refetch } = useCustomerOrders();
   // Return requests — powers the item-level return-status banner.
   const { returns: myReturns } = useCustomerReturns();
 
@@ -596,7 +596,7 @@ export default function OrdersSection({
           <div className="flex items-center" style={{ gap: '10px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.02em' }}>My Orders</h3>
             {!loading && !error && (
-              <span style={{ fontSize: '11px', fontWeight: 800, color: BROWN, background: 'rgba(70,40,20,0.08)', padding: '3px 9px', borderRadius: '100px' }}>{filtered.length}</span>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: BROWN, background: 'rgba(70,40,20,0.08)', padding: '3px 9px', borderRadius: '100px' }}>{orderFilter === 'All' && totalItems > orders.length ? `${orders.length} of ${totalItems}` : filtered.length}</span>
             )}
           </div>
           <p style={{ fontSize: '13px', color: MUTE, lineHeight: 1.6, marginTop: '4px', marginBottom: 0 }}>
@@ -675,6 +675,19 @@ export default function OrdersSection({
           </button>
         );
       })}
+
+      {/* Load more — quiet outline button, only while the server has more */}
+      {!loading && !error && hasMore && (
+        <button
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="self-center flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-[0.98]"
+          style={{ gap: '8px', marginTop: '4px', padding: '12px 32px', borderRadius: '100px', border: '1.5px solid var(--border-glass)', background: 'var(--bg-base)', fontSize: '12px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: loadingMore ? 'wait' : 'pointer' }}
+        >
+          {loadingMore && <Loader2 size={14} className="animate-spin" />}
+          {loadingMore ? 'Loading…' : `Load more (${Math.max(totalItems - orders.length, 0)} left)`}
+        </button>
+      )}
     </div>
   );
 }
