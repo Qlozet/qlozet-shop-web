@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2, Check, Store } from 'lucide-react';
+import { X, Loader2, Check, Store, UserPlus, PenLine } from 'lucide-react';
+import { RequestQuotesModal } from './RequestQuotesModal';
 import {
   useBespokeDesigns,
   type BespokeDesign,
@@ -20,6 +21,15 @@ interface DesignQuotesModalProps {
 
 const naira = (n?: number) =>
   typeof n === 'number' ? `₦${n.toLocaleString()}` : '—';
+
+// Waiting-state copy per quote status (submitted/accepted render their own UI).
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Awaiting the tailor’s quote',
+  draft: 'The tailor is preparing a quote',
+  revision_requested: 'Changes requested — awaiting the tailor’s update',
+  declined: 'Declined',
+  expired: 'Expired — you can ask another tailor',
+};
 
 const quoteTotal = (q: BespokeQuote): number => {
   if (typeof q.total_amount === 'number' && q.total_amount > 0) return q.total_amount;
@@ -49,6 +59,12 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [mounted, setMounted] = useState(false);
   const [addressId, setAddressId] = useState<string | null>(null);
   const [addressChecked, setAddressChecked] = useState(false);
+  // Revision request (per quote) + wave-2 tailor requests.
+  const [revisionFor, setRevisionFor] = useState<string | null>(null);
+  const [revisionMsg, setRevisionMsg] = useState('');
+  const [revisionBusy, setRevisionBusy] = useState(false);
+  const [showAddTailors, setShowAddTailors] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => setMounted(true), []);
 
@@ -93,7 +109,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     return () => {
       active = false;
     };
-  }, [isOpen, designId, getDesignDetail]);
+  }, [isOpen, designId, getDesignDetail, reloadKey]);
 
   if (!isOpen || !mounted) return null;
 
@@ -127,6 +143,36 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
       setAcceptingId(null);
     }
   };
+
+  const sendRevision = async (quoteId: string) => {
+    const message = revisionMsg.trim();
+    if (!message) return;
+    setRevisionBusy(true);
+    setErr(null);
+    try {
+      await api.post(`/bespoke/quotes/${quoteId}/revision`, { message });
+      setRevisionFor(null);
+      setRevisionMsg('');
+      setReloadKey((k) => k + 1); // re-fetch: quote is now revision_requested
+    } catch (e: any) {
+      setErr(
+        e?.response?.data?.message ||
+          'Could not send the revision request. Please try again.',
+      );
+    } finally {
+      setRevisionBusy(false);
+    }
+  };
+
+  // Wave-2 requests: active quotes consume cap slots; expired/declined free them.
+  const designStatus: string = designObj?.status || '';
+  const activeVendorIds = quotes
+    .filter((q) => !['expired', 'declined'].includes(q.status))
+    .map((q: any) => String(q.vendor?._id ?? q.vendor ?? ''))
+    .filter(Boolean);
+  const canAddMore =
+    ['draft', 'requesting_quotes', 'quoted'].includes(designStatus) &&
+    activeVendorIds.length < 5;
 
   return createPortal(
     <div
@@ -296,10 +342,64 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             You&apos;ll be charged {naira(total)} — the converted price is an estimate.
                           </p>
                         )}
+                        {revisionFor === q._id ? (
+                          <div className='flex flex-col' style={{ gap: '8px', paddingTop: '4px' }}>
+                            <textarea
+                              value={revisionMsg}
+                              onChange={(e) => setRevisionMsg(e.target.value)}
+                              maxLength={1000}
+                              rows={3}
+                              placeholder='Tell the tailor what you’d like changed — price, timeline, materials…'
+                              style={{
+                                width: '100%', fontSize: '12px', color: 'var(--text-primary)',
+                                background: 'var(--bg-base)', border: '1px solid var(--border-glass)',
+                                borderRadius: '10px', padding: '10px 12px', outline: 'none', resize: 'vertical',
+                              }}
+                            />
+                            <div className='flex' style={{ gap: '8px' }}>
+                              <button
+                                onClick={() => sendRevision(q._id)}
+                                disabled={revisionBusy || !revisionMsg.trim()}
+                                className='flex-1 flex items-center justify-center transition-all hover:opacity-90'
+                                style={{
+                                  padding: '10px', borderRadius: '10px', background: '#064E3B',
+                                  color: '#FFF', fontSize: '11px', fontWeight: 800, border: 'none',
+                                  cursor: revisionBusy || !revisionMsg.trim() ? 'not-allowed' : 'pointer',
+                                  opacity: revisionBusy || !revisionMsg.trim() ? 0.6 : 1, gap: '6px',
+                                }}
+                              >
+                                {revisionBusy && <Loader2 size={12} className='animate-spin' />}
+                                Send request
+                              </button>
+                              <button
+                                onClick={() => { setRevisionFor(null); setRevisionMsg(''); }}
+                                style={{
+                                  padding: '10px 14px', borderRadius: '10px', background: 'transparent',
+                                  color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700,
+                                  border: '1px solid var(--border-glass)', cursor: 'pointer',
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setRevisionFor(q._id); setRevisionMsg(''); }}
+                            className='flex items-center justify-center transition-all hover:opacity-80'
+                            style={{
+                              gap: '6px', padding: '6px', background: 'none', border: 'none',
+                              cursor: 'pointer', fontSize: '11px', fontWeight: 700,
+                              color: 'var(--text-muted)', textDecoration: 'underline',
+                            }}
+                          >
+                            <PenLine size={12} /> Request changes
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                        {q.status === 'pending' ? 'Awaiting the tailor’s quote' : q.status}
+                        {STATUS_LABELS[q.status] ?? q.status}
                       </p>
                     )}
                   </div>
@@ -307,11 +407,43 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
               })}
             </div>
           )}
+          {!loading && canAddMore && (
+            <button
+              onClick={() => setShowAddTailors(true)}
+              className='w-full flex items-center justify-center transition-all hover:opacity-80'
+              style={{
+                marginTop: '14px', gap: '8px', padding: '12px',
+                borderRadius: '12px', background: 'transparent',
+                border: '1.5px dashed var(--border-glass)',
+                color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <UserPlus size={14} />
+              Ask more tailors ({5 - activeVendorIds.length} slot{5 - activeVendorIds.length === 1 ? '' : 's'} left)
+            </button>
+          )}
           {err && (
             <p style={{ fontSize: '11px', color: '#DC2626', paddingTop: '12px' }}>⚠ {err}</p>
           )}
         </div>
       </div>
+
+      {/* Wave-2 tailor requests — rendered after the main card so it stacks above. */}
+      <RequestQuotesModal
+        isOpen={showAddTailors}
+        onClose={() => {
+          setShowAddTailors(false);
+          setReloadKey((k) => k + 1); // pick up the new pending quotes
+        }}
+        designName={designObj?.name || 'Design'}
+        category={designObj?.category || 'Design'}
+        gender={designObj?.gender === 'men' ? 'men' : 'women'}
+        designImages={designObj?.design_images || []}
+        referenceImages={designObj?.reference_images || []}
+        designId={designId}
+        excludeVendorIds={activeVendorIds}
+      />
     </div>,
     document.body,
   );

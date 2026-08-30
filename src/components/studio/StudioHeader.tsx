@@ -20,6 +20,10 @@ import { useApp } from '@/context/AppContext';
 interface StudioHeaderProps {
   designName: string;
   tokenBalance: number;
+  /** Clone the current design into a fresh draft (the reorder path). */
+  onDuplicate?: () => void;
+  canDuplicate?: boolean;
+  duplicating?: boolean;
 }
 
 // ─── Action types ─────────────────────────────────────────────
@@ -53,6 +57,9 @@ const getActions = (status: DesignStatus, hasUser: boolean): StudioAction[] => {
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   designName,
   tokenBalance,
+  onDuplicate,
+  canDuplicate,
+  duplicating,
 }) => {
   const { user } = useApp();
   const [designStatus] = useState<DesignStatus>('published');
@@ -70,11 +77,23 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileMenu]);
 
-  const actions = getActions(designStatus, !!user);
+  const actions = getActions(designStatus, !!user).map((a) =>
+    a.id === 'duplicate'
+      ? {
+          ...a,
+          label: duplicating ? 'Duplicating…' : a.label,
+          disabled: a.disabled || !canDuplicate || !!duplicating,
+        }
+      : a,
+  );
 
   const handleAction = (id: string) => {
     setShowMobileMenu(false);
-    // Placeholder — each action would trigger real logic
+    if (id === 'duplicate') {
+      onDuplicate?.();
+      return;
+    }
+    // Placeholder — remaining actions get real logic in the header overhaul.
     console.log(`Studio action: ${id}`);
   };
 
