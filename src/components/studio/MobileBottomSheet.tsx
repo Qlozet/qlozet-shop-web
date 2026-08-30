@@ -77,6 +77,24 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
     });
   }, []);
 
+  // The ArrowDownUp icon is a height control: each tap raises the sheet to
+  // the next snap point; from the top it wraps back to the lowest. Holding
+  // and dragging it behaves exactly like the handle line.
+  const SNAPS = [20, 35, 60, 92];
+  const iconMoved = useRef(false);
+  const iconTouched = useRef(false);
+
+  const stepHeight = useCallback(() => {
+    setSheetHeight(prev => {
+      const nearest = SNAPS.reduce((a, b) =>
+        Math.abs(b - prev) < Math.abs(a - prev) ? b : a
+      );
+      const idx = SNAPS.indexOf(nearest);
+      return idx >= SNAPS.length - 1 ? SNAPS[0] : SNAPS[idx + 1];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const sectionLabel: Record<string, string> = {
     styles: 'STYLES',
     fabric: 'FABRIC',
@@ -124,7 +142,42 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
               {sectionLabel[expandedSection] || ''}
             </h2>
             <div className="flex items-center gap-4">
-              <ArrowDownUp size={20} color="var(--text-primary)" />
+              <button
+                type="button"
+                aria-label="Expand or collapse the panel"
+                className="touch-none transition-transform active:scale-90"
+                style={{ background: 'transparent', border: 'none', padding: '6px', margin: '-6px', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex' }}
+                onClick={() => {
+                  // Touch taps are handled in onTouchEnd; skip the synthetic
+                  // click that follows so the sheet doesn't jump two steps.
+                  if (iconTouched.current) {
+                    iconTouched.current = false;
+                    return;
+                  }
+                  stepHeight();
+                }}
+                onTouchStart={(e) => {
+                  iconMoved.current = false;
+                  handleTouchStart(e);
+                }}
+                onTouchMove={(e) => {
+                  if (Math.abs(e.touches[0].clientY - dragStartY.current) > 8) {
+                    iconMoved.current = true;
+                  }
+                  handleTouchMove(e);
+                }}
+                onTouchEnd={() => {
+                  iconTouched.current = true;
+                  if (iconMoved.current) {
+                    handleTouchEnd(); // held + dragged → snap like the handle
+                  } else {
+                    isDragging.current = false; // plain tap → step up / wrap down
+                    stepHeight();
+                  }
+                }}
+              >
+                <ArrowDownUp size={20} />
+              </button>
               <RotateCcw size={20} color="var(--text-primary)" />
             </div>
           </div>
