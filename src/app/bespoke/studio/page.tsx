@@ -11,6 +11,7 @@ import { FloatingToolbar } from '@/components/studio/FloatingToolbar';
 import { MobileBottomSheet } from '@/components/studio/MobileBottomSheet';
 import { DesktopConfigPanel } from '@/components/studio/DesktopConfigPanel';
 import { Upload, Loader2, Sparkles, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
 import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
@@ -207,12 +208,20 @@ function StudioContent() {
         }),
       });
       if (created?._id) {
-        // Hard navigation so the studio re-initialises cleanly on the copy.
-        window.location.href = `/bespoke/studio?designId=${created._id}&name=${encodeURIComponent(`${baseName} (Copy)`)}`;
+        toast.success('Design duplicated', {
+          description: `“${baseName} (Copy)” is in My Designs — opening it…`,
+        });
+        // Brief pause so the toast lands before the hard navigation (which the
+        // studio needs to re-initialise cleanly on the copy).
+        setTimeout(() => {
+          window.location.href = `/bespoke/studio?designId=${created._id}&name=${encodeURIComponent(`${baseName} (Copy)`)}`;
+        }, 900);
         return;
       }
+      toast.error('Could not duplicate the design. Please try again.');
       setDuplicating(false);
     } catch {
+      toast.error('Could not duplicate the design. Please try again.');
       setDuplicating(false);
     }
   }, [duplicating, customization, createDesign, designName]);

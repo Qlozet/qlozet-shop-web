@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { X, Save, Loader2, CheckCircle2 } from 'lucide-react';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { enrichSelections } from '@/data/studio-options';
@@ -78,6 +79,9 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
 
     if (result) {
       setSaved(true);
+      toast.success(designId ? 'Design updated' : 'Design saved', {
+        description: name.trim(),
+      });
       setTimeout(() => {
         onClose();
         setSaved(false);
