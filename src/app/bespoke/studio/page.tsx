@@ -13,8 +13,9 @@ import { DesktopConfigPanel } from '@/components/studio/DesktopConfigPanel';
 import { Upload, Loader2, Sparkles, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
+import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
 
-import { type ClothingType, type DesignGender } from '@/data/studio-options';
+import { type ClothingType, type DesignGender, enrichSelections } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
 //  STUDIO CONTENT
@@ -165,6 +166,57 @@ function StudioContent() {
     loadDesign();
   }, [designId, designLoaded, customization]);
 
+  // ─── Duplicate (reorder path) ────────────────────────────────
+  // Clones the current studio state into a fresh DRAFT design, then reloads
+  // the studio on the copy. This is how a produced/delivered design gets
+  // made again (same or different tailor) — designs never reopen for quotes.
+  const { createDesign } = useBespokeDesigns();
+  const [duplicating, setDuplicating] = useState(false);
+
+  const handleDuplicate = useCallback(async () => {
+    if (duplicating || customization.generatedImages.length === 0) return;
+    setDuplicating(true);
+    try {
+      const categoryMap: Record<string, string> = {
+        top: 'Tops', full_body: 'Dresses', bottom: 'Pants',
+      };
+      const category = customization.clothingType
+        ? categoryMap[customization.clothingType] || customization.clothingType
+        : 'Design';
+      const baseName = (customization.designName || designName || 'My design').trim();
+      const created = await createDesign({
+        name: `${baseName} (Copy)`,
+        category,
+        gender: customization.designGender === 'male' ? 'men' : 'women',
+        design_images: [...customization.generatedImages].reverse(),
+        reference_images: customization.referenceImages.length
+          ? customization.referenceImages
+          : undefined,
+        description: JSON.stringify({
+          notes: '',
+          selections: enrichSelections({
+            neckline: customization.selectedNeckline,
+            sleeve: customization.selectedSleeve,
+            silhouette: customization.selectedSilhouette,
+            collar: customization.selectedCollar,
+            fabric: customization.selectedFabric,
+            color: customization.selectedColor,
+            fit: customization.selectedFit,
+            userPrompt: customization.userPrompt,
+          }),
+        }),
+      });
+      if (created?._id) {
+        // Hard navigation so the studio re-initialises cleanly on the copy.
+        window.location.href = `/bespoke/studio?designId=${created._id}&name=${encodeURIComponent(`${baseName} (Copy)`)}`;
+        return;
+      }
+      setDuplicating(false);
+    } catch {
+      setDuplicating(false);
+    }
+  }, [duplicating, customization, createDesign, designName]);
+
   // ─── Reference Upload Overlay ────────────────────────────────
   const [showRefOverlay, setShowRefOverlay] = useState(method === 'reference');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -274,6 +326,9 @@ function StudioContent() {
       <StudioHeader
         designName={designName}
         tokenBalance={customization.tokenBalance}
+        onDuplicate={handleDuplicate}
+        canDuplicate={customization.generatedImages.length > 0}
+        duplicating={duplicating}
       />
 
       {/* Canvas Area */}

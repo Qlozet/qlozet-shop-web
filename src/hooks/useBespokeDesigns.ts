@@ -75,6 +75,19 @@ export interface CreateDesignPayload {
   measurement_id?: string;
 }
 
+// The backend service returns { message, data: design } and the global
+// response interceptor wraps that AGAIN, so the design object actually
+// arrives at res.data.data.data. Walk down the `data` envelopes until we
+// reach the object that carries an _id (bounded, in case shapes change).
+const unwrapDesign = (body: any): any => {
+  let cur = body;
+  for (let i = 0; i < 4; i++) {
+    if (!cur || typeof cur !== 'object' || cur._id || !('data' in cur)) break;
+    cur = cur.data;
+  }
+  return cur;
+};
+
 // ─── Hook ────────────────────────────────────────────────────
 export function useBespokeDesigns() {
   const { isInitialized, user } = useApp();
@@ -139,7 +152,7 @@ export function useBespokeDesigns() {
   const createDesign = useCallback(async (payload: CreateDesignPayload): Promise<BespokeDesign | null> => {
     try {
       const res = await api.post('/bespoke/designs', payload);
-      const created = res?.data?.data || res?.data;
+      const created = unwrapDesign(res?.data);
       // Refresh list
       await fetchDesigns();
       return created;
@@ -154,7 +167,7 @@ export function useBespokeDesigns() {
   const updateDesign = useCallback(async (id: string, payload: Partial<CreateDesignPayload>): Promise<BespokeDesign | null> => {
     try {
       const res = await api.put(`/bespoke/designs/${id}`, payload);
-      const updated = res?.data?.data || res?.data;
+      const updated = unwrapDesign(res?.data);
       await fetchDesigns();
       return updated;
     } catch (err: any) {

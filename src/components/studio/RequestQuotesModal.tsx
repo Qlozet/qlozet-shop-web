@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { X, Loader2, CheckCircle2, Check, Store } from 'lucide-react';
@@ -19,6 +19,9 @@ interface RequestQuotesModalProps {
   referenceImages: string[];
   selections?: DesignSelections;
   designId?: string | null;
+  /** Vendors that already hold an ACTIVE quote on this design — shown but
+   *  not selectable, and they consume slots from the 5-vendor cap. */
+  excludeVendorIds?: string[];
 }
 
 const MAX_VENDORS = 5;
@@ -33,6 +36,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   referenceImages,
   selections,
   designId,
+  excludeVendorIds,
 }) => {
   const router = useRouter();
   const { saveDesign, requestQuotes } = useBespokeDesigns();
@@ -43,16 +47,25 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  // Remembers a design saved by a previous attempt so retrying after a
+  // failed quote request doesn't create a duplicate design.
+  const savedIdRef = useRef<string | null>(null);
 
   useEffect(() => setMounted(true), []);
 
   if (!isOpen || !mounted) return null;
 
+  // Vendors with active quotes consume cap slots (backend enforces the same).
+  const remainingSlots = Math.max(
+    0,
+    MAX_VENDORS - (excludeVendorIds?.length ?? 0),
+  );
+
   const toggle = (id: string) => {
     setSelected((prev) =>
       prev.includes(id)
         ? prev.filter((v) => v !== id)
-        : prev.length >= MAX_VENDORS
+        : prev.length >= remainingSlots
           ? prev
           : [...prev, id],
     );
@@ -68,7 +81,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
     setErr(null);
 
     // Ensure the design is saved first (need a designId to request quotes).
-    let id = designId ?? null;
+    let id = designId ?? savedIdRef.current;
     if (!id) {
       const payload: CreateDesignPayload = {
         name: (designName || 'My design').trim(),
@@ -85,6 +98,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
         return;
       }
       id = saved._id;
+      savedIdRef.current = id;
     }
 
     const ok = await requestQuotes(id, selected);
@@ -145,7 +159,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                   Choose Tailors
                 </h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
-                  Pick up to {MAX_VENDORS} tailors to send this design to. Each will
+                  Pick up to {remainingSlots} tailor{remainingSlots === 1 ? '' : 's'} to send this design to. Each will
                   send you a quote — you choose the one you like.
                 </p>
               </div>
@@ -168,7 +182,10 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                   vendors.map((v: any) => {
                     const id = v._id || v.id;
                     const isSel = selected.includes(id);
-                    const disabled = !isSel && selected.length >= MAX_VENDORS;
+                    const alreadyRequested = excludeVendorIds?.includes(String(id)) ?? false;
+                    const disabled =
+                      alreadyRequested ||
+                      (!isSel && selected.length >= remainingSlots);
                     return (
                       <button
                         key={id}
@@ -196,6 +213,11 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                         </div>
                         <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {v.business_name}
+                          {alreadyRequested && (
+                            <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '2px 6px' }}>
+                              Requested
+                            </span>
+                          )}
                         </span>
                         <span
                           className='flex items-center justify-center'
