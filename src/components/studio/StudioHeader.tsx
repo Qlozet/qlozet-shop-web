@@ -5,13 +5,11 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Bookmark,
-  Globe,
-  GlobeLock,
   Copy,
-  MessageCircle,
   Share2,
   Trash2,
   MoreVertical,
+  Loader2,
 } from 'lucide-react';
 import { TokenIcon } from '../icons/TokenIcon';
 
@@ -20,49 +18,46 @@ import { useApp } from '@/context/AppContext';
 interface StudioHeaderProps {
   designName: string;
   tokenBalance: number;
+  /** A generated design image exists — Save/Duplicate/Share need one. */
+  hasImages?: boolean;
+  onSave?: () => void;
+  saving?: boolean;
   /** Clone the current design into a fresh draft (the reorder path). */
   onDuplicate?: () => void;
-  canDuplicate?: boolean;
   duplicating?: boolean;
+  onShare?: () => void;
+  /** Deleting needs a saved design. */
+  onDelete?: () => void;
+  deleting?: boolean;
+  canDelete?: boolean;
 }
 
-// ─── Action types ─────────────────────────────────────────────
-type DesignStatus = 'published' | 'unpublished' | 'draft';
-
+// Every action here is real and wired — Publish/Unpublish and Chat Vendor were
+// removed: the platform has no design-publishing concept, and bespoke chat
+// lives on orders (there is no vendor to chat with at the studio stage).
 interface StudioAction {
   id: string;
   label: string;
   icon: React.ElementType;
   color?: string;
   disabled?: boolean;
-  /** Only show when status matches */
-  showWhen?: DesignStatus[];
+  busy?: boolean;
 }
-
-const getActions = (status: DesignStatus, hasUser: boolean): StudioAction[] => {
-  const all: StudioAction[] = [
-    { id: 'save', label: 'Save', icon: Bookmark, disabled: !hasUser },
-    { id: 'publish', label: 'Publish', icon: Globe, showWhen: ['unpublished', 'draft'], disabled: !hasUser },
-    { id: 'unpublish', label: 'Unpublish', icon: GlobeLock, showWhen: ['published'], disabled: !hasUser },
-    { id: 'duplicate', label: 'Duplicate', icon: Copy, disabled: !hasUser },
-    { id: 'chat_vendor', label: 'Chat Vendor', icon: MessageCircle, disabled: status === 'draft' || !hasUser },
-    { id: 'share', label: 'Share', icon: Share2, disabled: !hasUser },
-    { id: 'delete', label: 'Delete', icon: Trash2, color: '#EF4444', disabled: !hasUser },
-  ];
-  return all.filter(
-    (a) => !a.showWhen || a.showWhen.includes(status)
-  );
-};
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   designName,
   tokenBalance,
+  hasImages,
+  onSave,
+  saving,
   onDuplicate,
-  canDuplicate,
   duplicating,
+  onShare,
+  onDelete,
+  deleting,
+  canDelete,
 }) => {
   const { user } = useApp();
-  const [designStatus] = useState<DesignStatus>('published');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -77,24 +72,44 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileMenu]);
 
-  const actions = getActions(designStatus, !!user).map((a) =>
-    a.id === 'duplicate'
-      ? {
-          ...a,
-          label: duplicating ? 'Duplicating…' : a.label,
-          disabled: a.disabled || !canDuplicate || !!duplicating,
-        }
-      : a,
-  );
+  const hasUser = !!user;
+  const actions: StudioAction[] = [
+    {
+      id: 'save',
+      label: saving ? 'Saving…' : 'Save',
+      icon: Bookmark,
+      disabled: !hasUser || !hasImages || !!saving,
+      busy: !!saving,
+    },
+    {
+      id: 'duplicate',
+      label: duplicating ? 'Duplicating…' : 'Duplicate',
+      icon: Copy,
+      disabled: !hasUser || !hasImages || !!duplicating,
+      busy: !!duplicating,
+    },
+    {
+      id: 'share',
+      label: 'Share',
+      icon: Share2,
+      disabled: !hasUser || !hasImages,
+    },
+    {
+      id: 'delete',
+      label: deleting ? 'Deleting…' : 'Delete',
+      icon: Trash2,
+      color: '#EF4444',
+      disabled: !hasUser || !canDelete || !!deleting,
+      busy: !!deleting,
+    },
+  ];
 
   const handleAction = (id: string) => {
     setShowMobileMenu(false);
-    if (id === 'duplicate') {
-      onDuplicate?.();
-      return;
-    }
-    // Placeholder — remaining actions get real logic in the header overhaul.
-    console.log(`Studio action: ${id}`);
+    if (id === 'save') onSave?.();
+    else if (id === 'duplicate') onDuplicate?.();
+    else if (id === 'share') onShare?.();
+    else if (id === 'delete') onDelete?.();
   };
 
   return (
@@ -121,7 +136,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       {/* Right: Desktop action buttons */}
       <div className="absolute top-6 right-6 z-40 hidden lg:flex items-center" style={{ gap: '10px' }}>
-        {actions.map(({ id, label, icon: Icon, color, disabled }) => (
+        {actions.map(({ id, label, icon: Icon, color, disabled, busy }) => (
           <button
             key={id}
             title={label}
@@ -135,10 +150,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               border: 'none',
               background: 'var(--bg-base)',
               cursor: disabled ? 'not-allowed' : 'pointer',
-              opacity: disabled ? 0.4 : 1,
+              opacity: disabled && !busy ? 0.4 : 1,
             }}
           >
-            <Icon size={18} color={color || 'var(--text-primary)'} />
+            {busy ? (
+              <Loader2 size={18} className="animate-spin" color={color || 'var(--text-primary)'} />
+            ) : (
+              <Icon size={18} color={color || 'var(--text-primary)'} />
+            )}
           </button>
         ))}
       </div>
@@ -202,7 +221,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                   zIndex: 100,
                 }}
               >
-                {actions.map(({ id, label, icon: Icon, color, disabled }, idx) => (
+                {actions.map(({ id, label, icon: Icon, color, disabled, busy }) => (
                   <React.Fragment key={id}>
                     {/* Separator before Delete */}
                     {id === 'delete' && (
@@ -218,10 +237,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                         background: 'none',
                         border: 'none',
                         cursor: disabled ? 'not-allowed' : 'pointer',
-                        opacity: disabled ? 0.4 : 1,
+                        opacity: disabled && !busy ? 0.4 : 1,
                       }}
                     >
-                      <Icon size={18} color={color || 'var(--text-primary)'} />
+                      {busy ? (
+                        <Loader2 size={18} className="animate-spin" color={color || 'var(--text-primary)'} />
+                      ) : (
+                        <Icon size={18} color={color || 'var(--text-primary)'} />
+                      )}
                       <span style={{ fontSize: '14px', fontWeight: 600, color: color || 'var(--text-primary)' }}>
                         {label}
                       </span>
