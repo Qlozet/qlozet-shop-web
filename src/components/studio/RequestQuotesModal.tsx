@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { X, Loader2, CheckCircle2, Check, Store } from 'lucide-react';
@@ -43,6 +43,9 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  // Remembers a design saved by a previous attempt so retrying after a
+  // failed quote request doesn't create a duplicate design.
+  const savedIdRef = useRef<string | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -68,7 +71,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
     setErr(null);
 
     // Ensure the design is saved first (need a designId to request quotes).
-    let id = designId ?? null;
+    let id = designId ?? savedIdRef.current;
     if (!id) {
       const payload: CreateDesignPayload = {
         name: (designName || 'My design').trim(),
@@ -85,6 +88,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
         return;
       }
       id = saved._id;
+      savedIdRef.current = id;
     }
 
     const ok = await requestQuotes(id, selected);
