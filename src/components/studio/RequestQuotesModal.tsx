@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { X, Loader2, CheckCircle2, Check, Store } from 'lucide-react';
@@ -99,6 +100,8 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
       }
       id = saved._id;
       savedIdRef.current = id;
+      // Same signal as add-to-cart/wishlist — the design is now in My Designs.
+      toast.success('Design saved', { description: payload.name });
     }
 
     const ok = await requestQuotes(id, selected);

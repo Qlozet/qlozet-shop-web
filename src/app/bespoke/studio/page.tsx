@@ -11,9 +11,10 @@ import { FloatingToolbar } from '@/components/studio/FloatingToolbar';
 import { MobileBottomSheet } from '@/components/studio/MobileBottomSheet';
 import { DesktopConfigPanel } from '@/components/studio/DesktopConfigPanel';
 import { Upload, Loader2, Sparkles, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
-import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
+import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 
 import { type ClothingType, type DesignGender, enrichSelections } from '@/data/studio-options';
 
@@ -166,27 +167,25 @@ function StudioContent() {
     loadDesign();
   }, [designId, designLoaded, customization]);
 
-  // ─── Duplicate (reorder path) ────────────────────────────────
-  // Clones the current studio state into a fresh DRAFT design, then reloads
-  // the studio on the copy. This is how a produced/delivered design gets
-  // made again (same or different tailor) — designs never reopen for quotes.
-  const { createDesign } = useBespokeDesigns();
+  // ─── Header actions: Save / Duplicate / Share / Delete ───────
+  const { createDesign, saveDesign, cancelDesign } = useBespokeDesigns();
   const [duplicating, setDuplicating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  // The saved design this studio session points at. Starts as the URL param;
+  // set after the first Save so subsequent saves update instead of duplicating.
+  const [savedId, setSavedId] = useState<string | null>(designId);
 
-  const handleDuplicate = useCallback(async () => {
-    if (duplicating || customization.generatedImages.length === 0) return;
-    setDuplicating(true);
-    try {
+  const buildPayload = useCallback(
+    (name: string): CreateDesignPayload => {
       const categoryMap: Record<string, string> = {
         top: 'Tops', full_body: 'Dresses', bottom: 'Pants',
       };
-      const category = customization.clothingType
-        ? categoryMap[customization.clothingType] || customization.clothingType
-        : 'Design';
-      const baseName = (customization.designName || designName || 'My design').trim();
-      const created = await createDesign({
-        name: `${baseName} (Copy)`,
-        category,
+      return {
+        name,
+        category: customization.clothingType
+          ? categoryMap[customization.clothingType] || customization.clothingType
+          : 'Design',
         gender: customization.designGender === 'male' ? 'men' : 'women',
         design_images: [...customization.generatedImages].reverse(),
         reference_images: customization.referenceImages.length
@@ -205,17 +204,113 @@ function StudioContent() {
             userPrompt: customization.userPrompt,
           }),
         }),
-      });
-      if (created?._id) {
-        // Hard navigation so the studio re-initialises cleanly on the copy.
-        window.location.href = `/bespoke/studio?designId=${created._id}&name=${encodeURIComponent(`${baseName} (Copy)`)}`;
+      };
+    },
+    [customization],
+  );
+
+  const handleSave = useCallback(async () => {
+    if (saving) return;
+    if (customization.generatedImages.length === 0) {
+      toast.error('Generate a design first — there is nothing to save yet.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const baseName = (customization.designName || designName || 'My design').trim();
+      const wasUpdate = !!savedId;
+      const result = await saveDesign(buildPayload(baseName), savedId);
+      if (result?._id) {
+        if (!savedId) {
+          setSavedId(result._id);
+          // Point the URL at the saved design so a refresh reloads it.
+          const url = new URL(window.location.href);
+          url.searchParams.set('designId', result._id);
+          window.history.replaceState(null, '', url.toString());
+        }
+        toast.success(wasUpdate ? 'Design updated' : 'Design saved', {
+          description: baseName,
+        });
+      } else {
+        toast.error('Could not save the design. Please try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, savedId, customization, designName, saveDesign, buildPayload]);
+
+  const handleShare = useCallback(async () => {
+    const img = customization.currentImage || customization.generatedImages[0];
+    if (!img) {
+      toast.error('Generate a design first — there is nothing to share yet.');
+      return;
+    }
+    const name = (customization.designName || designName || 'My Qlozet design').trim();
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({
+          title: name,
+          text: `${name} — designed in Qlozet Bespoke Studio`,
+          url: img,
+        });
         return;
       }
+      await navigator.clipboard.writeText(img);
+      toast.success('Image link copied', { description: 'Paste it anywhere to share.' });
+    } catch (e: any) {
+      if (e?.name === 'AbortError') return; // user closed the share sheet
+      try {
+        await navigator.clipboard.writeText(img);
+        toast.success('Image link copied', { description: 'Paste it anywhere to share.' });
+      } catch {
+        toast.error('Could not share the design.');
+      }
+    }
+  }, [customization, designName]);
+
+  const handleDelete = useCallback(async () => {
+    if (!savedId || deleting) return;
+    const sure = window.confirm(
+      'Delete this design? Any open quote requests will be declined.',
+    );
+    if (!sure) return;
+    setDeleting(true);
+    const ok = await cancelDesign(savedId);
+    if (ok) {
+      toast.success('Design deleted');
+      setTimeout(() => {
+        window.location.href = '/bespoke';
+      }, 600);
+    } else {
+      toast.error('Could not delete — designs already in production can’t be removed.');
+      setDeleting(false);
+    }
+  }, [savedId, deleting, cancelDesign]);
+
+  const handleDuplicate = useCallback(async () => {
+    if (duplicating || customization.generatedImages.length === 0) return;
+    setDuplicating(true);
+    try {
+      const baseName = (customization.designName || designName || 'My design').trim();
+      const created = await createDesign(buildPayload(`${baseName} (Copy)`));
+      if (created?._id) {
+        toast.success('Design duplicated', {
+          description: `“${baseName} (Copy)” is in My Designs — opening it…`,
+        });
+        // Brief pause so the toast lands before the hard navigation (which the
+        // studio needs to re-initialise cleanly on the copy).
+        setTimeout(() => {
+          window.location.href = `/bespoke/studio?designId=${created._id}&name=${encodeURIComponent(`${baseName} (Copy)`)}`;
+        }, 900);
+        return;
+      }
+      toast.error('Could not duplicate the design. Please try again.');
       setDuplicating(false);
     } catch {
+      toast.error('Could not duplicate the design. Please try again.');
       setDuplicating(false);
     }
-  }, [duplicating, customization, createDesign, designName]);
+  }, [duplicating, customization, createDesign, designName, buildPayload]);
 
   // ─── Reference Upload Overlay ────────────────────────────────
   const [showRefOverlay, setShowRefOverlay] = useState(method === 'reference');
@@ -326,9 +421,15 @@ function StudioContent() {
       <StudioHeader
         designName={designName}
         tokenBalance={customization.tokenBalance}
+        hasImages={customization.generatedImages.length > 0}
+        onSave={handleSave}
+        saving={saving}
         onDuplicate={handleDuplicate}
-        canDuplicate={customization.generatedImages.length > 0}
         duplicating={duplicating}
+        onShare={handleShare}
+        onDelete={handleDelete}
+        deleting={deleting}
+        canDelete={!!savedId}
       />
 
       {/* Canvas Area */}
