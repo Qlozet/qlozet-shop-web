@@ -9,6 +9,7 @@ import { TokenIcon } from '@/components/icons/TokenIcon';
 import { cardStyle } from '../styles';
 import type { ActiveSection } from '../types';
 import { useWallet, type TokenPrice } from '@/hooks/useWallet';
+import { useCurrency } from '@/context/CurrencyContext';
 import { WalletSkeleton } from '../components/Skeleton';
 
 // ─── Token Package Definitions ────────────────────────────────
@@ -40,6 +41,12 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
     pollTransaction,
     purchaseTokens,
   } = useWallet();
+
+  // The wallet is a ₦-denominated account — its balance and transactions stay
+  // in ₦ (converting a ledger at a floating rate would make funds appear to
+  // shrink/grow daily). When browsing in another currency we add a clearly
+  // marked "≈" estimate under the balance, nothing more.
+  const { fmt, isConverted } = useCurrency();
 
   const [selectedPackage, setSelectedPackage] = useState('popular');
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
@@ -519,6 +526,11 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
                 <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>
                   {isLoading ? '...' : `₦${walletBalance.toLocaleString()}`}
                 </span>
+                {!isLoading && isConverted && (
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    ≈ {fmt(walletBalance)} · estimate
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center" style={{ gap: '10px' }}>
