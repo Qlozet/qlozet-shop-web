@@ -9,6 +9,7 @@ import {
   type BespokeQuote,
 } from '@/hooks/useBespokeDesigns';
 import { useWallet } from '@/hooks/useWallet';
+import { useCurrency } from '@/context/CurrencyContext';
 import { api } from '@/lib/api';
 
 interface DesignQuotesModalProps {
@@ -37,6 +38,10 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
 }) => {
   const { getDesignDetail, acceptQuote } = useBespokeDesigns();
   const { walletBalance } = useWallet();
+  // Quotes are prices being shopped — show them in the display currency like
+  // the catalogue. The charge itself is still ₦ (wallet/Paystack), so the
+  // converted view keeps the ₦ amount visible next to it.
+  const { fmt, isConverted } = useCurrency();
   const [design, setDesign] = useState<BespokeDesign | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -197,9 +202,16 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           {q.vendor?.business_name || 'Tailor'}
                         </span>
                       </div>
-                      <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                        {naira(total)}
-                      </span>
+                      <div className='flex flex-col items-end'>
+                        <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {isConverted ? fmt(total) : naira(total)}
+                        </span>
+                        {isConverted && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {naira(total)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {(q.line_items ?? []).length > 0 && (
@@ -210,7 +222,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                               {li.description || li.label}
                             </span>
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                              {naira(li.total ?? li.amount)}
+                              {isConverted
+                                ? fmt(li.total ?? li.amount ?? 0)
+                                : naira(li.total ?? li.amount)}
                             </span>
                           </div>
                         ))}
@@ -277,6 +291,11 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         >
                           Pay with card
                         </button>
+                        {isConverted && (
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                            You&apos;ll be charged {naira(total)} — the converted price is an estimate.
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
