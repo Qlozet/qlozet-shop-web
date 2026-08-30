@@ -58,7 +58,13 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [err, setErr] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [addressId, setAddressId] = useState<string | null>(null);
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [addressChecked, setAddressChecked] = useState(false);
+  // Whose body is this garment for? Defaults to the active measurement set.
+  const [measurementSets, setMeasurementSets] = useState<
+    { name: string; active: boolean }[]
+  >([]);
+  const [setName, setSetName] = useState<string | undefined>(undefined);
   // Revision request (per quote) + wave-2 tailor requests.
   const [revisionFor, setRevisionFor] = useState<string | null>(null);
   const [revisionMsg, setRevisionMsg] = useState('');
@@ -80,6 +86,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         if (!active) return;
         const data = res.data?.data ?? res.data;
         const list: any[] = Array.isArray(data) ? data : data ? [data] : [];
+        setAddresses(list);
         const chosen =
           list.find((a) => a.is_default) ?? list[0] ?? null;
         setAddressId(chosen ? chosen._id ?? chosen.id ?? null : null);
@@ -89,6 +96,30 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
       })
       .finally(() => {
         if (active) setAddressChecked(true);
+      });
+
+    // Measurement sets — the tailor sews to the chosen set, snapshotted at
+    // acceptance, so ordering for a friend just means picking their set here.
+    api
+      .get('/measurements/users/sets')
+      .then((res) => {
+        if (!active) return;
+        const wrapper = res?.data?.data || res?.data || {};
+        const sets = Array.isArray(wrapper?.sets)
+          ? wrapper.sets
+          : Array.isArray(wrapper)
+            ? wrapper
+            : [];
+        const mapped = sets.map((s: any) => ({
+          name: s.name || 'My measurements',
+          active: !!(s.active || s.is_active),
+        }));
+        setMeasurementSets(mapped);
+        const def = mapped.find((s: any) => s.active) || mapped[0];
+        setSetName((prev) => prev ?? def?.name);
+      })
+      .catch(() => {
+        /* backend falls back to the active set */
       });
     return () => {
       active = false;
@@ -129,7 +160,12 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     setAcceptingId(quoteId);
     setErr(null);
     try {
-      const res = await acceptQuote(quoteId, method, addressId ?? undefined);
+      const res = await acceptQuote(
+        quoteId,
+        method,
+        addressId ?? undefined,
+        setName,
+      );
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
       if (method === 'paystack' && url) {
         window.location.href = url; // redirect to Paystack
@@ -208,6 +244,62 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         </div>
 
         <div style={{ padding: '0 28px 28px', overflowY: 'auto' }}>
+          {/* Order preferences — who the garment is for and where it ships.
+              Snapshotted at acceptance, so switching profiles later is safe. */}
+          {!loading &&
+            quotes.some((q) => q.status === 'submitted') &&
+            (addresses.length > 1 || measurementSets.length > 1) && (
+              <div
+                className='flex flex-col'
+                style={{
+                  gap: '10px', marginBottom: '14px', padding: '14px',
+                  borderRadius: '14px', background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-glass)',
+                }}
+              >
+                {measurementSets.length > 1 && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                      Measurements for
+                    </label>
+                    <select
+                      value={setName}
+                      onChange={(e) => setSetName(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                    >
+                      {measurementSets.map((s) => (
+                        <option key={s.name} value={s.name}>
+                          {s.name}{s.active ? ' (active)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {addresses.length > 1 && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                      Deliver to
+                    </label>
+                    <select
+                      value={addressId ?? ''}
+                      onChange={(e) => setAddressId(e.target.value || null)}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                    >
+                      {addresses.map((a) => {
+                        const id = a._id || a.id;
+                        const who = a.full_name || a.label || a.name || 'Address';
+                        const line = a.address || a.address_line_1 || '';
+                        return (
+                          <option key={id} value={id}>
+                            {who} — {line}{a.city ? `, ${a.city}` : ''}{a.is_default ? ' (default)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
           {loading ? (
             <div className='flex items-center justify-center' style={{ padding: '40px 0' }}>
               <Loader2 size={22} className='animate-spin' color='var(--text-muted)' />

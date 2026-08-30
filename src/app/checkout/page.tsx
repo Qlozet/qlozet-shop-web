@@ -54,6 +54,36 @@ export default function CheckoutPage() {
     country: '',
   });
   const [isLoadingAddress, setIsLoadingAddress] = useState(true);
+  // Full saved-address list so the customer can ship anywhere they've saved
+  // (e.g. a friend's place) — not just the default.
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
+  // Measurement sets — shown only when the cart has custom garments, so the
+  // order can be sewn to someone else's saved measurements ("For Tolu").
+  const [measurementSets, setMeasurementSets] = useState<{ name: string; active: boolean }[]>([]);
+  const [selectedSetName, setSelectedSetName] = useState<string | undefined>(undefined);
+
+  const applyAddress = (addr: any) => {
+    setDeliveryName(addr.full_name || addr.label || addr.name || 'Guest User');
+    setDeliveryAddress({
+      line1: addr.address || addr.address_line_1 || '',
+      area: addr.city || '',
+      state: addr.state || '',
+      zip: addr.postal_code || addr.zip_code || '',
+      country: addr.country || 'Nigeria',
+    });
+  };
+
+  // Switch delivery address: update the display AND re-quote shipping —
+  // courier rates are address-specific, so the preview must be refetched.
+  const selectAddress = (id: string) => {
+    if (id === selectedAddressId) return;
+    const addr = addresses.find((a) => (a._id || a.id) === id);
+    if (!addr) return;
+    setSelectedAddressId(id);
+    applyAddress(addr);
+    checkout.fetchPreview(id);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -87,14 +117,9 @@ export default function CheckoutPage() {
             if (defaultAddr) {
               addressId = defaultAddr._id || defaultAddr.id;
               if (isMounted) {
-                setDeliveryName(defaultAddr.full_name || defaultAddr.label || defaultAddr.name || 'Guest User');
-                setDeliveryAddress({
-                  line1: defaultAddr.address || defaultAddr.address_line_1 || '',
-                  area: defaultAddr.city || '',
-                  state: defaultAddr.state || '',
-                  zip: defaultAddr.postal_code || defaultAddr.zip_code || '',
-                  country: defaultAddr.country || 'Nigeria',
-                });
+                setAddresses(addressList);
+                setSelectedAddressId(addressId);
+                applyAddress(defaultAddr);
               }
             }
           } else {
@@ -132,6 +157,43 @@ export default function CheckoutPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Custom garments are sewn to measurements — let the customer pick WHOSE.
+  const hasCustomItems = cart.some(
+    (i: any) =>
+      i.kind === 'clothing' &&
+      ((i.selections && Object.keys(i.selections).length > 0) ||
+        i.applied_fabric_id),
+  );
+
+  useEffect(() => {
+    if (!hasCustomItems || !user) return;
+    let active = true;
+    api
+      .get('/measurements/users/sets')
+      .then((res) => {
+        const wrapper = res?.data?.data || res?.data || {};
+        const sets = Array.isArray(wrapper?.sets)
+          ? wrapper.sets
+          : Array.isArray(wrapper)
+            ? wrapper
+            : [];
+        if (!active) return;
+        const mapped = sets.map((s: any) => ({
+          name: s.name || 'My measurements',
+          active: !!(s.active || s.is_active),
+        }));
+        setMeasurementSets(mapped);
+        const def = mapped.find((s: any) => s.active) || mapped[0];
+        setSelectedSetName((prev) => prev ?? def?.name);
+      })
+      .catch(() => {
+        /* backend snapshots the active set when none is named */
+      });
+    return () => {
+      active = false;
+    };
+  }, [hasCustomItems, user]);
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
@@ -227,7 +289,12 @@ export default function CheckoutPage() {
     // Card payments charge in the selected display currency where available
     // (USD → Stripe); the hook falls back to a ₦/Paystack charge if
     // international payment isn't enabled yet.
-    const result = await checkout.placeOrder(method, undefined, currency);
+    const result = await checkout.placeOrder(
+      method,
+      selectedAddressId,
+      currency,
+      hasCustomItems ? selectedSetName : undefined,
+    );
 
     if (!result) {
       setIsProcessing(false);
@@ -296,6 +363,73 @@ export default function CheckoutPage() {
       },
     });
   };
+
+  // ── Deliver-to + measurements-for pickers (shared by both layouts) ──
+  const pickerSelectStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    borderRadius: '10px',
+    border: '1px solid var(--border-glass)',
+    background: 'var(--bg-base)',
+    color: 'var(--text-primary)',
+    fontSize: '12px',
+    fontWeight: 600,
+    outline: 'none',
+  };
+  const pickerLabelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'var(--text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    marginBottom: '6px',
+  };
+  const addressLabel = (a: any) => {
+    const who = a.full_name || a.label || a.name || 'Address';
+    const line = a.address || a.address_line_1 || '';
+    const city = a.city || '';
+    return `${who} — ${line}${city ? `, ${city}` : ''}${a.is_default ? ' (default)' : ''}`;
+  };
+  const orderPickers = (
+    <>
+      {addresses.length > 1 && (
+        <div style={{ marginTop: '16px' }}>
+          <label style={pickerLabelStyle}>Deliver to</label>
+          <select
+            value={selectedAddressId}
+            onChange={(e) => selectAddress(e.target.value)}
+            style={pickerSelectStyle}
+          >
+            {addresses.map((a) => (
+              <option key={a._id || a.id} value={a._id || a.id}>
+                {addressLabel(a)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {hasCustomItems && measurementSets.length > 1 && (
+        <div style={{ marginTop: '12px' }}>
+          <label style={pickerLabelStyle}>Measurements for (custom items)</label>
+          <select
+            value={selectedSetName}
+            onChange={(e) => setSelectedSetName(e.target.value)}
+            style={pickerSelectStyle}
+          >
+            {measurementSets.map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.name}{s.active ? ' (active)' : ''}
+              </option>
+            ))}
+          </select>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+            Custom garments will be sewn to this measurement set.
+          </p>
+        </div>
+      )}
+    </>
+  );
 
   // Card style
   const cardStyle: React.CSSProperties = {
@@ -489,6 +623,7 @@ export default function CheckoutPage() {
                 Change
               </button>
             </div>
+            {orderPickers}
           </div>
 
           {/* ── DELIVERY OPTIONS (per vendor) ────────────────── */}
@@ -656,6 +791,7 @@ export default function CheckoutPage() {
                       No default address saved.
                     </div>
                   )}
+                  {!isLoadingAddress && orderPickers}
                 </div>
                 <button
                   type="button"

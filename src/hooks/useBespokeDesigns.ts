@@ -239,11 +239,16 @@ export function useBespokeDesigns() {
     quoteId: string,
     paymentMethod: 'wallet' | 'paystack' = 'paystack',
     addressId?: string,
+    /** Saved measurement set to sew to (e.g. a friend's) — defaults to active. */
+    measurementSetName?: string,
   ): Promise<AcceptQuoteResult | null> => {
     try {
       const res = await api.post(`/bespoke/quotes/${quoteId}/accept`, {
         payment_method: paymentMethod,
         ...(addressId ? { address_id: addressId } : {}),
+        ...(measurementSetName
+          ? { measurement_set_name: measurementSetName }
+          : {}),
       });
       const payload = res?.data?.data ?? res?.data;
       await fetchDesigns();

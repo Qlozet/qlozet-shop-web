@@ -158,6 +158,8 @@ export function useCheckout() {
     addressId?: string,
     /** Charge currency for card payments — 'USD' routes to Stripe. */
     currency?: string,
+    /** Saved measurement set to snapshot for custom items (e.g. a friend's). */
+    measurementSetName?: string,
   ) => {
     if (unavailableItems.length > 0) {
       setError('Some items are no longer available. Please remove them before checking out.');
@@ -225,6 +227,9 @@ export function useCheckout() {
         address_id: addressId,
         payment_method: paymentMethod,
         ...(chargeCurrency ? { currency: chargeCurrency } : {}),
+        ...(measurementSetName
+          ? { measurement_set_name: measurementSetName }
+          : {}),
       };
 
       let res;
