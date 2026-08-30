@@ -798,6 +798,8 @@ export interface CreateOrderPayload {
   payment_method?: 'paystack' | 'wallet';
   /** Charge currency — 'USD' routes the card charge to Stripe (Phase 3). */
   currency?: string;
+  /** Saved measurement set to snapshot for custom items (defaults to active). */
+  measurement_set_name?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
