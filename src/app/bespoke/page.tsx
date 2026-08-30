@@ -160,6 +160,27 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
     ? ['Tops', 'Dresses', 'Skirts', 'Pants', 'Jumpsuits', 'Sets']
     : ['Kaftan', 'Agbada', 'Pants', 'Shirts', 'Suits', 'Sets'];
 
+  // Curated sample shot per garment type so the choice reads visually.
+  // Static (not the platform-styles API): zero fetch on a first-touch modal
+  // and guaranteed coverage/art direction. `pos` crops multi-garment shots
+  // to the relevant half. Types without a shot fall back to the icon tile.
+  const CATEGORY_SAMPLES: Record<string, { src: string; pos?: string }> = gender === 'women'
+    ? {
+        Tops: { src: '/image/custom-outfit-1.webp', pos: 'top' },
+        Dresses: { src: '/image/bespoke-dress-1.png' },
+        Skirts: { src: '/image/orange-bespoke-1.png', pos: 'bottom' },
+        Pants: { src: '/image/bespoke-outfit-4.webp', pos: 'bottom' },
+        Jumpsuits: { src: '/image/bespoke-outfit-4.webp' },
+        Sets: { src: '/image/blue-bespoke-1.png' },
+      }
+    : {
+        Kaftan: { src: '/image/bespoke-kaftan-blue-1.png' },
+        Agbada: { src: '/image/bespoke-outfit-2.png' },
+        Pants: { src: '/image/bespoke-outfit-3.webp', pos: 'bottom' },
+        Shirts: { src: '/image/bespoke-kaftan-milk-1.png', pos: 'top' },
+        Sets: { src: '/image/bespoke-outfit-3.webp' },
+      };
+
   // ─── Shared step content (used in both mobile + desktop) ───
   const stepContent = (
     <>
@@ -283,22 +304,46 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {GARMENT_TYPES.map((type) => (
-              <button
-                key={type}
-                onClick={() => setSelectedCategory(type)}
-                className="flex flex-col items-center transition-all"
-                style={{
-                  padding: '16px 8px', borderRadius: '16px',
-                  background: selectedCategory === type ? 'rgba(107,114,128,0.12)' : 'var(--bg-surface-elevated)',
-                  border: selectedCategory === type ? '2px solid var(--text-primary)' : '2px solid transparent',
-                  cursor: 'pointer', gap: '8px',
-                }}
-              >
-                <Scissors size={24} color={selectedCategory === type ? 'var(--text-primary)' : 'var(--text-muted)'} />
-                <span style={{ fontSize: '10px', fontWeight: 700, color: selectedCategory === type ? 'var(--text-primary)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{type}</span>
-              </button>
-            ))}
+            {GARMENT_TYPES.map((type) => {
+              const active = selectedCategory === type;
+              const sample = CATEGORY_SAMPLES[type];
+              return (
+                <button
+                  key={type}
+                  onClick={() => setSelectedCategory(type)}
+                  className="flex flex-col transition-all active:scale-[0.97]"
+                  style={{
+                    padding: 0, borderRadius: '16px', overflow: 'hidden',
+                    background: active ? 'rgba(107,114,128,0.12)' : 'var(--bg-surface-elevated)',
+                    border: active ? '2px solid var(--text-primary)' : '2px solid transparent',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '100%', aspectRatio: '4 / 5', background: 'var(--bg-surface-elevated)' }}>
+                    {sample ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={sample.src}
+                        alt={type}
+                        loading="lazy"
+                        style={{
+                          width: '100%', height: '100%', objectFit: 'cover',
+                          objectPosition: sample.pos ?? 'center',
+                          opacity: active ? 1 : 0.92,
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center" style={{ width: '100%', height: '100%' }}>
+                        <Scissors size={24} color={active ? 'var(--text-primary)' : 'var(--text-muted)'} />
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ padding: '8px 4px 10px', fontSize: '10px', fontWeight: 700, color: active ? 'var(--text-primary)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '100%' }}>
+                    {type}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <button
             onClick={() => {
