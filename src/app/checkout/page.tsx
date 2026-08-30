@@ -689,7 +689,17 @@ export default function CheckoutPage() {
             {/* Two consistent, selectable options with a radio indicator. */}
             <div className="flex flex-col gap-2.5" style={{ marginBottom: '16px' }}>
               {([
-                { key: 'card', title: 'Credit / Debit Card', sub: 'Pay securely with Paystack', Icon: CreditCard },
+                {
+                  key: 'card',
+                  title: 'Credit / Debit Card',
+                  // USD checkouts charge through Stripe (international cards);
+                  // ₦ checkouts stay on Paystack.
+                  sub:
+                    currency === 'NGN'
+                      ? 'Pay securely with Paystack'
+                      : 'International cards — pay securely with Stripe',
+                  Icon: CreditCard,
+                },
                 { key: 'wallet', title: 'Pay with Wallet', sub: 'Use your Qlozet wallet balance', Icon: Wallet },
               ] as const).map(({ key, title, sub, Icon }) => {
                 const active = paymentMethod === key;
@@ -731,7 +741,7 @@ export default function CheckoutPage() {
               })}
             </div>
 
-            {/* Accepted card networks (Paystack) */}
+            {/* Accepted card networks — Verve is Paystack/₦-only */}
             <div className="flex items-center justify-center gap-2.5">
               <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginRight: '2px' }}>We accept</span>
               <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -744,9 +754,11 @@ export default function CheckoutPage() {
               <div style={{ width: '34px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '9px', fontWeight: 900, color: '#1A1F71', fontStyle: 'italic' }}>VISA</span>
               </div>
-              <div style={{ width: '38px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '8px', fontWeight: 900, color: '#0AA1DD', letterSpacing: '-0.02em' }}>verve</span>
-              </div>
+              {currency === 'NGN' && (
+                <div style={{ width: '38px', height: '22px', borderRadius: '4px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '8px', fontWeight: 900, color: '#0AA1DD', letterSpacing: '-0.02em' }}>verve</span>
+                </div>
+              )}
             </div>
           </div>
 
