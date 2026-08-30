@@ -101,7 +101,18 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-10 h-[5px] rounded-full" style={{ background: 'var(--drag-handle)', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
+          {/* Pill container hugs the line in the drawer's own colour so the
+              handle reads as part of the sheet, not floating over the canvas. */}
+          <div
+            className="rounded-full"
+            style={{
+              padding: '6px 10px',
+              background: 'var(--bg-base)',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
+            }}
+          >
+            <div className="w-10 h-[5px] rounded-full" style={{ background: 'var(--drag-handle)' }} />
+          </div>
         </div>
 
         {/* Sheet Body */}
