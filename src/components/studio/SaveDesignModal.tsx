@@ -72,10 +72,18 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
       selections: enrichSelections(selections),
     });
 
+    // A real fabric-product selection (Mongo-id shaped) rides on the design so
+    // the order carries the fabric the tailor must use.
+    const fabricId =
+      selections?.fabric && /^[0-9a-f]{24}$/i.test(selections.fabric)
+        ? selections.fabric
+        : undefined;
+
     const payload: CreateDesignPayload = {
       name: name.trim(),
       category,
       gender,
+      fabric_id: fabricId,
       design_images: [...designImages].reverse(),
       reference_images: referenceImages.length > 0 ? referenceImages : undefined,
       description: descriptionPayload,

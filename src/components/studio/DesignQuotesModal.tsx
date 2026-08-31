@@ -225,6 +225,11 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>
             {designObj?.name ? designObj.name : 'Your design'} · choose the tailor you like
           </p>
+          {(designObj?.fabric as any)?.name && (
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '4px' }}>
+              Fabric: {(designObj.fabric as any).name}
+            </p>
+          )}
         </div>
 
         <div style={{ padding: '0 28px 28px', overflowY: 'auto' }}>
