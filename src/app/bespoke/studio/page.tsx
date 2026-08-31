@@ -182,12 +182,22 @@ function StudioContent() {
       const categoryMap: Record<string, string> = {
         top: 'Tops', full_body: 'Dresses', bottom: 'Pants',
       };
+      // Studio fabrics are REAL fabric products (fabric library / applied
+      // "use my fabric") — persist the id so the design, and later the order,
+      // carry the actual fabric for the tailor. Static placeholder ids are
+      // filtered out by the Mongo-id shape check.
+      const fabricId =
+        customization.selectedFabric &&
+        /^[0-9a-f]{24}$/i.test(customization.selectedFabric)
+          ? customization.selectedFabric
+          : undefined;
       return {
         name,
         category: customization.clothingType
           ? categoryMap[customization.clothingType] || customization.clothingType
           : 'Design',
         gender: customization.designGender === 'male' ? 'men' : 'women',
+        fabric_id: fabricId,
         design_images: [...customization.generatedImages].reverse(),
         reference_images: customization.referenceImages.length
           ? customization.referenceImages

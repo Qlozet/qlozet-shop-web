@@ -88,6 +88,11 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
         name: (designName || 'My design').trim(),
         category,
         gender,
+        // Real fabric-product selection → the order carries the fabric.
+        fabric_id:
+          selections?.fabric && /^[0-9a-f]{24}$/i.test(selections.fabric)
+            ? selections.fabric
+            : undefined,
         design_images: [...designImages].reverse(),
         reference_images: referenceImages.length ? referenceImages : undefined,
         description: JSON.stringify({ notes: '', selections: enrichSelections(selections) }),
