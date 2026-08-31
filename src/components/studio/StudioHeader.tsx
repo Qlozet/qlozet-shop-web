@@ -20,8 +20,8 @@ interface StudioHeaderProps {
   tokenBalance: number;
   /** A generated design image exists — Save/Duplicate/Share need one. */
   hasImages?: boolean;
+  /** Opens the shared Save Design modal (same flow as the desktop panel). */
   onSave?: () => void;
-  saving?: boolean;
   /** Clone the current design into a fresh draft (the reorder path). */
   onDuplicate?: () => void;
   duplicating?: boolean;
@@ -49,7 +49,6 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   tokenBalance,
   hasImages,
   onSave,
-  saving,
   onDuplicate,
   duplicating,
   onShare,
@@ -76,10 +75,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   const actions: StudioAction[] = [
     {
       id: 'save',
-      label: saving ? 'Saving…' : 'Save',
+      label: 'Save',
       icon: Bookmark,
-      disabled: !hasUser || !hasImages || !!saving,
-      busy: !!saving,
+      disabled: !hasUser || !hasImages,
     },
     {
       id: 'duplicate',

@@ -10,6 +10,7 @@ import { StudioCanvas } from '@/components/studio/StudioCanvas';
 import { FloatingToolbar } from '@/components/studio/FloatingToolbar';
 import { MobileBottomSheet } from '@/components/studio/MobileBottomSheet';
 import { DesktopConfigPanel } from '@/components/studio/DesktopConfigPanel';
+import { SaveDesignModal } from '@/components/studio/SaveDesignModal';
 import { Upload, Loader2, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -168,9 +169,8 @@ function StudioContent() {
   }, [designId, designLoaded, customization]);
 
   // ─── Header actions: Save / Duplicate / Share / Delete ───────
-  const { createDesign, saveDesign, cancelDesign } = useBespokeDesigns();
+  const { createDesign, cancelDesign } = useBespokeDesigns();
   const [duplicating, setDuplicating] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // The saved design this studio session points at. Starts as the URL param;
   // set after the first Save so subsequent saves update instead of duplicating.
@@ -209,35 +209,19 @@ function StudioContent() {
     [customization],
   );
 
-  const handleSave = useCallback(async () => {
-    if (saving) return;
-    if (customization.generatedImages.length === 0) {
-      toast.error('Generate a design first — there is nothing to save yet.');
-      return;
-    }
-    setSaving(true);
-    try {
-      const baseName = (customization.designName || designName || 'My design').trim();
-      const wasUpdate = !!savedId;
-      const result = await saveDesign(buildPayload(baseName), savedId);
-      if (result?._id) {
-        if (!savedId) {
-          setSavedId(result._id);
-          // Point the URL at the saved design so a refresh reloads it.
-          const url = new URL(window.location.href);
-          url.searchParams.set('designId', result._id);
-          window.history.replaceState(null, '', url.toString());
-        }
-        toast.success(wasUpdate ? 'Design updated' : 'Design saved', {
-          description: baseName,
-        });
-      } else {
-        toast.error('Could not save the design. Please try again.');
+  // Save opens the SAME name/notes modal as the desktop "Save Design" button
+  // — one save flow everywhere. The modal reports the saved id back so later
+  // saves update rather than duplicate, and a refresh reloads the design.
+  const handleDesignSaved = useCallback((id: string) => {
+    setSavedId((prev) => {
+      if (!prev) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('designId', id);
+        window.history.replaceState(null, '', url.toString());
       }
-    } finally {
-      setSaving(false);
-    }
-  }, [saving, savedId, customization, designName, saveDesign, buildPayload]);
+      return prev ?? id;
+    });
+  }, []);
 
   const handleShare = useCallback(async () => {
     const img = customization.currentImage || customization.generatedImages[0];
@@ -422,8 +406,7 @@ function StudioContent() {
         designName={designName}
         tokenBalance={customization.tokenBalance}
         hasImages={customization.generatedImages.length > 0}
-        onSave={handleSave}
-        saving={saving}
+        onSave={() => customization.setShowSaveModal(true)}
         onDuplicate={handleDuplicate}
         duplicating={duplicating}
         onShare={handleShare}
@@ -454,6 +437,37 @@ function StudioContent() {
       <div style={!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : undefined}>
         <DesktopConfigPanel customization={customization} designId={designId} />
       </div>
+
+      {/* Save modal — page level so it opens on BOTH desktop and mobile. It
+          used to render inside the lg-hidden desktop panel, which made every
+          mobile Save entry point a dead end. */}
+      <SaveDesignModal
+        isOpen={customization.showSaveModal}
+        onClose={() => customization.setShowSaveModal(false)}
+        designName={customization.designName}
+        category={
+          customization.clothingType
+            ? ({ top: 'Tops', full_body: 'Dresses', bottom: 'Pants' } as Record<string, string>)[
+                customization.clothingType
+              ] || customization.clothingType
+            : 'Design'
+        }
+        gender={customization.designGender === 'male' ? 'men' : 'women'}
+        designImages={customization.generatedImages}
+        referenceImages={customization.referenceImages}
+        selections={{
+          neckline: customization.selectedNeckline,
+          sleeve: customization.selectedSleeve,
+          silhouette: customization.selectedSilhouette,
+          collar: customization.selectedCollar,
+          fabric: customization.selectedFabric,
+          color: customization.selectedColor,
+          fit: customization.selectedFit,
+          userPrompt: customization.userPrompt,
+        }}
+        designId={savedId}
+        onSaved={handleDesignSaved}
+      />
 
       {/* ─── Sign In CTA for Guest Users ─── */}
       {!user && (

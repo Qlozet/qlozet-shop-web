@@ -27,6 +27,9 @@ interface SaveDesignModalProps {
   referenceImages: string[];
   selections?: DesignSelections;
   designId?: string | null;
+  /** Fired after a successful save with the design's id — lets the studio
+   *  remember it so later saves update instead of duplicating. */
+  onSaved?: (id: string) => void;
 }
 
 export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
@@ -39,6 +42,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
   referenceImages,
   selections,
   designId,
+  onSaved,
 }) => {
   const { saveDesign } = useBespokeDesigns();
 
@@ -82,6 +86,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
       toast.success(designId ? 'Design updated' : 'Design saved', {
         description: name.trim(),
       });
+      if ((result as any)?._id) onSaved?.((result as any)._id);
       setTimeout(() => {
         onClose();
         setSaved(false);
