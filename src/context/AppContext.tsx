@@ -36,6 +36,8 @@ export interface CartItem {
   applied_fabric_id?: string;
   applied_fabric_yards?: number;
   note?: string;
+  /** Saved measurement-set NAME a custom garment is sewn to (Fit section). */
+  measurement_set?: string;
 }
 
 /**

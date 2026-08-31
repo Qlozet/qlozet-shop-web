@@ -90,6 +90,10 @@ export interface CustomizationState {
   selectAddon: (addonName: string, variantName: string) => void;
   selectedFit: string | null;
   setSelectedFit: (id: string | null) => void;
+  // Whose body the garment is for — the NAME of one of the customer's saved
+  // measurement sets (picked in the Fit section; null = active set).
+  measurementSetName: string | null;
+  setMeasurementSetName: (name: string | null) => void;
   referenceImages: string[];  // Cloudinary URLs (or blob URLs as preview fallback)
   setReferenceImages: (images: string[]) => void;
   removeReference: (index: number) => void;
@@ -170,6 +174,7 @@ export function useCustomization({
   const [selectedColor, setSelectedColor] = useState<string | null>('#1B2A4A');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
+  const [measurementSetName, setMeasurementSetName] = useState<string | null>(null);
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [selectedAddons, setSelectedAddons] = useState<Record<string, string>>({});
   const [userPrompt, setUserPrompt] = useState('');
@@ -574,6 +579,7 @@ export function useCustomization({
     selectedAccessories, toggleAccessory,
     selectedAddons, selectAddon,
     selectedFit, setSelectedFit,
+    measurementSetName, setMeasurementSetName,
     referenceImages, setReferenceImages, removeReference,
     handleFileUpload, fileInputRef,
     isUploading, uploadStatus, uploadError,

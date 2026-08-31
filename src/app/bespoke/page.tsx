@@ -440,10 +440,14 @@ function BespokeContent() {
     in_progress: 'In Progress...',
     in_production: 'In Progress...',
     completed: 'Outfit Ready!',
-    cancelled: 'Draft',
   };
 
-  const mappedDesigns: typeof DEMO_DESIGNS = backendDesigns.map((d) => ({
+  // Deleting a design is a CANCEL server-side (the record is kept for orders
+  // hanging off it) — the listing must hide cancelled designs or "deleted"
+  // items reappear labelled as drafts.
+  const mappedDesigns: typeof DEMO_DESIGNS = backendDesigns
+    .filter((d) => d.status !== 'cancelled')
+    .map((d) => ({
     id: d._id,
     image: d.design_images?.[0] || '/image/bespoke-agbada-green.webp',
     name: d.name,

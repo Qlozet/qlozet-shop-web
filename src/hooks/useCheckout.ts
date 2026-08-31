@@ -189,6 +189,11 @@ export function useCheckout() {
               applied_fabric_yards: item.applied_fabric_yards,
             }
           : {}),
+        // Per-item "who is this for" — one order can carry custom garments
+        // for different bodies; the backend snapshots each item's named set.
+        ...(item.measurement_set
+          ? { measurement_set_name: item.measurement_set }
+          : {}),
       }));
 
       // Build shipping selections
@@ -227,9 +232,14 @@ export function useCheckout() {
         address_id: addressId,
         payment_method: paymentMethod,
         ...(chargeCurrency ? { currency: chargeCurrency } : {}),
-        ...(measurementSetName
-          ? { measurement_set_name: measurementSetName }
-          : {}),
+        // "Who is this for" is chosen in the customize panel's Fit section and
+        // travels on the custom cart line; an explicit argument still wins.
+        ...((): Partial<CreateOrderPayload> => {
+          const chosen =
+            measurementSetName ??
+            cart.find((i) => i.measurement_set)?.measurement_set;
+          return chosen ? { measurement_set_name: chosen } : {};
+        })(),
       };
 
       let res;

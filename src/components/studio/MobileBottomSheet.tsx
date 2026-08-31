@@ -2,7 +2,7 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { ArrowDownUp, RotateCcw } from 'lucide-react';
+import { ArrowDownUp, Bookmark, RotateCcw } from 'lucide-react';
 import { STUDIO_TABS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
@@ -186,6 +186,24 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
             <div className="flex items-center gap-4">
               <button
                 type="button"
+                aria-label="Save design"
+                disabled={!hasGeneratedImages}
+                onClick={() => {
+                  if (!hasGeneratedImages) return;
+                  customization.setShowSaveModal(true); // same modal as desktop Save Design
+                }}
+                className="transition-transform active:scale-90"
+                style={{
+                  background: 'transparent', border: 'none', padding: '6px', margin: '-6px',
+                  cursor: hasGeneratedImages ? 'pointer' : 'not-allowed',
+                  color: 'var(--text-primary)', display: 'flex',
+                  opacity: hasGeneratedImages ? 1 : 0.35,
+                }}
+              >
+                <Bookmark size={20} />
+              </button>
+              <button
+                type="button"
                 aria-label="Expand or collapse the panel"
                 className="touch-none transition-transform active:scale-90"
                 style={{ background: 'transparent', border: 'none', padding: '6px', margin: '-6px', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex' }}
@@ -320,6 +338,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           fabric: customization.selectedFabric,
           color: customization.selectedColor,
           fit: customization.selectedFit,
+          measurement_set: customization.measurementSetName || undefined,
           userPrompt: customization.userPrompt,
         }}
         designId={designId}

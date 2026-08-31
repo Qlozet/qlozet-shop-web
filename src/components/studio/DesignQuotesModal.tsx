@@ -60,11 +60,6 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [addressId, setAddressId] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addressChecked, setAddressChecked] = useState(false);
-  // Whose body is this garment for? Defaults to the active measurement set.
-  const [measurementSets, setMeasurementSets] = useState<
-    { name: string; active: boolean }[]
-  >([]);
-  const [setName, setSetName] = useState<string | undefined>(undefined);
   // Revision request (per quote) + wave-2 tailor requests.
   const [revisionFor, setRevisionFor] = useState<string | null>(null);
   const [revisionMsg, setRevisionMsg] = useState('');
@@ -98,29 +93,6 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         if (active) setAddressChecked(true);
       });
 
-    // Measurement sets — the tailor sews to the chosen set, snapshotted at
-    // acceptance, so ordering for a friend just means picking their set here.
-    api
-      .get('/measurements/users/sets')
-      .then((res) => {
-        if (!active) return;
-        const wrapper = res?.data?.data || res?.data || {};
-        const sets = Array.isArray(wrapper?.sets)
-          ? wrapper.sets
-          : Array.isArray(wrapper)
-            ? wrapper
-            : [];
-        const mapped = sets.map((s: any) => ({
-          name: s.name || 'My measurements',
-          active: !!(s.active || s.is_active),
-        }));
-        setMeasurementSets(mapped);
-        const def = mapped.find((s: any) => s.active) || mapped[0];
-        setSetName((prev) => prev ?? def?.name);
-      })
-      .catch(() => {
-        /* backend falls back to the active set */
-      });
     return () => {
       active = false;
     };
@@ -156,6 +128,18 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const quotes = ((detail?.quotes ??
     designObj?.quotes ??
     []) as BespokeQuote[]);
+
+  // "Who is this for" travels WITH the design — chosen in the studio's Fit
+  // section and stored in the saved selections. Acceptance passes it through
+  // so the order snapshots that measurement set.
+  let designSetName: string | undefined;
+  try {
+    const parsed = JSON.parse(designObj?.description || '');
+    designSetName = parsed?.selections?.measurement_set || undefined;
+  } catch {
+    /* plain-text description — backend falls back to the active set */
+  }
+
   const accept = async (quoteId: string, method: 'wallet' | 'paystack') => {
     setAcceptingId(quoteId);
     setErr(null);
@@ -164,7 +148,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         quoteId,
         method,
         addressId ?? undefined,
-        setName,
+        designSetName,
       );
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
       if (method === 'paystack' && url) {
@@ -244,11 +228,12 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         </div>
 
         <div style={{ padding: '0 28px 28px', overflowY: 'auto' }}>
-          {/* Order preferences — who the garment is for and where it ships.
-              Snapshotted at acceptance, so switching profiles later is safe. */}
+          {/* Order preferences — where the order ships. WHO it's for lives on
+              the design itself (chosen in the studio's Fit section); shown
+              here read-only when present. */}
           {!loading &&
             quotes.some((q) => q.status === 'submitted') &&
-            (addresses.length > 1 || measurementSets.length > 1) && (
+            (addresses.length > 1 || designSetName) && (
               <div
                 className='flex flex-col'
                 style={{
@@ -257,22 +242,14 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                   border: '1px solid var(--border-glass)',
                 }}
               >
-                {measurementSets.length > 1 && (
-                  <div>
-                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                {designSetName && (
+                  <div className='flex items-center justify-between' style={{ gap: '10px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       Measurements for
-                    </label>
-                    <select
-                      value={setName}
-                      onChange={(e) => setSetName(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600, outline: 'none' }}
-                    >
-                      {measurementSets.map((s) => (
-                        <option key={s.name} value={s.name}>
-                          {s.name}{s.active ? ' (active)' : ''}
-                        </option>
-                      ))}
-                    </select>
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {designSetName}
+                    </span>
                   </div>
                 )}
                 {addresses.length > 1 && (

@@ -767,6 +767,8 @@ export interface OrderItemPayload {
   // clothing item, carried through so the backend persists it on the order.
   applied_fabric_id?: string;
   applied_fabric_yards?: number;
+  /** Saved measurement-set NAME this garment is sewn to (per-item snapshot). */
+  measurement_set_name?: string;
 }
 
 export interface SelectedShipping {

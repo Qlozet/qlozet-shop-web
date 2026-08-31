@@ -6,7 +6,6 @@ import { TokenIcon } from '../icons/TokenIcon';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
-import { SaveDesignModal } from './SaveDesignModal';
 import { RequestQuotesModal } from './RequestQuotesModal';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 
@@ -16,7 +15,7 @@ interface DesktopConfigPanelProps {
 }
 
 export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customization, designId }) => {
-  const { expandedSection, tokenBalance, isGenerating, handleGenerate, generatedImages, showSaveModal, setShowSaveModal } = customization;
+  const { expandedSection, tokenBalance, isGenerating, handleGenerate, generatedImages, setShowSaveModal } = customization;
 
   const [showOrderModal, setShowOrderModal] = React.useState(false);
 
@@ -139,27 +138,9 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         )}
       </div>
 
-      {/* Save Modal */}
-      <SaveDesignModal
-        isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        designName={customization.designName}
-        category={designCategory}
-        gender={designGender}
-        designImages={generatedImages}
-        referenceImages={customization.referenceImages}
-        selections={{
-          neckline: customization.selectedNeckline,
-          sleeve: customization.selectedSleeve,
-          silhouette: customization.selectedSilhouette,
-          collar: customization.selectedCollar,
-          fabric: customization.selectedFabric,
-          color: customization.selectedColor,
-          fit: customization.selectedFit,
-          userPrompt: customization.userPrompt,
-        }}
-        designId={designId}
-      />
+      {/* Save modal renders at the PAGE level (bespoke/studio/page.tsx) so it
+          also opens on mobile — this panel is lg-only, and a modal nested here
+          could never show below that breakpoint. */}
       {/* Request Quotes (Order Now) Modal */}
       <RequestQuotesModal
         isOpen={showOrderModal}
@@ -177,6 +158,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
           fabric: customization.selectedFabric,
           color: customization.selectedColor,
           fit: customization.selectedFit,
+          measurement_set: customization.measurementSetName || undefined,
           userPrompt: customization.userPrompt,
         }}
         designId={designId}
