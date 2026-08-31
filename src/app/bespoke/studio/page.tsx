@@ -92,15 +92,32 @@ function StudioContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedDesignImage]);
 
-  // ─── Load saved design when designId is present ─────────────
+  // ─── Refresh survival ───────────────────────────────────────
+  // After the first save, the design id is remembered per-tab against this
+  // exact studio URL, so a hard refresh reloads the saved design instead of
+  // a blank studio. sessionStorage (not the URL) so the remount key is never
+  // disturbed mid-save; new-design URLs carry a nonce (`s=`) so a fresh
+  // design can never collide with an old resume entry.
+  const resumeKey = `qlozet-studio-saved:${searchParams.toString()}`;
+  const [resumeId] = useState<string | null>(() => {
+    if (designId || typeof window === 'undefined') return null;
+    try {
+      return sessionStorage.getItem(resumeKey);
+    } catch {
+      return null;
+    }
+  });
+  const loadId = designId ?? resumeId;
+
+  // ─── Load saved design when one is referenced ───────────────
   const [designLoaded, setDesignLoaded] = useState(false);
 
   useEffect(() => {
-    if (!designId || designLoaded) return;
+    if (!loadId || designLoaded) return;
 
     const loadDesign = async () => {
       try {
-        const res = await api.get(`/bespoke/designs/${designId}`);
+        const res = await api.get(`/bespoke/designs/${loadId}`);
         const raw = res?.data;
         console.log('[Studio] Raw API response:', JSON.stringify(raw));
 
@@ -167,7 +184,7 @@ function StudioContent() {
     };
 
     loadDesign();
-  }, [designId, designLoaded, customization]);
+  }, [loadId, designLoaded, customization]);
 
   // ─── Header actions: Save / Duplicate / Share / Delete ───────
   const { createDesign, cancelDesign } = useBespokeDesigns();
@@ -175,7 +192,7 @@ function StudioContent() {
   const [deleting, setDeleting] = useState(false);
   // The saved design this studio session points at. Starts as the URL param;
   // set after the first Save so subsequent saves update instead of duplicating.
-  const [savedId, setSavedId] = useState<string | null>(designId);
+  const [savedId, setSavedId] = useState<string | null>(designId ?? resumeId);
 
   const buildPayload = useCallback(
     (name: string): CreateDesignPayload => {
@@ -223,17 +240,21 @@ function StudioContent() {
 
   // Save opens the SAME name/notes modal as the desktop "Save Design" button
   // — one save flow everywhere. The modal reports the saved id back so later
-  // saves update rather than duplicate, and a refresh reloads the design.
-  const handleDesignSaved = useCallback((id: string) => {
-    setSavedId((prev) => {
-      if (!prev) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('designId', id);
-        window.history.replaceState(null, '', url.toString());
+  // saves update rather than duplicate. NOTE: deliberately no URL stamping —
+  // the studio remounts on any search-param change (see KeyedStudioContent),
+  // so rewriting the URL here would blow the studio away mid-save.
+  const handleDesignSaved = useCallback(
+    (id: string) => {
+      setSavedId((prev) => prev ?? id);
+      // Survive a hard refresh: this tab's studio URL now resumes the design.
+      try {
+        sessionStorage.setItem(resumeKey, id);
+      } catch {
+        /* private mode — refresh just starts blank, as before */
       }
-      return prev ?? id;
-    });
-  }, []);
+    },
+    [resumeKey],
+  );
 
   const handleShare = useCallback(async () => {
     const img = customization.currentImage || customization.generatedImages[0];
@@ -273,6 +294,11 @@ function StudioContent() {
     setDeleting(true);
     const ok = await cancelDesign(savedId);
     if (ok) {
+      try {
+        sessionStorage.removeItem(resumeKey); // a refresh must not resume it
+      } catch {
+        /* ignore */
+      }
       toast.success('Design deleted');
       setTimeout(() => {
         window.location.href = '/bespoke';
@@ -432,7 +458,7 @@ function StudioContent() {
         currentImage={customization.currentImage}
         isGenerating={customization.isGenerating}
         referenceImages={customization.referenceImages}
-        isLoading={!!designId && !designLoaded}
+        isLoading={!!loadId && !designLoaded}
       />
 
       {/* Desktop Floating Toolbar */}
@@ -655,6 +681,15 @@ function StudioContent() {
 //  PAGE EXPORT
 // ═══════════════════════════════════════════════════════════════
 
+// Next's App Router does NOT remount a page when only its search params
+// change — so "new design" navigations reused the previous design's studio
+// state (images, selections, saved id) wholesale. Keying by the full query
+// string forces a clean remount whenever the studio's identity changes.
+function KeyedStudioContent() {
+  const searchParams = useSearchParams();
+  return <StudioContent key={searchParams.toString()} />;
+}
+
 export default function BespokeStudioPage() {
   return (
     <Suspense
@@ -664,7 +699,7 @@ export default function BespokeStudioPage() {
         </div>
       }
     >
-      <StudioContent />
+      <KeyedStudioContent />
     </Suspense>
   );
 }
