@@ -1099,14 +1099,16 @@ export default function CheckoutPage() {
                       <div className="flex justify-center pt-3 pb-1">
                         <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
                       </div>
-                      <div className="flex-1 overflow-y-auto hide-scrollbar relative" style={{ padding: '20px 24px 24px' }}>
-                        <button
-                          onClick={() => setShowAddressPicker(false)}
-                          className="absolute top-0 right-0 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
-                          style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
-                        >
-                          <X size={14} color="var(--text-secondary)" />
-                        </button>
+                      {/* Anchored to the sheet itself (not the scroll area) with a
+                          comfortable inset, level with the title. */}
+                      <button
+                        onClick={() => setShowAddressPicker(false)}
+                        className="absolute z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+                        style={{ top: '20px', right: '18px', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
+                      >
+                        <X size={14} color="var(--text-secondary)" />
+                      </button>
+                      <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '20px 24px 24px' }}>
                         {pickerContent}
                       </div>
                     </div>
