@@ -79,10 +79,18 @@ export interface CreateDesignPayload {
 // response interceptor wraps that AGAIN, so the design object actually
 // arrives at res.data.data.data. Walk down the `data` envelopes until we
 // reach the object that carries an _id (bounded, in case shapes change).
+// Older deployed backends spread the Mongoose document into the envelope,
+// which buries the real fields under `_doc` — unwrap that too.
 const unwrapDesign = (body: any): any => {
   let cur = body;
   for (let i = 0; i < 4; i++) {
-    if (!cur || typeof cur !== 'object' || cur._id || !('data' in cur)) break;
+    if (!cur || typeof cur !== 'object') break;
+    if (cur._id) break;
+    if (cur._doc && typeof cur._doc === 'object' && cur._doc._id) {
+      cur = cur._doc;
+      break;
+    }
+    if (!('data' in cur)) break;
     cur = cur.data;
   }
   return cur;
