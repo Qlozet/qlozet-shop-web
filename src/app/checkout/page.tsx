@@ -158,8 +158,12 @@ export default function CheckoutPage() {
   }, [user]);
 
   // "Who is this for" is chosen in the customize panel's Fit section and
-  // rides on the custom cart line — checkout shows it read-only.
-  const cartMeasurementSet = cart.find((i) => i.measurement_set)?.measurement_set;
+  // rides on each custom cart line — checkout shows it read-only, per
+  // garment when the order mixes bodies (asoebi/family orders).
+  const measurementLines = cart
+    .filter((i) => i.measurement_set)
+    .map((i) => ({ title: i.title, set: i.measurement_set as string }));
+  const distinctSets = Array.from(new Set(measurementLines.map((l) => l.set)));
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
@@ -338,12 +342,29 @@ export default function CheckoutPage() {
   };
   const orderPickers = (
     <>
-      {cartMeasurementSet && (
+      {distinctSets.length === 1 && (
         <div className="flex items-center justify-between" style={{ marginTop: '12px', gap: '10px' }}>
           <span style={pickerLabelStyle}>Measurements for</span>
           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {cartMeasurementSet}
+            {distinctSets[0]}
           </span>
+        </div>
+      )}
+      {distinctSets.length > 1 && (
+        <div style={{ marginTop: '12px' }}>
+          <span style={pickerLabelStyle}>Measurements per garment</span>
+          <div className="flex flex-col" style={{ gap: '4px' }}>
+            {measurementLines.map((l, i) => (
+              <div key={i} className="flex items-center justify-between" style={{ gap: '10px' }}>
+                <span className="truncate" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  {l.title}
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>
+                  {l.set}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </>

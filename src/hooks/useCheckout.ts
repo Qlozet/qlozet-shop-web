@@ -189,6 +189,11 @@ export function useCheckout() {
               applied_fabric_yards: item.applied_fabric_yards,
             }
           : {}),
+        // Per-item "who is this for" — one order can carry custom garments
+        // for different bodies; the backend snapshots each item's named set.
+        ...(item.measurement_set
+          ? { measurement_set_name: item.measurement_set }
+          : {}),
       }));
 
       // Build shipping selections
