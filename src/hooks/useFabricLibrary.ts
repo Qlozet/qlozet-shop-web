@@ -20,8 +20,11 @@ let cache: FabricOption[] | null = null;
 let inflight: Promise<FabricOption[]> | null = null;
 
 async function fetchFabricLibrary(): Promise<FabricOption[]> {
+  // in_stock: an out-of-stock fabric would pin the design to yards nobody can
+  // supply — quotes on it are unfulfillable and (for cross-vendor fabrics)
+  // the order would charge for stock the fabric vendor doesn't have.
   const res = await api.get('/products', {
-    params: { kind: 'fabric', size: 60, status: 'active' },
+    params: { kind: 'fabric', size: 60, status: 'active', in_stock: true },
   });
   // The list endpoint is paginated and the wrapper nests the payload, so the
   // rows can live at res.data.data.data / res.data.data / res.data.

@@ -129,6 +129,22 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     designObj?.quotes ??
     []) as BespokeQuote[]);
 
+  // Fabric from ANOTHER vendor is billed on top of the quote at acceptance
+  // (the quote prices the tailor's own work; the fabric vendor is paid and
+  // ships the yards to the tailor). Mirror the backend's computation so the
+  // customer sees the true payable before tapping pay.
+  const fabricDoc: any = designObj?.fabric;
+  const fabricBusinessId = fabricDoc?.business
+    ? String((fabricDoc.business as any)?._id ?? fabricDoc.business)
+    : null;
+  const fabricSurchargeFor = (q: any): number => {
+    if (!fabricDoc || !fabricBusinessId) return 0;
+    const vendorId = String((q.vendor as any)?._id ?? q.vendor ?? '');
+    if (!vendorId || vendorId === fabricBusinessId) return 0;
+    const yards = q.required_fabric_yards || fabricDoc?.fabric?.min_cut || 1;
+    return Math.round((fabricDoc?.fabric?.price_per_yard || 0) * yards);
+  };
+
   // "Who is this for" travels WITH the design — chosen in the studio's Fit
   // section and stored in the saved selections. Acceptance passes it through
   // so the order snapshots that measurement set.
@@ -296,6 +312,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                 const submitted = q.status === 'submitted';
                 const accepted = q.status === 'accepted';
                 const total = quoteTotal(q);
+                const fabricSurcharge = fabricSurchargeFor(q);
+                const payable = total + fabricSurcharge;
                 return (
                   <div
                     key={q._id}
@@ -324,11 +342,16 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       </div>
                       <div className='flex flex-col items-end'>
                         <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {isConverted ? fmt(total) : naira(total)}
+                          {isConverted ? fmt(payable) : naira(payable)}
                         </span>
                         {isConverted && (
                           <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                            {naira(total)}
+                            {naira(payable)}
+                          </span>
+                        )}
+                        {fabricSurcharge > 0 && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            incl. {naira(fabricSurcharge)} fabric
                           </span>
                         )}
                       </div>
@@ -375,15 +398,15 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       <div className='flex flex-col' style={{ gap: '8px' }}>
                         <button
                           onClick={() => accept(q._id, 'wallet')}
-                          disabled={acceptingId === q._id || walletBalance < total}
+                          disabled={acceptingId === q._id || walletBalance < payable}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
                             padding: '12px', borderRadius: '12px',
-                            background: walletBalance < total ? '#CFCFCF' : '#064E3B',
+                            background: walletBalance < payable ? '#CFCFCF' : '#064E3B',
                             color: '#FFF', fontSize: '12px', fontWeight: 800,
                             textTransform: 'uppercase', letterSpacing: '0.06em',
                             border: 'none',
-                            cursor: walletBalance < total ? 'not-allowed' : 'pointer',
+                            cursor: walletBalance < payable ? 'not-allowed' : 'pointer',
                             gap: '8px',
                           }}
                         >
@@ -393,7 +416,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             `Pay with wallet (₦${walletBalance.toLocaleString()})`
                           )}
                         </button>
-                        {walletBalance < total && (
+                        {walletBalance < payable && (
                           <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
                             Insufficient wallet balance — top up or pay with card.
                           </p>
@@ -413,7 +436,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         </button>
                         {isConverted && (
                           <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                            You&apos;ll be charged {naira(total)} — the converted price is an estimate.
+                            You&apos;ll be charged {naira(payable)} — the converted price is an estimate.
                           </p>
                         )}
                         {revisionFor === q._id ? (
