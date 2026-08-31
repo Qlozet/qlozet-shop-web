@@ -1104,7 +1104,7 @@ export default function CheckoutPage() {
                       <button
                         onClick={() => setShowAddressPicker(false)}
                         className="absolute z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
-                        style={{ top: '20px', right: '18px', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
+                        style={{ top: '20px', right: '18px', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
                       >
                         <X size={14} color="var(--text-secondary)" />
                       </button>
@@ -1128,7 +1128,7 @@ export default function CheckoutPage() {
                       <button
                         onClick={() => setShowAddressPicker(false)}
                         className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
                       >
                         <X size={14} color="var(--text-secondary)" />
                       </button>
