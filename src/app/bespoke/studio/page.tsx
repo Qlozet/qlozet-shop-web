@@ -223,16 +223,11 @@ function StudioContent() {
 
   // Save opens the SAME name/notes modal as the desktop "Save Design" button
   // — one save flow everywhere. The modal reports the saved id back so later
-  // saves update rather than duplicate, and a refresh reloads the design.
+  // saves update rather than duplicate. NOTE: deliberately no URL stamping —
+  // the studio remounts on any search-param change (see KeyedStudioContent),
+  // so rewriting the URL here would blow the studio away mid-save.
   const handleDesignSaved = useCallback((id: string) => {
-    setSavedId((prev) => {
-      if (!prev) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('designId', id);
-        window.history.replaceState(null, '', url.toString());
-      }
-      return prev ?? id;
-    });
+    setSavedId((prev) => prev ?? id);
   }, []);
 
   const handleShare = useCallback(async () => {
@@ -655,6 +650,15 @@ function StudioContent() {
 //  PAGE EXPORT
 // ═══════════════════════════════════════════════════════════════
 
+// Next's App Router does NOT remount a page when only its search params
+// change — so "new design" navigations reused the previous design's studio
+// state (images, selections, saved id) wholesale. Keying by the full query
+// string forces a clean remount whenever the studio's identity changes.
+function KeyedStudioContent() {
+  const searchParams = useSearchParams();
+  return <StudioContent key={searchParams.toString()} />;
+}
+
 export default function BespokeStudioPage() {
   return (
     <Suspense
@@ -664,7 +668,7 @@ export default function BespokeStudioPage() {
         </div>
       }
     >
-      <StudioContent />
+      <KeyedStudioContent />
     </Suspense>
   );
 }
