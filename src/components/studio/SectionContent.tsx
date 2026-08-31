@@ -77,6 +77,8 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
       <FitPanel
         selectedFit={customization.selectedFit}
         onSelectFit={(id) => customization.setSelectedFit(id)}
+        measurementSetName={customization.measurementSetName}
+        onSelectMeasurementSet={customization.setMeasurementSetName}
       />
     );
   }

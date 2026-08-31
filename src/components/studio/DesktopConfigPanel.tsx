@@ -158,6 +158,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
           fabric: customization.selectedFabric,
           color: customization.selectedColor,
           fit: customization.selectedFit,
+          measurement_set: customization.measurementSetName || undefined,
           userPrompt: customization.userPrompt,
         }}
         designId={designId}

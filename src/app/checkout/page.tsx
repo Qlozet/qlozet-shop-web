@@ -58,10 +58,6 @@ export default function CheckoutPage() {
   // (e.g. a friend's place) — not just the default.
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
-  // Measurement sets — shown only when the cart has custom garments, so the
-  // order can be sewn to someone else's saved measurements ("For Tolu").
-  const [measurementSets, setMeasurementSets] = useState<{ name: string; active: boolean }[]>([]);
-  const [selectedSetName, setSelectedSetName] = useState<string | undefined>(undefined);
 
   const applyAddress = (addr: any) => {
     setDeliveryName(addr.full_name || addr.label || addr.name || 'Guest User');
@@ -158,42 +154,9 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Custom garments are sewn to measurements — let the customer pick WHOSE.
-  const hasCustomItems = cart.some(
-    (i: any) =>
-      i.kind === 'clothing' &&
-      ((i.selections && Object.keys(i.selections).length > 0) ||
-        i.applied_fabric_id),
-  );
-
-  useEffect(() => {
-    if (!hasCustomItems || !user) return;
-    let active = true;
-    api
-      .get('/measurements/users/sets')
-      .then((res) => {
-        const wrapper = res?.data?.data || res?.data || {};
-        const sets = Array.isArray(wrapper?.sets)
-          ? wrapper.sets
-          : Array.isArray(wrapper)
-            ? wrapper
-            : [];
-        if (!active) return;
-        const mapped = sets.map((s: any) => ({
-          name: s.name || 'My measurements',
-          active: !!(s.active || s.is_active),
-        }));
-        setMeasurementSets(mapped);
-        const def = mapped.find((s: any) => s.active) || mapped[0];
-        setSelectedSetName((prev) => prev ?? def?.name);
-      })
-      .catch(() => {
-        /* backend snapshots the active set when none is named */
-      });
-    return () => {
-      active = false;
-    };
-  }, [hasCustomItems, user]);
+  // "Who is this for" is chosen in the customize panel's Fit section and
+  // rides on the custom cart line — checkout shows it read-only.
+  const cartMeasurementSet = cart.find((i) => i.measurement_set)?.measurement_set;
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
@@ -289,12 +252,8 @@ export default function CheckoutPage() {
     // Card payments charge in the selected display currency where available
     // (USD → Stripe); the hook falls back to a ₦/Paystack charge if
     // international payment isn't enabled yet.
-    const result = await checkout.placeOrder(
-      method,
-      selectedAddressId,
-      currency,
-      hasCustomItems ? selectedSetName : undefined,
-    );
+    // measurement_set_name is derived inside the hook from the cart line.
+    const result = await checkout.placeOrder(method, selectedAddressId, currency);
 
     if (!result) {
       setIsProcessing(false);
@@ -409,23 +368,12 @@ export default function CheckoutPage() {
           </select>
         </div>
       )}
-      {hasCustomItems && measurementSets.length > 1 && (
-        <div style={{ marginTop: '12px' }}>
-          <label style={pickerLabelStyle}>Measurements for (custom items)</label>
-          <select
-            value={selectedSetName}
-            onChange={(e) => setSelectedSetName(e.target.value)}
-            style={pickerSelectStyle}
-          >
-            {measurementSets.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}{s.active ? ' (active)' : ''}
-              </option>
-            ))}
-          </select>
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '6px 0 0' }}>
-            Custom garments will be sewn to this measurement set.
-          </p>
+      {cartMeasurementSet && (
+        <div className="flex items-center justify-between" style={{ marginTop: '12px', gap: '10px' }}>
+          <span style={pickerLabelStyle}>Measurements for</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {cartMeasurementSet}
+          </span>
         </div>
       )}
     </>

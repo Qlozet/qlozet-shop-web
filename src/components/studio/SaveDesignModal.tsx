@@ -15,6 +15,8 @@ export interface DesignSelections {
   color?: string | null;
   fit?: string | null;
   userPrompt?: string;
+  /** Saved measurement-set NAME the garment is for (Fit section choice). */
+  measurement_set?: string | null;
 }
 
 interface SaveDesignModalProps {

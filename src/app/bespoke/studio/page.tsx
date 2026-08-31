@@ -143,6 +143,7 @@ function StudioContent() {
               if (sel.fabric) customization.setSelectedFabric(sel.fabric);
               if (sel.color) customization.setSelectedColor(sel.color);
               if (sel.fit) customization.setSelectedFit(sel.fit);
+              if (sel.measurement_set) customization.setMeasurementSetName(sel.measurement_set);
               console.log('[Studio] Restored selections:', sel);
             }
 
@@ -201,6 +202,7 @@ function StudioContent() {
             fabric: customization.selectedFabric,
             color: customization.selectedColor,
             fit: customization.selectedFit,
+            measurement_set: customization.measurementSetName || undefined,
             userPrompt: customization.userPrompt,
           }),
         }),
@@ -463,6 +465,7 @@ function StudioContent() {
           fabric: customization.selectedFabric,
           color: customization.selectedColor,
           fit: customization.selectedFit,
+          measurement_set: customization.measurementSetName || undefined,
           userPrompt: customization.userPrompt,
         }}
         designId={savedId}

@@ -799,6 +799,11 @@ export default function ProductDetailsPage() {
               appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut,
           }
         : {}),
+      // Whose measurements the garment is sewn to — chosen in the customize
+      // panel's Fit section; checkout sends it for the order snapshot.
+      ...(isCustomizeGarment && customization.measurementSetName
+        ? { measurement_set: customization.measurementSetName }
+        : {}),
     });
 
     // Confirm the core action — without this the tap gave no visible signal.

@@ -227,9 +227,14 @@ export function useCheckout() {
         address_id: addressId,
         payment_method: paymentMethod,
         ...(chargeCurrency ? { currency: chargeCurrency } : {}),
-        ...(measurementSetName
-          ? { measurement_set_name: measurementSetName }
-          : {}),
+        // "Who is this for" is chosen in the customize panel's Fit section and
+        // travels on the custom cart line; an explicit argument still wins.
+        ...((): Partial<CreateOrderPayload> => {
+          const chosen =
+            measurementSetName ??
+            cart.find((i) => i.measurement_set)?.measurement_set;
+          return chosen ? { measurement_set_name: chosen } : {};
+        })(),
       };
 
       let res;
