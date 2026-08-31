@@ -349,10 +349,14 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
             onClick={() => {
               setStep(null);
               const name = encodeURIComponent(styleName || 'Untitled Design');
+              // `s` nonce: gives every new design a unique studio URL so the
+              // keyed remount always fires and per-URL resume state (refresh
+              // survival after save) can never collide with an older design.
+              const nonce = Date.now().toString(36);
               if (designMethod === 'reference') {
-                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&method=reference`);
+                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&method=reference&s=${nonce}`);
               } else {
-                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}`);
+                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&s=${nonce}`);
               }
             }}
             className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
