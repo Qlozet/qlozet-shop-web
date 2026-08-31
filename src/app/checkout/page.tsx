@@ -58,6 +58,9 @@ export default function CheckoutPage() {
   // (e.g. a friend's place) — not just the default.
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
+  // The Delivery Address card's "Change" button opens this picker (falls back
+  // to the address book when nothing is saved yet).
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
 
   const applyAddress = (addr: any) => {
     setDeliveryName(addr.full_name || addr.label || addr.name || 'Guest User');
@@ -323,18 +326,7 @@ export default function CheckoutPage() {
     });
   };
 
-  // ── Deliver-to + measurements-for pickers (shared by both layouts) ──
-  const pickerSelectStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: '10px',
-    border: '1px solid var(--border-glass)',
-    background: 'var(--bg-base)',
-    color: 'var(--text-primary)',
-    fontSize: '12px',
-    fontWeight: 600,
-    outline: 'none',
-  };
+  // ── Measurements-for note (shared by both layouts) ──
   const pickerLabelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '10px',
@@ -344,30 +336,8 @@ export default function CheckoutPage() {
     letterSpacing: '0.06em',
     marginBottom: '6px',
   };
-  const addressLabel = (a: any) => {
-    const who = a.full_name || a.label || a.name || 'Address';
-    const line = a.address || a.address_line_1 || '';
-    const city = a.city || '';
-    return `${who} — ${line}${city ? `, ${city}` : ''}${a.is_default ? ' (default)' : ''}`;
-  };
   const orderPickers = (
     <>
-      {addresses.length > 1 && (
-        <div style={{ marginTop: '16px' }}>
-          <label style={pickerLabelStyle}>Deliver to</label>
-          <select
-            value={selectedAddressId}
-            onChange={(e) => selectAddress(e.target.value)}
-            style={pickerSelectStyle}
-          >
-            {addresses.map((a) => (
-              <option key={a._id || a.id} value={a._id || a.id}>
-                {addressLabel(a)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
       {cartMeasurementSet && (
         <div className="flex items-center justify-between" style={{ marginTop: '12px', gap: '10px' }}>
           <span style={pickerLabelStyle}>Measurements for</span>
@@ -553,7 +523,11 @@ export default function CheckoutPage() {
               </div>
               <button
                 type="button"
-                onClick={() => router.push('/profile?tab=address-book')}
+                onClick={() =>
+                  addresses.length > 0
+                    ? setShowAddressPicker(true)
+                    : router.push('/profile?tab=address-book')
+                }
                 className="transition-all hover:bg-[var(--bg-surface-elevated)]"
                 style={{
                   padding: '8px 20px',
@@ -743,7 +717,11 @@ export default function CheckoutPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => router.push('/profile?tab=address-book')}
+                  onClick={() =>
+                  addresses.length > 0
+                    ? setShowAddressPicker(true)
+                    : router.push('/profile?tab=address-book')
+                }
                   className="transition-all hover:bg-[var(--bg-surface-elevated)]"
                   style={{
                     padding: '7px 18px',
@@ -1001,6 +979,102 @@ export default function CheckoutPage() {
         </div>
 
       </div>
+
+      {/* ── Address picker — opened by the Delivery Address "Change" button.
+          Selecting re-quotes shipping (courier rates are address-specific). ── */}
+      {showAddressPicker && (
+        <div
+          className="fixed inset-0 flex items-end sm:items-center justify-center"
+          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowAddressPicker(false)}
+        >
+          <div
+            className="w-full animate-fade-in"
+            style={{
+              maxWidth: '440px', margin: '0 16px 16px', borderRadius: '24px',
+              background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+              overflow: 'hidden', maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between" style={{ padding: '22px 24px 12px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                Deliver To
+              </h3>
+              <button
+                onClick={() => setShowAddressPicker(false)}
+                aria-label="Close"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '18px', lineHeight: 1, padding: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '4px 16px 8px', overflowY: 'auto' }}>
+              {addresses.map((a) => {
+                const id = a._id || a.id;
+                const isSel = id === selectedAddressId;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      selectAddress(id);
+                      setShowAddressPicker(false);
+                    }}
+                    className="w-full flex items-start justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
+                    style={{
+                      gap: '12px', padding: '14px', borderRadius: '14px', textAlign: 'left',
+                      border: `1.5px solid ${isSel ? 'var(--brand-fill)' : 'var(--border-glass)'}`,
+                      background: isSel ? 'var(--bg-surface-elevated)' : 'transparent',
+                      cursor: 'pointer', marginBottom: '8px',
+                    }}
+                  >
+                    <span style={{ minWidth: 0 }}>
+                      <span className="flex items-center" style={{ gap: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {a.full_name || a.label || a.name || 'Address'}
+                        </span>
+                        {a.is_default && (
+                          <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '1px 6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Default
+                          </span>
+                        )}
+                      </span>
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '4px' }}>
+                        {a.address || a.address_line_1 || ''}
+                        {a.city ? `, ${a.city}` : ''}
+                        {a.state ? `, ${a.state}` : ''}
+                      </span>
+                    </span>
+                    <span
+                      className="flex items-center justify-center flex-shrink-0"
+                      style={{
+                        width: '18px', height: '18px', borderRadius: '50%', marginTop: '2px',
+                        border: isSel ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)',
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push('/profile?tab=address-book')}
+              className="transition-all hover:bg-[var(--bg-surface-elevated)]"
+              style={{
+                margin: '4px 16px 16px', padding: '13px', borderRadius: '12px',
+                border: '1.5px dashed var(--border-glass)', background: 'transparent',
+                color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              + Add or edit addresses
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
