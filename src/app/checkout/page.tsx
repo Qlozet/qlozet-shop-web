@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ import {
   Truck,
   Wallet,
   Check,
+  X,
 } from 'lucide-react';
 
 type PromoTab = 'promo' | 'voucher' | 'rewards';
@@ -1002,100 +1004,143 @@ export default function CheckoutPage() {
       </div>
 
       {/* ── Address picker — opened by the Delivery Address "Change" button.
-          Selecting re-quotes shipping (courier rates are address-specific). ── */}
-      {showAddressPicker && (
-        <div
-          className="fixed inset-0 flex items-end sm:items-center justify-center"
-          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setShowAddressPicker(false)}
-        >
-          <div
-            className="w-full animate-fade-in"
-            style={{
-              maxWidth: '440px', margin: '0 16px 16px', borderRadius: '24px',
-              background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
-              overflow: 'hidden', maxHeight: '80vh', display: 'flex', flexDirection: 'column',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between" style={{ padding: '22px 24px 12px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
-                Deliver To
-              </h3>
-              <button
-                onClick={() => setShowAddressPicker(false)}
-                aria-label="Close"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '18px', lineHeight: 1, padding: '4px' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ padding: '4px 16px 8px', overflowY: 'auto' }}>
-              {addresses.map((a) => {
-                const id = a._id || a.id;
-                const isSel = id === selectedAddressId;
-                return (
+          Same shell as the bespoke "Start Your Journey" modal: bottom sheet
+          with a drag handle on mobile, centred card on desktop. Selecting
+          re-quotes shipping (courier rates are address-specific). ── */}
+      {showAddressPicker &&
+        createPortal(
+          <>
+            {(() => {
+              const pickerContent = (
+                <>
+                  <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '4px' }}>
+                    Deliver To
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '18px' }}>
+                    Choose where this order ships — shipping rates update for
+                    the new address.
+                  </p>
+                  <div className="flex flex-col" style={{ gap: '8px' }}>
+                    {addresses.map((a) => {
+                      const id = a._id || a.id;
+                      const isSel = id === selectedAddressId;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => {
+                            selectAddress(id);
+                            setShowAddressPicker(false);
+                          }}
+                          className="w-full flex items-start justify-between transition-all"
+                          style={{
+                            gap: '12px', padding: '16px 20px', borderRadius: '16px', textAlign: 'left',
+                            background: 'var(--bg-surface-elevated)',
+                            border: isSel ? '1.5px solid var(--brand-fill)' : '1.5px solid transparent',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <span style={{ minWidth: 0 }}>
+                            <span className="flex items-center" style={{ gap: '8px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {a.full_name || a.label || a.name || 'Address'}
+                              </span>
+                              {a.is_default && (
+                                <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '1px 6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  Default
+                                </span>
+                              )}
+                            </span>
+                            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '4px' }}>
+                              {a.address || a.address_line_1 || ''}
+                              {a.city ? `, ${a.city}` : ''}
+                              {a.state ? `, ${a.state}` : ''}
+                            </span>
+                          </span>
+                          <span
+                            className="flex-shrink-0"
+                            style={{
+                              width: '18px', height: '18px', borderRadius: '50%', marginTop: '2px',
+                              border: isSel ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)',
+                            }}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
                   <button
-                    key={id}
                     type="button"
-                    onClick={() => {
-                      selectAddress(id);
-                      setShowAddressPicker(false);
-                    }}
-                    className="w-full flex items-start justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
+                    onClick={() => router.push('/profile?tab=address-book')}
+                    className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
                     style={{
-                      gap: '12px', padding: '14px', borderRadius: '14px', textAlign: 'left',
-                      border: `1.5px solid ${isSel ? 'var(--brand-fill)' : 'var(--border-glass)'}`,
-                      background: isSel ? 'var(--bg-surface-elevated)' : 'transparent',
-                      cursor: 'pointer', marginBottom: '8px',
+                      marginTop: '18px', padding: '16px', borderRadius: '14px',
+                      background: 'var(--brand-fill)', color: 'var(--brand-fill-text)',
+                      fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
+                      letterSpacing: '0.12em', border: 'none', cursor: 'pointer',
                     }}
                   >
-                    <span style={{ minWidth: 0 }}>
-                      <span className="flex items-center" style={{ gap: '8px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {a.full_name || a.label || a.name || 'Address'}
-                        </span>
-                        {a.is_default && (
-                          <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '1px 6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            Default
-                          </span>
-                        )}
-                      </span>
-                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '4px' }}>
-                        {a.address || a.address_line_1 || ''}
-                        {a.city ? `, ${a.city}` : ''}
-                        {a.state ? `, ${a.state}` : ''}
-                      </span>
-                    </span>
-                    <span
-                      className="flex items-center justify-center flex-shrink-0"
-                      style={{
-                        width: '18px', height: '18px', borderRadius: '50%', marginTop: '2px',
-                        border: isSel ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)',
-                      }}
-                    />
+                    Add or Edit Addresses
                   </button>
-                );
-              })}
-            </div>
+                </>
+              );
 
-            <button
-              type="button"
-              onClick={() => router.push('/profile?tab=address-book')}
-              className="transition-all hover:bg-[var(--bg-surface-elevated)]"
-              style={{
-                margin: '4px 16px 16px', padding: '13px', borderRadius: '12px',
-                border: '1.5px dashed var(--border-glass)', background: 'transparent',
-                color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              + Add or edit addresses
-            </button>
-          </div>
-        </div>
-      )}
+              return (
+                <>
+                  {/* ═══ MOBILE: Bottom Sheet ═══ */}
+                  <div className="lg:hidden">
+                    <div
+                      className="fixed inset-0 z-[100] bg-black/40 animate-fade-in"
+                      onClick={() => setShowAddressPicker(false)}
+                    />
+                    <div
+                      className="fixed left-3 right-3 bottom-3 z-[101] bg-[var(--bg-base)] rounded-[24px] flex flex-col"
+                      style={{ maxHeight: '85vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)' }}
+                    >
+                      <div className="flex justify-center pt-3 pb-1">
+                        <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
+                      </div>
+                      <div className="flex-1 overflow-y-auto hide-scrollbar relative" style={{ padding: '20px 24px 24px' }}>
+                        <button
+                          onClick={() => setShowAddressPicker(false)}
+                          className="absolute top-0 right-0 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
+                        >
+                          <X size={14} color="var(--text-secondary)" />
+                        </button>
+                        {pickerContent}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ═══ DESKTOP: Centered Modal ═══ */}
+                  <div
+                    className="hidden lg:flex fixed inset-0 z-[100] items-center justify-center"
+                    style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+                    onClick={() => setShowAddressPicker(false)}
+                  >
+                    <div
+                      className="relative w-full animate-fade-in"
+                      style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => setShowAddressPicker(false)}
+                        className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
+                      >
+                        <X size={14} color="var(--text-secondary)" />
+                      </button>
+                      <div style={{ padding: '32px 28px', overflowY: 'auto' }}>
+                        {pickerContent}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
