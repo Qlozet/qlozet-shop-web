@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import {
   ArrowLeft,
@@ -17,18 +18,25 @@ import {
   Check,
   AlertTriangle,
   Loader2,
+  LogIn,
 } from 'lucide-react';
+
+// ═══════════════════════════════════════════════════════════════
+//  Guest reservation page (/reserve/:id) — the link an organizer
+//  shares with their event guests. Public to view; claiming needs a
+//  signed-in account (the claim creates an order + Paystack charge).
+// ═══════════════════════════════════════════════════════════════
 
 export default function ReservationPage() {
   const { fmt: fmtMoney } = useCurrency();
+  const { user } = useApp();
   const params = useParams();
   const reservationId = params.id as string;
 
   const [raw, setRaw] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [selectedYards, setSelectedYards] = useState(6);
-  const [claimed, setClaimed] = useState(false);
+  const [selectedYards, setSelectedYards] = useState(0);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
@@ -41,7 +49,14 @@ export default function ReservationPage() {
     api
       .get(`/reservations/${reservationId}`)
       .then((res) => {
-        if (!cancelled) setRaw(res.data?.data ?? res.data);
+        // Envelope walk: newer backends return { reservation, progress, … }
+        // directly under data; older ones double-nest it under data.data.
+        const d = res.data?.data;
+        const payload = d?.reservation ? d : (d?.data?.reservation ? d.data : d);
+        if (!cancelled) {
+          if (payload?.reservation) setRaw(payload);
+          else setNotFound(true);
+        }
       })
       .catch(() => {
         if (!cancelled) setNotFound(true);
@@ -68,77 +83,122 @@ export default function ReservationPage() {
         id: rsv._id as string,
         fabricId: (fabricProduct?._id as string) ?? '',
         fabricName: fabricSub?.name ?? 'Fabric',
-        fabricPrice: fabricSub?.price_per_yard ?? fabricProduct?.base_price ?? 0,
+        fabricPrice: rsv.price_per_yard ?? fabricSub?.price_per_yard ?? 0,
+        minCut: Math.max(1, Math.ceil(Number(fabricSub?.min_cut) || 1)),
         fabricImage:
           pickUrl(fabricSub?.images) ??
           pickUrl(fabricProduct?.images) ??
           '/image/bespoke-agbada-orange.webp',
         eventName: rsv.event_name ?? 'Event',
         organizerName:
-          [rsv.organizer?.firstName, rsv.organizer?.lastName].filter(Boolean).join(' ') ||
-          'Organizer',
+          rsv.organizer?.full_name || rsv.organizer?.username || 'Organizer',
         totalYards: progress?.total_yards ?? rsv.total_yards ?? 0,
         claimedYards: progress?.claimed_yards ?? rsv.claimed_yards ?? 0,
+        guestCount: raw?.guest_count ?? 0,
         deadline: rsv.deadline,
         status: rsv.status as string,
+        feePaid: rsv.fee_paid !== false,
       }
     : null;
+
+  const remainingYards = reservation
+    ? Math.max(0, reservation.totalYards - reservation.claimedYards)
+    : 0;
+
+  // Default the picker once the data lands: a 6-yard asoebi bundle when there's
+  // room, the fabric's minimum otherwise — always clamped to what's left.
+  useEffect(() => {
+    if (!reservation || selectedYards > 0) return;
+    const start = Math.min(Math.max(6, reservation.minCut), remainingYards);
+    setSelectedYards(Math.max(start, Math.min(reservation.minCut, remainingYards)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rsv?._id]);
 
   // Countdown timer
   useEffect(() => {
     if (!reservation) return;
     const update = () => {
-      const now = Date.now();
-      const deadline = new Date(reservation.deadline).getTime();
-      const diff = deadline - now;
+      const diff = new Date(reservation.deadline).getTime() - Date.now();
       if (diff <= 0) {
         setTimeLeft('Expired');
         return;
       }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      setTimeLeft(days > 0 ? `${days}d ${hours}h` : `${hours}h ${minutes}m`);
     };
     update();
     const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
-  }, [reservation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rsv?._id, rsv?.deadline]);
 
+  const isCancelled = raw?.is_cancelled || reservation?.status === 'cancelled';
   const isExpired = reservation
-    ? raw?.is_expired || new Date(reservation.deadline).getTime() < Date.now() || reservation.status === 'expired'
+    ? raw?.is_expired ||
+      new Date(reservation.deadline).getTime() < Date.now() ||
+      reservation.status === 'expired'
     : false;
   const isCompleted = raw?.is_sold_out || reservation?.status === 'completed';
-  const remainingYards = reservation ? reservation.totalYards - reservation.claimedYards : 0;
-  const progressPercent = reservation ? (reservation.claimedYards / reservation.totalYards) * 100 : 0;
+  const progressPercent =
+    reservation && reservation.totalYards > 0
+      ? (reservation.claimedYards / reservation.totalYards) * 100
+      : 0;
+
+  const minClaim = reservation ? Math.min(reservation.minCut, remainingYards) : 1;
+  const canClaim = !isExpired && !isCompleted && !isCancelled && remainingYards > 0;
 
   const handleClaim = async () => {
     if (!reservation || selectedYards > remainingYards || claiming) return;
     setClaiming(true);
     setClaimError(null);
     try {
-      const res = await api.post(`/reservations/${reservation.id}/claim`, { yards: selectedYards });
+      const res = await api.post(`/reservations/${reservation.id}/claim`, {
+        yards: selectedYards,
+      });
       const d = res.data?.data ?? res.data;
-      const paymentUrl = d?.payment?.authorization_url ?? d?.authorization_url ?? d?.paymentUrl;
+      const paymentUrl =
+        d?.payment?.authorization_url ?? d?.authorization_url ?? d?.paymentUrl;
       if (paymentUrl) {
-        // Guest pays the fabric price via Paystack; the claim is confirmed on webhook.
+        // Stash the reservation so /payment/verify shows a claim confirmation
+        // (and does NOT clear the shopper's unrelated cart) when Paystack
+        // returns the guest there.
+        try {
+          sessionStorage.setItem('pending_claim_reservation_id', reservation.id);
+        } catch {
+          /* storage unavailable — verify page falls back to generic copy */
+        }
         window.location.href = paymentUrl;
         return;
       }
-      setClaimed(true);
+      setClaimError('Could not start the payment. Please try again.');
     } catch (err: any) {
-      setClaimError(err?.response?.data?.message || err?.message || 'Could not claim. Please try again.');
+      setClaimError(
+        err?.response?.data?.message || err?.message || 'Could not claim. Please try again.',
+      );
     } finally {
       setClaiming(false);
     }
   };
 
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--bg-base)',
+    borderRadius: '24px',
+    border: '1px solid var(--border-glass)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+    overflow: 'hidden',
+  };
+
   // ── Loading State ──
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '16px' }}>
-        <Loader2 size={40} color="#4C1D95" className="animate-spin" />
-        <p style={{ fontSize: '14px', color: '#888' }}>Loading reservation…</p>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-app)' }}
+      >
+        <Loader2 size={36} color="var(--brand-brown)" className="animate-spin" />
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Loading reservation…</p>
       </div>
     );
   }
@@ -146,14 +206,26 @@ export default function ReservationPage() {
   // ── Not Found State ──
   if (notFound || !reservation) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: '40px 20px', gap: '16px' }}>
-        <AlertTriangle size={48} color="#999" />
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1A1A' }}>Reservation Not Found</h2>
-        <p style={{ fontSize: '14px', color: '#888', textAlign: 'center' }}>This reservation link is invalid or has been removed.</p>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-app)' }}
+      >
+        <div
+          className="flex items-center justify-center rounded-full"
+          style={{ width: '64px', height: '64px', background: 'var(--bg-surface-elevated)' }}
+        >
+          <AlertTriangle size={28} color="var(--text-muted)" />
+        </div>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+          Reservation Not Found
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.6 }}>
+          This reservation link is invalid or has been removed.
+        </p>
         <Link
           href="/"
           className="transition-all hover:opacity-90"
-          style={{ marginTop: '8px', padding: '12px 28px', borderRadius: '14px', background: '#1A1A1A', color: '#FFF', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}
+          style={{ marginTop: '8px', padding: '13px 32px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}
         >
           Go Home
         </Link>
@@ -162,19 +234,19 @@ export default function ReservationPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F8F9FA' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg-app)' }}>
       <div className="w-full" style={{ maxWidth: '600px', margin: '0 auto', padding: '0 20px 100px' }}>
 
         {/* Back Link */}
-        <Link href="/" className="flex items-center" style={{ gap: '6px', padding: '20px 0 16px', textDecoration: 'none' }}>
-          <ArrowLeft size={18} color="#888" />
-          <span style={{ fontSize: '13px', color: '#888', fontWeight: 500 }}>Back</span>
+        <Link href="/" className="inline-flex items-center transition-opacity hover:opacity-70" style={{ gap: '6px', padding: '20px 0 16px', textDecoration: 'none' }}>
+          <ArrowLeft size={18} color="var(--text-muted)" />
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>Back</span>
         </Link>
 
         {/* ── Hero Card ── */}
-        <div className="rounded-[24px] overflow-hidden bg-white shadow-sm" style={{ border: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={cardStyle}>
           {/* Fabric Image */}
-          <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
+          <div className="relative w-full" style={{ aspectRatio: '16/9', background: 'var(--bg-surface-elevated)' }}>
             <Image
               src={reservation.fabricImage}
               alt={reservation.fabricName}
@@ -183,38 +255,47 @@ export default function ReservationPage() {
               sizes="(max-width: 768px) 100vw, 600px"
               priority
             />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
-            {/* Event badge */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65) 100%)' }} />
+            {/* Event badge — fixed white on the photo overlay in both themes */}
             <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-white" style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1.2 }}>{reservation.eventName}</p>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>Hosted by {reservation.organizerName}</p>
+              <p style={{ fontSize: '10px', fontWeight: 800, color: '#D4AF37', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
+                Fabric Reservation
+              </p>
+              <p style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1.2, color: '#FFFFFF' }}>{reservation.eventName}</p>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                Hosted by {reservation.organizerName}
+              </p>
             </div>
           </div>
 
           {/* Content */}
           <div style={{ padding: '20px 24px 24px' }}>
             {/* Fabric Info */}
-            <div className="flex items-center" style={{ gap: '12px', marginBottom: '20px' }}>
-              <div className="relative flex-shrink-0 rounded-[10px] overflow-hidden" style={{ width: '48px', height: '48px' }}>
+            <Link
+              href={`/products/${reservation.fabricId}`}
+              className="flex items-center transition-opacity hover:opacity-80"
+              style={{ gap: '12px', marginBottom: '20px', textDecoration: 'none' }}
+            >
+              <div className="relative flex-shrink-0 rounded-[10px] overflow-hidden" style={{ width: '48px', height: '48px', background: 'var(--bg-surface-elevated)' }}>
                 <Image src={reservation.fabricImage} alt="" fill style={{ objectFit: 'cover' }} sizes="48px" />
               </div>
-              <div className="flex-1">
-                <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>{reservation.fabricName}</p>
-                <p style={{ fontSize: '13px', color: '#888' }}>{fmtMoney(reservation.fabricPrice)} per yard</p>
+              <div className="flex-1 min-w-0">
+                <p className="truncate" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{reservation.fabricName}</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{fmtMoney(reservation.fabricPrice)} per yard</p>
               </div>
-            </div>
+            </Link>
 
             {/* Progress Bar */}
             <div style={{ marginBottom: '20px' }}>
               <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {reservation.claimedYards} of {reservation.totalYards} yards claimed
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: progressPercent >= 100 ? '#065F46' : '#D4AF37' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: progressPercent >= 100 ? '#059669' : '#D4AF37' }}>
                   {Math.round(progressPercent)}%
                 </span>
               </div>
-              <div className="w-full rounded-full" style={{ height: '10px', background: '#F0F0F0', overflow: 'hidden' }}>
+              <div className="w-full rounded-full" style={{ height: '10px', background: 'var(--bg-surface-elevated)', overflow: 'hidden' }}>
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
@@ -226,26 +307,36 @@ export default function ReservationPage() {
                 />
               </div>
               <div className="flex items-center justify-between" style={{ marginTop: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#999' }}>{remainingYards} yards remaining</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{remainingYards} yards remaining</span>
                 <div className="flex items-center" style={{ gap: '4px' }}>
-                  <Users size={12} color="#999" />
-                  <span style={{ fontSize: '11px', color: '#999' }}>{reservation.claimedYards > 0 ? Math.ceil(reservation.claimedYards / 6) : 0} guests claimed</span>
+                  <Users size={12} color="var(--text-muted)" />
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {reservation.guestCount} guest{reservation.guestCount === 1 ? '' : 's'} claimed
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Deadline */}
-            <div className="flex items-center rounded-[14px]" style={{ gap: '10px', padding: '14px', background: isExpired ? '#FEF2F2' : '#F9FAFB', border: `1px solid ${isExpired ? '#FECACA' : '#F0F0F0'}` }}>
-              {isExpired ? (
-                <AlertTriangle size={18} color="#DC2626" />
+            <div
+              className="flex items-center rounded-[14px]"
+              style={{
+                gap: '10px',
+                padding: '14px',
+                background: isExpired || isCancelled ? 'rgba(239,68,68,0.06)' : 'var(--bg-surface-elevated)',
+                border: `1px solid ${isExpired || isCancelled ? 'rgba(239,68,68,0.2)' : 'var(--border-glass)'}`,
+              }}
+            >
+              {isExpired || isCancelled ? (
+                <AlertTriangle size={18} color="#EF4444" />
               ) : (
                 <Clock size={18} color="#D4AF37" />
               )}
               <div>
-                <p style={{ fontSize: '12px', fontWeight: 700, color: isExpired ? '#DC2626' : '#1A1A1A' }}>
-                  {isExpired ? 'Reservation Expired' : `Ends in ${timeLeft}`}
+                <p style={{ fontSize: '12px', fontWeight: 700, color: isExpired || isCancelled ? '#EF4444' : 'var(--text-primary)' }}>
+                  {isCancelled ? 'Reservation Cancelled' : isExpired ? 'Reservation Expired' : `Ends in ${timeLeft}`}
                 </p>
-                <p style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   <CalendarDays size={11} className="inline mr-1" style={{ verticalAlign: '-1px' }} />
                   Deadline: {new Date(reservation.deadline).toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
@@ -255,115 +346,123 @@ export default function ReservationPage() {
         </div>
 
         {/* ── Claim Section ── */}
-        {!isExpired && !isCompleted && !claimed && remainingYards > 0 && (
-          <div className="rounded-[24px] bg-white shadow-sm" style={{ marginTop: '16px', padding: '24px', border: '1px solid rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A', marginBottom: '16px' }}>Claim Your Fabric</h3>
+        {canClaim && (
+          <div style={{ ...cardStyle, marginTop: '16px', padding: '24px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '16px' }}>
+              Claim Your Fabric
+            </h3>
 
-            {/* Yards selector */}
-            <div className="flex items-center justify-between" style={{ padding: '12px 16px', borderRadius: '14px', border: '1.5px solid #E5E5E5', background: '#FAFAFA', marginBottom: '16px' }}>
+            {/* Yards selector — steps by the yard, floored at the fabric's
+                minimum cut, capped at what's left (the last short cut is
+                claimable instead of stranded). */}
+            <div
+              className="flex items-center justify-between"
+              style={{ padding: '12px 16px', borderRadius: '14px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', marginBottom: '8px' }}
+            >
               <button
-                onClick={() => setSelectedYards(Math.max(6, selectedYards - 6))}
-                className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full"
-                style={{ width: '36px', height: '36px', border: 'none', background: '#EBEBEB', cursor: 'pointer' }}
+                onClick={() => setSelectedYards((y) => Math.max(minClaim, y - 1))}
+                disabled={selectedYards <= minClaim}
+                aria-label="Fewer yards"
+                className="flex items-center justify-center transition-all active:scale-90 disabled:opacity-35"
+                style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
               >
-                <Minus size={16} color="#333" />
+                <Minus size={16} color="var(--text-primary)" />
               </button>
               <div className="flex flex-col items-center">
-                <span style={{ fontSize: '24px', fontWeight: 900, color: '#1A1A1A' }}>{selectedYards}</span>
-                <span style={{ fontSize: '11px', color: '#888' }}>yards</span>
+                <span style={{ fontSize: '26px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1 }}>{selectedYards}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>yards</span>
               </div>
               <button
-                onClick={() => setSelectedYards(Math.min(remainingYards, selectedYards + 6))}
-                className="flex items-center justify-center hover:bg-gray-200 transition-colors rounded-full"
-                style={{ width: '36px', height: '36px', border: 'none', background: '#EBEBEB', cursor: 'pointer' }}
+                onClick={() => setSelectedYards((y) => Math.min(remainingYards, y + 1))}
+                disabled={selectedYards >= remainingYards}
+                aria-label="More yards"
+                className="flex items-center justify-center transition-all active:scale-90 disabled:opacity-35"
+                style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
               >
-                <Plus size={16} color="#333" />
+                <Plus size={16} color="var(--text-primary)" />
               </button>
             </div>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Minimum cut: {reservation.minCut} yd
+            </p>
 
             {/* Price */}
-            <div className="flex items-center justify-between" style={{ marginBottom: '20px' }}>
-              <span style={{ fontSize: '14px', color: '#666' }}>Total</span>
-              <span style={{ fontSize: '20px', fontWeight: 900, color: '#1A1A1A' }}>
+            <div className="flex items-center justify-between" style={{ paddingTop: '12px', borderTop: '1px solid var(--border-glass)', marginBottom: '20px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total</span>
+              <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>
                 {fmtMoney(reservation.fabricPrice * selectedYards)}
               </span>
             </div>
 
             {claimError && (
-              <p style={{ fontSize: '12px', color: '#DC2626', marginBottom: '10px', textAlign: 'center' }}>{claimError}</p>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#DC2626', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '10px', padding: '10px 12px', marginBottom: '12px', textAlign: 'center' }}>
+                {claimError}
+              </div>
             )}
-            {/* Claim Button */}
-            <button
-              onClick={handleClaim}
-              disabled={selectedYards > remainingYards || claiming}
-              className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
-              style={{
-                padding: '16px',
-                borderRadius: '16px',
-                background: '#064E3B',
-                color: '#FFFFFF',
-                fontSize: '14px',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                border: 'none',
-                cursor: claiming ? 'wait' : 'pointer',
-                gap: '8px',
-              }}
-            >
-              {claiming ? (
-                'Processing…'
-              ) : (
-                <>
-                  <ShoppingCart size={16} />
-                  Claim &amp; Pay
-                </>
-              )}
-            </button>
-          </div>
-        )}
 
-        {/* ── Claimed Confirmation ── */}
-        {claimed && (
-          <div className="rounded-[24px] bg-white shadow-sm flex flex-col items-center" style={{ marginTop: '16px', padding: '32px 24px', border: '1px solid rgba(0,0,0,0.06)', gap: '12px' }}>
-            <div className="flex items-center justify-center rounded-full" style={{ width: '56px', height: '56px', background: '#ECFDF5' }}>
-              <Check size={28} color="#065F46" strokeWidth={3} />
-            </div>
-            <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A' }}>Fabric Claimed!</p>
-            <p style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>
-              {selectedYards} yards of {reservation.fabricName} added to your cart.
+            {/* Claim / Sign-in CTA — claiming charges the guest via Paystack,
+                so it needs an account. */}
+            {user ? (
+              <button
+                onClick={handleClaim}
+                disabled={selectedYards > remainingYards || selectedYards < minClaim || claiming}
+                className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                style={{ padding: '16px', borderRadius: '14px', background: '#064E3B', color: '#FFFFFF', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: claiming ? 'wait' : 'pointer', gap: '8px' }}
+              >
+                {claiming ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Starting payment…
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart size={16} />
+                    Claim &amp; Pay
+                  </>
+                )}
+              </button>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none', gap: '8px' }}
+              >
+                <LogIn size={16} />
+                Sign in to claim
+              </Link>
+            )}
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', lineHeight: 1.6 }}>
+              You pay for your yards now; they&apos;re held under {reservation.eventName}.
             </p>
-            <Link
-              href="/cart"
-              className="transition-all hover:opacity-90"
-              style={{ marginTop: '4px', padding: '12px 28px', borderRadius: '14px', background: '#1A1A1A', color: '#FFF', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}
-            >
-              Go to Cart
-            </Link>
           </div>
         )}
 
-        {/* ── Expired / Completed State ── */}
-        {(isExpired || isCompleted) && !claimed && (
-          <div className="rounded-[24px] bg-white shadow-sm flex flex-col items-center" style={{ marginTop: '16px', padding: '32px 24px', border: '1px solid rgba(0,0,0,0.06)', gap: '12px' }}>
-            <div className="flex items-center justify-center rounded-full" style={{ width: '56px', height: '56px', background: isCompleted ? '#ECFDF5' : '#FEF2F2' }}>
+        {/* ── Ended States ── */}
+        {!canClaim && (
+          <div className="flex flex-col items-center" style={{ ...cardStyle, marginTop: '16px', padding: '32px 24px', gap: '12px' }}>
+            <div
+              className="flex items-center justify-center rounded-full"
+              style={{ width: '56px', height: '56px', background: isCompleted ? 'rgba(5,150,105,0.1)' : 'rgba(239,68,68,0.08)' }}
+            >
               {isCompleted
-                ? <Check size={28} color="#065F46" strokeWidth={3} />
-                : <AlertTriangle size={28} color="#DC2626" />
+                ? <Check size={28} color="#059669" strokeWidth={3} />
+                : <AlertTriangle size={26} color="#EF4444" />
               }
             </div>
-            <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1A1A' }}>
-              {isCompleted ? 'Fully Claimed!' : 'Reservation Ended'}
+            <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {isCompleted ? 'Fully Claimed!' : isCancelled ? 'Reservation Cancelled' : 'Reservation Ended'}
             </p>
-            <p style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.6 }}>
               {isCompleted
                 ? 'All yards have been claimed for this event.'
-                : 'This reservation has expired. Unclaimed yards have been returned to stock.'}
+                : isCancelled
+                  ? 'The organizer cancelled this reservation. Unclaimed yards were returned to stock.'
+                  : 'This reservation has expired. Unclaimed yards have been returned to stock.'}
             </p>
             <Link
               href="/products"
               className="transition-all hover:opacity-90"
-              style={{ marginTop: '4px', padding: '12px 28px', borderRadius: '14px', background: '#1A1A1A', color: '#FFF', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}
+              style={{ marginTop: '4px', padding: '13px 32px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}
             >
               Browse Fabrics
             </Link>

@@ -36,10 +36,14 @@ function PaymentVerifyInner() {
 
   // A reservation the organizer just paid the fee for (stashed before redirect)
   const [reservationId, setReservationId] = useState<string | null>(null);
+  // A guest's fabric CLAIM payment (stashed on /reserve/:id before redirect) —
+  // not a cart checkout, so the cart must be left alone.
+  const [claimReservationId, setClaimReservationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setReservationId(sessionStorage.getItem('pending_reservation_id'));
+      setClaimReservationId(sessionStorage.getItem('pending_claim_reservation_id'));
     }
   }, []);
 
@@ -94,7 +98,10 @@ function PaymentVerifyInner() {
     if (status !== 'success' || handled.current || typeof window === 'undefined') return;
     handled.current = true;
     sessionStorage.removeItem('pending_reservation_id');
-    if (!reservationId) {
+    sessionStorage.removeItem('pending_claim_reservation_id');
+    // Only a CART checkout clears the cart — reservation fees and guest fabric
+    // claims are standalone payments that must not wipe an unrelated cart.
+    if (!reservationId && !claimReservationId) {
       clearCart();
       sessionStorage.removeItem('qlozet_checkout_preview');
     }
@@ -104,7 +111,7 @@ function PaymentVerifyInner() {
       origin: { y: 0.55 },
       colors: [BROWN, '#8A5A2B', '#D4AF37', GOOD, '#FFFFFF'],
     });
-  }, [status, reservationId, clearCart]);
+  }, [status, reservationId, claimReservationId, clearCart]);
 
   return (
     <div
@@ -140,12 +147,16 @@ function PaymentVerifyInner() {
             <Body>
               {reservationId
                 ? 'Your fabric reservation is active — share the link with your guests.'
-                : 'Thank you! Your payment was successful and your order is on its way to the vendor.'}
+                : claimReservationId
+                  ? 'Your fabric is claimed! Your yards are secured under this event.'
+                  : 'Thank you! Your payment was successful and your order is on its way to the vendor.'}
             </Body>
             {reference && <Ref value={reference} />}
             <Actions>
               {reservationId ? (
                 <PrimaryLink href={`/reserve/${reservationId}`}>View reservation</PrimaryLink>
+              ) : claimReservationId ? (
+                <PrimaryLink href={`/reserve/${claimReservationId}`}>Back to reservation</PrimaryLink>
               ) : (
                 <PrimaryLink href="/profile?tab=orders">View orders</PrimaryLink>
               )}
@@ -166,7 +177,11 @@ function PaymentVerifyInner() {
             </Body>
             {reference && <Ref value={reference} />}
             <Actions>
-              <PrimaryLink href="/cart">Back to cart</PrimaryLink>
+              {claimReservationId ? (
+                <PrimaryLink href={`/reserve/${claimReservationId}`}>Back to reservation</PrimaryLink>
+              ) : (
+                <PrimaryLink href="/cart">Back to cart</PrimaryLink>
+              )}
               <GhostLink href="/">Home</GhostLink>
             </Actions>
           </>
