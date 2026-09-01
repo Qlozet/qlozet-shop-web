@@ -134,6 +134,12 @@ export default function ReservationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rsv?._id, rsv?.deadline]);
 
+  // Fee not yet settled — the backend self-heals a cleared-but-unflagged fee
+  // on this very fetch, so this state only shows while payment is genuinely
+  // outstanding (and the reservation auto-cancels if it never completes).
+  const isPendingActivation =
+    raw?.is_pending_activation ??
+    (reservation?.status === 'active' && reservation?.feePaid === false);
   const isCancelled = raw?.is_cancelled || reservation?.status === 'cancelled';
   const isExpired = reservation
     ? raw?.is_expired ||
@@ -147,7 +153,8 @@ export default function ReservationPage() {
       : 0;
 
   const minClaim = reservation ? Math.min(reservation.minCut, remainingYards) : 1;
-  const canClaim = !isExpired && !isCompleted && !isCancelled && remainingYards > 0;
+  const canClaim =
+    !isExpired && !isCompleted && !isCancelled && !isPendingActivation && remainingYards > 0;
 
   const handleClaim = async () => {
     if (!reservation || selectedYards > remainingYards || claiming) return;
@@ -437,8 +444,28 @@ export default function ReservationPage() {
           </div>
         )}
 
+        {/* ── Awaiting activation (fee still settling) ── */}
+        {isPendingActivation && (
+          <div className="flex flex-col items-center" style={{ ...cardStyle, marginTop: '16px', padding: '32px 24px', gap: '12px' }}>
+            <div className="flex items-center justify-center rounded-full" style={{ width: '56px', height: '56px', background: 'rgba(180,83,10,0.1)' }}>
+              <Clock size={26} color="#B4530A" />
+            </div>
+            <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>Almost Ready</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.6 }}>
+              The organizer is completing this reservation&apos;s setup. Check back in a moment — your yards aren&apos;t going anywhere yet.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="transition-all hover:opacity-90"
+              style={{ marginTop: '4px', padding: '13px 32px', borderRadius: '100px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none', cursor: 'pointer' }}
+            >
+              Refresh
+            </button>
+          </div>
+        )}
+
         {/* ── Ended States ── */}
-        {!canClaim && (
+        {!canClaim && !isPendingActivation && (
           <div className="flex flex-col items-center" style={{ ...cardStyle, marginTop: '16px', padding: '32px 24px', gap: '12px' }}>
             <div
               className="flex items-center justify-center rounded-full"
