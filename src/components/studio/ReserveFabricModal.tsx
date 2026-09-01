@@ -87,7 +87,11 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
       });
       const data = res.data?.data ?? res.data;
       const newReservationId = data?.reservation?._id ?? data?._id ?? '';
+      // The backend's payment initializer names the link `paymentUrl` (it also
+      // used to be missed entirely here, which skipped straight to the share
+      // screen with the fee UNPAID — the reservation then never activated).
       const paymentUrl =
+        data?.payment?.paymentUrl ??
         data?.payment?.authorization_url ??
         data?.authorization_url ??
         data?.paymentUrl;
@@ -100,9 +104,12 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
         window.location.href = paymentUrl;
         return;
       }
-      // No payment URL — go straight to the share/confirmation step.
+      // No payment URL — do NOT pretend success: an unpaid reservation never
+      // activates and auto-cancels. Surface it instead.
       setReservationId(newReservationId);
-      setStep('confirmed');
+      setError(
+        'Reservation created but the fee payment could not be started. Open Profile → Reserved Fabric to pay the fee.',
+      );
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
