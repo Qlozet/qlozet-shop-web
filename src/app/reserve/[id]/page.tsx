@@ -165,8 +165,12 @@ export default function ReservationPage() {
         yards: selectedYards,
       });
       const d = res.data?.data ?? res.data;
+      // The payment initializer names the link `paymentUrl`.
       const paymentUrl =
-        d?.payment?.authorization_url ?? d?.authorization_url ?? d?.paymentUrl;
+        d?.payment?.paymentUrl ??
+        d?.payment?.authorization_url ??
+        d?.authorization_url ??
+        d?.paymentUrl;
       if (paymentUrl) {
         // Stash the reservation so /payment/verify shows a claim confirmation
         // (and does NOT clear the shopper's unrelated cart) when Paystack

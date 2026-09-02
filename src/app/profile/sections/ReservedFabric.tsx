@@ -67,6 +67,7 @@ export default function ReservedFabric() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -128,6 +129,39 @@ export default function ReservedFabric() {
       });
     } catch {
       toast('Could not copy', { description: shareUrl(id) });
+    }
+  };
+
+  // Retry an outstanding reservation fee — resolves the "Awaiting Payment"
+  // state without cancelling and re-creating the reservation.
+  const handlePayFee = async (row: ReservationRow) => {
+    setPayingId(row.id);
+    try {
+      const res = await api.post(`/reservations/${row.id}/pay-fee`);
+      const d = res.data?.data ?? res.data;
+      if (d?.already_paid) {
+        toast.success('Fee already paid', { description: 'Your reservation is active.' });
+        load();
+        return;
+      }
+      const paymentUrl =
+        d?.payment?.paymentUrl ?? d?.payment?.authorization_url;
+      if (paymentUrl) {
+        try {
+          sessionStorage.setItem('pending_reservation_id', row.id);
+        } catch {
+          /* non-fatal */
+        }
+        window.location.href = paymentUrl;
+        return;
+      }
+      toast.error('Could not start the payment', { description: 'Please try again.' });
+    } catch (err: any) {
+      toast.error('Could not start the payment', {
+        description: err?.response?.data?.message || 'Please try again.',
+      });
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -289,6 +323,19 @@ export default function ReservedFabric() {
 
             {/* Actions */}
             <div className="flex items-center" style={{ padding: '12px 20px', borderTop: '1px solid var(--border-glass)', gap: '8px' }}>
+              {isLive && !row.feePaid && (
+                <button
+                  onClick={() => handlePayFee(row)}
+                  disabled={payingId === row.id}
+                  className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+                  style={{ gap: '6px', padding: '10px', borderRadius: '10px', background: '#064E3B', color: '#FFFFFF', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', border: 'none', cursor: payingId === row.id ? 'wait' : 'pointer' }}
+                >
+                  {payingId === row.id
+                    ? <Loader2 size={13} className="animate-spin" />
+                    : <Clock size={13} />}
+                  Pay Fee
+                </button>
+              )}
               <button
                 onClick={() => handleCopyLink(row.id)}
                 className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
