@@ -45,7 +45,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   minCut = 0,
   soldOut = false,
 }) => {
-  const { fmt: fmtMoney } = useCurrency();
+  const { fmt: fmtMoney, currency } = useCurrency();
   const floor = Math.max(RESERVE_MIN, Math.ceil(minCut));
   // Can't reserve more than what's left; can't reserve at all below the floor.
   const cap = yardsAvailable > 0 ? Math.floor(yardsAvailable) : 0;
@@ -84,6 +84,9 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
         eventName: eventName.trim(),
         totalYards: yards,
         deadline: new Date(deadline).toISOString(),
+        // Non-NGN display currency → the fee charges via Stripe where
+        // available (the backend falls back to ₦/Paystack if not).
+        ...(currency && currency !== 'NGN' ? { currency } : {}),
       });
       const data = res.data?.data ?? res.data;
       const newReservationId = data?.reservation?._id ?? data?._id ?? '';

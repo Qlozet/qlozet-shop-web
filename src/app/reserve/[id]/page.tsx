@@ -28,7 +28,7 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 export default function ReservationPage() {
-  const { fmt: fmtMoney } = useCurrency();
+  const { fmt: fmtMoney, currency } = useCurrency();
   const { user } = useApp();
   const params = useParams();
   const reservationId = params.id as string;
@@ -242,6 +242,8 @@ export default function ReservationPage() {
     try {
       const res = await api.post(`/reservations/${reservation.id}/claim`, {
         yards: selectedYards,
+        // Non-NGN display currency → Stripe where available (₦/Paystack fallback).
+        ...(currency && currency !== 'NGN' ? { currency } : {}),
         ...(wantsDelivery && quote && selectedCourier
           ? {
               address_id: selectedAddressId,
