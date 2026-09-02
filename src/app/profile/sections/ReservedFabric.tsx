@@ -62,7 +62,7 @@ function timeLeftLabel(deadline: string): string {
 }
 
 export default function ReservedFabric() {
-  const { fmt: fmtMoney } = useCurrency();
+  const { fmt: fmtMoney, currency } = useCurrency();
   const [rows, setRows] = useState<ReservationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +137,11 @@ export default function ReservedFabric() {
   const handlePayFee = async (row: ReservationRow) => {
     setPayingId(row.id);
     try {
-      const res = await api.post(`/reservations/${row.id}/pay-fee`);
+      // Charged in the CURRENT display currency — switching the shop to ₦ and
+      // retrying is the escape hatch if Stripe misbehaves in your browser.
+      const res = await api.post(`/reservations/${row.id}/pay-fee`, {
+        currency: currency || 'NGN',
+      });
       const d = res.data?.data ?? res.data;
       if (d?.already_paid) {
         toast.success('Fee already paid', { description: 'Your reservation is active.' });
