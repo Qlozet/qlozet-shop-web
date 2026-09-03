@@ -47,7 +47,10 @@ export interface CartItem {
  * payload still sends the bare product `id`; only line identity uses this.
  */
 export function cartLineId(
-  item: Pick<CartItem, 'id' | 'size' | 'color' | 'applied_fabric_id' | 'selections'>,
+  item: Pick<
+    CartItem,
+    'id' | 'size' | 'color' | 'applied_fabric_id' | 'selections' | 'measurement_set'
+  >,
 ): string {
   return [
     item.id,
@@ -55,6 +58,10 @@ export function cartLineId(
     item.color ?? '',
     item.applied_fabric_id ?? '',
     item.selections ? JSON.stringify(item.selections) : '',
+    // Who the garment is sewn FOR is part of the line's identity: the same
+    // agbada in the same size for Dad and for Mum must be TWO lines, or the
+    // second person's measurement set silently collapses into the first.
+    item.measurement_set ?? '',
   ].join('|');
 }
 

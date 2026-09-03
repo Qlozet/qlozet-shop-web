@@ -332,7 +332,13 @@ export default function OrdersSection({
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: ESPRESSO, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Ruler size={16} color="var(--brand-fill-text)" />
                   </div>
-                  <span style={{ fontSize: '11px', color: MUTE, lineHeight: 1.5 }}>The measurements saved to your profile are used to tailor this order.</span>
+                  <span style={{ fontSize: '11px', color: MUTE, lineHeight: 1.5 }}>
+                    {item.measurementSetName ? (
+                      <>Sewn to <b style={{ color: INK }}>{item.measurementSetName}</b>&apos;s measurements — locked at order time, so later edits to the profile don&apos;t affect this garment.</>
+                    ) : (
+                      'The measurements saved to your profile are used to tailor this order.'
+                    )}
+                  </span>
                 </div>
                 <button onClick={() => setActiveSection('measurements')} className="w-full transition-all hover:opacity-90"
                   style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>

@@ -230,6 +230,9 @@ function mapItem(
     vendorLogo: vendor?.business_logo_url,
     pricing: item.pricing,
     choices: productType === 'custom' ? itemChoices(item) : undefined,
+    // The order-time measurement snapshot's set name ("Dad", "Mum"…) — shown
+    // so the customer can confirm WHO each garment is being sewn for.
+    measurementSetName: (item as any).body_profile?.set_name ?? undefined,
     productId:
       item.product && typeof item.product === 'object'
         ? item.product._id

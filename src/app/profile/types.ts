@@ -117,6 +117,9 @@ export interface OrderItem {
   pricing?: OrderItemPricing;
   /** Custom (customize) item's design choices — populated styles/fabric/etc. */
   choices?: DesignChoice[];
+  /** Name of the measurement set this garment was locked to at order time
+   *  (e.g. "Dad") — from the per-item body_profile snapshot. */
+  measurementSetName?: string;
   /** Catalog product id — used to review the item after delivery. */
   productId?: string;
   /** Vendor business id — used to scope a return request to the right vendor. */
