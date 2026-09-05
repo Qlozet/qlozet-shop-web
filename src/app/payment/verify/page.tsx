@@ -116,7 +116,7 @@ function PaymentVerifyInner() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center"
-      style={{ padding: '48px 20px', background: 'var(--bg-app)' }}
+      style={{ padding: '48px 20px', background: 'var(--bg-base)' }}
     >
       <div
         className="w-full flex flex-col items-center text-center"
@@ -305,7 +305,7 @@ export default function PaymentVerifyPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-app)' }}>
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
           <Loader2 size={38} className="animate-spin" color="var(--brand-fill)" />
         </div>
       }
