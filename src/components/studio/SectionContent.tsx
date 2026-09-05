@@ -68,6 +68,8 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         selectedAccessories={customization.selectedAccessories}
         onToggle={customization.toggleAccessory}
         product={product}
+        clothingType={customization.clothingType}
+        gender={customization.designGender}
       />
     );
   }

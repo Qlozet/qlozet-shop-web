@@ -50,6 +50,10 @@ export interface AccessoryOption {
   imageUrl?: string;
   description?: string;
   extraCost?: number;
+  /** Garment types this embellishment makes sense on. Absent → all types. */
+  appliesTo?: ClothingType[];
+  /** Genders this embellishment is offered to. Absent → everyone. */
+  genders?: DesignGender[];
 }
 
 export interface FitOption {
@@ -108,16 +112,70 @@ export const FABRIC_COLORS = [
   '#FF6347', '#4B0082', '#E8D5B7', '#1A1A1A',
 ];
 
-// ── Accessories ─────────────────────────────────────────────────
+// ── Embellishments ──────────────────────────────────────────────
+// Finishing work the TAILOR applies to the garment (not standalone accessory
+// products — those are shopped normally). Selections ride on the design so the
+// tailor sees exactly what was requested and prices it in their quote — which
+// is why these carry no fixed extraCost.
 
 export const ACCESSORIES: AccessoryOption[] = [
-  { id: 'a1', name: 'Gold Buttons', emoji: '🔘', extraCost: 2000 },
-  { id: 'a2', name: 'Waist Belt', emoji: '🪢', extraCost: 3500 },
-  { id: 'a3', name: 'Embroidery', emoji: '🧵', extraCost: 8000 },
-  { id: 'a4', name: 'Beadwork', emoji: '📿', extraCost: 12000 },
-  { id: 'a5', name: 'Sequin Detail', emoji: '✨', extraCost: 6000 },
-  { id: 'a6', name: 'Lace Trim', emoji: '🎀', extraCost: 4000 },
+  {
+    id: 'a3', name: 'Embroidery', emoji: '🧵',
+    description: 'Handcrafted embroidery patterns that bring intricate detail and cultural richness to the garment.',
+  },
+  {
+    id: 'a4', name: 'Beadwork', emoji: '📿',
+    description: 'Hand-sewn beadwork accents that add texture, color, and a premium artisanal feel.',
+  },
+  {
+    id: 'a7', name: 'Aso-Oke Trim', emoji: '🪡',
+    description: 'Woven aso-oke strips along collars, cuffs or hems for a rich traditional finish.',
+  },
+  {
+    id: 'a8', name: 'Contrast Piping', emoji: '➰',
+    description: 'A slim contrast-colour edge along seams, plackets and pockets for a sharp, tailored look.',
+  },
+  {
+    id: 'a1', name: 'Statement Buttons', emoji: '🔘',
+    appliesTo: ['top', 'full_body'],
+    description: 'Premium gold-toned or covered buttons that finish collars, cuffs, and front closures.',
+  },
+  {
+    id: 'a2', name: 'Waist Belt / Sash', emoji: '🪢',
+    appliesTo: ['full_body'],
+    description: 'A matching structured belt or soft sash to cinch the silhouette and add definition.',
+  },
+  {
+    id: 'a5', name: 'Sequin Detail', emoji: '✨',
+    appliesTo: ['top', 'full_body'], genders: ['female'],
+    description: 'Sparkling sequin detailing for evening and event wear — adds glamour and light-catching movement.',
+  },
+  {
+    id: 'a6', name: 'Lace Trim', emoji: '🎀',
+    appliesTo: ['top', 'full_body'], genders: ['female'],
+    description: 'Delicate lace trim along hems, necklines, or sleeves for a feminine and elegant finish.',
+  },
+  {
+    id: 'a9', name: 'Side Pockets', emoji: '🫙',
+    description: 'Discreet in-seam pockets — practical without breaking the garment’s line.',
+  },
 ];
+
+/**
+ * Embellishments that make sense for the garment being designed. No type or
+ * gender chosen yet → the universally applicable ones.
+ */
+export function filterEmbellishments(
+  clothingType?: ClothingType | null,
+  gender?: DesignGender | null,
+): AccessoryOption[] {
+  return ACCESSORIES.filter((a) => {
+    if (a.appliesTo && clothingType && !a.appliesTo.includes(clothingType)) return false;
+    if (a.appliesTo && !clothingType) return false;
+    if (a.genders && gender && gender !== 'unisex' && !a.genders.includes(gender)) return false;
+    return true;
+  });
+}
 
 // ── Fit Options ─────────────────────────────────────────────────
 
@@ -192,6 +250,7 @@ const SELECTION_CATALOG: Record<string, { id: string; label?: string; name?: str
   neckline: NECKLINES,
   sleeve: SLEEVES,
   fit: FIT_OPTIONS as any,
+  accessories: ACCESSORIES,
 };
 
 function resolveSelection(kind: string, id: unknown): ResolvedSelection | unknown {
@@ -215,7 +274,11 @@ export function enrichSelections(
   if (!selections) return {};
   const out: Record<string, unknown> = { ...(selections as Record<string, unknown>) };
   for (const kind of Object.keys(SELECTION_CATALOG)) {
-    if (selections[kind]) out[kind] = resolveSelection(kind, selections[kind]);
+    if (!selections[kind]) continue;
+    // Multi-select kinds (accessories) are arrays of ids — resolve each.
+    out[kind] = Array.isArray(selections[kind])
+      ? selections[kind].map((id: unknown) => resolveSelection(kind, id))
+      : resolveSelection(kind, selections[kind]);
   }
   return out;
 }

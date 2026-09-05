@@ -86,6 +86,7 @@ export interface CustomizationState {
   setSelectedColor: (id: string | null) => void;
   selectedAccessories: string[];
   toggleAccessory: (id: string) => void;
+  setSelectedAccessories: (ids: string[]) => void;
   selectedAddons: Record<string, string>;
   selectAddon: (addonName: string, variantName: string) => void;
   selectedFit: string | null;
@@ -576,7 +577,7 @@ export function useCustomization({
     selectedFabric, setSelectedFabric,
     appliedFabric, setAppliedFabric,
     selectedColor, setSelectedColor,
-    selectedAccessories, toggleAccessory,
+    selectedAccessories, toggleAccessory, setSelectedAccessories,
     selectedAddons, selectAddon,
     selectedFit, setSelectedFit,
     measurementSetName, setMeasurementSetName,

@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { ACCESSORIES } from '@/data/studio-options';
+import {
+  filterEmbellishments,
+  type ClothingType,
+  type DesignGender,
+} from '@/data/studio-options';
 import { AccessoryCheckbox } from './AccessoryCheckbox';
 
 import { type ApiProduct } from '@/lib/api-types';
@@ -10,12 +14,17 @@ interface AccessoriesPanelProps {
   selectedAccessories: string[];
   onToggle: (id: string) => void;
   product?: ApiProduct;
+  /** Studio mode: what's being designed, to filter the embellishment list. */
+  clothingType?: ClothingType | null;
+  gender?: DesignGender | null;
 }
 
 export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
   selectedAccessories,
   onToggle,
   product,
+  clothingType,
+  gender,
 }) => {
   const productAccessories = product?.clothing?.accessories || [];
 
@@ -32,8 +41,11 @@ export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
     );
   }
 
-  // Use product accessories if available, otherwise fall back to hardcoded (studio mode)
-  const accessoryOptions = productAccessories.length > 0
+  // Product customize mode uses the product's own priced add-ons; studio mode
+  // offers tailor-applied embellishments filtered to the garment being
+  // designed (the tailor prices these in their quote — no fixed costs).
+  const isStudioMode = productAccessories.length === 0;
+  const accessoryOptions = !isStudioMode
     ? productAccessories.map((a) => ({
         // Use the real sub-doc _id so selections map to the product's accessory
         // (customizationExtra and handleAddToCart both look these up by _id).
@@ -44,14 +56,19 @@ export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
         description: a.description,
         extraCost: a.price || 0,
       }))
-    : ACCESSORIES;
+    : filterEmbellishments(clothingType, gender);
 
   return (
     <div style={{ padding: '20px' }}>
-      <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
+      <div className="flex flex-col" style={{ marginBottom: '12px', gap: '3px' }}>
         <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Embellishments
         </span>
+        {isStudioMode && (
+          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            Finishing details your tailor applies to the garment — priced in their quote.
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-2" style={{ gap: '8px' }}>
         {accessoryOptions.map((acc) => (
