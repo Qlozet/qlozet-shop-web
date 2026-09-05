@@ -62,7 +62,7 @@ export const AccessoriesPanel: React.FC<AccessoriesPanelProps> = ({
     <div style={{ padding: '20px' }}>
       <div className="flex flex-col" style={{ marginBottom: '12px', gap: '3px' }}>
         <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Embellishments
+          {isStudioMode ? 'Finishing touches' : 'Accessories'}
         </span>
         {isStudioMode && (
           <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>

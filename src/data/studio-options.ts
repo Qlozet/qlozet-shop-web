@@ -215,13 +215,14 @@ export interface SectionTab {
   label: string;
 }
 
+// No 'details' tab: the free-text notes live inside the Photo & Notes panel,
+// so a separate Details tab rendered an empty body.
 export const STUDIO_TABS: SectionTab[] = [
   { id: 'styles', label: 'STYLE' },
   { id: 'fabric', label: 'FABRIC' },
-  { id: 'accessories', label: 'ACCESSORIES' },
+  { id: 'accessories', label: 'FINISHING' },
   { id: 'fit', label: 'FIT' },
-  { id: 'details', label: 'DETAILS' },
-  { id: 'reference', label: 'PHOTO' },
+  { id: 'reference', label: 'PHOTO & NOTES' },
 ];
 
 export const PRODUCT_TABS: SectionTab[] = [
