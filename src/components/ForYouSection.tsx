@@ -137,9 +137,9 @@ export function ForYouSection({ recentlyViewed, heroImage }: ForYouSectionProps)
             ))}
           </div>
 
-          {/* View All footer */}
+          {/* View All footer — the full recently-viewed list, not the catalog */}
           <Link
-            href="/products"
+            href="/recently-viewed"
             className="flex items-center justify-end transition-opacity hover:opacity-80 mt-auto"
             style={{
               padding: '6px 20px 20px',
