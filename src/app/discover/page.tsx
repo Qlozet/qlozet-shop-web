@@ -224,7 +224,8 @@ export default function DiscoverPage() {
           {[1, 2].map((i) => (
             <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
               <div className="h-3 w-32 bg-[var(--bg-surface-elevated)] rounded" />
-              <div className="flex" style={{ gap: '16px' }}>
+              {/* overflow-hidden: fixed-width placeholders must not widen the page */}
+              <div className="flex overflow-hidden" style={{ gap: '16px' }}>
                 {[1, 2, 3].map((j) => (
                   <div key={j} className="rounded-[24px] bg-[var(--bg-surface-elevated)] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
                 ))}

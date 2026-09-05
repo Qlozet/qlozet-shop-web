@@ -44,7 +44,8 @@ export function VendorDiscountRow({ vendor }: { vendor: ApiBusinessPublic }) {
           <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-surface-elevated)' }} />
           <div style={{ height: '12px', width: '160px', borderRadius: '6px', background: 'var(--bg-surface-elevated)' }} />
         </div>
-        <div className="flex" style={{ gap: '16px' }}>
+        {/* overflow-hidden: fixed-width placeholders must not widen the page */}
+        <div className="flex overflow-hidden" style={{ gap: '16px' }}>
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '160px', aspectRatio: '214/264', borderRadius: '16px', background: 'var(--bg-surface-elevated)' }} />
           ))}
