@@ -98,9 +98,9 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
           </button>
         </div>
 
-        {/* 2. Accessories Capsule */}
+        {/* 2. Finishing (embellishments) Capsule */}
         <div className="group relative flex flex-col items-center bg-[var(--bg-base)] rounded-[24px] shadow-sm border border-[var(--border-glass)]" style={{ gap: '8px', padding: '12px' }}>
-          <ToolbarTooltip label="Accessories" />
+          <ToolbarTooltip label="Finishing" />
           {selectedAccessories.map((accId, idx) => (
             <button
               key={`acc-${idx}`}

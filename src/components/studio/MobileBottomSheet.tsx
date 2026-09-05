@@ -99,10 +99,9 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
   const sectionLabel: Record<string, string> = {
     styles: 'STYLES',
     fabric: 'FABRIC',
-    accessories: 'ACCESSORIES',
+    accessories: 'FINISHING',
     fit: 'FIT',
-    details: 'DETAILS',
-    reference: 'PHOTO',
+    reference: 'PHOTO & NOTES',
   };
 
   // Reset arrow: clears ONLY the open section's selections, with a toast so
@@ -129,19 +128,17 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         customization.selectedAccessories.forEach((id) =>
           customization.toggleAccessory(id),
         );
-        toast('Accessories cleared');
+        toast('Finishing details cleared');
         break;
       case 'fit':
         customization.setSelectedFit(null);
         toast('Fit reset');
         break;
-      case 'details':
-        customization.setUserPrompt('');
-        toast('Details cleared');
-        break;
       case 'reference':
+        // The panel holds both the reference photos and the written notes.
         customization.setReferenceImages([]);
-        toast('Reference photos removed');
+        customization.setUserPrompt('');
+        toast('Photos & notes cleared');
         break;
     }
   };

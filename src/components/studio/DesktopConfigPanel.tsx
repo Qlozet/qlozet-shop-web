@@ -50,9 +50,9 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
   const sectionLabel: Record<string, string> = {
     styles: 'Styles',
     fabric: 'Fabric',
-    accessories: 'Accessories',
+    accessories: 'Finishing',
     fit: 'Fit',
-    reference: 'Reference',
+    reference: 'Photo & Notes',
   };
 
   return (
