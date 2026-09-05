@@ -2040,6 +2040,7 @@ export default function ProductDetailsPage() {
                     price={getProductPrice(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
+                    stockState={p.availability?.state}
                   />
                 </div>
               ))}
@@ -2064,6 +2065,7 @@ export default function ProductDetailsPage() {
                     price={getProductPrice(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
+                    stockState={p.availability?.state}
                   />
                 </div>
               ))}
@@ -2088,6 +2090,7 @@ export default function ProductDetailsPage() {
                     price={getProductPrice(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
+                    stockState={p.availability?.state}
                   />
                 </div>
               ))}
