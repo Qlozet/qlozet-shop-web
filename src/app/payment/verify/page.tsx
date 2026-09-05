@@ -118,17 +118,10 @@ function PaymentVerifyInner() {
       className="min-h-screen flex flex-col items-center justify-center"
       style={{ padding: '48px 20px', background: 'var(--bg-base)' }}
     >
+      {/* Flat on the page — no boxed card around the confirmation. */}
       <div
         className="w-full flex flex-col items-center text-center"
-        style={{
-          maxWidth: '400px',
-          gap: '20px',
-          background: 'var(--bg-base)',
-          border: '1px solid var(--border-glass)',
-          borderRadius: '24px',
-          padding: '40px 28px',
-          boxShadow: '0 8px 40px rgba(70,40,20,0.06)',
-        }}
+        style={{ maxWidth: '400px', gap: '20px' }}
       >
         {status === 'verifying' && (
           <>

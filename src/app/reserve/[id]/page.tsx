@@ -284,11 +284,10 @@ export default function ReservationPage() {
     }
   };
 
+  // Sections sit flat on the page — no boxed-card background/border/shadow.
+  // The radius + clip stay so the hero image keeps its rounded corners.
   const cardStyle: React.CSSProperties = {
-    background: 'var(--bg-base)',
     borderRadius: '24px',
-    border: '1px solid var(--border-glass)',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
     overflow: 'hidden',
   };
 
