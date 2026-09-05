@@ -297,7 +297,7 @@ export default function ReservationPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center"
-        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-app)' }}
+        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-base)' }}
       >
         <Loader2 size={36} color="var(--brand-brown)" className="animate-spin" />
         <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Loading reservation…</p>
@@ -310,7 +310,7 @@ export default function ReservationPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center"
-        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-app)' }}
+        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-base)' }}
       >
         <div
           className="flex items-center justify-center rounded-full"
@@ -336,7 +336,7 @@ export default function ReservationPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-app)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <div className="w-full" style={{ maxWidth: '600px', margin: '0 auto', padding: '0 20px 100px' }}>
 
         {/* Back Link */}
