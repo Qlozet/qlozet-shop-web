@@ -160,6 +160,17 @@ function StudioContent() {
               if (sel.fabric) customization.setSelectedFabric(sel.fabric);
               if (sel.color) customization.setSelectedColor(sel.color);
               if (sel.fit) customization.setSelectedFit(sel.fit);
+              // Embellishments are saved enriched ({id, name, emoji}[]) —
+              // restore the raw ids the panel selects on.
+              if (Array.isArray(sel.accessories)) {
+                customization.setSelectedAccessories(
+                  sel.accessories
+                    .map((a: { id?: string } | string) =>
+                      typeof a === 'string' ? a : a?.id,
+                    )
+                    .filter((x: unknown): x is string => typeof x === 'string'),
+                );
+              }
               if (sel.measurement_set) customization.setMeasurementSetName(sel.measurement_set);
               console.log('[Studio] Restored selections:', sel);
             }
@@ -229,6 +240,9 @@ function StudioContent() {
             fabric: customization.selectedFabric,
             color: customization.selectedColor,
             fit: customization.selectedFit,
+            accessories: customization.selectedAccessories.length
+              ? customization.selectedAccessories
+              : undefined,
             measurement_set: customization.measurementSetName || undefined,
             userPrompt: customization.userPrompt,
           }),
@@ -501,6 +515,9 @@ function StudioContent() {
           fabric: customization.selectedFabric,
           color: customization.selectedColor,
           fit: customization.selectedFit,
+          accessories: customization.selectedAccessories.length
+            ? customization.selectedAccessories
+            : undefined,
           measurement_set: customization.measurementSetName || undefined,
           userPrompt: customization.userPrompt,
         }}

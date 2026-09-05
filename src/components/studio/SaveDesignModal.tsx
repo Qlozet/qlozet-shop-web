@@ -14,6 +14,8 @@ export interface DesignSelections {
   fabric?: string | null;
   color?: string | null;
   fit?: string | null;
+  /** Selected embellishment ids — enriched to {id, name} on save. */
+  accessories?: string[];
   userPrompt?: string;
   /** Saved measurement-set NAME the garment is for (Fit section choice). */
   measurement_set?: string | null;
