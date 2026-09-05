@@ -116,12 +116,19 @@ function PaymentVerifyInner() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center"
-      style={{ padding: '48px 20px', background: 'var(--bg-base)' }}
+      style={{ padding: '48px 20px' }}
     >
-      {/* Flat on the page — no boxed card around the confirmation. */}
       <div
         className="w-full flex flex-col items-center text-center"
-        style={{ maxWidth: '400px', gap: '20px' }}
+        style={{
+          maxWidth: '400px',
+          gap: '20px',
+          background: 'var(--bg-base)',
+          border: '1px solid var(--border-glass)',
+          borderRadius: '24px',
+          padding: '40px 28px',
+          boxShadow: '0 8px 40px rgba(70,40,20,0.06)',
+        }}
       >
         {status === 'verifying' && (
           <>
@@ -298,7 +305,7 @@ export default function PaymentVerifyPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="min-h-screen flex items-center justify-center">
           <Loader2 size={38} className="animate-spin" color="var(--brand-fill)" />
         </div>
       }

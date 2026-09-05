@@ -284,10 +284,11 @@ export default function ReservationPage() {
     }
   };
 
-  // Sections sit flat on the page — no boxed-card background/border/shadow.
-  // The radius + clip stay so the hero image keeps its rounded corners.
   const cardStyle: React.CSSProperties = {
+    background: 'var(--bg-base)',
     borderRadius: '24px',
+    border: '1px solid var(--border-glass)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
     overflow: 'hidden',
   };
 
@@ -296,7 +297,7 @@ export default function ReservationPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center"
-        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-base)' }}
+        style={{ padding: '40px 20px', gap: '16px' }}
       >
         <Loader2 size={36} color="var(--brand-brown)" className="animate-spin" />
         <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Loading reservation…</p>
@@ -309,7 +310,7 @@ export default function ReservationPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center"
-        style={{ padding: '40px 20px', gap: '16px', background: 'var(--bg-base)' }}
+        style={{ padding: '40px 20px', gap: '16px' }}
       >
         <div
           className="flex items-center justify-center rounded-full"
@@ -335,7 +336,7 @@ export default function ReservationPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
+    <div className="min-h-screen">
       <div className="w-full" style={{ maxWidth: '600px', margin: '0 auto', padding: '0 20px 100px' }}>
 
         {/* Back Link */}
