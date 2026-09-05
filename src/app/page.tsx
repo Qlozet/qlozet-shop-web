@@ -118,8 +118,9 @@ function FeedSkeleton() {
     <div className="flex flex-col w-full animate-pulse" style={{ gap: '36px' }}>
       {/* Trending banner skeleton */}
       <div className="rounded-[30px]" style={{ height: '280px', background: 'var(--bg-surface-elevated)' }} />
-      {/* Category skeleton */}
-      <div className="flex" style={{ gap: '20px' }}>
+      {/* Category skeleton — overflow-hidden: fixed-width placeholder cards
+          must never widen the page into a horizontal scroll on mobile. */}
+      <div className="flex overflow-hidden" style={{ gap: '20px' }}>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="rounded-[24px] flex-shrink-0 w-[72vw] max-w-[360px] aspect-square" style={{ background: 'var(--bg-surface-elevated)' }} />
         ))}
@@ -128,7 +129,7 @@ function FeedSkeleton() {
       {[1, 2].map((i) => (
         <div key={i} className="flex flex-col" style={{ gap: '16px' }}>
           <div className="h-3 w-32 rounded" style={{ background: 'var(--bg-surface-elevated)' }} />
-          <div className="flex" style={{ gap: '16px' }}>
+          <div className="flex overflow-hidden" style={{ gap: '16px' }}>
             {[1, 2, 3].map((j) => (
               <div key={j} className="rounded-[24px] flex-shrink-0 w-[72vw] max-w-[360px] h-[500px]" style={{ background: 'var(--bg-surface-elevated)' }} />
             ))}
