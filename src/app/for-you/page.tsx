@@ -493,7 +493,7 @@ export default function ForYouPage() {
       {/* ─────────────────────── RECENTLY VIEWED ─────────────────────── */}
       {validRecent.length > 0 && (
         <section className="flex flex-col" style={{ gap: '16px' }}>
-          <SectionHead title="Pick up where you left off" href="/products" />
+          <SectionHead title="Pick up where you left off" href="/recently-viewed" />
           <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '12px', paddingBottom: '4px' }}>
             {validRecent.slice(0, 12).map((item, idx) => (
               <Link
