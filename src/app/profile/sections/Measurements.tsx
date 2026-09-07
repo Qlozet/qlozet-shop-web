@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Ruler, ChevronRight, ChevronDown, Plus, Minus, Trash2, Sparkles, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { cardStyle } from '../styles';
-import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringTier } from '../types';
+import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringMeta, TailoringTier } from '../types';
 import { MEASUREMENT_LABELS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { MeasurementSkeleton } from '../components/Skeleton';
@@ -60,6 +60,10 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   // beside the 14 body points, editable, saved into the same set.
   const [tailoringValues, setTailoringValues] = useState<Record<string, number>>({});
   const [tailoringTiers, setTailoringTiers] = useState<Record<string, TailoringTier>>({});
+  // Full per-measurement provenance ({tier, mae_cm, method}) + prediction
+  // inputs from the v2 payload — persisted with the set for the vendor's grid.
+  const [predMeta, setPredMeta] = useState<TailoringMeta | undefined>(undefined);
+  const [predInputs, setPredInputs] = useState<Record<string, unknown> | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [saveProfileName, setSaveProfileName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -154,10 +158,12 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   };
 
   // ─── Shared: Tailoring Row (generic key + optional tier chip) ──
-  const TailoringRow = ({ name, cmValue, tier, displayUnit, editable, onChange }: {
+  const TailoringRow = ({ name, cmValue, tier, mae, displayUnit, editable, onChange }: {
     name: string;
     cmValue: number;
     tier?: TailoringTier;
+    /** Expected absolute error in cm, when the model knows it. */
+    mae?: number | null;
     displayUnit: 'cm' | 'inch';
     editable: boolean;
     onChange?: (name: string, cmVal: number) => void;
@@ -165,13 +171,14 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     const displayed = toDisplay(cmValue, displayUnit);
     const step = displayUnit === 'inch' ? 0.25 : 0.5;
     const meta = tier ? TIER_META[tier] : null;
+    const maeNote = typeof mae === 'number' ? ` Typical error: ±${mae} cm.` : '';
     return (
       <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '10px' }}>
         <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
           <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{tailoringLabel(name)}</span>
           {meta && (
             <span
-              title={tier === 'rough' ? 'A rough estimate — please double-check this one' : tier === 'measured' ? 'Measured from your silhouette' : 'Calculated from your other measurements'}
+              title={(tier === 'rough' ? 'A rough estimate — please double-check this one.' : tier === 'measured' ? 'Measured from your silhouette.' : 'Calculated from your other measurements.') + maeNote}
               style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 8px', borderRadius: '100px', color: meta.color, background: meta.bg, whiteSpace: 'nowrap' }}
             >
               {meta.label}
@@ -347,6 +354,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           setTailoringTiers(
             Object.fromEntries(result.tailoring.map((t) => [t.name, t.tier])),
           );
+          setPredMeta(Object.keys(result.meta).length ? result.meta : undefined);
+          setPredInputs(result.inputs);
           setActiveSection('measurement-results');
         }
       };
@@ -677,6 +686,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                     name={name}
                     cmValue={cmVal}
                     tier={tailoringTiers[name]}
+                    mae={predMeta?.[name]?.mae_cm}
                     displayUnit={unit}
                     editable
                     onChange={(n, v) => setTailoringValues(prev => ({ ...prev, [n]: v }))}
@@ -710,12 +720,16 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               unit,
               editValues,
               Object.keys(tailoringValues).length ? tailoringValues : undefined,
+              predMeta,
+              predInputs,
             );
             setIsSaving(false);
             if (ok) {
               setEditValues({ ...EMPTY_MEASUREMENTS });
               setTailoringValues({});
               setTailoringTiers({});
+              setPredMeta(undefined);
+              setPredInputs(undefined);
               setSaveProfileName('');
               setPredictionResult(null);
               setActiveSection('measurements');
@@ -894,6 +908,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                 unit,
                 editValues,
                 Object.keys(tailoringValues).length ? tailoringValues : undefined,
+                profile.tailoringMeta,
               );
               setIsSaving(false);
               if (ok) { setIsEditing(false); setActiveSection('measurements'); }
