@@ -66,6 +66,9 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   const [heightFt, setHeightFt] = useState('');
   const [heightIn, setHeightIn] = useState('');
   const [formWeight, setFormWeight] = useState('');
+  // Weight gets the same unit treatment as height: entered in kg or lbs,
+  // always converted to kg before it reaches the AI prediction.
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [formGender, setFormGender] = useState<'male' | 'female'>(gender);
 
   // Sync gender from app context
@@ -269,8 +272,13 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     if (!isManual) {
       const handlePredict = async () => {
         const heightCm = getHeightCm();
-        const weight = parseFloat(formWeight);
-        if (!heightCm || !weight) return;
+        const entered = parseFloat(formWeight);
+        if (!heightCm || !entered) return;
+        // Canonical unit is kg — lbs entries convert on the way out.
+        const weight =
+          weightUnit === 'lbs'
+            ? Math.round(entered * 0.45359237 * 10) / 10
+            : entered;
 
         const result = await runPrediction(heightCm, weight, formGender);
         if (result) {
@@ -379,15 +387,37 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
           {/* Weight */}
           <div className="flex flex-col" style={{ gap: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight (kg)</label>
-            <input
-              type="number"
-              value={formWeight}
-              onChange={(e) => setFormWeight(e.target.value)}
-              placeholder="70"
-              className="w-full"
-              style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
-            />
+            <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight</label>
+            {/* Unit toggle — mirrors the height CM / FT·IN switch */}
+            <div className="flex" style={{ gap: '0', marginBottom: '6px' }}>
+              {(['kg', 'lbs'] as const).map(u => (
+                <button
+                  key={u}
+                  onClick={() => setWeightUnit(u)}
+                  style={{
+                    padding: '6px 14px', fontSize: '11px', fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer',
+                    border: '1px solid var(--border-glass)',
+                    borderRadius: u === 'kg' ? '8px 0 0 8px' : '0 8px 8px 0',
+                    background: weightUnit === u ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+                    color: weightUnit === u ? 'var(--brand-fill-text)' : 'var(--text-muted)',
+                  }}
+                >
+                  {u.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <div className="relative w-full">
+              <input
+                type="number"
+                value={formWeight}
+                onChange={(e) => setFormWeight(e.target.value)}
+                placeholder={weightUnit === 'kg' ? '70' : '154'}
+                className="w-full"
+                style={{ padding: '14px 16px', paddingRight: '44px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
+              />
+              <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{weightUnit}</span>
+            </div>
           </div>
 
           {/* Error */}
