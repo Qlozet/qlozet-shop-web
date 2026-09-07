@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
   Package, ChevronRight, ArrowLeft, MessageCircle, Ruler, Truck,
-  RotateCcw, Loader2, Store, ShoppingBag, Star,
+  RotateCcw, Loader2, Store, ShoppingBag, Star, ShieldCheck,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -595,19 +595,36 @@ export default function OrdersSection({
   // ═══════════════ ORDERS LIST ═══════════════
   return (
     <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
-      {/* Header card — mirrors the My Measurement landing header */}
+      {/* Header card — mirrors the My Measurement landing header, including
+          its side info card (Fabric Usage there, On-Time Promise here). */}
       <div style={cardStyle}>
-        <div className="flex flex-col" style={{ padding: '24px 20px' }}>
-          <Package size={32} color={INK} strokeWidth={1.5} style={{ marginBottom: '12px' }} />
-          <div className="flex items-center" style={{ gap: '10px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.02em' }}>My Orders</h3>
-            {!loading && !error && (
-              <span style={{ fontSize: '11px', fontWeight: 800, color: BROWN, background: 'rgba(70,40,20,0.08)', padding: '3px 9px', borderRadius: '100px' }}>{orderFilter === 'All' && totalItems > orders.length ? `${orders.length} of ${totalItems}` : filtered.length}</span>
-            )}
+        <div className="flex flex-col lg:flex-row lg:items-start" style={{ padding: '24px 20px', gap: '16px' }}>
+          <div className="flex-1">
+            <Package size={32} color={INK} strokeWidth={1.5} style={{ marginBottom: '12px' }} />
+            <div className="flex items-center" style={{ gap: '10px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.02em' }}>My Orders</h3>
+              {!loading && !error && (
+                <span style={{ fontSize: '11px', fontWeight: 800, color: BROWN, background: 'rgba(70,40,20,0.08)', padding: '3px 9px', borderRadius: '100px' }}>{orderFilter === 'All' && totalItems > orders.length ? `${orders.length} of ${totalItems}` : filtered.length}</span>
+              )}
+            </div>
+            <p style={{ fontSize: '13px', color: MUTE, lineHeight: 1.6, marginTop: '4px', marginBottom: 0 }}>
+              Track deliveries, request returns and review your purchases.
+            </p>
           </div>
-          <p style={{ fontSize: '13px', color: MUTE, lineHeight: 1.6, marginTop: '4px', marginBottom: 0 }}>
-            Track deliveries, request returns and review your purchases.
-          </p>
+
+          {/* On-Time Promise — surfaces the automatic late-delivery
+              compensation the platform already pays into the wallet. */}
+          <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: '16px', padding: '16px 20px', border: '1px solid var(--border-glass)', maxWidth: '260px' }}>
+            <div className="flex items-center" style={{ gap: '8px', marginBottom: '8px' }}>
+              <div className="flex items-center justify-center" style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)' }}>
+                <ShieldCheck size={11} color="#D4AF37" />
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>On-Time Promise</span>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              If a vendor delivers late, we automatically credit compensation to your wallet — no need to ask.
+            </p>
+          </div>
         </div>
       </div>
 
