@@ -84,15 +84,28 @@ export const EMPTY_MEASUREMENTS: MeasurementValues = {
 // Derived by the AI prediction alongside the 14 body points: the numbers a
 // tailor actually cuts from (inseam, sleeve length, nape-to-waist…). Each
 // carries a confidence tier the UI surfaces as a chip.
-export type TailoringTier = 'measured' | 'estimated' | 'rough';
+export type TailoringTier =
+  | 'input'
+  | 'predicted'
+  | 'measured'
+  | 'estimated'
+  | 'rough';
 
 export interface TailoringMeasurement {
   name: string;
   label: string;
   value_cm: number;
   tier: TailoringTier;
+  /** Expected absolute error in cm (per the model's held-out set), if known. */
+  mae_cm?: number | null;
   method?: string;
 }
+
+/** Per-measurement provenance, keyed by name — persisted with the set. */
+export type TailoringMeta = Record<
+  string,
+  { tier?: TailoringTier; mae_cm?: number | null; method?: string }
+>;
 
 /** Display labels; unknown keys fall back to a humanized name. */
 export const TAILORING_LABELS: Record<string, string> = {
@@ -119,6 +132,8 @@ export const tailoringLabel = (key: string): string =>
 
 /** Tier → chip copy + colors. Keep the science in tooltips, not on screen. */
 export const TIER_META: Record<TailoringTier, { label: string; color: string; bg: string }> = {
+  input: { label: 'Entered', color: 'var(--text-muted)', bg: 'var(--bg-surface-elevated)' },
+  predicted: { label: 'Predicted', color: '#166534', bg: 'rgba(34,197,94,0.12)' },
   measured: { label: 'Measured', color: '#166534', bg: 'rgba(34,197,94,0.12)' },
   estimated: { label: 'Calculated', color: 'var(--text-muted)', bg: 'var(--bg-surface-elevated)' },
   rough: { label: 'Verify', color: '#92400E', bg: 'rgba(245,158,11,0.15)' },
@@ -132,6 +147,10 @@ export interface MeasurementProfile {
   values: MeasurementValues;
   /** Extra tailoring keys stored on the set beyond the core 14 (cm). */
   tailoring?: Record<string, number>;
+  /** Per-measurement { tier, mae_cm, method } persisted with the set. */
+  tailoringMeta?: TailoringMeta;
+  /** Prediction inputs (height/weight_kg/gender/variant…) for audit. */
+  inputs?: Record<string, unknown>;
 }
 
 export type ProductType = 'custom' | 'ready-to-wear' | 'fabric' | 'accessories' | 'bespoke';

@@ -8,6 +8,7 @@ import type {
   MeasurementProfile,
   MeasurementValues,
   TailoringMeasurement,
+  TailoringMeta,
   TailoringTier,
 } from '@/app/profile/types';
 import { EMPTY_MEASUREMENTS, tailoringLabel } from '@/app/profile/types';
@@ -20,6 +21,8 @@ interface BackendMeasurementSet {
   active?: boolean;
   is_active?: boolean;
   measurements: Record<string, number>;
+  inputs?: Record<string, unknown> | null;
+  tailoring_meta?: TailoringMeta | null;
 }
 
 // ─── Gradio DataFrame label → MeasurementValues key mapping ───
@@ -100,26 +103,68 @@ function parseDataFrame(data: any): MeasurementValues {
   return result;
 }
 
-// ─── Parse the prediction's derived tailoring measurements ────
-// Shape: derived: [{ name, label, value_cm, tier, method }] — labels come
-// from our own map (the service's are verbose) and tiers are validated.
-function parseDerived(data: any): TailoringMeasurement[] {
-  const raw = Array.isArray(data?.derived) ? data.derived : [];
-  const tiers: TailoringTier[] = ['measured', 'estimated', 'rough'];
-  const out: TailoringMeasurement[] = [];
-  for (const d of raw) {
+const TIERS: TailoringTier[] = ['input', 'predicted', 'measured', 'estimated', 'rough'];
+
+interface ParsedPrediction {
+  values: MeasurementValues;
+  tailoring: TailoringMeasurement[];
+  /** Provenance for EVERY measurement (core 14 included), keyed by name. */
+  meta: TailoringMeta;
+  inputs?: Record<string, unknown>;
+}
+
+// ─── Parse the prediction payload (schema v2, with v1 fallbacks) ──
+// v2: { schema_version: 2, inputs, measurements: [{name,label,value_cm,tier,
+// mae_cm,method}], by_name, cm, in }. The core-14 names route into `values`;
+// everything else becomes a tailoring row. v1's `derived` array and the bare
+// cm map still parse for older Space deploys.
+function parsePrediction(data: any): ParsedPrediction {
+  const values = parseDataFrame(data);
+  const meta: TailoringMeta = {};
+  const tailoring: TailoringMeasurement[] = [];
+
+  const rows = Array.isArray(data?.measurements)
+    ? data.measurements
+    : Array.isArray(data?.derived)
+      ? data.derived
+      : [];
+
+  for (const d of rows) {
     const name = typeof d?.name === 'string' ? normalizeLabel(d.name) : '';
     const value = typeof d?.value_cm === 'number' ? d.value_cm : NaN;
     if (!name || !Number.isFinite(value) || value <= 0) continue;
-    out.push({
+
+    const tier: TailoringTier = TIERS.includes(d?.tier) ? d.tier : 'estimated';
+    meta[name] = {
+      tier,
+      mae_cm: typeof d?.mae_cm === 'number' ? d.mae_cm : null,
+      method: typeof d?.method === 'string' ? d.method : undefined,
+    };
+
+    const coreKey = GRADIO_LABEL_MAP[name] || (name in EMPTY_MEASUREMENTS ? name : undefined);
+    if (coreKey) {
+      // Core 14 — v2 lists them in `measurements` too; keep values in sync.
+      (values as unknown as Record<string, number>)[coreKey] =
+        Math.round(value * 100) / 100;
+      continue;
+    }
+    tailoring.push({
       name,
       label: tailoringLabel(name),
       value_cm: Math.round(value * 10) / 10,
-      tier: tiers.includes(d?.tier) ? d.tier : 'estimated',
+      tier,
+      mae_cm: typeof d?.mae_cm === 'number' ? d.mae_cm : null,
       method: typeof d?.method === 'string' ? d.method : undefined,
     });
   }
-  return out;
+
+  return {
+    values,
+    tailoring,
+    meta,
+    inputs:
+      data?.inputs && typeof data.inputs === 'object' ? data.inputs : undefined,
+  };
 }
 
 // ─── Map backend data to frontend type ────────────────────────
@@ -145,6 +190,8 @@ function mapToProfile(set: BackendMeasurementSet, index: number): MeasurementPro
     unit: set.unit || 'cm',
     values,
     tailoring: Object.keys(tailoring).length ? tailoring : undefined,
+    tailoringMeta: set.tailoring_meta ?? undefined,
+    inputs: set.inputs ?? undefined,
   };
 }
 
@@ -193,7 +240,7 @@ export function useMeasurements() {
     weight: number,
     gender: 'male' | 'female',
     notes?: string,
-  ): Promise<{ values: MeasurementValues; tailoring: TailoringMeasurement[] } | null> => {
+  ): Promise<ParsedPrediction | null> => {
     setIsPredicting(true);
     setPredictionError(null);
     setPredictionResult(null);
@@ -209,10 +256,8 @@ export function useMeasurements() {
       const data = res?.data?.data || res?.data;
       console.log('[Measurements] run-prediction response:', JSON.stringify(data));
 
-      const values = parseDataFrame(data);
-      const tailoring = parseDerived(data);
-      const result = { values, tailoring };
-      setPredictionResult(values);
+      const result = parsePrediction(data);
+      setPredictionResult(result.values);
 
       // Track event
       if (user?.id) {
@@ -244,6 +289,8 @@ export function useMeasurements() {
     unit: 'cm' | 'inch',
     values: MeasurementValues,
     tailoring?: Record<string, number>,
+    meta?: TailoringMeta,
+    inputs?: Record<string, unknown>,
   ): Promise<boolean> => {
     try {
       // Values are ALWAYS held in cm internally (steppers convert only for
@@ -255,6 +302,8 @@ export function useMeasurements() {
         name,
         unit: 'cm' as const,
         measurements: tailoring ? { ...values, ...tailoring } : values,
+        ...(meta ? { tailoring_meta: meta } : {}),
+        ...(inputs ? { inputs } : {}),
       };
       console.log('[Measurements] saveMeasurement request:', JSON.stringify(body));
       const res = await api.post('/measurements/users', body);
@@ -282,6 +331,7 @@ export function useMeasurements() {
     unit: 'cm' | 'inch',
     values: MeasurementValues,
     tailoring?: Record<string, number>,
+    meta?: TailoringMeta,
   ): Promise<boolean> => {
     try {
       // Same cm-canonical rule as saveMeasurement — display unit never
@@ -290,6 +340,7 @@ export function useMeasurements() {
       const body = {
         unit: 'cm' as const,
         measurements: tailoring ? { ...values, ...tailoring } : values,
+        ...(meta ? { tailoring_meta: meta } : {}),
       };
       console.log('[Measurements] updateMeasurement request:', name, JSON.stringify(body));
       const res = await api.patch(`/measurements/users/sets/${encodeURIComponent(name)}`, body);
