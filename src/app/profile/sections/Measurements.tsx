@@ -302,7 +302,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             </p>
           </div>
 
-          {/* Height + Gender */}
+          {/* Height + Weight */}
           <div className="flex" style={{ gap: '12px' }}>
             <div className="flex-1 flex flex-col" style={{ gap: '6px' }}>
               <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Height</label>
@@ -362,61 +362,63 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                 </div>
               )}
             </div>
+            {/* Weight — beside height: the two numeric, unit-toggled inputs
+                pair up, and the wide gender buttons get their own row below. */}
             <div className="flex-1 flex flex-col" style={{ gap: '6px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gender</label>
-              <div className="flex" style={{ gap: '8px' }}>
-                {(['male', 'female'] as const).map(g => (
+              <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight</label>
+              {/* Unit toggle — mirrors the height CM / FT·IN switch */}
+              <div className="flex" style={{ gap: '0', marginBottom: '6px' }}>
+                {(['kg', 'lbs'] as const).map(u => (
                   <button
-                    key={g}
-                    onClick={() => setFormGender(g)}
-                    className="flex-1 transition-all"
+                    key={u}
+                    onClick={() => setWeightUnit(u)}
                     style={{
-                      padding: '14px', borderRadius: '12px',
-                      border: formGender === g ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
-                      background: formGender === g ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)',
-                      fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
-                      cursor: 'pointer', textTransform: 'capitalize',
+                      padding: '6px 14px', fontSize: '11px', fontWeight: 700,
+                      textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer',
+                      border: '1px solid var(--border-glass)',
+                      borderRadius: u === 'kg' ? '8px 0 0 8px' : '0 8px 8px 0',
+                      background: weightUnit === u ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
+                      color: weightUnit === u ? 'var(--brand-fill-text)' : 'var(--text-muted)',
                     }}
                   >
-                    {g}
+                    {u.toUpperCase()}
                   </button>
                 ))}
+              </div>
+              <div className="relative w-full">
+                <input
+                  type="number"
+                  value={formWeight}
+                  onChange={(e) => setFormWeight(e.target.value)}
+                  placeholder={weightUnit === 'kg' ? '70' : '154'}
+                  className="w-full"
+                  style={{ padding: '14px 16px', paddingRight: '44px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
+                />
+                <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{weightUnit}</span>
               </div>
             </div>
           </div>
 
-          {/* Weight */}
+          {/* Gender */}
           <div className="flex flex-col" style={{ gap: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight</label>
-            {/* Unit toggle — mirrors the height CM / FT·IN switch */}
-            <div className="flex" style={{ gap: '0', marginBottom: '6px' }}>
-              {(['kg', 'lbs'] as const).map(u => (
+            <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gender</label>
+            <div className="flex" style={{ gap: '8px' }}>
+              {(['male', 'female'] as const).map(g => (
                 <button
-                  key={u}
-                  onClick={() => setWeightUnit(u)}
+                  key={g}
+                  onClick={() => setFormGender(g)}
+                  className="flex-1 transition-all"
                   style={{
-                    padding: '6px 14px', fontSize: '11px', fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer',
-                    border: '1px solid var(--border-glass)',
-                    borderRadius: u === 'kg' ? '8px 0 0 8px' : '0 8px 8px 0',
-                    background: weightUnit === u ? 'var(--brand-fill)' : 'var(--bg-surface-elevated)',
-                    color: weightUnit === u ? 'var(--brand-fill-text)' : 'var(--text-muted)',
+                    padding: '14px', borderRadius: '12px',
+                    border: formGender === g ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                    background: 'var(--bg-surface-elevated)',
+                    fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
+                    cursor: 'pointer', textTransform: 'capitalize',
                   }}
                 >
-                  {u.toUpperCase()}
+                  {g}
                 </button>
               ))}
-            </div>
-            <div className="relative w-full">
-              <input
-                type="number"
-                value={formWeight}
-                onChange={(e) => setFormWeight(e.target.value)}
-                placeholder={weightUnit === 'kg' ? '70' : '154'}
-                className="w-full"
-                style={{ padding: '14px 16px', paddingRight: '44px', borderRadius: '12px', border: '1px solid var(--border-glass)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-surface-elevated)', outline: 'none' }}
-              />
-              <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{weightUnit}</span>
             </div>
           </div>
 
