@@ -4,8 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { trackEventDirect } from '@/hooks/useTrackEvent';
 import { useApp } from '@/context/AppContext';
-import type { MeasurementProfile, MeasurementValues } from '@/app/profile/types';
-import { EMPTY_MEASUREMENTS } from '@/app/profile/types';
+import type {
+  MeasurementProfile,
+  MeasurementValues,
+  TailoringMeasurement,
+  TailoringTier,
+} from '@/app/profile/types';
+import { EMPTY_MEASUREMENTS, tailoringLabel } from '@/app/profile/types';
 
 // ─── Backend response shape ───────────────────────────────────
 interface BackendMeasurementSet {
@@ -57,6 +62,12 @@ function normalizeLabel(raw: string): string {
 function parseDataFrame(data: any): MeasurementValues {
   const result: MeasurementValues = { ...EMPTY_MEASUREMENTS };
 
+  // Newest shape: { cm: { 'arm-length': 50.4, ... }, in: {...}, derived: [...] }
+  // — cm is canonical; the kebab-case keys normalize through the label map.
+  if (data?.cm && typeof data.cm === 'object' && !Array.isArray(data.cm)) {
+    return parseDataFrame(data.cm);
+  }
+
   // Format: { headers: ["Measurement", "cm", "inches"], data: [["Chest", 95.2, 37.5], ...] }
   if (data?.headers && data?.data && Array.isArray(data.data)) {
     const cmIndex = data.headers.findIndex((h: string) =>
@@ -89,14 +100,40 @@ function parseDataFrame(data: any): MeasurementValues {
   return result;
 }
 
+// ─── Parse the prediction's derived tailoring measurements ────
+// Shape: derived: [{ name, label, value_cm, tier, method }] — labels come
+// from our own map (the service's are verbose) and tiers are validated.
+function parseDerived(data: any): TailoringMeasurement[] {
+  const raw = Array.isArray(data?.derived) ? data.derived : [];
+  const tiers: TailoringTier[] = ['measured', 'estimated', 'rough'];
+  const out: TailoringMeasurement[] = [];
+  for (const d of raw) {
+    const name = typeof d?.name === 'string' ? normalizeLabel(d.name) : '';
+    const value = typeof d?.value_cm === 'number' ? d.value_cm : NaN;
+    if (!name || !Number.isFinite(value) || value <= 0) continue;
+    out.push({
+      name,
+      label: tailoringLabel(name),
+      value_cm: Math.round(value * 10) / 10,
+      tier: tiers.includes(d?.tier) ? d.tier : 'estimated',
+      method: typeof d?.method === 'string' ? d.method : undefined,
+    });
+  }
+  return out;
+}
+
 // ─── Map backend data to frontend type ────────────────────────
 function mapToProfile(set: BackendMeasurementSet, index: number): MeasurementProfile {
   const values: MeasurementValues = { ...EMPTY_MEASUREMENTS };
+  const tailoring: Record<string, number> = {};
 
   if (set.measurements) {
     for (const [key, val] of Object.entries(set.measurements)) {
       if (key in values) {
         (values as unknown as Record<string, number>)[key] = val;
+      } else if (typeof val === 'number' && Number.isFinite(val) && val > 0) {
+        // Tailoring keys saved beyond the core 14 (inseam, sleeve_length…).
+        tailoring[key] = val;
       }
     }
   }
@@ -107,6 +144,7 @@ function mapToProfile(set: BackendMeasurementSet, index: number): MeasurementPro
     isDefault: set.active || set.is_active || false,
     unit: set.unit || 'cm',
     values,
+    tailoring: Object.keys(tailoring).length ? tailoring : undefined,
   };
 }
 
@@ -155,7 +193,7 @@ export function useMeasurements() {
     weight: number,
     gender: 'male' | 'female',
     notes?: string,
-  ): Promise<MeasurementValues | null> => {
+  ): Promise<{ values: MeasurementValues; tailoring: TailoringMeasurement[] } | null> => {
     setIsPredicting(true);
     setPredictionError(null);
     setPredictionResult(null);
@@ -171,8 +209,10 @@ export function useMeasurements() {
       const data = res?.data?.data || res?.data;
       console.log('[Measurements] run-prediction response:', JSON.stringify(data));
 
-      const result = parseDataFrame(data);
-      setPredictionResult(result);
+      const values = parseDataFrame(data);
+      const tailoring = parseDerived(data);
+      const result = { values, tailoring };
+      setPredictionResult(values);
 
       // Track event
       if (user?.id) {
@@ -197,13 +237,20 @@ export function useMeasurements() {
   }, [user?.id]);
 
   // ─── Save a measurement set ─────────────────────────────────
+  // `tailoring` rides in the same measurements map (open-keyed server-side);
+  // the order snapshot copies it wholesale, so vendors sew from these too.
   const saveMeasurement = useCallback(async (
     name: string,
     unit: 'cm' | 'inch',
     values: MeasurementValues,
+    tailoring?: Record<string, number>,
   ): Promise<boolean> => {
     try {
-      const body = { name, unit, measurements: values };
+      const body = {
+        name,
+        unit,
+        measurements: tailoring ? { ...values, ...tailoring } : values,
+      };
       console.log('[Measurements] saveMeasurement request:', JSON.stringify(body));
       const res = await api.post('/measurements/users', body);
       console.log('[Measurements] saveMeasurement response:', res?.status, JSON.stringify(res?.data));
@@ -229,9 +276,13 @@ export function useMeasurements() {
     name: string,
     unit: 'cm' | 'inch',
     values: MeasurementValues,
+    tailoring?: Record<string, number>,
   ): Promise<boolean> => {
     try {
-      const body = { unit, measurements: values };
+      const body = {
+        unit,
+        measurements: tailoring ? { ...values, ...tailoring } : values,
+      };
       console.log('[Measurements] updateMeasurement request:', name, JSON.stringify(body));
       const res = await api.patch(`/measurements/users/sets/${encodeURIComponent(name)}`, body);
       console.log('[Measurements] updateMeasurement response:', res?.status, JSON.stringify(res?.data));
