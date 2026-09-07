@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Ruler, ChevronRight, ChevronDown, Plus, Minus, Trash2, Sparkles, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { cardStyle } from '../styles';
-import type { ActiveSection, MeasurementProfile, MeasurementValues } from '../types';
-import { MEASUREMENT_LABELS, EMPTY_MEASUREMENTS } from '../types';
+import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringTier } from '../types';
+import { MEASUREMENT_LABELS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { MeasurementSkeleton } from '../components/Skeleton';
 import { useApp } from '@/context/AppContext';
@@ -56,6 +56,10 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   const [unit, setUnit] = useState<'cm' | 'inch'>('cm');
   const [isEditing, setIsEditing] = useState(false);
   const [editValues, setEditValues] = useState<MeasurementValues>({ ...EMPTY_MEASUREMENTS });
+  // Tailoring measurements (inseam, sleeve length…) — derived by the AI
+  // beside the 14 body points, editable, saved into the same set.
+  const [tailoringValues, setTailoringValues] = useState<Record<string, number>>({});
+  const [tailoringTiers, setTailoringTiers] = useState<Record<string, TailoringTier>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveProfileName, setSaveProfileName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -145,6 +149,60 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             <Plus size={14} color="var(--text-primary)" />
           </button>
         </div>
+      </div>
+    );
+  };
+
+  // ─── Shared: Tailoring Row (generic key + optional tier chip) ──
+  const TailoringRow = ({ name, cmValue, tier, displayUnit, editable, onChange }: {
+    name: string;
+    cmValue: number;
+    tier?: TailoringTier;
+    displayUnit: 'cm' | 'inch';
+    editable: boolean;
+    onChange?: (name: string, cmVal: number) => void;
+  }) => {
+    const displayed = toDisplay(cmValue, displayUnit);
+    const step = displayUnit === 'inch' ? 0.25 : 0.5;
+    const meta = tier ? TIER_META[tier] : null;
+    return (
+      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '10px' }}>
+        <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
+          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{tailoringLabel(name)}</span>
+          {meta && (
+            <span
+              title={tier === 'rough' ? 'A rough estimate — please double-check this one' : tier === 'measured' ? 'Measured from your silhouette' : 'Calculated from your other measurements'}
+              style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 8px', borderRadius: '100px', color: meta.color, background: meta.bg, whiteSpace: 'nowrap' }}
+            >
+              {meta.label}
+            </span>
+          )}
+        </div>
+        {editable && onChange ? (
+          <div className="flex items-center" style={{ gap: '0', flexShrink: 0 }}>
+            <button
+              onClick={() => onChange(name, toCm(Math.max(0, Math.round((displayed - step) * 100) / 100), displayUnit))}
+              className="flex items-center justify-center transition-all active:scale-90"
+              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer' }}
+            >
+              <Minus size={14} color="var(--text-primary)" />
+            </button>
+            <span style={{ width: '56px', textAlign: 'center', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {displayed || 0}
+            </span>
+            <button
+              onClick={() => onChange(name, toCm(Math.round((displayed + step) * 100) / 100, displayUnit))}
+              className="flex items-center justify-center transition-all active:scale-90"
+              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer' }}
+            >
+              <Plus size={14} color="var(--text-primary)" />
+            </button>
+          </div>
+        ) : (
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', flexShrink: 0 }}>
+            {displayed || 0} {displayUnit === 'inch' ? 'in' : 'cm'}
+          </span>
+        )}
       </div>
     );
   };
@@ -282,7 +340,13 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
 
         const result = await runPrediction(heightCm, weight, formGender);
         if (result) {
-          setEditValues(result);
+          setEditValues(result.values);
+          setTailoringValues(
+            Object.fromEntries(result.tailoring.map((t) => [t.name, t.value_cm])),
+          );
+          setTailoringTiers(
+            Object.fromEntries(result.tailoring.map((t) => [t.name, t.tier])),
+          );
           setActiveSection('measurement-results');
         }
       };
@@ -596,6 +660,33 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           </div>
         </div>
 
+        {/* Tailoring measurements — what a tailor actually cuts from */}
+        {Object.keys(tailoringValues).length > 0 && (
+          <>
+            <div className="flex flex-col" style={{ gap: '3px' }}>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Tailoring measurements</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Derived for your tailor — amber ones are estimates worth double-checking.
+              </span>
+            </div>
+            <div style={cardStyle}>
+              <div className="flex flex-col">
+                {Object.entries(tailoringValues).map(([name, cmVal]) => (
+                  <TailoringRow
+                    key={name}
+                    name={name}
+                    cmValue={cmVal}
+                    tier={tailoringTiers[name]}
+                    displayUnit={unit}
+                    editable
+                    onChange={(n, v) => setTailoringValues(prev => ({ ...prev, [n]: v }))}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Profile name input */}
         <div className="flex flex-col" style={{ gap: '6px' }}>
           <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Profile Name</label>
@@ -614,10 +705,17 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           onClick={async () => {
             if (!saveProfileName.trim()) return;
             setIsSaving(true);
-            const ok = await saveMeasurement(saveProfileName.trim(), unit, editValues);
+            const ok = await saveMeasurement(
+              saveProfileName.trim(),
+              unit,
+              editValues,
+              Object.keys(tailoringValues).length ? tailoringValues : undefined,
+            );
             setIsSaving(false);
             if (ok) {
               setEditValues({ ...EMPTY_MEASUREMENTS });
+              setTailoringValues({});
+              setTailoringTiers({});
               setSaveProfileName('');
               setPredictionResult(null);
               setActiveSection('measurements');
@@ -683,7 +781,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               </>
             ) : (
               <button
-                onClick={() => { setIsEditing(true); setEditValues({ ...profile.values }); }}
+                onClick={() => { setIsEditing(true); setEditValues({ ...profile.values }); setTailoringValues({ ...(profile.tailoring ?? {}) }); }}
                 className="transition-all hover:opacity-80 active:scale-95"
                 style={{ padding: '8px 20px', borderRadius: '8px', background: 'var(--brand-fill)', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: 'var(--brand-fill-text)', textTransform: 'uppercase', letterSpacing: '0.08em' }}
               >
@@ -761,12 +859,42 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           </div>
         </div>
 
+        {/* Tailoring measurements stored on this set */}
+        {(() => {
+          const t = isEditing ? tailoringValues : (profile.tailoring ?? {});
+          if (Object.keys(t).length === 0) return null;
+          return (
+            <>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Tailoring measurements</span>
+              <div style={cardStyle}>
+                <div className="flex flex-col">
+                  {Object.entries(t).map(([name, cmVal]) => (
+                    <TailoringRow
+                      key={name}
+                      name={name}
+                      cmValue={cmVal}
+                      displayUnit={unit}
+                      editable={isEditing}
+                      onChange={(n, v) => setTailoringValues(prev => ({ ...prev, [n]: v }))}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          );
+        })()}
+
         {/* Save edits */}
         {isEditing && (
           <button
             onClick={async () => {
               setIsSaving(true);
-              const ok = await updateMeasurement(profile.name, unit, editValues);
+              const ok = await updateMeasurement(
+                profile.name,
+                unit,
+                editValues,
+                Object.keys(tailoringValues).length ? tailoringValues : undefined,
+              );
               setIsSaving(false);
               if (ok) { setIsEditing(false); setActiveSection('measurements'); }
             }}

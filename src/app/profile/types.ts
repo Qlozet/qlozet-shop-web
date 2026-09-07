@@ -80,12 +80,58 @@ export const EMPTY_MEASUREMENTS: MeasurementValues = {
   height: 0, shoulder_to_crotch: 0,
 };
 
+// ── Tailoring measurements ──────────────────────────────────────
+// Derived by the AI prediction alongside the 14 body points: the numbers a
+// tailor actually cuts from (inseam, sleeve length, nape-to-waist…). Each
+// carries a confidence tier the UI surfaces as a chip.
+export type TailoringTier = 'measured' | 'estimated' | 'rough';
+
+export interface TailoringMeasurement {
+  name: string;
+  label: string;
+  value_cm: number;
+  tier: TailoringTier;
+  method?: string;
+}
+
+/** Display labels; unknown keys fall back to a humanized name. */
+export const TAILORING_LABELS: Record<string, string> = {
+  inseam: 'Inside Leg (Inseam)',
+  outseam: 'Outside Leg (Outseam)',
+  sleeve_length: 'Sleeve Length',
+  nape_to_waist: 'Back Length (Nape–Waist)',
+  neck: 'Neck',
+  neck_base: 'Neck Base',
+  knee: 'Knee',
+  mid_thigh: 'Mid Thigh',
+  lower_thigh: 'Lower Thigh',
+  belly_waist: 'Belly Waist',
+  top_hip: 'High Hip',
+  under_bust: 'Under Bust',
+  waist_height: 'Waist Height',
+  ankle_height: 'Ankle Height',
+  neck_height: 'Neck Height',
+};
+
+export const tailoringLabel = (key: string): string =>
+  TAILORING_LABELS[key] ??
+  key.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** Tier → chip copy + colors. Keep the science in tooltips, not on screen. */
+export const TIER_META: Record<TailoringTier, { label: string; color: string; bg: string }> = {
+  measured: { label: 'Measured', color: '#166534', bg: 'rgba(34,197,94,0.12)' },
+  estimated: { label: 'Calculated', color: 'var(--text-muted)', bg: 'var(--bg-surface-elevated)' },
+  rough: { label: 'Verify', color: '#92400E', bg: 'rgba(245,158,11,0.15)' },
+};
+
 export interface MeasurementProfile {
   id: string;
   name: string;
   isDefault: boolean;
   unit: 'cm' | 'inch';
   values: MeasurementValues;
+  /** Extra tailoring keys stored on the set beyond the core 14 (cm). */
+  tailoring?: Record<string, number>;
 }
 
 export type ProductType = 'custom' | 'ready-to-wear' | 'fabric' | 'accessories' | 'bespoke';
