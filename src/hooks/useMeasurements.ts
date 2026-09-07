@@ -246,9 +246,14 @@ export function useMeasurements() {
     tailoring?: Record<string, number>,
   ): Promise<boolean> => {
     try {
+      // Values are ALWAYS held in cm internally (steppers convert only for
+      // display), so the stored unit must be 'cm' regardless of the display
+      // toggle — saving `unit: 'inch'` labeled cm numbers as inches and made
+      // the vendor's converter inflate every measurement by 2.54×.
+      void unit;
       const body = {
         name,
-        unit,
+        unit: 'cm' as const,
         measurements: tailoring ? { ...values, ...tailoring } : values,
       };
       console.log('[Measurements] saveMeasurement request:', JSON.stringify(body));
@@ -279,8 +284,11 @@ export function useMeasurements() {
     tailoring?: Record<string, number>,
   ): Promise<boolean> => {
     try {
+      // Same cm-canonical rule as saveMeasurement — display unit never
+      // touches storage.
+      void unit;
       const body = {
-        unit,
+        unit: 'cm' as const,
         measurements: tailoring ? { ...values, ...tailoring } : values,
       };
       console.log('[Measurements] updateMeasurement request:', name, JSON.stringify(body));
