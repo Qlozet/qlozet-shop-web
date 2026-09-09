@@ -351,6 +351,20 @@ function StudioContent() {
 
   // ─── Reference Upload Overlay ────────────────────────────────
   const [showRefOverlay, setShowRefOverlay] = useState(method === 'reference');
+
+  // CustomerShell mounts the page TWICE (mobile + desktop layout branches,
+  // each display:none'd by breakpoint). The overlay portals to <body>, which
+  // escapes that hiding — so only the instance whose branch is actually
+  // visible may render it, or two identical modals stack up.
+  const studioRootRef = useRef<HTMLDivElement | null>(null);
+  const [inVisibleLayout, setInVisibleLayout] = useState(false);
+  useEffect(() => {
+    const check = () =>
+      setInVisibleLayout(!!studioRootRef.current && studioRootRef.current.offsetParent !== null);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeStatus, setAnalyzeStatus] = useState<string | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -456,6 +470,7 @@ function StudioContent() {
 
   return (
     <div
+      ref={studioRootRef}
       className="relative w-full h-full overflow-hidden flex flex-col lg:flex-row"
       style={{
         backgroundColor: 'var(--bg-surface)',
@@ -588,7 +603,7 @@ function StudioContent() {
       {/* ─── Reference Upload Overlay ─── */}
       {/* Portaled to <body>: rendered in-page it sat under the mobile header
           and the z-50 bottom sheet. z-[100] matches the hub's NewDesignModal. */}
-      {showRefOverlay && typeof document !== 'undefined' && createPortal(
+      {showRefOverlay && inVisibleLayout && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
