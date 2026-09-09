@@ -29,6 +29,12 @@ import {
 } from '@/lib/api-types';
 import type { ApiProduct, ApiFeedItem, CartSelections } from '@/lib/api-types';
 import { api } from '@/lib/api';
+import {
+  DEFAULT_TRANSIT_BUFFER,
+  deliveryRange,
+  fetchTransitBuffer,
+  type TransitBuffer,
+} from '@/lib/delivery-estimate';
 import { useCustomization } from '@/hooks/useCustomization';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useBoughtTogether, useCompleteTheLook } from '@/hooks/useRecommendations';
@@ -151,6 +157,23 @@ export default function ProductDetailsPage() {
   const colors = product ? getProductColors(product) : [];
   const tag = product ? getProductTag(product) : '';
   const turnaroundDays = product ? getTurnaroundDays(product) : null;
+  // Estimated delivery = vendor turnaround (if any) + admin-tuned courier
+  // transit buffer, shown as a date range. Defaults render immediately; the
+  // real buffer swaps in once /config/public answers.
+  const [transitBuffer, setTransitBuffer] = useState<TransitBuffer>(DEFAULT_TRANSIT_BUFFER);
+  useEffect(() => {
+    let cancelled = false;
+    fetchTransitBuffer().then((b) => {
+      if (!cancelled) setTransitBuffer(b);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const deliveryEstimate = useMemo(
+    () => deliveryRange(turnaroundDays, transitBuffer),
+    [turnaroundDays, transitBuffer],
+  );
   const isCustomizable = tag === 'CUSTOMIZABLE';
   const isFabric = product?.kind === 'fabric';
   // Fabric-PDP yardage: how many yards the customer wants to buy. Priced at
@@ -1449,10 +1472,9 @@ export default function ProductDetailsPage() {
             >
               <Clock size={14} style={{ color: 'var(--text-muted)' }} />
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {turnaroundDays != null ? (
-                  <>If you order within the next hour, you will get it in <strong style={{ color: 'var(--text-primary)' }}>{turnaroundDays} days</strong>.</>
-                ) : (
-                  <>If you order within the next hour, you will get it in <strong style={{ color: 'var(--text-primary)' }}>2 weeks</strong>.</>
+                Estimated delivery: <strong style={{ color: 'var(--text-primary)' }}>{deliveryEstimate.label}</strong>
+                {turnaroundDays != null && turnaroundDays > 0 && (
+                  <> · includes the vendor&apos;s {turnaroundDays}-day making time</>
                 )}
               </span>
             </div>
