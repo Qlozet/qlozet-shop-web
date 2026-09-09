@@ -384,6 +384,12 @@ function StudioContent() {
       }
       console.log('[Studio] Reference uploaded to Cloudinary:', cloudinaryUrl);
 
+      // Keep the photo as a design reference regardless of how analysis goes —
+      // it must show up in the Photo & Notes section and travel with the design.
+      if (!customization.referenceImages.includes(cloudinaryUrl)) {
+        customization.setReferenceImages([...customization.referenceImages, cloudinaryUrl].slice(0, 3));
+      }
+
       setAnalyzeStatus('Analyzing your reference photo...');
       const res = await api.post('/measurements/analyze-reference', {
         image_url: cloudinaryUrl,
@@ -433,12 +439,16 @@ function StudioContent() {
           }, 2500);
         }
       } else {
-        // No jobId — might be a synchronous response
+        // No jobId — synchronous response; keep any prompt it carried
+        const sync = res?.data?.data ?? res?.data;
+        if (sync?.suggested_prompt) {
+          customization.setUserPrompt(sync.suggested_prompt);
+        }
         setShowRefOverlay(false);
       }
     } catch (err: any) {
       console.error('[Studio] Reference analysis error:', err);
-      setAnalyzeError(err?.response?.data?.message || err?.message || 'Analysis failed. You can still design from scratch.');
+      setAnalyzeError(err?.response?.data?.message || err?.message || 'Analysis failed — if your photo uploaded, it was kept in Photo & Notes.');
     } finally {
       setIsAnalyzing(false);
     }
