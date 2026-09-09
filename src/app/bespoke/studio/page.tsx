@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense, useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
@@ -575,9 +576,11 @@ function StudioContent() {
       )}
 
       {/* ─── Reference Upload Overlay ─── */}
-      {showRefOverlay && (
+      {/* Portaled to <body>: rendered in-page it sat under the mobile header
+          and the z-50 bottom sheet. z-[100] matches the hub's NewDesignModal. */}
+      {showRefOverlay && typeof document !== 'undefined' && createPortal(
         <div
-          className="absolute inset-0 z-30 flex items-center justify-center"
+          className="fixed inset-0 z-[100] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
         >
           <div
@@ -688,7 +691,8 @@ function StudioContent() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
