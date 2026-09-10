@@ -24,6 +24,19 @@ import { type ClothingType, type DesignGender, enrichSelections } from '@/data/s
 //  STUDIO CONTENT
 // ═══════════════════════════════════════════════════════════════
 
+// One /use call per template per page load: CustomerShell mounts the studio
+// TWICE (mobile + desktop layout branches), and without this cache each
+// instance would increment the template's uses counter.
+const templateFetchCache: Record<string, Promise<any>> = {};
+function fetchTemplateUse(id: string): Promise<any> {
+  if (!templateFetchCache[id]) {
+    templateFetchCache[id] = api
+      .post(`/bespoke/templates/${id}/use`)
+      .then((res) => res.data?.data ?? res.data);
+  }
+  return templateFetchCache[id];
+}
+
 function StudioContent() {
   const { user } = useApp();
   const searchParams = useSearchParams();
@@ -204,6 +217,60 @@ function StudioContent() {
   const [deleting, setDeleting] = useState(false);
   // The saved design this studio session points at. Starts as the URL param;
   // set after the first Save so subsequent saves update instead of duplicating.
+  // ─── Seed from a platform template (?template=<id>) ─────────
+  // Templates preload the canvas and selections; the customer then tweaks
+  // and saves a design of their OWN — the template itself is never mutated.
+  const templateId = searchParams.get('template');
+  const [templateLoaded, setTemplateLoaded] = useState(false);
+  useEffect(() => {
+    if (!templateId || loadId || templateLoaded) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const t = await fetchTemplateUse(templateId);
+        if (cancelled || !t) return;
+        if (Array.isArray(t.design_images) && t.design_images.length > 0) {
+          customization.setGeneratedImages(t.design_images);
+          customization.setActiveImageIndex(0);
+        }
+        if (t.description) {
+          try {
+            const parsed = JSON.parse(t.description);
+            const sel = parsed?.selections;
+            if (sel) {
+              if (sel.neckline) customization.setSelectedNeckline(sel.neckline);
+              if (sel.sleeve) customization.setSelectedSleeve(sel.sleeve);
+              if (sel.silhouette) customization.setSelectedSilhouette(sel.silhouette);
+              if (sel.collar) customization.setSelectedCollar(sel.collar);
+              if (sel.color) customization.setSelectedColor(sel.color);
+              if (sel.fit) customization.setSelectedFit(sel.fit);
+              if (Array.isArray(sel.accessories)) {
+                customization.setSelectedAccessories(
+                  sel.accessories
+                    .map((a: { id?: string } | string) =>
+                      typeof a === 'string' ? a : a?.id,
+                    )
+                    .filter((x: unknown): x is string => typeof x === 'string'),
+                );
+              }
+            }
+            if (parsed?.userPrompt) customization.setUserPrompt(parsed.userPrompt);
+          } catch {
+            /* description not JSON — images alone still seed the studio */
+          }
+        }
+      } catch (err) {
+        console.warn('[Studio] Template load failed:', err);
+      } finally {
+        if (!cancelled) setTemplateLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId, loadId, templateLoaded]);
+
   const [savedId, setSavedId] = useState<string | null>(designId ?? resumeId);
 
   const buildPayload = useCallback(
