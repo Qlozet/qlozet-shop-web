@@ -233,6 +233,9 @@ function StudioContent() {
           customization.setGeneratedImages(t.design_images);
           customization.setActiveImageIndex(0);
         }
+        if (Array.isArray(t.reference_images) && t.reference_images.length > 0) {
+          customization.setReferenceImages(t.reference_images.slice(0, 3));
+        }
         if (t.description) {
           try {
             const parsed = JSON.parse(t.description);
