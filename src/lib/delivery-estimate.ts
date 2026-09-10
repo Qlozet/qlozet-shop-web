@@ -5,7 +5,7 @@
 // transit buffer that admins tune in Settings → Orders. It is an ESTIMATE for
 // display — the On-Time Promise machinery works off order deadlines, not this.
 
-import { api } from './api';
+import { fetchPublicConfig, PUBLIC_CONFIG_DEFAULTS } from './public-config';
 
 export interface TransitBuffer {
   min: number;
@@ -14,27 +14,17 @@ export interface TransitBuffer {
 
 // Matches the backend schema defaults; also covers deployed backends that
 // don't have GET /config/public yet.
-export const DEFAULT_TRANSIT_BUFFER: TransitBuffer = { min: 2, max: 5 };
-
-let cached: Promise<TransitBuffer> | null = null;
+export const DEFAULT_TRANSIT_BUFFER: TransitBuffer = {
+  min: PUBLIC_CONFIG_DEFAULTS.delivery_transit_min_days,
+  max: PUBLIC_CONFIG_DEFAULTS.delivery_transit_max_days,
+};
 
 /** Fetch the admin-tuned transit buffer once per page load; never throws. */
 export function fetchTransitBuffer(): Promise<TransitBuffer> {
-  if (!cached) {
-    cached = api
-      .get('/config/public')
-      .then((res) => {
-        const d = res.data?.data ?? res.data;
-        const min = Number(d?.delivery_transit_min_days);
-        const max = Number(d?.delivery_transit_max_days);
-        if (!Number.isFinite(min) || !Number.isFinite(max)) {
-          return DEFAULT_TRANSIT_BUFFER;
-        }
-        return { min, max: Math.max(min, max) };
-      })
-      .catch(() => DEFAULT_TRANSIT_BUFFER);
-  }
-  return cached;
+  return fetchPublicConfig().then((cfg) => ({
+    min: cfg.delivery_transit_min_days,
+    max: Math.max(cfg.delivery_transit_min_days, cfg.delivery_transit_max_days),
+  }));
 }
 
 export interface DeliveryRange {

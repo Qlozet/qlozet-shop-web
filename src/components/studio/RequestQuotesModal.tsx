@@ -9,6 +9,7 @@ import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeD
 import { useVendors } from '@/hooks/useVendors';
 import { enrichSelections } from '@/data/studio-options';
 import type { DesignSelections } from './SaveDesignModal';
+import { fetchPublicConfig } from '@/lib/public-config';
 
 interface RequestQuotesModalProps {
   isOpen: boolean;
@@ -21,11 +22,13 @@ interface RequestQuotesModalProps {
   selections?: DesignSelections;
   designId?: string | null;
   /** Vendors that already hold an ACTIVE quote on this design — shown but
-   *  not selectable, and they consume slots from the 5-vendor cap. */
+   *  not selectable, and they consume slots from the vendor cap. */
   excludeVendorIds?: string[];
 }
 
-const MAX_VENDORS = 5;
+// Fallback while /config/public loads (or on backends without it). The real
+// cap is admin-tuned: platform settings max_quote_vendors_per_design.
+const DEFAULT_MAX_VENDORS = 5;
 
 export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   isOpen,
@@ -51,15 +54,25 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   // Remembers a design saved by a previous attempt so retrying after a
   // failed quote request doesn't create a duplicate design.
   const savedIdRef = useRef<string | null>(null);
+  const [maxVendors, setMaxVendors] = useState(DEFAULT_MAX_VENDORS);
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    let cancelled = false;
+    fetchPublicConfig().then((cfg) => {
+      if (!cancelled) setMaxVendors(cfg.max_quote_vendors_per_design);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!isOpen || !mounted) return null;
 
   // Vendors with active quotes consume cap slots (backend enforces the same).
   const remainingSlots = Math.max(
     0,
-    MAX_VENDORS - (excludeVendorIds?.length ?? 0),
+    maxVendors - (excludeVendorIds?.length ?? 0),
   );
 
   const toggle = (id: string) => {
