@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -73,23 +73,16 @@ const DEMO_DESIGNS: BespokeDesign[] = [
   { id: 'b10', image: '/image/bespoke-agbada-lime.webp', name: 'Lime Grand Agbada', status: 'Draft', date: 'May 5', category: 'Agbada' },
 ];
 
-// Templates
+// Templates — platform-curated starting points, admin-managed.
+// Fetched from GET /bespoke/templates; `uses` is a real counter.
 interface Template {
   id: string;
   image: string;
   name: string;
   uses: number;
   category: string;
+  gender: 'men' | 'women';
 }
-
-const TEMPLATES: Template[] = [
-  { id: 't1', image: '/image/bespoke-kaftan-brown-1.png', name: 'Classic Kaftan', uses: 2400, category: 'Kaftan' },
-  { id: 't2', image: '/image/bespoke-dress-1.png', name: 'Ankara Flare', uses: 1800, category: 'Dresses' },
-  { id: 't3', image: '/image/bespoke-agbada-orange.webp', name: 'Royal Agbada', uses: 3100, category: 'Agbada' },
-  { id: 't4', image: '/image/bespoke-outfit-1.webp', name: 'Modern Pencil', uses: 950, category: 'Dresses' },
-  { id: 't5', image: '/image/bespoke-kaftan-milk-1.png', name: 'Crepe Minimal', uses: 1200, category: 'Kaftan' },
-  { id: 't6', image: '/image/bespoke-ankara-1.png', name: 'Ankara Blazer', uses: 780, category: 'Tops' },
-];
 
 // Community showcase
 interface CommunityDesign {
@@ -429,6 +422,34 @@ function BespokeContent() {
 
   // Page tabs
   const [activeTab, setActiveTab] = useState<'designs' | 'templates' | 'community' | 'quotes'>('designs');
+
+  // ─── Platform templates (admin-curated) ───
+  const [templates, setTemplates] = useState<Template[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/bespoke/templates')
+      .then((res) => {
+        const rows = res.data?.data ?? res.data ?? [];
+        if (cancelled || !Array.isArray(rows)) return;
+        setTemplates(
+          rows.map((t: any) => ({
+            id: t._id,
+            image: t.design_images?.[0] ?? '/image/bespoke-dress-1.png',
+            name: t.name,
+            uses: t.uses ?? 0,
+            category: t.category,
+            gender: t.gender === 'men' ? 'men' : 'women',
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setTemplates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [modalStep, setModalStep] = useState<ModalStep>(null);
@@ -801,9 +822,18 @@ function BespokeContent() {
           </div>
 
           {/* Template grid */}
+          {templates !== null && templates.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center" style={{ padding: '48px 20px' }}>
+              <Layout size={32} color="var(--text-muted)" style={{ marginBottom: '12px' }} />
+              <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Templates are on the way</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', maxWidth: '320px' }}>
+                Our stylists are curating starting points. Meanwhile, start a design from scratch or from a reference photo.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
-            {TEMPLATES.map((t) => (
-              <Link href={`/bespoke/studio?name=${encodeURIComponent(t.name)}&type=${encodeURIComponent(t.category)}`} key={t.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
+            {(templates ?? []).map((t) => (
+              <Link href={`/bespoke/studio?name=${encodeURIComponent(t.name)}&type=${encodeURIComponent(t.category)}&gender=${t.gender}&template=${t.id}`} key={t.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
                 <div className="relative overflow-hidden bg-[var(--bg-surface-elevated)]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
                   <Image src={t.image} alt={t.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end" style={{ padding: '10px' }}>
