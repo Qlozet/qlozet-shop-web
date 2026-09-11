@@ -460,8 +460,13 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
           >
             <div className="w-full max-w-[600px] relative" style={{ pointerEvents: isTopSearchVisible ? 'none' : 'auto' }}>
               
-              {/* Drop-Up Suggestions — appears ABOVE the search bar */}
+              {/* Drop-Up Suggestions — appears ABOVE the search bar.
+                  preventDefault on pointerdown keeps the input from blurring
+                  when a suggestion is tapped — otherwise the blur handler
+                  hides the panel (pointer-events-none) before the tap's
+                  click event lands, and every suggestion needs two taps. */}
               <div
+                onPointerDown={(e) => e.preventDefault()}
                 className={`absolute left-0 w-full rounded-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.1)] border flex flex-col transition-all origin-bottom ${isSearchFocused ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 translate-y-2 pointer-events-none'}`}
                 style={{ bottom: '100%', marginBottom: '12px', padding: '24px', gap: '20px', transitionDuration: '0.35s', background: 'var(--bg-base)', borderColor: 'var(--border-glass)' }}
               >
