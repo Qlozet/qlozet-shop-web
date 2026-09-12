@@ -27,6 +27,24 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   return nodes;
 }
 
+export const headingSlug = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 60);
+
+/** Headings in the markdown body — feeds the article table of contents. */
+export function extractHeadings(content: string): { text: string; id: string }[] {
+  const out: { text: string; id: string }[] = [];
+  for (const line of (content ?? '').split('\n')) {
+    const m = line.match(/^#{1,4}\s+(.*)$/);
+    if (m) out.push({ text: m[1], id: headingSlug(m[1]) });
+  }
+  return out;
+}
+
 export function HelpMarkdown({ content }: { content: string }) {
   const lines = (content ?? '').split('\n');
   const blocks: React.ReactNode[] = [];
@@ -71,11 +89,13 @@ export function HelpMarkdown({ content }: { content: string }) {
       blocks.push(
         <p
           key={k}
+          id={headingSlug(heading[2])}
           style={{
             fontSize: level <= 2 ? '16px' : '14px',
             fontWeight: 800,
             color: 'var(--text-primary)',
             marginTop: '10px',
+            scrollMarginTop: '90px',
           }}
         >
           {renderInline(heading[2], `h${k}`)}
