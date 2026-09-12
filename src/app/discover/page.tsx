@@ -49,13 +49,26 @@ export default function DiscoverPage() {
     [allVendors]
   );
 
-  // Top vendors sorted by rating
-  const worthTheHypeVendors = useMemo(() =>
-    [...stockedVendors]
-      .sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0))
-      .slice(0, 5),
-    [stockedVendors]
-  );
+  // "Worth the Hype": best-REVIEWED shops, Bayesian-weighted so one lucky
+  // 5-star review can't outrank a shop with two hundred 4.8s. Each vendor's
+  // rating is pulled toward the marketplace average (C) until they earn
+  // enough reviews (m) for their own average to dominate:
+  //   score = (n·R + m·C) / (n + m)
+  const worthTheHypeVendors = useMemo(() => {
+    const rated = stockedVendors.filter(
+      (v) => (v.total_ratings ?? 0) > 0 && (v.average_rating ?? 0) > 0
+    );
+    const m = 5; // reviews needed before a vendor's own average dominates
+    const C = rated.length
+      ? rated.reduce((sum, v) => sum + (v.average_rating ?? 0), 0) / rated.length
+      : 0;
+    const score = (v: (typeof stockedVendors)[number]) => {
+      const n = v.total_ratings ?? 0;
+      const r = v.average_rating ?? 0;
+      return n > 0 ? (n * r + m * C) / (n + m) : 0;
+    };
+    return [...stockedVendors].sort((a, b) => score(b) - score(a)).slice(0, 5);
+  }, [stockedVendors]);
 
   // Top shops by total items sold
   const topShops = useMemo(() =>
