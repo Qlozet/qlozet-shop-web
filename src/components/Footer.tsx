@@ -47,10 +47,9 @@ const QUICK_LINKS = [
 
 const SOCIALS = ['Instagram', 'Twitter', 'LinkedIn'];
 
-// Canonical legal pages live on the marketing site (qlozethome). Override
-// with NEXT_PUBLIC_LANDING_URL once the custom domain is live.
+// Canonical legal pages live on the marketing site.
 const LANDING_URL =
-  process.env.NEXT_PUBLIC_LANDING_URL ?? 'https://qlozethome.vercel.app';
+  process.env.NEXT_PUBLIC_LANDING_URL ?? 'https://www.qlozet.app';
 
 export const Footer = () => {
   const year = new Date().getFullYear();
