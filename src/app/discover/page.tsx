@@ -135,11 +135,6 @@ export default function DiscoverPage() {
         <DiscoverHeroBanners banners={HERO_BANNERS} />
       )}
 
-      {/* Personalized "For You" — logged-in only; header opens the For You page */}
-      {user && forYouProducts.length > 0 && (
-        <ProductCarousel title="For You" products={forYouProducts} href="/for-you" />
-      )}
-
       {/* Categories & Collections — show skeletons while loading */}
       {isLoading ? (
         <>
@@ -218,6 +213,12 @@ export default function DiscoverPage() {
         </>
       )}
 
+      {/* Personalized "For You" — logged-in only; sits under Curated For You.
+          Header opens the full For You page. */}
+      {user && forYouProducts.length > 0 && (
+        <ProductCarousel title="For You" products={forYouProducts} href="/for-you" />
+      )}
+
       {/* Loading State for vendor sections */}
       {isLoading && (
         <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
@@ -238,14 +239,14 @@ export default function DiscoverPage() {
       {/* Live data sections — only show after loading */}
       {!isLoading && (
         <>
-          {/* Vendor Deals — self-hides when no vendor has an active discount */}
-          <DealCarousel title="Vendor Deals" vendors={allVendors} allProducts={allProducts} />
-
           {/* Top Shops — showcase cards */}
           <VendorShowcaseCarousel title="Top Shops" vendors={topShops} allProducts={allProducts} />
 
           {/* Worth the Hype */}
           <VendorShowcaseCarousel title="Worth the Hype" vendors={worthTheHypeVendors} allProducts={allProducts} />
+
+          {/* Vendor Deals — self-hides when no vendor has an active discount */}
+          <DealCarousel title="Vendor Deals" vendors={allVendors} allProducts={allProducts} />
         </>
       )}
 
