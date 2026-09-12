@@ -46,7 +46,7 @@ const QUICK_LINKS = [
 ];
 
 const SOCIALS = [
-  { label: 'Instagram', href: 'https://instagram.com/qlozet' },
+  { label: 'Instagram', href: 'https://instagram.com/qlozet_app' },
   { label: 'Twitter', href: '#' }, // no confirmed handle yet
   { label: 'LinkedIn', href: 'https://linkedin.com/company/qlozet' },
 ];
