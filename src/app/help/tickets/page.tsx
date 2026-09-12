@@ -170,9 +170,19 @@ function MyTicketsContent() {
     api
       .get('/tickets')
       .then((res) => {
+        // Envelope → paging object; getPagingData puts the list under `data`
+        // ({ total_items, data: [...] }), older shapes used rows/items.
         const d = res.data?.data ?? res.data;
-        const rows = d?.rows ?? d?.items ?? d ?? [];
-        if (!cancelled) setTickets(Array.isArray(rows) ? rows : []);
+        const rows = Array.isArray(d)
+          ? d
+          : Array.isArray(d?.data)
+            ? d.data
+            : Array.isArray(d?.rows)
+              ? d.rows
+              : Array.isArray(d?.items)
+                ? d.items
+                : [];
+        if (!cancelled) setTickets(rows);
       })
       .catch(() => {
         if (!cancelled) setTickets([]);
