@@ -37,20 +37,23 @@ const CurrencySelect = () => {
 
 const QUICK_LINKS = [
   { label: 'Virtual Fitting', href: '/bespoke' },
-  { label: 'About Us', href: '/' },
-  { label: 'Features', href: '/' },
+  { label: 'About Us', href: 'https://www.qlozet.app/about' },
+  { label: 'Features', href: 'https://www.qlozet.app/whatwedo' },
   { label: 'Help & FAQ', href: '/help' },
   { label: 'Returns', href: '/help' },
   { label: 'Shipping', href: '/help' },
-  { label: 'Contact', href: '/' },
+  { label: 'Contact', href: '/help/contact' },
 ];
 
-const SOCIALS = ['Instagram', 'Twitter', 'LinkedIn'];
+const SOCIALS = [
+  { label: 'Instagram', href: 'https://instagram.com/qlozet' },
+  { label: 'Twitter', href: '#' }, // no confirmed handle yet
+  { label: 'LinkedIn', href: 'https://linkedin.com/company/qlozet' },
+];
 
-// Canonical legal pages live on the marketing site (qlozethome). Override
-// with NEXT_PUBLIC_LANDING_URL once the custom domain is live.
+// Canonical legal pages live on the marketing site.
 const LANDING_URL =
-  process.env.NEXT_PUBLIC_LANDING_URL ?? 'https://qlozethome.vercel.app';
+  process.env.NEXT_PUBLIC_LANDING_URL ?? 'https://www.qlozet.app';
 
 export const Footer = () => {
   const year = new Date().getFullYear();
@@ -142,10 +145,10 @@ export const Footer = () => {
         {/* Social + Region Row */}
         <div className="flex items-center justify-center" style={{ gap: '20px', padding: '16px 0 8px' }}>
           {SOCIALS.map((s, i) => (
-            <React.Fragment key={s}>
+            <React.Fragment key={s.label}>
               {i > 0 && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border-glass)' }} />}
-              <Link href="#" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}>
-                {s}
+              <Link href={s.href} target={s.href.startsWith('http') ? '_blank' : undefined} style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', textDecoration: 'none' }}>
+                {s.label}
               </Link>
             </React.Fragment>
           ))}
@@ -251,12 +254,13 @@ export const Footer = () => {
           <div className="flex items-center" style={{ gap: '22px' }}>
             {SOCIALS.map((s) => (
               <Link
-                key={s}
-                href="#"
+                key={s.label}
+                href={s.href}
+                target={s.href.startsWith('http') ? '_blank' : undefined}
                 className="transition-colors hover:text-[#D4AF37]"
                 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none' }}
               >
-                {s}
+                {s.label}
               </Link>
             ))}
           </div>
@@ -279,14 +283,17 @@ export const Footer = () => {
               <span style={{ color: 'var(--text-muted)' }}>UK</span>
             </span>
             <span style={{ width: '1px', height: '14px', background: 'var(--border-glass)' }} />
-            {['Privacy', 'Terms'].map((l) => (
+            {[
+              { label: 'Privacy', href: `${LANDING_URL}/privacy` },
+              { label: 'Terms', href: `${LANDING_URL}/terms` },
+            ].map((l) => (
               <Link
-                key={l}
-                href="#"
+                key={l.label}
+                href={l.href}
                 className="transition-colors"
                 style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none' }}
               >
-                {l}
+                {l.label}
               </Link>
             ))}
           </div>
