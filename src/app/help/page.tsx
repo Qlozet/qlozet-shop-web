@@ -52,7 +52,7 @@ function HelpHome() {
   const featured = useMemo(() => (articles ?? []).filter((a) => a.featured), [articles]);
 
   return (
-    <div className="flex flex-col w-full animate-fade-in mx-auto" style={{ gap: '28px', maxWidth: '980px' }}>
+    <div className="flex flex-col w-full animate-fade-in mx-auto self-center" style={{ gap: '28px', maxWidth: '980px' }}>
       {/* ── Hero: clean, no card — just title + slim search pill ── */}
       <div
         className="flex flex-col items-center text-center"
