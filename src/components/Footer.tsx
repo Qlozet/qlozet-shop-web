@@ -39,9 +39,9 @@ const QUICK_LINKS = [
   { label: 'Virtual Fitting', href: '/bespoke' },
   { label: 'About Us', href: '/' },
   { label: 'Features', href: '/' },
-  { label: 'Help & FAQ', href: '/' },
-  { label: 'Returns', href: '/' },
-  { label: 'Shipping', href: '/' },
+  { label: 'Help & FAQ', href: '/help' },
+  { label: 'Returns', href: '/help' },
+  { label: 'Shipping', href: '/help' },
   { label: 'Contact', href: '/' },
 ];
 
