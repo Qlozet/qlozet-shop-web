@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -159,7 +159,20 @@ function TicketCard({ ticket, onReplied }: { ticket: CustomerTicket; onReplied: 
 function MyTicketsContent() {
   const { user } = useApp();
   const searchParams = useSearchParams();
-  const justSubmitted = searchParams.get('submitted') === '1';
+  const router = useRouter();
+
+  // One-time confirmation: capture the ?submitted=1 flag, strip it from the
+  // URL immediately (so reloads don't re-show it) and auto-hide shortly.
+  const [justSubmitted, setJustSubmitted] = useState(
+    () => searchParams.get('submitted') === '1'
+  );
+  useEffect(() => {
+    if (searchParams.get('submitted') !== '1') return;
+    router.replace('/help/tickets', { scroll: false });
+    const t = setTimeout(() => setJustSubmitted(false), 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [tickets, setTickets] = useState<CustomerTicket[] | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
