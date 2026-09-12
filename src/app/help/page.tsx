@@ -69,7 +69,8 @@ export default function HelpPage() {
           Help Center
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px' }}>
-          Answers about orders, returns, bespoke designs, measurements and payments.
+          Answers about orders, returns, bespoke designs, measurements and payments.{' '}
+          <Link href="/help/tickets" style={{ color: 'var(--brand-brown)', fontWeight: 600 }}>My tickets</Link>
         </p>
         {/* Search */}
         <div
@@ -173,6 +174,34 @@ export default function HelpPage() {
           </div>
         );
       })}
+
+      {/* Escalation — articles first, humans second */}
+      {articles !== null && (
+        <div
+          className="flex items-center justify-between flex-wrap"
+          style={{
+            gap: '12px', padding: '20px 22px', borderRadius: '20px',
+            background: 'var(--bg-surface-elevated)', marginBottom: '8px',
+          }}
+        >
+          <div className="flex flex-col" style={{ gap: '2px' }}>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Still stuck?</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Our support team replies right here on Qlozet.
+            </p>
+          </div>
+          <Link
+            href="/help/contact"
+            style={{
+              padding: '12px 24px', borderRadius: '100px', background: 'var(--brand-fill)',
+              color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800,
+              textTransform: 'uppercase', letterSpacing: '0.08em', textDecoration: 'none',
+            }}
+          >
+            Contact Support
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
