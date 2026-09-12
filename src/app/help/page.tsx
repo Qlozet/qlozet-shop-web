@@ -52,20 +52,17 @@ function HelpHome() {
   const featured = useMemo(() => (articles ?? []).filter((a) => a.featured), [articles]);
 
   return (
-    <div className="flex flex-col w-full animate-fade-in mx-auto" style={{ gap: '28px', maxWidth: '980px' }}>
-      {/* ── Hero: title + search ── */}
+    <div className="flex flex-col w-full animate-fade-in mx-auto self-center" style={{ gap: '28px', maxWidth: '980px' }}>
+      {/* ── Hero: clean, no card — just title + slim search pill ── */}
       <div
         className="flex flex-col items-center text-center"
-        style={{
-          gap: '14px', padding: '36px 24px', borderRadius: '24px',
-          background: 'var(--bg-surface-elevated)',
-        }}
+        style={{ gap: '12px', paddingTop: '12px' }}
       >
         <h1
           className="font-display font-extrabold uppercase tracking-[0.12em]"
-          style={{ fontSize: '24px', color: 'var(--text-primary)' }}
+          style={{ fontSize: '22px', color: 'var(--text-primary)' }}
         >
-          Customer Care
+          Help Center
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px' }}>
           Answers about orders, returns, bespoke designs, measurements and payments.
@@ -73,18 +70,22 @@ function HelpHome() {
         <div
           className="flex items-center w-full"
           style={{
-            maxWidth: '460px', gap: '10px', padding: '13px 18px',
+            maxWidth: '460px', gap: '10px', padding: '9px 16px', marginTop: '4px',
             borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
           }}
         >
-          <Search size={16} color="var(--text-muted)" />
+          <Search size={15} color="var(--text-muted)" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for answers…"
-            className="flex-1 bg-transparent outline-none border-none min-w-0"
-            style={{ fontSize: '13px', color: 'var(--text-primary)' }}
+            className="flex-1 min-w-0"
+            style={{
+              fontSize: '13px', color: 'var(--text-primary)',
+              background: 'transparent', border: 'none', outline: 'none',
+              boxShadow: 'none', WebkitAppearance: 'none',
+            }}
           />
         </div>
         <Link

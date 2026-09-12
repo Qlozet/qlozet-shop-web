@@ -54,7 +54,7 @@ export default function ContactSupportPage() {
   };
 
   return (
-    <div className="flex flex-col w-full animate-fade-in mx-auto" style={{ gap: '20px', maxWidth: '560px' }}>
+    <div className="flex flex-col w-full animate-fade-in mx-auto self-center" style={{ gap: '20px', maxWidth: '560px' }}>
       <Link
         href="/help"
         className="flex items-center transition-opacity hover:opacity-70"

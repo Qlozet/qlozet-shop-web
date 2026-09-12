@@ -163,8 +163,12 @@ export function HelpRail({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search for answers…"
-            className="flex-1 bg-transparent outline-none border-none min-w-0"
-            style={{ fontSize: '12px', color: 'var(--text-primary)' }}
+            className="flex-1 min-w-0"
+            style={{
+              fontSize: '12px', color: 'var(--text-primary)',
+              background: 'transparent', border: 'none', outline: 'none',
+              boxShadow: 'none', WebkitAppearance: 'none',
+            }}
           />
         </form>
       </div>

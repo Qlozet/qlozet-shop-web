@@ -183,7 +183,7 @@ function MyTicketsContent() {
   }, [user, reloadKey]);
 
   return (
-    <div className="flex flex-col w-full animate-fade-in mx-auto" style={{ gap: '20px', maxWidth: '640px' }}>
+    <div className="flex flex-col w-full animate-fade-in mx-auto self-center" style={{ gap: '20px', maxWidth: '640px' }}>
       <Link
         href="/help"
         className="flex items-center transition-opacity hover:opacity-70"
