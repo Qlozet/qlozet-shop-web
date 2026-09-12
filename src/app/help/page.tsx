@@ -1,83 +1,81 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, ChevronRight, HelpCircle, Search } from 'lucide-react';
-import { api } from '@/lib/api';
+import { useSearchParams } from 'next/navigation';
+import { ChevronRight, HelpCircle, MessageSquare, Search } from 'lucide-react';
+import {
+  categoriesOf,
+  categoryIcon,
+  categorySlug,
+  useHelpArticles,
+  type HelpArticleSummary,
+} from '@/components/help/help-lib';
 
-// Help Center home — admin-curated articles (audience: customer/both).
-// Featured articles render as the "Frequently asked" row; the rest group
-// by category. Search filters client-side over the fetched list.
+// Help Center home — topic cards (each previewing three articles with a
+// See All into its category page), Popular FAQs (featured articles) beside
+// the contact card. Typing in the search collapses everything into a flat
+// result list.
 
-export interface HelpArticleSummary {
-  _id: string;
-  title: string;
-  body: string;
-  category: string;
-  featured?: boolean;
+function ArticleLink({ article, bordered }: { article: HelpArticleSummary; bordered?: boolean }) {
+  return (
+    <Link
+      href={`/help/${article._id}`}
+      className="flex items-center justify-between transition-colors hover:bg-[var(--bg-surface-elevated)]"
+      style={{
+        padding: '13px 18px', textDecoration: 'none',
+        borderTop: bordered ? '1px solid var(--border-glass)' : 'none',
+      }}
+    >
+      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{article.title}</span>
+      <ChevronRight size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+    </Link>
+  );
 }
 
-export default function HelpPage() {
-  const [articles, setArticles] = useState<HelpArticleSummary[] | null>(null);
-  const [query, setQuery] = useState('');
+function HelpHome() {
+  const searchParams = useSearchParams();
+  const articles = useHelpArticles();
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
 
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get('/help/articles?audience=customer')
-      .then((res) => {
-        const rows = res.data?.data ?? res.data ?? [];
-        if (!cancelled && Array.isArray(rows)) setArticles(rows);
-      })
-      .catch(() => {
-        if (!cancelled) setArticles([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
 
-  const filtered = useMemo(() => {
-    if (!articles) return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return articles;
+  const results = useMemo(() => {
+    if (!articles || !searching) return [];
     return articles.filter(
-      (a) =>
-        a.title.toLowerCase().includes(q) || a.body.toLowerCase().includes(q)
+      (a) => a.title.toLowerCase().includes(q) || a.body.toLowerCase().includes(q)
     );
-  }, [articles, query]);
+  }, [articles, q, searching]);
 
-  const featured = filtered.filter((a) => a.featured);
-  const byCategory = useMemo(() => {
-    const map = new Map<string, HelpArticleSummary[]>();
-    for (const a of filtered) {
-      const list = map.get(a.category) ?? [];
-      list.push(a);
-      map.set(a.category, list);
-    }
-    return [...map.entries()];
-  }, [filtered]);
+  const categories = useMemo(() => (articles ? categoriesOf(articles) : []), [articles]);
+  const featured = useMemo(() => (articles ?? []).filter((a) => a.featured), [articles]);
 
   return (
-    <div className="flex flex-col w-full animate-fade-in mx-auto" style={{ gap: '28px', maxWidth: '760px' }}>
-      {/* Header */}
-      <div className="flex flex-col items-center text-center" style={{ gap: '10px', paddingTop: '8px' }}>
+    <div className="flex flex-col w-full animate-fade-in mx-auto" style={{ gap: '28px', maxWidth: '980px' }}>
+      {/* ── Hero: title + search ── */}
+      <div
+        className="flex flex-col items-center text-center"
+        style={{
+          gap: '14px', padding: '36px 24px', borderRadius: '24px',
+          background: 'var(--bg-surface-elevated)',
+        }}
+      >
         <h1
           className="font-display font-extrabold uppercase tracking-[0.12em]"
-          style={{ fontSize: '22px', color: 'var(--text-primary)' }}
+          style={{ fontSize: '24px', color: 'var(--text-primary)' }}
         >
-          Help Center
+          Customer Care
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px' }}>
-          Answers about orders, returns, bespoke designs, measurements and payments.{' '}
-          <Link href="/help/tickets" style={{ color: 'var(--brand-brown)', fontWeight: 600 }}>My tickets</Link>
+          Answers about orders, returns, bespoke designs, measurements and payments.
         </p>
-        {/* Search */}
         <div
           className="flex items-center w-full"
           style={{
-            maxWidth: '480px', gap: '10px', padding: '12px 18px', marginTop: '6px',
+            maxWidth: '460px', gap: '10px', padding: '13px 18px',
             borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
           }}
         >
           <Search size={16} color="var(--text-muted)" />
@@ -85,123 +83,181 @@ export default function HelpPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for answers…"
-            className="flex-1 bg-transparent outline-none border-none"
+            className="flex-1 bg-transparent outline-none border-none min-w-0"
             style={{ fontSize: '13px', color: 'var(--text-primary)' }}
           />
         </div>
+        <Link
+          href="/help/tickets"
+          style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+        >
+          My Tickets →
+        </Link>
       </div>
 
-      {/* Loading */}
+      {/* ── Loading ── */}
       {articles === null && (
-        <div className="flex flex-col animate-pulse" style={{ gap: '12px' }}>
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-[16px] bg-[var(--bg-surface-elevated)]" style={{ height: '58px' }} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="rounded-[20px] bg-[var(--bg-surface-elevated)]" style={{ height: '190px' }} />
           ))}
         </div>
       )}
 
-      {/* Empty */}
-      {articles !== null && filtered.length === 0 && (
-        <div className="flex flex-col items-center text-center" style={{ padding: '48px 20px', gap: '10px' }}>
-          <HelpCircle size={32} color="var(--text-muted)" />
-          <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {query ? 'No answers match your search' : 'Help articles are on the way'}
-          </p>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '320px' }}>
-            {query
-              ? 'Try a different word — or browse the categories below once you clear the search.'
-              : 'We are writing guides for orders, returns, bespoke designs and more.'}
-          </p>
-        </div>
-      )}
-
-      {/* Frequently asked */}
-      {featured.length > 0 && (
+      {/* ── Search results ── */}
+      {articles !== null && searching && (
         <div className="flex flex-col" style={{ gap: '12px' }}>
           <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Frequently Asked
+            {results.length} Result{results.length === 1 ? '' : 's'}
           </h2>
-          <div className="flex flex-col" style={{ gap: '8px' }}>
-            {featured.map((a) => (
-              <Link
-                key={a._id}
-                href={`/help/${a._id}`}
-                className="flex items-center justify-between transition-all hover:-translate-y-0.5 hover:shadow-md"
-                style={{
-                  padding: '14px 18px', borderRadius: '16px', textDecoration: 'none',
-                  background: 'var(--bg-surface-elevated)',
-                }}
-              >
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{a.title}</span>
-                <ChevronRight size={16} color="var(--text-muted)" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Categories */}
-      {byCategory.map(([category, list]) => {
-        const rows = list.filter((a) => !a.featured);
-        if (rows.length === 0) return null;
-        return (
-          <div key={category} className="flex flex-col" style={{ gap: '12px' }}>
-            <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              {category}
-            </h2>
+          {results.length === 0 ? (
+            <div className="flex flex-col items-center text-center" style={{ padding: '40px 20px', gap: '10px' }}>
+              <HelpCircle size={30} color="var(--text-muted)" />
+              <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>No answers match your search</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Try a different word, or{' '}
+                <Link href="/help/contact" style={{ color: 'var(--brand-brown)' }}>contact support</Link>.
+              </p>
+            </div>
+          ) : (
             <div
               className="flex flex-col overflow-hidden"
               style={{ borderRadius: '20px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
             >
-              {rows.map((a, i) => (
-                <Link
-                  key={a._id}
-                  href={`/help/${a._id}`}
-                  className="flex items-center justify-between transition-colors hover:bg-[var(--bg-surface-elevated)]"
-                  style={{
-                    padding: '14px 18px', textDecoration: 'none',
-                    borderTop: i > 0 ? '1px solid var(--border-glass)' : 'none',
-                  }}
-                >
-                  <div className="flex items-center" style={{ gap: '12px' }}>
-                    <BookOpen size={15} color="var(--text-muted)" />
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{a.title}</span>
-                  </div>
-                  <ChevronRight size={16} color="var(--text-muted)" />
-                </Link>
+              {results.map((a, i) => (
+                <ArticleLink key={a._id} article={a} bordered={i > 0} />
               ))}
             </div>
-          </div>
-        );
-      })}
+          )}
+        </div>
+      )}
 
-      {/* Escalation — articles first, humans second */}
-      {articles !== null && (
-        <div
-          className="flex items-center justify-between flex-wrap"
-          style={{
-            gap: '12px', padding: '20px 22px', borderRadius: '20px',
-            background: 'var(--bg-surface-elevated)', marginBottom: '8px',
-          }}
-        >
-          <div className="flex flex-col" style={{ gap: '2px' }}>
-            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Still stuck?</p>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Our support team replies right here on Qlozet.
-            </p>
+      {/* ── Topic cards ── */}
+      {articles !== null && !searching && articles.length > 0 && (
+        <div className="flex flex-col" style={{ gap: '14px' }}>
+          <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            FAQ Topics
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categories.map((c) => {
+              const Icon = categoryIcon(c);
+              const list = articles.filter((a) => a.category === c);
+              return (
+                <div
+                  key={c}
+                  className="flex flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ borderRadius: '20px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
+                >
+                  <Link
+                    href={`/help/category/${categorySlug(c)}`}
+                    className="flex items-center"
+                    style={{ gap: '12px', padding: '16px 18px', textDecoration: 'none', borderBottom: '1px solid var(--border-glass)' }}
+                  >
+                    <div
+                      className="flex items-center justify-center flex-shrink-0"
+                      style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'var(--bg-surface-elevated)' }}
+                    >
+                      <Icon size={17} color="var(--brand-brown)" />
+                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{c}</span>
+                  </Link>
+                  <div className="flex flex-col flex-1">
+                    {list.slice(0, 3).map((a, i) => (
+                      <ArticleLink key={a._id} article={a} bordered={i > 0} />
+                    ))}
+                  </div>
+                  <Link
+                    href={`/help/category/${categorySlug(c)}`}
+                    className="transition-opacity hover:opacity-70"
+                    style={{
+                      padding: '12px 18px 16px', fontSize: '12px', fontWeight: 800,
+                      color: 'var(--brand-brown)', textDecoration: 'underline', textUnderlineOffset: '3px',
+                    }}
+                  >
+                    See All
+                  </Link>
+                </div>
+              );
+            })}
           </div>
-          <Link
-            href="/help/contact"
-            style={{
-              padding: '12px 24px', borderRadius: '100px', background: 'var(--brand-fill)',
-              color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800,
-              textTransform: 'uppercase', letterSpacing: '0.08em', textDecoration: 'none',
-            }}
-          >
-            Contact Support
-          </Link>
+        </div>
+      )}
+
+      {/* ── Popular FAQs + contact ── */}
+      {articles !== null && !searching && articles.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" style={{ marginBottom: '8px' }}>
+          {featured.length > 0 && (
+            <div className="flex flex-col" style={{ gap: '14px' }}>
+              <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Popular FAQs
+              </h2>
+              <div
+                className="flex flex-col overflow-hidden"
+                style={{ borderRadius: '20px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
+              >
+                {featured.map((a, i) => (
+                  <ArticleLink key={a._id} article={a} bordered={i > 0} />
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col" style={{ gap: '14px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Still Stuck?
+            </h2>
+            <div
+              className="flex flex-col justify-between flex-1"
+              style={{ gap: '16px', padding: '22px', borderRadius: '20px', background: 'var(--bg-surface-elevated)' }}
+            >
+              <div className="flex items-start" style={{ gap: '12px' }}>
+                <div
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(139,90,43,0.1)' }}
+                >
+                  <MessageSquare size={16} color="var(--brand-brown)" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Talk to our support team</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.6 }}>
+                    Send us a message and follow the conversation in My Tickets — replies also land in your notifications.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/help/contact"
+                className="text-center transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{
+                  padding: '13px', borderRadius: '12px', background: 'var(--brand-fill)',
+                  color: 'var(--brand-fill-text)', fontSize: '11px', fontWeight: 800,
+                  textTransform: 'uppercase', letterSpacing: '0.08em', textDecoration: 'none',
+                }}
+              >
+                Contact Us Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Empty state ── */}
+      {articles !== null && !searching && articles.length === 0 && (
+        <div className="flex flex-col items-center text-center" style={{ padding: '48px 20px', gap: '10px' }}>
+          <HelpCircle size={32} color="var(--text-muted)" />
+          <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Help articles are on the way</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '320px' }}>
+            We&apos;re writing guides for orders, returns, bespoke designs and more. Need a hand meanwhile?{' '}
+            <Link href="/help/contact" style={{ color: 'var(--brand-brown)' }}>Contact support</Link>.
+          </p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function HelpPage() {
+  return (
+    <Suspense fallback={null}>
+      <HelpHome />
+    </Suspense>
   );
 }
