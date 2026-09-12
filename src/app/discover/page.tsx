@@ -49,13 +49,26 @@ export default function DiscoverPage() {
     [allVendors]
   );
 
-  // Top vendors sorted by rating
-  const worthTheHypeVendors = useMemo(() =>
-    [...stockedVendors]
-      .sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0))
-      .slice(0, 5),
-    [stockedVendors]
-  );
+  // "Worth the Hype": best-REVIEWED shops, Bayesian-weighted so one lucky
+  // 5-star review can't outrank a shop with two hundred 4.8s. Each vendor's
+  // rating is pulled toward the marketplace average (C) until they earn
+  // enough reviews (m) for their own average to dominate:
+  //   score = (n·R + m·C) / (n + m)
+  const worthTheHypeVendors = useMemo(() => {
+    const rated = stockedVendors.filter(
+      (v) => (v.total_ratings ?? 0) > 0 && (v.average_rating ?? 0) > 0
+    );
+    const m = 5; // reviews needed before a vendor's own average dominates
+    const C = rated.length
+      ? rated.reduce((sum, v) => sum + (v.average_rating ?? 0), 0) / rated.length
+      : 0;
+    const score = (v: (typeof stockedVendors)[number]) => {
+      const n = v.total_ratings ?? 0;
+      const r = v.average_rating ?? 0;
+      return n > 0 ? (n * r + m * C) / (n + m) : 0;
+    };
+    return [...stockedVendors].sort((a, b) => score(b) - score(a)).slice(0, 5);
+  }, [stockedVendors]);
 
   // Top shops by total items sold
   const topShops = useMemo(() =>
@@ -133,11 +146,6 @@ export default function DiscoverPage() {
         <CollectionsGrid title="Collections" collections={platformCollections} loading={collectionsLoading} />
       ) : (
         <DiscoverHeroBanners banners={HERO_BANNERS} />
-      )}
-
-      {/* Personalized "For You" — logged-in only; header opens the For You page */}
-      {user && forYouProducts.length > 0 && (
-        <ProductCarousel title="For You" products={forYouProducts} href="/for-you" />
       )}
 
       {/* Categories & Collections — show skeletons while loading */}
@@ -218,6 +226,12 @@ export default function DiscoverPage() {
         </>
       )}
 
+      {/* Personalized "For You" — logged-in only; sits under Curated For You.
+          Header opens the full For You page. */}
+      {user && forYouProducts.length > 0 && (
+        <ProductCarousel title="For You" products={forYouProducts} href="/for-you" />
+      )}
+
       {/* Loading State for vendor sections */}
       {isLoading && (
         <div className="flex flex-col animate-pulse" style={{ gap: '32px' }}>
@@ -238,14 +252,14 @@ export default function DiscoverPage() {
       {/* Live data sections — only show after loading */}
       {!isLoading && (
         <>
-          {/* Vendor Deals — self-hides when no vendor has an active discount */}
-          <DealCarousel title="Vendor Deals" vendors={allVendors} allProducts={allProducts} />
-
           {/* Top Shops — showcase cards */}
           <VendorShowcaseCarousel title="Top Shops" vendors={topShops} allProducts={allProducts} />
 
           {/* Worth the Hype */}
           <VendorShowcaseCarousel title="Worth the Hype" vendors={worthTheHypeVendors} allProducts={allProducts} />
+
+          {/* Vendor Deals — self-hides when no vendor has an active discount */}
+          <DealCarousel title="Vendor Deals" vendors={allVendors} allProducts={allProducts} />
         </>
       )}
 
