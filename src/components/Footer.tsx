@@ -47,6 +47,11 @@ const QUICK_LINKS = [
 
 const SOCIALS = ['Instagram', 'Twitter', 'LinkedIn'];
 
+// Canonical legal pages live on the marketing site (qlozethome). Override
+// with NEXT_PUBLIC_LANDING_URL once the custom domain is live.
+const LANDING_URL =
+  process.env.NEXT_PUBLIC_LANDING_URL ?? 'https://qlozethome.vercel.app';
+
 export const Footer = () => {
   const year = new Date().getFullYear();
 
@@ -156,8 +161,8 @@ export const Footer = () => {
           </div>
           <CurrencySelect />
           <div className="flex items-center" style={{ gap: '12px' }}>
-            <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy</Link>
-            <Link href="#" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</Link>
+            <Link href={`${LANDING_URL}/privacy`} style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy</Link>
+            <Link href={`${LANDING_URL}/terms`} style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</Link>
           </div>
           <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             © {year} Qlozet, Inc.
