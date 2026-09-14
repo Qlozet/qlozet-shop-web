@@ -73,7 +73,16 @@ export default function LoginPage() {
       router.push('/');
     } catch (err: any) {
       setIsLoading(false);
-      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+      const message =
+        err.response?.data?.message ||
+        'Invalid email or password. Please try again.';
+      // Unverified account (fresh or expired code): the backend has already
+      // (re)sent a code — take them straight to the code-entry step.
+      if (/verify your email|verification code expired/i.test(message)) {
+        router.push(`/auth/register?step=otp&email=${encodeURIComponent(email)}`);
+        return;
+      }
+      setError(message);
     }
   };
 
