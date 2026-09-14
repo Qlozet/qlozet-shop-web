@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
@@ -14,15 +14,19 @@ import { OtpInputs } from '@/components/auth/OtpInputs';
 
 type RegisterStep = 'email' | 'personal' | 'password' | 'otp';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { authenticateUser, user } = useApp();
 
-  // Signup Steps Wizard
-  const [step, setStep] = useState<RegisterStep>('email');
+  // Signup Steps Wizard. Login routes unverified users here with
+  // ?step=otp&email=... so they can finish an abandoned signup.
+  const [step, setStep] = useState<RegisterStep>(() =>
+    searchParams.get('step') === 'otp' ? 'otp' : 'email'
+  );
 
   // Form Fields
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [fullName, setFullName] = useState('');
   const [dialCode, setDialCode] = useState('+234');
   const [phone, setPhone] = useState('');
@@ -145,6 +149,21 @@ export default function RegisterPage() {
 
   // Form Handler Step 4 (OTP Verification) — shared by typing/paste (onComplete)
   // and the submit button. Focus + paste handling lives in <OtpInputs />.
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const resendCode = async () => {
+    if (!email) return;
+    setResendMsg('Sending…');
+    try {
+      await api.post('/auth/resend-verification', { email });
+      setResendMsg('A new code is on its way to your email.');
+    } catch (err: any) {
+      setResendMsg(
+        err?.response?.data?.message ??
+          'Could not resend just now — try again shortly.'
+      );
+    }
+  };
+
   const verifyOtp = (code: string) => {
     if (code.length < 6) return;
     setError('');
@@ -365,9 +384,12 @@ export default function RegisterPage() {
                 {/* 4 OTP underline inputs */}
                 <OtpInputs value={otp} onChange={setOtp} onComplete={verifyOtp} idPrefix="otp-m" />
 
-                <button type="button" onClick={() => setStep('otp')} style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-                  Verify from email
+                <button type="button" onClick={resendCode} style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                  Resend code
                 </button>
+                {resendMsg && (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>{resendMsg}</p>
+                )}
               </form>
             </div>
           )}
@@ -919,8 +941,8 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              <button 
-                onClick={() => setStep('otp')}
+              <button
+                onClick={resendCode}
                 style={{
                   fontSize: '13px',
                   color: 'var(--brand-brown)',
@@ -932,8 +954,11 @@ export default function RegisterPage() {
                 }}
                 className="hover:underline"
               >
-                Verify from email
+                Resend code
               </button>
+              {resendMsg && (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '10px' }}>{resendMsg}</p>
+              )}
 
             </div>
           )}
@@ -942,5 +967,13 @@ export default function RegisterPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterContent />
+    </Suspense>
   );
 }
