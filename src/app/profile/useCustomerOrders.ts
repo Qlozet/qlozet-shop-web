@@ -92,13 +92,19 @@ function resolveProductType(
   product: ApiOrderProduct | string | null,
   orderType?: string,
 ): ProductType {
-  if (orderType === 'bespoke') return 'bespoke';
-  if (!product || typeof product === 'string') return 'ready-to-wear';
-  if (product.kind === 'fabric') return 'fabric';
-  if (product.kind === 'accessory') return 'accessories';
-  if (product.kind === 'clothing') {
-    return product.clothing?.type === 'customize' ? 'custom' : 'ready-to-wear';
+  // Check the item's own product FIRST: a bespoke order can carry a real
+  // catalog product (the attached fabric), which must present as itself —
+  // only the productless design line falls back to the order type.
+  if (product && typeof product !== 'string') {
+    if (product.kind === 'fabric') return 'fabric';
+    if (product.kind === 'accessory') return 'accessories';
+    if (product.kind === 'clothing') {
+      return product.clothing?.type === 'customize'
+        ? 'custom'
+        : 'ready-to-wear';
+    }
   }
+  if (orderType === 'bespoke') return 'bespoke';
   return 'ready-to-wear';
 }
 
@@ -209,12 +215,13 @@ function mapItem(
     item.business && typeof item.business === 'object'
       ? item.business
       : undefined;
-  const isBespoke = orderType === 'bespoke';
-  // Bespoke items have no catalog product — the name/image come from the design.
-  const name = isBespoke
-    ? design?.name || 'Custom outfit'
-    : resolveName(item.product);
-  const image = isBespoke
+  // Only the DESIGN line of a bespoke order borrows the design's identity —
+  // an attached fabric item has a real catalog product and shows as itself
+  // (its price was already its own, which made the duplicate look wrong).
+  const catalogName = resolveName(item.product);
+  const isDesignItem = orderType === 'bespoke' && catalogName === 'Product';
+  const name = isDesignItem ? design?.name || 'Custom outfit' : catalogName;
+  const image = isDesignItem
     ? design?.design_images?.[0] || resolveImage(item.product)
     : resolveImage(item.product);
   return {
