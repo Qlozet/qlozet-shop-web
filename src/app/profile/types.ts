@@ -191,7 +191,22 @@ export interface OrderItem {
   businessId?: string;
 }
 
+export interface PreshipReview {
+  photos: string[];
+  note?: string | null;
+  status: 'pending_review' | 'approved' | 'changes_requested';
+  submitted_at?: string;
+  reviewed_at?: string | null;
+  customer_note?: string | null;
+}
+
 export interface Order {
+  /** Order type from the backend ('standard' | 'bespoke' | ...). */
+  type?: string;
+  /** Bespoke pre-ship checkpoint — photos the tailor sent for approval. */
+  preship?: PreshipReview | null;
+  /** Post-delivery fit feedback, once given. */
+  fitFeedback?: { fit: string; comment?: string | null } | null;
   id: string;
   orderNumber: string;
   date: string;

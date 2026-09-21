@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   Package, ChevronRight, ArrowLeft, MessageCircle, Ruler, Truck,
   RotateCcw, Loader2, Store, ShoppingBag, Star, ShieldCheck,
+  BadgeCheck, Clock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -97,6 +98,220 @@ function Section({ title, right, children, pad = '16px 18px' }: {
         {children}
       </div>
     </div>
+  );
+}
+
+const apiErrMsg = (err: unknown, fallback: string) => {
+  const anyErr = err as { response?: { data?: { message?: string | string[] } } };
+  const msg = anyErr?.response?.data?.message;
+  return (Array.isArray(msg) ? msg[0] : msg) || fallback;
+};
+
+// ─── Pre-ship approval (bespoke) ─────────────────────────────
+// The tailor photographs the finished piece and the customer approves before
+// it ships. No response for 72 hours auto-clears the gate on the backend.
+function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) {
+  const [preship, setPreship] = useState(order.preship ?? null);
+  const [requesting, setRequesting] = useState(false);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState<'approve' | 'changes' | null>(null);
+
+  if (!preship) return null;
+  // Once shipped/delivered the checkpoint is history — don't clutter the page.
+  if (preship.status !== 'pending_review' && (order.status === 'Shipped' || order.status === 'Delivered')) return null;
+
+  const decide = async (approve: boolean) => {
+    setBusy(approve ? 'approve' : 'changes');
+    try {
+      const res = await api.post(`/orders/${order.orderNumber}/preship/review`, {
+        approve,
+        note: note.trim() || undefined,
+      });
+      setPreship(res.data?.data ?? {
+        ...preship,
+        status: approve ? 'approved' : 'changes_requested',
+        customer_note: note.trim() || null,
+      });
+      setRequesting(false);
+      setNote('');
+      toast.success(approve ? 'Approved — the tailor will ship your piece.' : 'Change request sent to the tailor.');
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMsg(err, 'Could not send your review. Please try again.'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Section title="Pre-ship Approval">
+      {preship.status === 'approved' && (
+        <div className="flex items-center" style={{ gap: '8px', fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>
+          <BadgeCheck size={15} /> You approved — the tailor is shipping your piece.
+        </div>
+      )}
+      {preship.status === 'changes_requested' && (
+        <div className="flex flex-col" style={{ gap: '6px' }}>
+          <div className="flex items-center" style={{ gap: '8px', fontSize: '12px', fontWeight: 700, color: '#EA6A0E' }}>
+            <RotateCcw size={14} /> Changes requested — waiting for the tailor to resubmit.
+          </div>
+          {preship.customer_note && (
+            <p style={{ fontSize: '12px', color: MUTE, margin: 0 }}>&ldquo;{preship.customer_note}&rdquo;</p>
+          )}
+        </div>
+      )}
+      {preship.status === 'pending_review' && (
+        <p style={{ fontSize: '12.5px', color: MUTE, lineHeight: 1.6, margin: 0 }}>
+          Your outfit is finished! Check the photos below — approve it to ship, or
+          tell the tailor what to adjust. If you don&apos;t respond within 72 hours it
+          ships automatically.
+        </p>
+      )}
+
+      {preship.photos?.length > 0 && (
+        <div className="flex flex-wrap" style={{ gap: '8px' }}>
+          {preship.photos.map((url, i) => (
+            <a key={i} href={url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+              <Image src={url} alt={`Finished piece ${i + 1}`} width={72} height={88}
+                style={{ width: '72px', height: '88px', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--border-glass)' }} />
+            </a>
+          ))}
+        </div>
+      )}
+      {preship.note && (
+        <p style={{ fontSize: '12px', color: MUTE, margin: 0, fontStyle: 'italic' }}>
+          Tailor&apos;s note: {preship.note}
+        </p>
+      )}
+
+      {preship.status === 'pending_review' && (
+        <div className="flex flex-col" style={{ gap: '10px' }}>
+          {requesting && (
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What should the tailor adjust? (e.g. sleeves feel long)"
+              rows={2}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', fontSize: '12.5px', color: INK, resize: 'vertical', outline: 'none' }}
+            />
+          )}
+          <div className="flex" style={{ gap: '8px' }}>
+            {!requesting ? (
+              <>
+                <button onClick={() => decide(true)} disabled={busy !== null}
+                  className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ gap: '6px', padding: '11px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {busy === 'approve' ? <Loader2 size={13} className="animate-spin" /> : <BadgeCheck size={14} />}
+                  Approve
+                </button>
+                <button onClick={() => setRequesting(true)} disabled={busy !== null}
+                  className="flex-1 transition-all hover:opacity-90 disabled:opacity-60"
+                  style={{ padding: '11px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Request Changes
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => decide(false)} disabled={busy !== null || !note.trim()}
+                  className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ gap: '6px', padding: '11px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '11px', fontWeight: 800, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {busy === 'changes' && <Loader2 size={13} className="animate-spin" />}
+                  Send Change Request
+                </button>
+                <button onClick={() => { setRequesting(false); setNote(''); }} disabled={busy !== null}
+                  className="transition-all hover:opacity-90"
+                  style={{ padding: '11px 16px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Back
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+// ─── Fit feedback (bespoke, post-delivery) ───────────────────
+// One rating per order; it aggregates onto the vendor's fit track record.
+const FIT_OPTIONS = [
+  { value: 'perfect', label: 'Fits perfectly', color: '#2D6A4F' },
+  { value: 'minor_issues', label: 'Minor issues', color: '#EA6A0E' },
+  { value: 'poor', label: 'Poor fit', color: '#EF4444' },
+] as const;
+
+function FitFeedbackCard({ order, refetch }: { order: Order; refetch: () => void }) {
+  const [given, setGiven] = useState(order.fitFeedback ?? null);
+  const [fit, setFit] = useState<'perfect' | 'minor_issues' | 'poor' | null>(null);
+  const [comment, setComment] = useState('');
+  const [sending, setSending] = useState(false);
+
+  if (given) {
+    const opt = FIT_OPTIONS.find((o) => o.value === given.fit);
+    return (
+      <Section title="How did it fit?">
+        <div className="flex items-center" style={{ gap: '8px', fontSize: '12px', fontWeight: 700, color: opt?.color ?? INK }}>
+          <BadgeCheck size={15} /> You said: {opt?.label ?? given.fit}. Thanks — this helps us match you better.
+        </div>
+      </Section>
+    );
+  }
+
+  const submit = async () => {
+    if (!fit) return;
+    setSending(true);
+    try {
+      const res = await api.post(`/orders/${order.orderNumber}/fit-feedback`, {
+        fit,
+        comment: comment.trim() || undefined,
+      });
+      setGiven(res.data?.data ?? { fit, comment: comment.trim() || null });
+      toast.success('Thanks for the fit feedback!');
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMsg(err, 'Could not save your feedback. Please try again.'));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Section title="How did it fit?">
+      <p style={{ fontSize: '12.5px', color: MUTE, lineHeight: 1.6, margin: 0 }}>
+        Your honest answer keeps your measurements accurate and holds tailors to their fit record.
+      </p>
+      <div className="flex flex-wrap" style={{ gap: '8px' }}>
+        {FIT_OPTIONS.map((o) => {
+          const active = fit === o.value;
+          return (
+            <button key={o.value} onClick={() => setFit(o.value)}
+              className="transition-all active:scale-95"
+              style={{ padding: '9px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                background: active ? o.color : 'var(--bg-surface-elevated)', color: active ? '#fff' : MUTE,
+                border: active ? 'none' : '1px solid var(--border-glass)' }}>
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      {fit && fit !== 'perfect' && (
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="What was off? (optional — e.g. tight at the shoulders)"
+          rows={2}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', fontSize: '12.5px', color: INK, resize: 'vertical', outline: 'none' }}
+        />
+      )}
+      {fit && (
+        <button onClick={submit} disabled={sending}
+          className="w-full flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ gap: '8px', padding: '12px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {sending && <Loader2 size={14} className="animate-spin" />}
+          {sending ? 'Sending…' : 'Submit Feedback'}
+        </button>
+      )}
+    </Section>
   );
 }
 
@@ -501,8 +716,11 @@ export default function OrdersSection({
 
   // ═══════════════ ORDER DETAIL ═══════════════
   if (activeSection === 'order-detail' && selectedOrder) {
-    const order = selectedOrder;
+    // Re-resolve from the live list so a refetch (e.g. after approving
+    // pre-ship photos) is reflected without reopening the order.
+    const order = orders.find((o) => o.orderNumber === selectedOrder.orderNumber) ?? selectedOrder;
     const pay = paymentLabel(order);
+    const isBespokeOrder = order.type === 'bespoke' || order.items.some((i) => i.productType === 'bespoke');
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '16px' }}>
         <BackBtn onClick={() => setActiveSection('orders')} />
@@ -526,6 +744,17 @@ export default function OrdersSection({
             </div>
           </div>
         </div>
+
+        {/* Bespoke: approve the finished piece before it ships. Keyed on the
+            preship state so a fresh submission remounts with the new photos. */}
+        {isBespokeOrder && order.preship && (
+          <PreshipCard key={`${order.orderNumber}-${order.preship.status}-${order.preship.submitted_at ?? ''}`} order={order} refetch={refetch} />
+        )}
+
+        {/* Bespoke: post-delivery fit rating (once per order). */}
+        {isBespokeOrder && order.status === 'Delivered' && (
+          <FitFeedbackCard key={`fit-${order.orderNumber}`} order={order} refetch={refetch} />
+        )}
 
         {/* Items */}
         <span style={{ fontSize: '11px', fontWeight: 800, color: INK, textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: '2px' }}>Items</span>
