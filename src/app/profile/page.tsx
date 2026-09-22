@@ -6,7 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/hooks/useWallet';
 import {
-  User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
+  User, Wallet, Package, Ruler, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
   HelpCircle, BookOpen, FileText, Lock, LogOut,
   Heart, Scissors, MapPin,
@@ -29,7 +29,6 @@ import TrackOrder from './sections/TrackOrder';
 import MeasurementsSection from './sections/Measurements';
 import AccountSecurity from './sections/AccountSecurity';
 import Notifications from './sections/Notifications';
-import PaymentInformation from './sections/PaymentInformation';
 import Following from './sections/Following';
 import ReservedFabric from './sections/ReservedFabric';
 
@@ -60,8 +59,6 @@ const sectionTitles: Record<ActiveSection, string> = {
   'account-security': 'Account Security',
   'change-password': 'Change Password',
   'notifications': 'Notifications',
-  'payment-information': 'Payment Information',
-  'add-card': 'Add Card',
   'following': 'Following',
   'reserved-fabric': 'Reserved Fabric',
 };
@@ -119,7 +116,6 @@ function ProfilePageContent() {
     else if (activeSection === 'add-measurement') setActiveSection('measurements');
     else if (activeSection === 'measurement-detail') setActiveSection('measurements');
     else if (activeSection === 'change-password') setActiveSection('account-security');
-    else if (activeSection === 'add-card') setActiveSection('payment-information');
     else setActiveSection('welcome');
   };
 
@@ -283,14 +279,6 @@ function ProfilePageContent() {
         );
       case 'notifications':
         return <Notifications />;
-      case 'payment-information':
-      case 'add-card':
-        return (
-          <PaymentInformation
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-          />
-        );
       case 'following':
         return <Following />;
       case 'reserved-fabric':
@@ -399,8 +387,6 @@ function ProfilePageContent() {
                 onClick={() => setActiveSection('orders')} isActive={activeSection === 'orders' || activeSection === 'order-detail'} />
               <MenuRow icon={Ruler} label="My Measurement" iconBg="rgba(99,102,241,0.08)" iconColor="#6366F1"
                 onClick={() => setActiveSection('measurements')} isActive={activeSection === 'measurements' || activeSection === 'measurement-detail' || activeSection === 'add-measurement' || activeSection === 'measurement-form'} />
-              <MenuRow icon={CreditCard} label="Payment Information" iconBg="rgba(239,68,68,0.06)" iconColor="#EF4444"
-                onClick={() => setActiveSection('payment-information')} isActive={activeSection === 'payment-information' || activeSection === 'add-card'} />
               <MenuRow icon={ShieldCheck} label="Account Security" iconBg="rgba(16,185,129,0.08)" iconColor="#10B981"
                 onClick={() => setActiveSection('account-security')} isActive={activeSection === 'account-security' || activeSection === 'change-password'} />
               <MenuRow icon={Bell} label="Push Notification" iconBg="rgba(245,158,11,0.08)" iconColor="#F59E0B"

@@ -25,8 +25,6 @@ export type ActiveSection =
   | 'account-security'
   | 'change-password'
   | 'notifications'
-  | 'payment-information'
-  | 'add-card'
   | 'following'
   | 'reserved-fabric';
 
