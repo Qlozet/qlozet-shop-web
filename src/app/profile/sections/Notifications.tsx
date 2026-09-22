@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Bell, BellOff, Package, Truck, Wallet, Scissors, Tag, Info, Loader2, CheckCheck,
@@ -125,6 +125,16 @@ export default function Notifications() {
 
   const unread = notifications.filter((n) => !n.is_read).length;
 
+  // Desktop: cap the list like the Wallet transactions card and scroll
+  // inside it; mobile keeps the natural page scroll.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const openNotification = (n: AppNotification) => {
     if (!n.is_read) markRead(n._id);
     if (n.action_url && n.action_url.startsWith('/')) {
@@ -203,31 +213,29 @@ export default function Notifications() {
           </div>
         </div>
       ) : (
-        <>
-          <div style={{ ...cardStyle, overflow: 'hidden' }}>
-            <div className="flex flex-col">
-              {notifications.map((n, i) => (
-                <NotificationRow
-                  key={n._id}
-                  n={n}
-                  isLast={i === notifications.length - 1}
-                  onOpen={openNotification}
-                />
-              ))}
-            </div>
+        <div style={{ ...cardStyle, overflow: 'hidden', ...(isMobile ? {} : { maxHeight: '60vh', overflowY: 'auto' as const }) }}>
+          <div className="flex flex-col">
+            {notifications.map((n, i) => (
+              <NotificationRow
+                key={n._id}
+                n={n}
+                isLast={!hasMore && i === notifications.length - 1}
+                onOpen={openNotification}
+              />
+            ))}
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="w-full flex items-center justify-center gap-2 transition-colors hover:bg-[var(--bg-surface-elevated)] disabled:opacity-60"
+                style={{ padding: '14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              >
+                {loadingMore && <Loader2 size={13} className="animate-spin" />}
+                {loadingMore ? 'Loading…' : 'Load older notifications'}
+              </button>
+            )}
           </div>
-          {hasMore && (
-            <button
-              onClick={loadMore}
-              disabled={loadingMore}
-              className="w-full flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-60"
-              style={{ padding: '12px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-            >
-              {loadingMore && <Loader2 size={13} className="animate-spin" />}
-              {loadingMore ? 'Loading…' : 'Load older notifications'}
-            </button>
-          )}
-        </>
+        </div>
       )}
     </div>
   );
