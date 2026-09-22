@@ -13,7 +13,6 @@ import {
   Search,
   Scissors,
   Heart,
-  Eye,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -470,13 +469,16 @@ function BespokeContent() {
   // Deleting a design is a CANCEL server-side (the record is kept for orders
   // hanging off it) — the listing must hide cancelled designs or "deleted"
   // items reappear labelled as drafts.
-  const mappedDesigns: typeof DEMO_DESIGNS = backendDesigns
+  const mappedDesigns: ((typeof DEMO_DESIGNS)[number] & { rawStatus?: string })[] = backendDesigns
     .filter((d) => d.status !== 'cancelled')
     .map((d) => ({
     id: d._id,
     image: d.design_images?.[0] || '/image/bespoke-agbada-green.webp',
     name: d.name,
     status: STATUS_MAP[d.status] || 'Draft',
+    // Raw backend status — drives the card's quote button (only designs with
+    // quote activity get one; 'quoted' means prices are waiting).
+    rawStatus: d.status,
     date: new Date(d.createdAt || d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     category: d.category || 'Design',
   }));
@@ -772,16 +774,32 @@ function BespokeContent() {
                           >
                             {design.status}
                           </div>
-                          {/* Action buttons */}
+                          {/* Action buttons — quotes only exist once the design
+                              has been sent out for pricing; 'quoted' means
+                              offers are waiting, so that state gets the gold. */}
                           <div className="absolute bottom-3 right-3 flex flex-col" style={{ gap: '6px' }}>
-                            <button
-                              className="flex items-center justify-center transition-all hover:scale-110"
-                              style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
-                            >
-                              <Eye size={16} color="#FFF" />
-                            </button>
+                            {['requesting_quotes', 'quoting', 'quoted'].includes((design as any).rawStatus) && (
+                              <button
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQuotesDesignId(design.id); }}
+                                aria-label="View quotes"
+                                title={(design as any).rawStatus === 'quoted' ? 'Prices are in — view quotes' : 'View quote requests'}
+                                className="flex items-center justify-center transition-all hover:scale-110"
+                                style={{
+                                  width: '36px',
+                                  height: '36px',
+                                  borderRadius: '50%',
+                                  background: (design as any).rawStatus === 'quoted' ? '#D4AF37' : 'rgba(0,0,0,0.5)',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  boxShadow: (design as any).rawStatus === 'quoted' ? '0 2px 10px rgba(212,175,55,0.5)' : 'none',
+                                }}
+                              >
+                                <Quote size={15} color={(design as any).rawStatus === 'quoted' ? '#2C1810' : '#FFF'} />
+                              </button>
+                            )}
                             <button
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(design.id); }}
+                              aria-label="Save to wishlist"
                               className="flex items-center justify-center transition-all hover:scale-110"
                               style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
                             >
