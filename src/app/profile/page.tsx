@@ -8,7 +8,7 @@ import { useWallet } from '@/hooks/useWallet';
 import {
   User, Wallet, Package, Ruler, CreditCard, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
-  HelpCircle, BookOpen, FileText, Lock, Star, LogOut, Award,
+  HelpCircle, BookOpen, FileText, Lock, LogOut,
   Heart, Scissors, MapPin,
 } from 'lucide-react';
 import { TokenIcon } from '@/components/icons/TokenIcon';
@@ -418,11 +418,16 @@ function ProfilePageContent() {
           <div style={cardStyle}>
             <h3 style={sectionTitle}>Support and Legal</h3>
             <div className="flex flex-col">
-              <MenuRow icon={HelpCircle} label="Help and support" iconBg="rgba(99,102,241,0.06)" iconColor="#6366F1" />
-              <MenuRow icon={BookOpen} label="Your Guide to Qlozet FAQS" iconBg="rgba(212,175,55,0.08)" iconColor="#D4AF37" />
-              <MenuRow icon={FileText} label="Terms of Use" iconBg="rgba(16,185,129,0.06)" iconColor="#10B981" />
-              <MenuRow icon={Lock} label="Privacy Policy" iconBg="rgba(239,68,68,0.06)" iconColor="#EF4444" />
-              <MenuRow icon={Star} label="Rate The Qlozet App" iconBg="rgba(245,158,11,0.06)" iconColor="#F59E0B" />
+              {/* Help center: FAQ topics, popular articles and contact. */}
+              <MenuRow icon={HelpCircle} label="Help and support" iconBg="rgba(99,102,241,0.06)" iconColor="#6366F1"
+                onClick={() => router.push('/help')} />
+              <MenuRow icon={BookOpen} label="My Support Tickets" iconBg="rgba(212,175,55,0.08)" iconColor="#D4AF37"
+                onClick={() => router.push('/help/tickets')} />
+              {/* Legal pages live on the main site. */}
+              <MenuRow icon={FileText} label="Terms of Use" iconBg="rgba(16,185,129,0.06)" iconColor="#10B981"
+                onClick={() => window.open('https://www.qlozet.app/terms', '_blank', 'noopener')} />
+              <MenuRow icon={Lock} label="Privacy Policy" iconBg="rgba(239,68,68,0.06)" iconColor="#EF4444"
+                onClick={() => window.open('https://www.qlozet.app/privacy', '_blank', 'noopener')} />
             </div>
           </div>
 
