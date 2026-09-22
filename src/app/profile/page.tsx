@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/hooks/useWallet';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import {
   User, Wallet, Package, Ruler, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
@@ -68,6 +69,8 @@ function ProfilePageContent() {
   const searchParams = useSearchParams();
   const { user, demoLogin, logout } = useApp();
   const { walletBalance, tokenBalance } = useWallet();
+  // Unread badge for the Notifications menu row.
+  const { count: unreadNotifications, refresh: refreshUnread } = useUnreadNotificationCount(Boolean(user));
 
   // ─── Shared State ───────────────────────────────────────────
   // Read initial tab from URL if present
@@ -82,7 +85,12 @@ function ProfilePageContent() {
     }
   }, [searchParams]);
 
-  const [pushNotif, setPushNotif] = useState(false);
+  // Keep the unread badge honest as the user moves between sections
+  // (reading notifications marks them read server-side).
+  useEffect(() => {
+    refreshUnread();
+  }, [activeSection, refreshUnread]);
+
   const { isDark, toggle: toggleTheme } = useTheme();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedItemIdx, setSelectedItemIdx] = useState(0);
@@ -389,8 +397,18 @@ function ProfilePageContent() {
                 onClick={() => setActiveSection('measurements')} isActive={activeSection === 'measurements' || activeSection === 'measurement-detail' || activeSection === 'add-measurement' || activeSection === 'measurement-form'} />
               <MenuRow icon={ShieldCheck} label="Account Security" iconBg="rgba(16,185,129,0.08)" iconColor="#10B981"
                 onClick={() => setActiveSection('account-security')} isActive={activeSection === 'account-security' || activeSection === 'change-password'} />
-              <MenuRow icon={Bell} label="Push Notification" iconBg="rgba(245,158,11,0.08)" iconColor="#F59E0B"
-                onClick={() => setActiveSection('notifications')} isActive={activeSection === 'notifications'} />
+              <MenuRow icon={Bell} label="Notifications" iconBg="rgba(245,158,11,0.08)" iconColor="#F59E0B"
+                onClick={() => setActiveSection('notifications')} isActive={activeSection === 'notifications'}
+                trailing={
+                  <span className="flex items-center" style={{ gap: '8px' }}>
+                    {unreadNotifications > 0 && (
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-fill-text)', background: 'var(--brand-fill)', padding: '2px 8px', borderRadius: '100px' }}>
+                        {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                      </span>
+                    )}
+                    <ChevronRight size={16} color="var(--text-muted)" />
+                  </span>
+                } />
               <MenuRow icon={Heart} label="Following" iconBg="rgba(239,68,68,0.06)" iconColor="#E11D48"
                 onClick={() => setActiveSection('following')} isActive={activeSection === 'following'} />
               <MenuRow icon={Scissors} label="Reserved Fabric" iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED"
