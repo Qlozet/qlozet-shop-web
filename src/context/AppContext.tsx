@@ -209,6 +209,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem('qlozet_user', JSON.stringify(mappedUser));
           isAuthenticated.current = true;
 
+          // ── Sync followed vendors from the account ────────────
+          // Follows are account-level (POST /users/:id/follow), not
+          // per-browser: without this, a vendor followed on the laptop
+          // never shows on the phone. Local guest follows are pushed up,
+          // then the merged list becomes the truth.
+          api.get('/users/me/following-businesses', { params: { page: 1, size: 100 } })
+            .then((folRes) => {
+              const payload = folRes.data?.data ?? folRes.data;
+              const rows = payload?.data ?? payload?.rows ?? [];
+              const backendIds: string[] = (Array.isArray(rows) ? rows : [])
+                .map((b: any) => b?._id)
+                .filter(Boolean);
+              const localRaw = localStorage.getItem('qlozet_followed_vendors');
+              const localIds: string[] = localRaw ? JSON.parse(localRaw) : [];
+              const guestOnly = localIds.filter((id) => !backendIds.includes(id));
+              for (const id of guestOnly) {
+                api.post(`/users/${id}/follow`).catch(() => { /* resyncs next load */ });
+              }
+              const merged = [...new Set([...backendIds, ...guestOnly])];
+              setFollowedVendors(merged);
+              saveState('qlozet_followed_vendors', merged);
+            })
+            .catch(() => { /* keep the local list */ });
+
           // Fetch real token balance from dedicated endpoint
           api.get('/token/balance').then((tokenRes) => {
             const realBalance = tokenRes.data?.data?.tokens ?? tokenRes.data?.tokens ?? 0;
@@ -346,12 +370,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleFollowVendor = (id: string) => {
-    setFollowedVendors((prev) => {
-      const exists = prev.includes(id);
-      const updated = exists ? prev.filter((v) => v !== id) : [...prev, id];
-      saveState('qlozet_followed_vendors', updated);
-      return updated;
-    });
+    const exists = followedVendors.includes(id);
+    const updated = exists
+      ? followedVendors.filter((v) => v !== id)
+      : [...followedVendors, id];
+    setFollowedVendors(updated);
+    saveState('qlozet_followed_vendors', updated);
+    // Persist to the account so follows travel across devices; the local
+    // state already reflects the intent, and the next login resyncs.
+    if (isAuthenticated.current) {
+      (exists
+        ? api.delete(`/users/${id}/unfollow`)
+        : api.post(`/users/${id}/follow`)
+      ).catch(() => undefined);
+    }
   };
 
   // Persistent Storage Sync
