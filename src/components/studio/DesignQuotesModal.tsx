@@ -413,14 +413,16 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           {acceptingId === q._id ? (
                             <><Loader2 size={14} className='animate-spin' /> Processing...</>
                           ) : (
-                            `Pay with wallet (₦${walletBalance.toLocaleString()})`
+                            // The button states the CHARGE — the balance is a
+                            // caption below, never the headline number.
+                            `Pay ${naira(payable)} from wallet`
                           )}
                         </button>
-                        {walletBalance < payable && (
-                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                            Insufficient wallet balance — top up or pay with card.
-                          </p>
-                        )}
+                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>
+                          {walletBalance < payable
+                            ? `Insufficient wallet balance (₦${walletBalance.toLocaleString()}) — top up or pay with card.`
+                            : `Wallet balance: ₦${walletBalance.toLocaleString()}`}
+                        </p>
                         <button
                           onClick={() => accept(q._id, 'paystack')}
                           disabled={acceptingId === q._id}
