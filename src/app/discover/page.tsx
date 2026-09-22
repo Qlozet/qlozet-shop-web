@@ -240,8 +240,11 @@ export default function DiscoverPage() {
               <div className="h-3 w-32 bg-[var(--bg-surface-elevated)] rounded" />
               {/* overflow-hidden: fixed-width placeholders must not widen the page */}
               <div className="flex overflow-hidden" style={{ gap: '16px' }}>
+                {/* Same responsive footprint as VendorShowcaseCard (420px tall
+                    on mobile, 360×500 from lg) so the page doesn't jump when
+                    the real cards swap in. */}
                 {[1, 2, 3].map((j) => (
-                  <div key={j} className="rounded-[24px] bg-[var(--bg-surface-elevated)] flex-shrink-0" style={{ width: '360px', height: '500px' }} />
+                  <div key={j} className="rounded-[24px] bg-[var(--bg-surface-elevated)] flex-shrink-0 w-[calc(100vw-56px)] max-w-[380px] h-[420px] lg:w-[360px] lg:max-w-none lg:h-[500px]" style={{ minWidth: '300px' }} />
                 ))}
               </div>
             </div>
