@@ -32,7 +32,7 @@ function reviewDate(id?: string): string {
   return new Date(secs * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 import {
-  Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag
+  Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag, Clock
 } from 'lucide-react';
 
 // Solid card colours per discount type — matched to the vendor app's discount
@@ -335,6 +335,21 @@ export default function VendorPage() {
               {vendorName}
             </h1>
           )}
+          {/* Capacity — this vendor's bench is full, so their items can't be
+              ordered until they finish something. Said here rather than
+              discovered at checkout. */}
+          {vendor.at_capacity && (
+            <div
+              className="flex items-center gap-2 backdrop-blur-md rounded-full border"
+              style={{ marginTop: '18px', padding: '7px 14px', backgroundColor: 'rgba(180,35,42,0.9)', borderColor: 'rgba(255,255,255,0.25)' }}
+            >
+              <Clock size={12} color="#FFFFFF" />
+              <span className="text-xs font-bold" style={{ color: '#FFFFFF' }}>
+                Fully booked — not taking new orders right now
+              </span>
+            </div>
+          )}
+
           <div className="text-white/90 text-sm font-semibold flex items-center gap-1.5" style={{ marginTop: '24px' }}>
             <span>{vendorRating.toFixed(1)}</span>
             {/* Fill is theme-aware: fill-white isn't caught by the light-theme
