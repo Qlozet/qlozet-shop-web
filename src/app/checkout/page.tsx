@@ -847,13 +847,15 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* ── OUT-OF-STOCK NOTICE ────────────────────────────── */}
+          {/* ── BLOCKED-LINES NOTICE ───────────────────────────────
+              Covers both out-of-stock lines and vendors whose workshop is
+              at capacity; each row carries its own reason. */}
           {checkout.unavailableItems.length > 0 && (
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: '#FEF2F2', border: '1px solid rgba(180,35,42,0.18)', marginBottom: '12px' }}>
               <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
                 <AlertCircle size={14} color="#B4232A" className="flex-shrink-0" />
                 <p style={{ fontSize: '12px', fontWeight: 800, color: '#B4232A', margin: 0 }}>
-                  Some items are no longer available
+                  Some items can&apos;t be ordered right now
                 </p>
               </div>
               <ul style={{ margin: 0, paddingLeft: '22px' }}>
