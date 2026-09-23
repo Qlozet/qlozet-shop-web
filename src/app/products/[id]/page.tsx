@@ -1611,22 +1611,43 @@ export default function ProductDetailsPage() {
                   </button>
                 ))}
 
-                {/* AI Size Recommendation Button */}
-                {product.kind === 'clothing' && (
+                {/* AI Size Recommendation Button — the feature only works when
+                    this product has a size guide, so the button advertises that
+                    BEFORE it's tapped: purple when a guide is loaded (a
+                    recommendation is actually possible), muted otherwise. It
+                    stays tappable either way so the popover can explain why. */}
+                {product.kind === 'clothing' && (() => {
+                  const canRecommend = !sizeGuideLoading && Boolean(sizeGuideData?._id);
+                  return (
                   <div style={{ position: 'relative' }} ref={aiButtonRef}>
                     <button
                       onClick={handleAIRecommend}
                       disabled={sizeRecLoading}
-                      className="flex items-center justify-center transition-all hover:bg-gray-100"
+                      className="flex items-center justify-center transition-all"
                       style={{
                         minWidth: '42px', height: '42px', padding: '0 12px',
                         borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                        background: sizeRec ? 'linear-gradient(135deg, #7C3AED, #4F46E5)' : 'var(--bg-surface-elevated)',
-                        color: sizeRec ? '#FFF' : 'var(--text-secondary)',
-                        border: sizeRec ? '2px solid #7C3AED' : '1px solid var(--border-glass)', gap: '4px',
+                        background: sizeRec
+                          ? 'linear-gradient(135deg, #7C3AED, #4F46E5)'
+                          : canRecommend
+                            ? 'rgba(124,58,237,0.08)'
+                            : 'var(--bg-surface-elevated)',
+                        color: sizeRec ? '#FFF' : canRecommend ? '#7C3AED' : 'var(--text-muted)',
+                        border: sizeRec
+                          ? '2px solid #7C3AED'
+                          : canRecommend
+                            ? '1px solid rgba(124,58,237,0.35)'
+                            : '1px solid var(--border-glass)',
+                        gap: '4px',
                         opacity: sizeRecLoading ? 0.6 : 1,
                       }}
-                      title="AI-powered size recommendation"
+                      title={
+                        canRecommend
+                          ? 'AI-powered size recommendation'
+                          : sizeGuideLoading
+                            ? 'Checking for a size guide…'
+                            : 'No size guide for this product yet'
+                      }
                     >
                       {sizeRecLoading ? (
                         <span className="animate-spin" style={{ width: 13, height: 13, border: '2px solid #999', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block' }} />
@@ -1731,8 +1752,8 @@ export default function ProductDetailsPage() {
                       </div>
                     )}
                   </div>
-
-                )}
+                  );
+                })()}
               </div>
             )}
 
