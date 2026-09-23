@@ -289,6 +289,12 @@ export interface ApiBusinessPublicDetail extends ApiBusinessPublic {
   total_products: number;
   followers_count: number;
   successful_deliveries?: number;
+  /**
+   * True when the vendor already has as many orders in progress as their
+   * capacity setting allows. Their items are blocked at checkout preview, so
+   * the storefront says so up front rather than letting it surprise anyone.
+   */
+  at_capacity?: boolean;
 }
 
 // ─── Ratings / Reviews ────────────────────────────────────────
