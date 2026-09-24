@@ -97,6 +97,15 @@ const unwrapDesign = (body: any): any => {
 };
 
 // ─── Hook ────────────────────────────────────────────────────
+/**
+ * A design library is personal, not a catalogue — almost every customer has
+ * well under this many. Fetching them in one page keeps the tab's category
+ * chips and name search honest, since those filter client-side and would
+ * otherwise silently search only the pages loaded so far. Load More still
+ * exists for the rare library that outgrows it.
+ */
+const DESIGNS_PAGE_SIZE = 60;
+
 export function useBespokeDesigns() {
   const { isInitialized, user } = useApp();
   const [designs, setDesigns] = useState<BespokeDesign[]>([]);
@@ -118,7 +127,7 @@ export function useBespokeDesigns() {
       try {
         const params = new URLSearchParams({
           page: String(pageNum),
-          size: '20',
+          size: String(DESIGNS_PAGE_SIZE),
         });
         if (status && status !== 'all') params.set('status', status);
 
