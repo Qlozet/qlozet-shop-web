@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useCallback, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { ArrowDownUp, Bookmark, RotateCcw } from 'lucide-react';
 import { STUDIO_TABS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
+import { resetCurrentSection } from './resetSection';
 import { RequestQuotesModal } from './RequestQuotesModal';
 
 interface MobileBottomSheetProps {
@@ -102,45 +102,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
     accessories: 'FINISHING',
     fit: 'FIT',
     reference: 'PHOTO & NOTES',
-  };
-
-  // Reset arrow: clears ONLY the open section's selections, with a toast so
-  // the action is legible (previously this icon was decorative).
-  const resetCurrentSection = () => {
-    switch (expandedSection) {
-      case 'styles':
-        customization.setSelectedNeckline(null);
-        customization.setSelectedSleeve(null);
-        customization.setSelectedCollar(null);
-        customization.setSelectedSilhouette(null);
-        customization.setSelectedSkirt(null);
-        customization.setSelectedTrouser(null);
-        customization.setSelectedFullBody(null);
-        toast('Style selections cleared');
-        break;
-      case 'fabric':
-        customization.setSelectedFabric(null);
-        customization.setAppliedFabric(null);
-        customization.setSelectedColor(null);
-        toast('Fabric & colour cleared');
-        break;
-      case 'accessories':
-        customization.selectedAccessories.forEach((id) =>
-          customization.toggleAccessory(id),
-        );
-        toast('Finishing details cleared');
-        break;
-      case 'fit':
-        customization.setSelectedFit(null);
-        toast('Fit reset');
-        break;
-      case 'reference':
-        // The panel holds both the reference photos and the written notes.
-        customization.setReferenceImages([]);
-        customization.setUserPrompt('');
-        toast('Photos & notes cleared');
-        break;
-    }
   };
 
   return (
@@ -238,7 +199,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
               <button
                 type="button"
                 aria-label="Reset this section"
-                onClick={resetCurrentSection}
+                onClick={() => resetCurrentSection(customization)}
                 className="transition-transform active:scale-90"
                 style={{ background: 'transparent', border: 'none', padding: '6px', margin: '-6px', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex' }}
               >

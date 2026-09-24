@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { Save, ShoppingCart } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { TokenIcon } from '../icons/TokenIcon';
+import { resetCurrentSection } from './resetSection';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
@@ -66,9 +68,35 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
           <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {sectionLabel[expandedSection] || ''}
           </span>
-          <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '5px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
-            <TokenIcon size={14} color="#D4AF37" />
-            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>{tokenBalance.toLocaleString()}</span>
+          <div className="flex items-center" style={{ gap: '8px' }}>
+            {/* Clears the open section only — same behaviour as the mobile
+                sheet's reset arrow, which shares this helper. */}
+            <button
+              type="button"
+              aria-label="Reset this section"
+              title="Reset this section"
+              onClick={() => resetCurrentSection(customization)}
+              className="flex items-center justify-center transition-transform hover:scale-105 active:scale-90"
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '50%',
+                background: 'var(--bg-surface-elevated)',
+                border: '1px solid var(--border-glass)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              <RotateCcw size={14} />
+            </button>
+            <div className="flex items-center rounded-full" style={{ background: '#FFF7E6', gap: '5px', border: '1px solid #F5E6C8', padding: '6px 12px' }}>
+              <TokenIcon size={14} color="#D4AF37" />
+              {/* Pill background is a fixed cream, so the count stays dark in
+                  both themes — var(--text-primary) turns white in dark mode
+                  and vanishes against it. */}
+              <span style={{ fontSize: '12px', fontWeight: 800, color: '#2C1810' }}>{tokenBalance.toLocaleString()}</span>
+            </div>
           </div>
         </div>
 
