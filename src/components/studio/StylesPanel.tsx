@@ -59,6 +59,7 @@ function StyleSection({
   onSelect,
   isLoading,
   fallback,
+  showPrice = false,
 }: {
   title: string;
   options: (PlatformStyle | ApiStyle)[];
@@ -66,6 +67,8 @@ function StyleSection({
   onSelect: (id: string) => void;
   isLoading: boolean;
   fallback: StyleOption[];
+  /** Real vendor pricing (product customisation) vs none (bespoke). */
+  showPrice?: boolean;
 }) {
   // Use API styles if available, fallback to hardcoded
   const items: StyleOption[] = options.length > 0
@@ -93,6 +96,7 @@ function StyleSection({
             option={opt}
             isSelected={selectedId === opt.id}
             onSelect={onSelect}
+            showPrice={showPrice}
           />
         ))}
       </div>
@@ -177,12 +181,12 @@ export const StylesPanel: React.FC<StylesPanelProps> = ({
   if (useProductStyles) {
     return (
       <div style={{ padding: '20px' }}>
-        {currentFullBody.length > 0 && <StyleSection title="Silhouette" options={currentFullBody} selectedId={selectedFullBody ?? null} onSelect={onSelectFullBody ?? (() => {})} isLoading={false} fallback={[]} />}
-        {currentNecklines.length > 0 && <StyleSection title="Neckline" options={currentNecklines} selectedId={selectedNeckline} onSelect={onSelectNeckline} isLoading={false} fallback={[]} />}
-        {currentSleeves.length > 0 && <StyleSection title="Sleeves" options={currentSleeves} selectedId={selectedSleeve} onSelect={onSelectSleeve} isLoading={false} fallback={[]} />}
-        {currentCollars.length > 0 && <StyleSection title="Collar" options={currentCollars} selectedId={selectedCollar ?? null} onSelect={onSelectCollar ?? (() => {})} isLoading={false} fallback={[]} />}
-        {currentSkirts.length > 0 && <StyleSection title="Skirt Style" options={currentSkirts} selectedId={selectedSkirt ?? null} onSelect={onSelectSkirt ?? (() => {})} isLoading={false} fallback={[]} />}
-        {currentTrousers.length > 0 && <StyleSection title="Trouser Style" options={currentTrousers} selectedId={selectedTrouser ?? null} onSelect={onSelectTrouser ?? (() => {})} isLoading={false} fallback={[]} />}
+        {currentFullBody.length > 0 && <StyleSection title="Silhouette" options={currentFullBody} selectedId={selectedFullBody ?? null} onSelect={onSelectFullBody ?? (() => {})} isLoading={false} fallback={[]} showPrice />}
+        {currentNecklines.length > 0 && <StyleSection title="Neckline" options={currentNecklines} selectedId={selectedNeckline} onSelect={onSelectNeckline} isLoading={false} fallback={[]} showPrice />}
+        {currentSleeves.length > 0 && <StyleSection title="Sleeves" options={currentSleeves} selectedId={selectedSleeve} onSelect={onSelectSleeve} isLoading={false} fallback={[]} showPrice />}
+        {currentCollars.length > 0 && <StyleSection title="Collar" options={currentCollars} selectedId={selectedCollar ?? null} onSelect={onSelectCollar ?? (() => {})} isLoading={false} fallback={[]} showPrice />}
+        {currentSkirts.length > 0 && <StyleSection title="Skirt Style" options={currentSkirts} selectedId={selectedSkirt ?? null} onSelect={onSelectSkirt ?? (() => {})} isLoading={false} fallback={[]} showPrice />}
+        {currentTrousers.length > 0 && <StyleSection title="Trouser Style" options={currentTrousers} selectedId={selectedTrouser ?? null} onSelect={onSelectTrouser ?? (() => {})} isLoading={false} fallback={[]} showPrice />}
       </div>
     );
   }
