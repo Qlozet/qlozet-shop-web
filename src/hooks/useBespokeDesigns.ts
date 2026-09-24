@@ -104,45 +104,76 @@ export function useBespokeDesigns() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  // Separate from isLoading so paging in never blanks the grid already on
+  // screen — only the button under it shows a spinner.
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // ─── Fetch designs ────────────────────────────────────────
-  const fetchDesigns = useCallback(async (pageNum = 1, status?: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page: String(pageNum), size: '20' });
-      if (status && status !== 'all') params.set('status', status);
+  const fetchDesigns = useCallback(
+    async (pageNum = 1, status?: string, append = false) => {
+      if (append) setIsLoadingMore(true);
+      else setIsLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({
+          page: String(pageNum),
+          size: '20',
+        });
+        if (status && status !== 'all') params.set('status', status);
 
-      const res = await api.get(`/bespoke/designs?${params}`);
-      // Backend returns getPagingData format: { total_items, data: [...], total_pages, current_page }
-      // NestJS may also wrap in { data: { ... } }
-      const body = res?.data;
-      console.log('[BespokeDesigns] raw response:', JSON.stringify(body));
+        const res = await api.get(`/bespoke/designs?${params}`);
+        // Backend returns getPagingData format:
+        // { total_items, data: [...], total_pages, current_page }
+        // NestJS may also wrap in { data: { ... } }
+        const body = res?.data;
 
-      // Handle both: body = paginated directly, or body.data = paginated
-      const paginated = body?.total_items !== undefined ? body : body?.data;
+        // Handle both: body = paginated directly, or body.data = paginated
+        const paginated = body?.total_items !== undefined ? body : body?.data;
 
-      if (paginated && Array.isArray(paginated.data)) {
-        setDesigns(paginated.data);
-        setPage(paginated.current_page || pageNum);
-        setTotalPages(paginated.total_pages || 1);
-      } else if (Array.isArray(body?.data)) {
-        // Flat array response
-        setDesigns(body.data);
-      } else if (Array.isArray(body)) {
-        setDesigns(body);
-      } else {
-        console.warn('[BespokeDesigns] Unexpected response shape:', body);
-        setDesigns([]);
+        // De-dupe on merge: a design created between page fetches shifts the
+        // window, which would otherwise repeat a row.
+        const merge = (rows: BespokeDesign[]) =>
+          setDesigns((prev) => {
+            if (!append) return rows;
+            const seen = new Set(prev.map((d) => d._id));
+            return [...prev, ...rows.filter((d) => !seen.has(d._id))];
+          });
+
+        if (paginated && Array.isArray(paginated.data)) {
+          merge(paginated.data);
+          setPage(paginated.current_page || pageNum);
+          setTotalPages(paginated.total_pages || 1);
+          setTotalItems(paginated.total_items ?? paginated.data.length);
+        } else if (Array.isArray(body?.data)) {
+          // Flat array response — no paging information to act on.
+          merge(body.data);
+          setTotalItems(body.data.length);
+        } else if (Array.isArray(body)) {
+          merge(body);
+          setTotalItems(body.length);
+        } else {
+          console.warn('[BespokeDesigns] Unexpected response shape:', body);
+          if (!append) setDesigns([]);
+        }
+      } catch (err: any) {
+        console.error('[BespokeDesigns] fetch error:', err);
+        setError(err?.response?.data?.message || 'Failed to load designs');
+        // A failed "load more" must not wipe what is already on screen.
+        if (!append) setDesigns([]);
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
       }
-    } catch (err: any) {
-      console.error('[BespokeDesigns] fetch error:', err);
-      setError(err?.response?.data?.message || 'Failed to load designs');
-      setDesigns([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
+
+  /** Pull the next page in, keeping what is already rendered. */
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || page >= totalPages) return;
+    fetchDesigns(page + 1, undefined, true);
+  }, [fetchDesigns, isLoadingMore, page, totalPages]);
 
   // Load when initialized and user is present
   useEffect(() => {
@@ -271,9 +302,13 @@ export function useBespokeDesigns() {
   return {
     designs,
     isLoading,
+    isLoadingMore,
     error,
     page,
     totalPages,
+    totalItems,
+    hasMore: page < totalPages,
+    loadMore,
     fetchDesigns,
     createDesign,
     updateDesign,
