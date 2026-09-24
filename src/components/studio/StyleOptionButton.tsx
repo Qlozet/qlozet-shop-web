@@ -9,12 +9,21 @@ interface StyleOptionButtonProps {
   option: StyleOption;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  /**
+   * Whether this option's cost is real money the customer will pay.
+   * True when customising a catalogue product (the figure is the vendor's
+   * own price for that option). False in the bespoke studio, where the
+   * tailor's quote sets the price and any number here would be a promise
+   * nothing can honour — see StylesPanel.
+   */
+  showPrice?: boolean;
 }
 
 export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
   option,
   isSelected,
   onSelect,
+  showPrice = false,
 }) => {
   const { fmt: fmtMoney } = useCurrency();
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -68,7 +77,7 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
           }}>
             {option.label}
           </p>
-          {option.extraCost !== undefined && (
+          {showPrice && option.extraCost !== undefined && (
             <p style={{ fontSize: '10px', fontWeight: 700, color: option.extraCost > 0 ? 'var(--text-primary)' : '#059669', marginTop: '2px' }}>
               {option.extraCost > 0 ? `+${fmtMoney(option.extraCost)}` : 'Included'}
             </p>
@@ -97,7 +106,9 @@ export const StyleOptionButton: React.FC<StyleOptionButtonProps> = ({
             imageUrl: option.imageUrl,
             description: option.description,
             tags: option.tags,
-            extraCost: option.extraCost,
+            // Omitted when prices aren't real — PreviewCard hides the line
+            // entirely rather than rendering a figure nothing commits to.
+            extraCost: showPrice ? option.extraCost : undefined,
           }}
           anchorRef={btnRef}
         />
