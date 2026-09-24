@@ -417,7 +417,14 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
 function BespokeContent() {
   const { wishlist, toggleWishlist, user } = useApp();
   const router = useRouter();
-  const { designs: backendDesigns, isLoading: designsLoading, cancelDesign } = useBespokeDesigns();
+  const {
+    designs: backendDesigns,
+    isLoading: designsLoading,
+    isLoadingMore: designsLoadingMore,
+    hasMore: hasMoreDesigns,
+    loadMore: loadMoreDesigns,
+    cancelDesign,
+  } = useBespokeDesigns();
 
   // Page tabs
   const [activeTab, setActiveTab] = useState<'designs' | 'templates' | 'community' | 'quotes'>('designs');
@@ -814,6 +821,37 @@ function BespokeContent() {
                       </Link>
                     );
                   })}
+                </div>
+              )}
+
+              {/* The API pages at 20 — without this the rest were unreachable.
+                  Hidden while a category/search filter is narrowing the list,
+                  since those filter only what has been loaded. */}
+              {hasMoreDesigns && activeCategory === 'All' && !searchQuery && (
+                <div className="flex justify-center" style={{ paddingTop: '4px' }}>
+                  <button
+                    onClick={loadMoreDesigns}
+                    disabled={designsLoadingMore}
+                    className="flex items-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+                    style={{
+                      gap: '8px',
+                      padding: '12px 28px',
+                      borderRadius: '100px',
+                      border: '1px solid var(--border-glass)',
+                      background: 'var(--bg-surface-elevated)',
+                      cursor: designsLoadingMore ? 'wait' : 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      color: 'var(--text-primary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                    }}
+                  >
+                    {designsLoadingMore && (
+                      <Loader2 size={14} className="animate-spin" />
+                    )}
+                    {designsLoadingMore ? 'Loading…' : 'Load more designs'}
+                  </button>
                 </div>
               )}
             </>
