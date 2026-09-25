@@ -3,7 +3,10 @@
 import React, { useRef, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
+import {
+  VendorShowcaseCard,
+  hasSomethingToSell,
+} from '@/components/VendorShowcaseCard';
 import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
 
 interface VendorShowcaseCarouselProps {
@@ -28,7 +31,10 @@ export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorSh
     return map;
   }, [allProducts]);
 
-  if (vendors.length === 0) return null;
+  // Empty shops are dropped here rather than in the card, so a section whose
+  // vendors are all empty takes its heading down with it.
+  const sellingVendors = vendors.filter(hasSomethingToSell);
+  if (sellingVendors.length === 0) return null;
 
   const scrollRight = () => {
     if (scrollRef.current) {
@@ -61,7 +67,7 @@ export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorSh
           className="flex overflow-x-auto hide-scrollbar snap-x"
           style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {vendors.map((vendor) => {
+          {sellingVendors.map((vendor) => {
             const vendorProducts = vendorProductMap.get(vendor._id) ?? [];
             return (
               <VendorShowcaseCard
@@ -76,7 +82,7 @@ export function VendorShowcaseCarousel({ title, vendors, allProducts }: VendorSh
         </div>
 
         {/* Scroll right button */}
-        {vendors.length > 3 && (
+        {sellingVendors.length > 3 && (
           <button
             onClick={scrollRight}
             className="absolute z-10 hidden lg:flex items-center justify-center transition-opacity opacity-0 group-hover/row:opacity-100"

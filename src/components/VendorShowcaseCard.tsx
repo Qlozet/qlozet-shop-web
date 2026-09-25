@@ -23,19 +23,27 @@ interface VendorShowcaseCardProps {
  * - 2 rectangular product thumbnails at the bottom
  * - Follow/Following button
  */
+/**
+ * A shop with nothing to sell is a dead end — tapping through lands on an
+ * empty storefront. `total_products` is the vendor's real active-product
+ * count from the API, not a count of whatever happened to be in the sampled
+ * product list, so this only hides shops that are genuinely empty. Vendors
+ * whose payload predates the field are left visible.
+ */
+export const hasSomethingToSell = (vendor: ApiBusinessPublic): boolean =>
+  typeof vendor.total_products !== 'number' || vendor.total_products > 0;
+
 export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
   vendor,
   products,
   isFollowing,
   onToggleFollow,
 }) => {
-  // Ensure we always show exactly 2 product thumbnails
-  const rawProducts = products.slice(0, 2);
-  const displayProducts = rawProducts.length >= 2
-    ? rawProducts
-    : rawProducts.length === 1
-      ? [rawProducts[0], rawProducts[0]]
-      : [];
+  // Up to two thumbnails. A single product used to be rendered TWICE, which
+  // read as a bug — the same photo side by side. One product now gets one
+  // wide tile instead.
+  const displayProducts = products.slice(0, 2);
+  const isSingleProduct = displayProducts.length === 1;
 
   // Derived vendor fields
   const vendorName = vendor.business_name;
@@ -261,11 +269,14 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                 className="relative overflow-hidden group/thumb"
                 style={{
                   flex: 1,
-                  aspectRatio: '3 / 4',
+                  // Alone it spans the card, so a fixed height replaces the
+                  // portrait ratio that would otherwise make it enormous.
+                  ...(isSingleProduct
+                    ? { height: '160px' }
+                    : { aspectRatio: '3 / 4', maxHeight: '160px' }),
                   borderRadius: '16px',
                   background: '#F5F3F0',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  maxHeight: '160px',
                 }}
               >
                 {thumbImage ? (
@@ -275,7 +286,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
                     fill
                     quality={90}
                     className="object-cover group-hover/thumb:scale-110 transition-transform duration-300"
-                    sizes="200px"
+                    sizes={isSingleProduct ? '400px' : '200px'}
                     style={product.availability?.state === 'out_of_stock' ? soldOutImageStyle : undefined}
                   />
                 ) : (
