@@ -41,5 +41,15 @@ export function resetCurrentSection(customization: CustomizationState) {
       customization.setUserPrompt('');
       toast('Photos & notes cleared');
       break;
+    case 'addons':
+      // Only the product customize panel has this tab. selectAddon toggles,
+      // so re-selecting each chosen variant clears it — same shape as the
+      // accessories case above.
+      Object.entries(customization.selectedAddons).forEach(
+        ([addonName, variantName]) =>
+          customization.selectAddon(addonName, variantName),
+      );
+      toast('Add-ons cleared');
+      break;
   }
 }
