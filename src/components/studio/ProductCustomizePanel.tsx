@@ -3,12 +3,13 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { RotateCcw, X } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { TokenIcon } from '../icons/TokenIcon';
 import { type SectionTab, FIT_OPTIONS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
+import { resetCurrentSection } from './resetSection';
 import { AccessoriesPanel } from './AccessoriesPanel';
 import { AddonsPanel } from './AddonsPanel';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
@@ -199,6 +200,18 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
                 text fixed dark — the theme token would go white and vanish. */}
             <span style={{ fontSize: '12px', fontWeight: 800, color: '#1A1A1A' }}>{customization.tokenBalance.toLocaleString()}</span>
           </div>
+          {/* Clears the open tab's selections. The studio panels have had this
+              for a while; the product customizer never did, so a wrong pick
+              could only be undone by hunting down the right option again. */}
+          <button
+            onClick={() => resetCurrentSection(customization)}
+            aria-label="Reset this section"
+            title="Reset this section"
+            className="transition-colors hover:bg-[var(--bg-surface-elevated)] rounded-full p-2"
+            style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+          >
+            <RotateCcw size={16} strokeWidth={2.5} />
+          </button>
           <button
             onClick={onClose}
             className="hover:text-black transition-colors hover:bg-[var(--bg-surface-elevated)] rounded-full p-2"
