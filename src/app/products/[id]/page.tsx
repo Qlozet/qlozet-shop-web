@@ -694,10 +694,22 @@ export default function ProductDetailsPage() {
         quantity: 1,
       }];
     } else if (product.kind === 'accessory' && product.accessory) {
-      const firstVariant = product.accessory.variants?.[0];
+      // Match what the customer actually picked. This used to take
+      // variants[0] unconditionally, so choosing a colour or size changed
+      // nothing about what was added to the cart.
+      const variants = product.accessory.variants ?? [];
+      const matches = (v: typeof variants[number]) =>
+        (!selectedColor || (v.color?.name ?? '') === selectedColor) &&
+        (!selectedSize || (v.size ?? '') === selectedSize);
+      const chosen =
+        variants.find(matches) ??
+        // Fall back one dimension at a time rather than to variants[0]: a
+        // colour with no row in the chosen size should still add that colour.
+        variants.find((v) => !selectedColor || (v.color?.name ?? '') === selectedColor) ??
+        variants[0];
       selections.accessory_selections = [{
         accessory_id: product.accessory._id,
-        variant_id: firstVariant?._id || product.accessory._id,
+        variant_id: chosen?._id || product.accessory._id,
         quantity: 1,
       }];
     }
