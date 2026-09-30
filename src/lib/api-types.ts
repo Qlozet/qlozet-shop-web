@@ -18,6 +18,8 @@ export interface ApiProductImage {
 export interface ApiVariant {
   name?: string;
   size?: string;
+  /** Accessory variants are keyed by colour as well as size. */
+  color?: { name?: string; hex?: string };
   sku?: string;
   price: number;
   stock: number;
@@ -612,6 +614,17 @@ export function getProductColors(p: ApiProduct): { name: string; hex: string }[]
   if (p.kind === 'fabric' && p.fabric?.colors) {
     return p.fabric.colors;
   }
+  if (p.kind === 'accessory' && p.accessory?.variants) {
+    // Accessory variants are a flat colour+size list, so the same colour
+    // repeats once per size - de-duplicate by name.
+    const seen = new Map<string, { name: string; hex: string }>();
+    for (const v of p.accessory.variants) {
+      const name = v.color?.name ?? '';
+      if (!name || seen.has(name)) continue;
+      seen.set(name, { name, hex: v.color?.hex ?? '' });
+    }
+    return Array.from(seen.values());
+  }
   return [];
 }
 
@@ -630,7 +643,13 @@ export function getProductSizes(p: ApiProduct): string[] {
     return p.fabric.variants.map((v) => v.size).filter(Boolean) as string[];
   }
   if (p.kind === 'accessory' && p.accessory?.variants) {
-    return p.accessory.variants.map((v) => v.name).filter(Boolean) as string[];
+    // Was `v.name`, a field accessory variants have never had, so this always
+    // returned [] and the size pills never rendered.
+    return Array.from(
+      new Set(
+        p.accessory.variants.map((v) => v.size).filter(Boolean) as string[],
+      ),
+    );
   }
   return [];
 }
