@@ -7,8 +7,39 @@ import type { ApiBusinessPublic, ApiCollection } from '@/lib/api-types';
 import { api } from '@/lib/api';
 import {
   X, Share, ChevronRight, Info, DollarSign, Calendar,
-  Camera as Instagram, PlayCircle as Youtube, Link as LinkIcon, Mail, AlertCircle
+  Camera, PlayCircle, Link as LinkIcon, AlertCircle
 } from 'lucide-react';
+import { socialProfiles, type SocialPlatformKey } from '@/lib/social';
+
+/**
+ * lucide has dropped its brand marks, so only the two platforms with a
+ * reasonable generic stand-in get a glyph; the rest take a lettered badge
+ * rather than borrowing an icon that means something else.
+ */
+const BADGE_LETTER: Record<string, string> = {
+  twitter: 'X',
+  tiktok: 'T',
+  pinterest: 'P',
+};
+
+function SocialGlyph({
+  platform,
+  color,
+}: {
+  platform: SocialPlatformKey;
+  color: string;
+}) {
+  if (platform === 'instagram') return <Camera size={16} />;
+  if (platform === 'youtube') return <PlayCircle size={16} />;
+  return (
+    <div
+      className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold"
+      style={{ border: `1px solid ${color}` }}
+    >
+      {BADGE_LETTER[platform] ?? '@'}
+    </div>
+  );
+}
 
 interface VendorSidebarModalProps {
   isOpen: boolean;
@@ -74,6 +105,7 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
   const g = Math.round(parseInt(hex.substring(2, 4), 16) * 0.35);
   const b = Math.round(parseInt(hex.substring(4, 6), 16) * 0.35);
   const sidebarBg = isLightTheme ? '#FFFFFF' : `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  const socials = socialProfiles(vendor.social_links);
   const sText = isLightTheme ? '#1a1a1a' : '#ffffff';
   const sSubtle = isLightTheme ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
   const sMuted = isLightTheme ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
@@ -196,35 +228,54 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
             </div>
           </div>
 
-          {/* Contact Block */}
-          <div style={{ backgroundColor: sSubtle, borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ color: sText, fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Contact</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <a href="#" className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>Instagram</span>
-                <Instagram size={16} />
-              </a>
-              <a href="#" className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>Pinterest</span>
-                <div className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ border: `1px solid ${sText}` }}>P</div>
-              </a>
-              <a href="#" className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>YouTube</span>
-                <Youtube size={16} />
-              </a>
-              <a href={vendor.website || '#'} className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>{vendor.website || 'website.com'}</span>
-                <LinkIcon size={16} />
-              </a>
-              <a href={vendor.social_links?.email ? `mailto:${vendor.social_links.email}` : '#'} className="flex items-center justify-between text-sm" style={{ color: sText }}>
-                <span>{vendor.social_links?.email || 'help@vendor.com'}</span>
-                <Mail size={16} />
-              </a>
-              <div className="text-sm pr-6 mt-4" style={{ color: sText }}>
-                {vendor.business_address || vendor.city || 'Lagos, Nigeria'}
+          {/* Find this vendor
+              Every row here used to be invented: Instagram, Pinterest and
+              YouTube were hardcoded href="#", the website fell back to the
+              string "website.com", the email read social_links.email - a field
+              the API does not have - and defaulted to "help@vendor.com", and a
+              vendor with no address was shown as being in Lagos. Made-up
+              contact details are worse than none, so each row now renders only
+              when there is something real behind it, and the whole card
+              disappears when there is nothing. */}
+          {(socials.length > 0 || vendor.website || vendor.business_address || vendor.city) && (
+            <div style={{ backgroundColor: sSubtle, borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <h3 style={{ color: sText, fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Find us</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {socials.map((social) => (
+                  <a
+                    key={social.key}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="flex items-center justify-between text-sm"
+                    style={{ color: sText }}
+                  >
+                    <span>@{social.handle}</span>
+                    <SocialGlyph platform={social.key} color={sText} />
+                  </a>
+                ))}
+
+                {vendor.website && (
+                  <a
+                    href={vendor.website}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="flex items-center justify-between text-sm"
+                    style={{ color: sText }}
+                  >
+                    <span>{vendor.website.replace(/^https?:\/\//i, '')}</span>
+                    <LinkIcon size={16} />
+                  </a>
+                )}
+
+                {(vendor.business_address || vendor.city) && (
+                  <div className="text-sm pr-6 mt-4" style={{ color: sText }}>
+                    {vendor.business_address || vendor.city}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Bottom Actions */}
           <button className="w-full flex items-center justify-between text-sm font-bold transition-colors" style={{ backgroundColor: sSubtle, borderRadius: '9999px', padding: '16px 20px', color: sText }}>
