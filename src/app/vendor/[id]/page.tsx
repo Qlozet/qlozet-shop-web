@@ -32,8 +32,17 @@ function reviewDate(id?: string): string {
   return new Date(secs * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 import {
-  Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag, Clock
+  Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag, Clock,
+  Camera, PlayCircle
 } from 'lucide-react';
+import { socialProfiles } from '@/lib/social';
+
+/** lucide has dropped its brand marks; the rest take a lettered badge. */
+const SOCIAL_LETTER: Record<string, string> = {
+  twitter: 'X',
+  tiktok: 'T',
+  pinterest: 'P',
+};
 
 // Solid card colours per discount type — matched to the vendor app's discount
 // badge hues (percentage=blue, fixed=green, store_wide=purple, flash=orange,
@@ -206,6 +215,7 @@ export default function VendorPage() {
   const sheetMuted = isLightTheme ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
   const handleColor = isLightTheme ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.3)';
 
+  const socials = socialProfiles(vendor.social_links);
   const vendorRating = vendor.average_rating ?? 0;
   const vendorReviewCount = vendor.total_ratings ?? 0;
   const vendorLogo = vendor.business_logo_url;
@@ -357,6 +367,54 @@ export default function VendorPage() {
             <Star size={12} color={isLightTheme ? '#1A1A1A' : '#FFFFFF'} fill={isLightTheme ? '#1A1A1A' : '#FFFFFF'} />
             <span>{vendorReviewCount} Reviews</span>
           </div>
+
+          {/* Social handles — credibility, deliberately placed beside the
+              rating rather than near the order controls. In this market a
+              vendor's feed of finished garments is the strongest trust signal
+              they have, so it belongs with the other trust signals and not
+              competing with the buy flow. Renders nothing when the vendor has
+              filled none in. */}
+          {socials.length > 0 && (
+            <div
+              className="flex items-center justify-center gap-2 pointer-events-auto"
+              style={{ marginTop: '14px' }}
+            >
+              {socials.map((social) => (
+                <a
+                  key={social.key}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  title={`@${social.handle} on ${social.label}`}
+                  aria-label={`${vendorName} on ${social.label}`}
+                  className="flex items-center justify-center rounded-full backdrop-blur-md border transition-all hover:opacity-80 active:scale-95"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    // Matches the Star above: fill-white classes are not caught
+                    // by the light-theme override, so the colour is explicit.
+                    color: isLightTheme ? '#1A1A1A' : '#FFFFFF',
+                    backgroundColor: isLightTheme
+                      ? 'rgba(255,255,255,0.75)'
+                      : 'rgba(0,0,0,0.35)',
+                    borderColor: isLightTheme
+                      ? 'rgba(0,0,0,0.12)'
+                      : 'rgba(255,255,255,0.2)',
+                  }}
+                >
+                  {social.key === 'instagram' ? (
+                    <Camera size={14} />
+                  ) : social.key === 'youtube' ? (
+                    <PlayCircle size={14} />
+                  ) : (
+                    <span className="text-[11px] font-bold">
+                      {SOCIAL_LETTER[social.key] ?? '@'}
+                    </span>
+                  )}
+                </a>
+              ))}
+            </div>
+          )}
 
           {/* Floating Action Pills */}
           <div className="flex items-center justify-center gap-3 pointer-events-auto flex-wrap px-6" style={{ marginTop: '40px' }}>

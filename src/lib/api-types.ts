@@ -238,24 +238,21 @@ export interface ApiBusinessPaginated {
 
 // ─── Business / Vendor Types ──────────────────────────────────
 
+/**
+ * Vendor social HANDLES, not URLs — the link is built in lib/social.ts.
+ *
+ * This was declared twice in this file. TypeScript merges duplicate
+ * interfaces, so the effective type gained `facebook`, `website` and `email`,
+ * none of which the backend stores: `social_links.email` typechecked happily
+ * and was forever undefined, which is how the vendor panel ended up showing
+ * an invented "help@vendor.com".
+ */
 export interface ApiSocialLinks {
   instagram?: string;
   twitter?: string;
   pinterest?: string;
   youtube?: string;
   tiktok?: string;
-}
-
-/** Returned by GET /business/public (trimmed projection) */
-export interface ApiSocialLinks {
-  instagram?: string;
-  twitter?: string;
-  facebook?: string;
-  youtube?: string;
-  pinterest?: string;
-  tiktok?: string;
-  website?: string;
-  email?: string;
 }
 
 export interface ApiBusinessPublic {
