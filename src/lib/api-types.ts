@@ -433,6 +433,8 @@ export interface VendorQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  /** Only vendors who take bespoke work — for the quote-request picker. */
+  bespoke?: boolean;
 }
 
 // ─── Vendor Collection Pagination ─────────────────────────────

@@ -44,7 +44,13 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
 }) => {
   const router = useRouter();
   const { saveDesign, requestQuotes } = useBespokeDesigns();
-  const { vendors, loading: vendorsLoading } = useVendors({ limit: 50 });
+  // Only vendors who take bespoke work. A design can go to a few vendors at
+  // once, so offering a shop that does not sew spends one of the customer's
+  // slots on someone who will never answer - and the API now rejects it.
+  const { vendors, loading: vendorsLoading } = useVendors({
+    limit: 50,
+    bespoke: true,
+  });
 
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
