@@ -16,7 +16,18 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   isGenerating,
   isLoading = false,
 }) => (
-  <div className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pt-[72px] pb-4 px-4 lg:pt-0 lg:pb-0 lg:px-0">
+  // lg:pr-[540px] reserves the right-hand furniture instead of ignoring it.
+  // The config panel sits at right:24px and is 380px wide, and the floating
+  // toolbar at right:420px is about 112px across - so roughly 532px from the
+  // right edge is already spoken for. The canvas used to span the full
+  // viewport and centre a 680px image in it, which overlapped the toolbar on
+  // anything narrower than about 1744px: most laptops.
+  //
+  // Padding the CONTAINER rather than the image matters. The image stays
+  // centred, just within the space it actually has, so it never sits
+  // off-centre in its own frame and shrinks gracefully on a small laptop
+  // rather than sliding under the controls.
+  <div className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pt-[72px] pb-4 px-4 lg:pt-0 lg:pb-0 lg:pl-0 lg:pr-[540px]">
     {/* Card Wrapper */}
     <div className="relative w-full h-full lg:w-full lg:h-full lg:max-w-none lg:max-h-none max-w-[500px] max-h-[800px] flex items-center justify-center lg:bg-transparent rounded-[32px] lg:rounded-none">
 
