@@ -269,6 +269,8 @@ export default function ProductDetailsPage() {
 
   let gallery = galleryObjects.map(img => img.url).filter(Boolean);
   let sizes = product ? getProductSizes(product) : [];
+  /** False when the chosen colour has no photographs of its own. */
+  let colourHasOwnPhotos = true;
 
   if (product?.kind === 'clothing' && selectedColor) {
     const cv = product.clothing?.color_variants?.find(c => (c.name || c.color_name) === selectedColor);
@@ -290,6 +292,14 @@ export default function ProductDetailsPage() {
       if (cvImagesObj.length > 0) {
         galleryObjects = cvImagesObj;
         gallery = cvImagesObj.map(img => img.url).filter(Boolean);
+      } else {
+        // No photographs of this colourway. The gallery stays on the
+        // product's default images, which are of a DIFFERENT colour — so the
+        // page says so rather than letting the customer believe the garment
+        // they are looking at is the one they picked. Colour mismatch is the
+        // single biggest cause of fashion returns, and this is the cheapest
+        // place to prevent it.
+        colourHasOwnPhotos = false;
       }
     }
   }
@@ -1518,6 +1528,20 @@ export default function ProductDetailsPage() {
                     />
                   ))}
                 </div>
+
+                {!colourHasOwnPhotos && (
+                  <p
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      marginTop: '10px',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Photos of {selectedColor} are coming soon — the images
+                    above show another colourway of the same piece.
+                  </p>
+                )}
               </div>
             )}
 
