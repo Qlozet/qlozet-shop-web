@@ -157,6 +157,8 @@ export interface OrderItemPricing {
   base: number;
   styles_total: number;
   fabric_total: number;
+  /** Marketplace fabric applied to the garment — its own charge. */
+  external_fabric?: number;
   variant_total: number;
   accessories_total: number;
   addons_total: number;
