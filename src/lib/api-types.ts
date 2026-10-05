@@ -917,7 +917,14 @@ export interface ApiOrderEmbeddedOption {
 export interface ApiOrderItemPricing {
   base: number;
   styles_total: number;
+  /** Fabric chosen from the garment's own options. */
   fabric_total: number;
+  /**
+   * Fabric applied from the marketplace, charged as its own line and left out
+   * of `final` because it is the fabric vendor's revenue. Without it the
+   * customer's rows do not sum to what they paid.
+   */
+  external_fabric?: number;
   variant_total: number;
   accessories_total: number;
   addons_total: number;
@@ -942,8 +949,17 @@ export interface ApiOrderFabricSelection {
   fabric_id?: string;
 }
 
+/** The marketplace fabric applied to a garment, as the order populates it. */
+export interface ApiAppliedFabric {
+  _id?: string;
+  fabric?: { name?: string; images?: ApiProductImage[] };
+  business?: { business_name?: string } | string | null;
+}
+
 export interface ApiOrderItem {
   product: ApiOrderProduct | string | null;
+  applied_fabric?: ApiAppliedFabric | string | null;
+  applied_fabric_yards?: number;
   business?: { _id: string; business_name?: string; business_logo_url?: string } | string | null;
   color_variant_selections?: ApiOrderVariantSelection[];
   fabric_selections?: ApiOrderFabricSelection[];

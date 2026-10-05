@@ -439,6 +439,13 @@ export default function OrdersSection({
           p.accessories_total ? ['Accessories', ngn(p.accessories_total)] : null,
           p.addons_total ? ['Add-ons', ngn(p.addons_total)] : null,
           p.discount ? ['Discount', `-${ngn(p.discount)}`] : null,
+          // The marketplace fabric is charged as its own line and is not in
+          // `final`, so without this row the breakdown is short by exactly
+          // what the fabric cost — a receipt that does not match the amount
+          // that left the customer's account.
+          p.external_fabric
+            ? ['Fabric you chose', ngn(p.external_fabric)]
+            : null,
         ].filter(Boolean) as [string, string][])
       : [['Item total', ngn(item.price)]];
 

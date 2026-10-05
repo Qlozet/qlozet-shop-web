@@ -202,6 +202,28 @@ function itemChoices(item: ApiOrderItem): DesignChoice[] {
     const c = optionChoice('accessories', 'Accessory', a.accessory_id, clothing?.accessories);
     if (c) out.push(c);
   }
+
+  // Fabric applied from the marketplace. It is NOT one of the garment's own
+  // fabric options, so it never appeared among the loops above — the customer
+  // chose a fabric and then could not see it anywhere on their order.
+  const applied = item.applied_fabric;
+  if (applied && typeof applied === 'object') {
+    const name = applied.fabric?.name;
+    if (name) {
+      const vendor =
+        applied.business && typeof applied.business === 'object'
+          ? applied.business.business_name
+          : undefined;
+      const yards = item.applied_fabric_yards;
+      out.push({
+        kind: 'fabric',
+        label: vendor ? `Fabric from ${vendor}` : 'Fabric',
+        name: yards ? `${name} — ${yards} yd` : name,
+        image: pickImg(applied.fabric?.images),
+      });
+    }
+  }
+
   return out;
 }
 
