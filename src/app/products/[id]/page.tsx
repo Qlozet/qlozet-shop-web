@@ -635,8 +635,21 @@ export default function ProductDetailsPage() {
         }
       }
 
-      // Color variant — only when NOT pricing via fabric yardage (avoid double-count).
-      if (!(hasFabrics && customization.selectedFabric) && selectedColor) {
+      // Color variant — only when the garment is being taken as it is sold.
+      //
+      // Two things replace it. An embedded fabric prices the garment by
+      // yardage instead, which was already handled. A fabric the customer
+      // supplied does the same, and was NOT: the colour selection was sent
+      // alongside it, so the order carried both — the customer paid for the
+      // vendor's own colourway AND the fabric, and stock was deducted for
+      // both. A garment cut from supplied cloth is not also taken off the
+      // shelf.
+      const usingSuppliedFabric = Boolean(appliedFabricId);
+      if (
+        !(hasFabrics && customization.selectedFabric) &&
+        !usingSuppliedFabric &&
+        selectedColor
+      ) {
         const cv = clothing.color_variants?.find(
           (c: any) => (c.name || c.color_name) === selectedColor,
         );
@@ -842,6 +855,10 @@ export default function ProductDetailsPage() {
             // bill of materials), unless the customer overrode it.
             applied_fabric_yards:
               appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut,
+            // The size travels here because a supplied-fabric order carries no
+            // colour-variant selection — that is the garment off the shelf,
+            // which this is not. Without it the vendor loses "Size L".
+            applied_fabric_size: selectedSize || undefined,
           }
         : {}),
       // Whose measurements the garment is sewn to — chosen in the customize
@@ -1504,8 +1521,13 @@ export default function ProductDetailsPage() {
             {/* Divider */}
             <div style={{ height: '1px', background: 'var(--border-glass)' }} />
 
-            {/* Colour Swatches */}
-            {colors.length > 0 && (
+            {/* Colour Swatches.
+                Hidden while the customer is supplying their own fabric: the
+                garment is being cut from that cloth, so the vendor's own
+                colourways are not on offer. Leaving them visible and selected
+                was the confusing half of a real bug - the order used to carry
+                both, charging for the colourway AND the fabric. */}
+            {colors.length > 0 && !appliedFabricId && (
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '10px', display: 'block' }}>
                   Colour: <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{selectedColor}</span>
@@ -1543,6 +1565,25 @@ export default function ProductDetailsPage() {
                   </p>
                 )}
               </div>
+            )}
+
+            {/* Why the colours are gone, and how to get them back. */}
+            {appliedFabricId && colors.length > 0 && (
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Your chosen fabric replaces this piece&apos;s own colourways.{' '}
+                <button
+                  type="button"
+                  onClick={() => router.push(`/products/${product._id}`)}
+                  style={{
+                    background: 'none', border: 'none', padding: 0,
+                    font: 'inherit', color: 'var(--brand-fill)',
+                    textDecoration: 'underline', textUnderlineOffset: '3px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Use the vendor&apos;s fabric instead
+                </button>
+              </p>
             )}
 
             {/* Selected Customizations Summary — only for customizable clothing */}

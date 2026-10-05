@@ -35,6 +35,7 @@ export interface CartItem {
   selections?: CartSelections;
   applied_fabric_id?: string;
   applied_fabric_yards?: number;
+  applied_fabric_size?: string;
   note?: string;
   /** Saved measurement-set NAME a custom garment is sewn to (Fit section). */
   measurement_set?: string;
@@ -143,6 +144,7 @@ function mapBackendCartItem(item: any): CartItem {
     selections: item.selections ?? undefined,
     applied_fabric_id: item.applied_fabric_id ?? undefined,
     applied_fabric_yards: item.applied_fabric_yards ?? undefined,
+    applied_fabric_size: item.applied_fabric_size ?? undefined,
     note: item.note ?? undefined,
   };
 }
@@ -275,6 +277,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   ...(item.selections ? { selections: item.selections } : {}),
                   ...(item.applied_fabric_id ? { appliedFabricId: item.applied_fabric_id } : {}),
                   ...(item.applied_fabric_yards ? { appliedFabricYards: item.applied_fabric_yards } : {}),
+                  ...(item.applied_fabric_size ? { appliedFabricSize: item.applied_fabric_size } : {}),
                   ...(item.note ? { note: item.note } : {}),
                 }).catch(() => {});
               }
@@ -516,6 +519,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...(newItem.selections ? { selections: newItem.selections } : {}),
         ...(newItem.applied_fabric_id ? { appliedFabricId: newItem.applied_fabric_id } : {}),
         ...(newItem.applied_fabric_yards ? { appliedFabricYards: newItem.applied_fabric_yards } : {}),
+        ...(newItem.applied_fabric_size ? { appliedFabricSize: newItem.applied_fabric_size } : {}),
         ...(newItem.note ? { note: newItem.note } : {}),
       }).then((res) => {
         // Adopt the backend's authoritative unit_price (base + components,
