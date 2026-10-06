@@ -10,6 +10,7 @@ import { cardStyle, fieldInput } from '../styles';
 import { suggestedAddresses } from '../data';
 import type { ActiveSection, AddressEntry } from '../types';
 import { AddressBookSkeleton } from '../components/Skeleton';
+import { config } from '@/lib/config';
 
 interface AddressBookProps {
   activeSection: ActiveSection;
@@ -187,7 +188,7 @@ export default function AddressBook({ activeSection, setActiveSection }: Address
           </div>
         )}
 
-        {!isLoaded && !process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY && (
+        {!isLoaded && !config.google.placesApiKey && (
           <div style={{ fontSize: '11px', color: '#B45309', background: '#FEF3C7', padding: '8px 12px', borderRadius: '8px', fontWeight: 600 }}>
             Note: Google Places API key not found. Using local address suggestions.
           </div>

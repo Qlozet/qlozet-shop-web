@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { config } from '@/lib/config';
 
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
 
@@ -79,7 +80,7 @@ export const GoogleSignInButton = ({
   const handler = useRef(onCredential);
   handler.current = onCredential;
 
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const clientId = config.google.clientId;
 
   useEffect(() => {
     if (!clientId || !holder.current) return;
