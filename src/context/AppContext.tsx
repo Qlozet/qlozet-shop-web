@@ -107,6 +107,7 @@ interface AppContextType {
   toggleFollowVendor: (id: string) => void;
   login: (email: string, name?: string) => void;
   authenticateUser: (email: string, password: string) => Promise<User>;
+  authenticateWithGoogle: (idToken: string) => Promise<User>;
   logout: () => void;
   demoLogin: () => void;
   cart: CartItem[];
@@ -447,11 +448,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('qlozet_user_id', 'usr_demo');
   };
 
-  const authenticateUser = async (email: string, password: string): Promise<User> => {
-    const res = await api.post('/auth/login/customer', { email, password });
-    const wrapper = res.data;
-    const loginData = wrapper.data;
-
+  /**
+   * Everything that happens once the API has accepted a sign-in, whichever
+   * route it came through: store the tokens, load the profile, map it, then
+   * top up the real token balance. Shared so a Google sign-in cannot drift
+   * from a password one.
+   */
+  const completeSignIn = async (loginData: any): Promise<User> => {
     localStorage.setItem('qlozet_access_token', loginData.token.access_token);
     localStorage.setItem('qlozet_refresh_token', loginData.token.refresh_token);
     localStorage.setItem('qlozet_user_id', loginData.user._id || loginData.user.id);
@@ -484,6 +487,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {
       return mappedUser;
     }
+  };
+
+  const authenticateUser = async (email: string, password: string): Promise<User> => {
+    const res = await api.post('/auth/login/customer', { email, password });
+    return completeSignIn(res.data.data);
+  };
+
+  /**
+   * Google hands the browser an ID token; the API verifies it and creates the
+   * account on first use, so one call covers both signing up and signing in.
+   */
+  const authenticateWithGoogle = async (idToken: string): Promise<User> => {
+    const res = await api.post('/auth/google', { id_token: idToken });
+    return completeSignIn(res.data.data);
   };
 
   const logout = () => {
@@ -762,6 +779,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleFollowVendor,
         login,
         authenticateUser,
+        authenticateWithGoogle,
         logout,
         demoLogin,
         cart,
