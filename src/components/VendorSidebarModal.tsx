@@ -10,6 +10,7 @@ import {
   Camera, PlayCircle, AlertCircle
 } from 'lucide-react';
 import { socialProfiles, type SocialPlatformKey } from '@/lib/social';
+import { ReportStoreModal } from './ReportStoreModal';
 
 /**
  * lucide has dropped its brand marks, so only the two platforms with a
@@ -72,6 +73,7 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
   const [liveTotal, setLiveTotal] = useState<number | null>(null);
   const [latestReview, setLatestReview] = useState<any | null>(null);
   const [loadedReviews, setLoadedReviews] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   const vendorRating = liveAvg ?? vendor.average_rating ?? 0;
   const vendorReviewCount = liveTotal ?? vendor.total_ratings ?? 0;
@@ -276,10 +278,22 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
               same decision in a different shape. It did nothing anyway - no
               handler was ever attached. */}
           
-          <button className="w-full flex items-center justify-between text-sm font-bold transition-colors" style={{ backgroundColor: sSubtle, borderRadius: '9999px', padding: '16px 20px', color: sText }}>
+          <button
+            type="button"
+            onClick={() => setReporting(true)}
+            className="w-full flex items-center justify-between text-sm font-bold transition-colors"
+            style={{ backgroundColor: sSubtle, borderRadius: '9999px', padding: '16px 20px', color: sText }}
+          >
             <span>Report store</span>
             <AlertCircle size={16} />
           </button>
+
+          <ReportStoreModal
+            isOpen={reporting}
+            onClose={() => setReporting(false)}
+            businessId={vendor._id}
+            businessName={vendorName}
+          />
         </div>
       </div>
     </>
