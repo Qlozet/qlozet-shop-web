@@ -536,50 +536,17 @@ function RegisterContent() {
                 </p>
               </div>
 
-              {/* Social Signup Buttons */}
+              {/* The desktop layout carried its own copy of the fake social
+                  buttons: both prefilled a hardcoded demo address and jumped
+                  to the personal-details step, so "SIGNUP with Google" here
+                  never spoke to Google at all. */}
               <div className="flex flex-col" style={{ gap: '12px', marginBottom: '24px' }}>
-                <button 
-                  onClick={() => {
-                    setEmail('ciroma_chukwu@gmail.com');
-                    setStep('personal');
-                  }}
-                  className="w-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)]"
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: 'var(--bg-surface-elevated)',
-                    border: '1px solid var(--border-glass)',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    gap: '10px',
-                  }}
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.7 0 3.3.6 4.6 1.8l2.4-2.4C17.3 1.5 14.9.5 12.24.5c-5.8 0-10.5 4.7-10.5 10.5s4.7 10.5 10.5 10.5c5.5 0 10-4 10-10.5c0-.6-.1-1.2-.2-1.715z"/></svg>
-                  <span>SIGNUP with Google</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setEmail('ciroma_chukwu@gmail.com');
-                    setStep('personal');
-                  }}
-                  className="w-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)]"
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: 'var(--bg-surface-elevated)',
-                    border: '1px solid var(--border-glass)',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    gap: '10px',
-                  }}
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.22.67-2.94 1.51-.64.74-1.2 1.88-1.05 3 .1.07 2.34-.16 3-.45"/></svg>
-                  <span>SIGNUP with Apple</span>
-                </button>
+                <GoogleSignInButton
+                  text="signup_with"
+                  disabled={isLoading}
+                  onCredential={handleGoogle}
+                  onError={setError}
+                />
               </div>
 
               {/* Divider */}
