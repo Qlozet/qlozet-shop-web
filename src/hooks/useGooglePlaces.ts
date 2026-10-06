@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { config } from '@/lib/config';
 
 // ─── Public Types ────────────────────────────────────────────
 export interface PlacePrediction {
@@ -63,7 +64,7 @@ export function useGooglePlaces(countryCodes: string | string[] = ['ng', 'us', '
 
   // ── Load the SDK ────────────────────────────────────────────
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    const key = config.google.placesApiKey;
     if (!key) return;
 
     loadScript(key)

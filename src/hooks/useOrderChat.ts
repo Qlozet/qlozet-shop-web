@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { api } from '@/lib/api';
+import { config } from '@/lib/config';
 
 // A single message in a bespoke order's customer <-> tailor thread.
 export interface ChatMessage {
@@ -18,7 +19,7 @@ export interface ChatMessage {
 // The Socket.IO server lives at the API origin without the `/api` suffix.
 function socketOrigin(): string {
   const base =
-    process.env.NEXT_PUBLIC_API_URL || 'https://qlozet-backend.fly.dev/api';
+    config.apiUrl;
   return base.replace(/\/api\/?$/, '');
 }
 

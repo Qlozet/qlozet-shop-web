@@ -1,7 +1,8 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { config } from '@/lib/config';
 
 // Get base URL from environment or fallback
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://qlozet-backend.fly.dev/api';
+const API_URL = config.apiUrl;
 
 export const api = axios.create({
   baseURL: API_URL,

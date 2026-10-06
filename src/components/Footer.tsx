@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 import { QlozetLogo } from '@/components/QlozetLogo';
 import { useCurrency, type DisplayCurrency } from '@/context/CurrencyContext';
+import { config } from '@/lib/config';
 
 // Currency selector — shared by both footer variants. Switching re-renders all
 // prices via useCurrency(); checkout still charges ₦ (Phase 2 is display-only).
@@ -53,7 +54,7 @@ const SOCIALS = [
 
 // Canonical legal pages live on the marketing site.
 const LANDING_URL =
-  process.env.NEXT_PUBLIC_LANDING_URL ?? 'https://www.qlozet.app';
+  config.landingUrl;
 
 export const Footer = () => {
   const year = new Date().getFullYear();

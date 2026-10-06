@@ -6,11 +6,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { QlozetLogo } from '@/components/QlozetLogo';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { authenticateUser, demoLogin, user } = useApp();
+  const { authenticateUser, authenticateWithGoogle, demoLogin, user } = useApp();
 
   // Form States
   const [email, setEmail] = useState('');
@@ -57,6 +58,22 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, router]);
+
+  const handleGoogle = async (idToken: string) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      await authenticateWithGoogle(idToken);
+      router.push('/');
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+          'Could not sign you in with Google. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,6 +300,19 @@ export default function LoginPage() {
                 </div>
               )}
 
+              <div className="flex flex-col" style={{ gap: '14px', marginBottom: '18px' }}>
+                <GoogleSignInButton
+                  text="signin_with"
+                  disabled={isLoading}
+                  onCredential={handleGoogle}
+                  onError={setError}
+                />
+                <div className="flex items-center" style={{ gap: '10px' }}>
+                  <span style={{ flex: 1, height: '1px', background: 'var(--border, #e5e7eb)' }} />
+                  <span style={{ fontSize: '11px', color: 'var(--muted, #6b7280)' }}>or</span>
+                  <span style={{ flex: 1, height: '1px', background: 'var(--border, #e5e7eb)' }} />
+                </div>
+              </div>
               <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '18px' }}>
                 <div className="flex flex-col" style={{ gap: '6px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
@@ -514,7 +544,20 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '20px' }}>
+          <div className="flex flex-col" style={{ gap: '14px', marginBottom: '18px' }}>
+                <GoogleSignInButton
+                  text="signin_with"
+                  disabled={isLoading}
+                  onCredential={handleGoogle}
+                  onError={setError}
+                />
+                <div className="flex items-center" style={{ gap: '10px' }}>
+                  <span style={{ flex: 1, height: '1px', background: 'var(--border, #e5e7eb)' }} />
+                  <span style={{ fontSize: '11px', color: 'var(--muted, #6b7280)' }}>or</span>
+                  <span style={{ flex: 1, height: '1px', background: 'var(--border, #e5e7eb)' }} />
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '20px' }}>
             
             {/* Email Field */}
             <div className="flex flex-col" style={{ gap: '8px' }}>
