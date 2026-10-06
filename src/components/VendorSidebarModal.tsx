@@ -7,9 +7,10 @@ import type { ApiBusinessPublic, ApiCollection } from '@/lib/api-types';
 import { api } from '@/lib/api';
 import {
   X, Share, ChevronRight, Info, DollarSign, Calendar,
-  Camera, PlayCircle, Link as LinkIcon, AlertCircle
+  Camera, PlayCircle, AlertCircle
 } from 'lucide-react';
 import { socialProfiles, type SocialPlatformKey } from '@/lib/social';
+import { ReportStoreModal } from './ReportStoreModal';
 
 /**
  * lucide has dropped its brand marks, so only the two platforms with a
@@ -72,6 +73,7 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
   const [liveTotal, setLiveTotal] = useState<number | null>(null);
   const [latestReview, setLatestReview] = useState<any | null>(null);
   const [loadedReviews, setLoadedReviews] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   const vendorRating = liveAvg ?? vendor.average_rating ?? 0;
   const vendorReviewCount = liveTotal ?? vendor.total_ratings ?? 0;
@@ -237,7 +239,7 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
               contact details are worse than none, so each row now renders only
               when there is something real behind it, and the whole card
               disappears when there is nothing. */}
-          {(socials.length > 0 || vendor.website || vendor.business_address || vendor.city) && (
+          {(socials.length > 0 || vendor.business_address || vendor.city) && (
             <div style={{ backgroundColor: sSubtle, borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 style={{ color: sText, fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Find us</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -255,18 +257,11 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
                   </a>
                 ))}
 
-                {vendor.website && (
-                  <a
-                    href={vendor.website}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="flex items-center justify-between text-sm"
-                    style={{ color: sText }}
-                  >
-                    <span>{vendor.website.replace(/^https?:\/\//i, '')}</span>
-                    <LinkIcon size={16} />
-                  </a>
-                )}
+                {/* No website link. A vendor's own site is a competing
+                    checkout with the same garments and no commission, so the
+                    storefront profile no longer carries one - the API stopped
+                    sending it. Social handles stay: a handle is identity, and
+                    a customer can find the brand with or without our help. */}
 
                 {(vendor.business_address || vendor.city) && (
                   <div className="text-sm pr-6 mt-4" style={{ color: sText }}>
@@ -278,15 +273,27 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
           )}
 
           {/* Bottom Actions */}
-          <button className="w-full flex items-center justify-between text-sm font-bold transition-colors" style={{ backgroundColor: sSubtle, borderRadius: '9999px', padding: '16px 20px', color: sText }}>
-            <span>Visit online store</span>
-            <LinkIcon size={16} />
-          </button>
+          {/* No "Visit online store": the storefront no longer links a
+              vendor's own site, and a button offering the same exit is the
+              same decision in a different shape. It did nothing anyway - no
+              handler was ever attached. */}
           
-          <button className="w-full flex items-center justify-between text-sm font-bold transition-colors" style={{ backgroundColor: sSubtle, borderRadius: '9999px', padding: '16px 20px', color: sText }}>
+          <button
+            type="button"
+            onClick={() => setReporting(true)}
+            className="w-full flex items-center justify-between text-sm font-bold transition-colors"
+            style={{ backgroundColor: sSubtle, borderRadius: '9999px', padding: '16px 20px', color: sText }}
+          >
             <span>Report store</span>
             <AlertCircle size={16} />
           </button>
+
+          <ReportStoreModal
+            isOpen={reporting}
+            onClose={() => setReporting(false)}
+            businessId={vendor._id}
+            businessName={vendorName}
+          />
         </div>
       </div>
     </>
