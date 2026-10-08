@@ -15,6 +15,7 @@ import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
 import { OrderChatModal } from '@/components/chat/OrderChatModal';
+import { useUnreadOrderMessages } from '@/hooks/useUnreadOrderMessages';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS } from '@/hooks/useCustomerReturns';
 
 // ─── Tokens ──────────────────────────────────────────────────
@@ -383,6 +384,12 @@ export default function OrdersSection({
   // Return requests — powers the item-level return-status banner.
   const { returns: myReturns } = useCustomerReturns();
 
+  // Unread chat counts for every order at once, so a tailor's reply shows on
+  // the list instead of only inside the thread. Refreshed when a thread is
+  // closed, because opening it marks that side read on the server.
+  const { perOrder: unreadByOrder, refresh: refreshUnread } =
+    useUnreadOrderMessages(true);
+
   // Chat is a bespoke-only channel; sending opens while the order is in
   // production ("Processing") or in transit ("Shipped").
   const chatCanSend = (o: Order) => o.status === 'Processing' || o.status === 'Shipped';
@@ -603,6 +610,11 @@ export default function OrdersSection({
                       className="flex items-center transition-all hover:opacity-80 flex-shrink-0"
                       style={{ gap: '6px', padding: '7px 14px', borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: INK }}>
                       <MessageCircle size={13} /> Message
+                      {(unreadByOrder[order.orderNumber] ?? 0) > 0 && (
+                        <span style={{ minWidth: '15px', padding: '0 4px', borderRadius: '100px', background: 'var(--accent, #2C1810)', color: '#fff', fontSize: '9px', fontWeight: 800, lineHeight: '15px', textAlign: 'center' }}>
+                          {unreadByOrder[order.orderNumber]! > 9 ? '9+' : unreadByOrder[order.orderNumber]}
+                        </span>
+                      )}
                     </button>
                   )}
                 </div>
@@ -711,7 +723,11 @@ export default function OrdersSection({
         {chatFor && (
           <OrderChatModal
             isOpen
-            onClose={() => setChatFor(null)}
+            onClose={() => {
+              setChatFor(null);
+              // Reading the thread marked it read server-side.
+              void refreshUnread();
+            }}
             orderReference={chatFor.orderReference}
             vendorName={chatFor.vendorName}
             canSend={chatFor.canSend}
@@ -924,6 +940,16 @@ export default function OrdersSection({
                 <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
                   <StatusPill status={order.status} />
                   <span style={{ fontSize: '11px', color: MUTE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.orderNumber} · {order.date}</span>
+                  {(unreadByOrder[order.orderNumber] ?? 0) > 0 && (
+                    <span
+                      title={`${unreadByOrder[order.orderNumber]} unread message${unreadByOrder[order.orderNumber] === 1 ? '' : 's'}`}
+                      className="flex items-center flex-shrink-0"
+                      style={{ gap: '3px', padding: '2px 7px', borderRadius: '100px', background: 'var(--accent, #2C1810)', color: '#fff', fontSize: '10px', fontWeight: 700, lineHeight: 1.4 }}
+                    >
+                      <MessageCircle size={9} />
+                      {unreadByOrder[order.orderNumber]! > 9 ? '9+' : unreadByOrder[order.orderNumber]}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col items-end flex-shrink-0" style={{ gap: '10px' }}>
