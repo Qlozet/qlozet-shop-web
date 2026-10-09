@@ -18,6 +18,7 @@ export interface SuggestionReason {
     | 'well_rated'
     | 'reliable'
     | 'experienced'
+    | 'verified'
     | 'new_here';
   label: string;
 }
@@ -35,6 +36,8 @@ export interface SuggestedVendor {
   success_rate?: number;
   total_items_sold?: number;
   accepts_external_fabric?: boolean;
+  /** The platform's own verification tier. */
+  verified: boolean;
   reasons: SuggestionReason[];
 }
 

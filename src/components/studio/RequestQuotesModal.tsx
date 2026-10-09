@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { X, Loader2, CheckCircle2, Check, Store, Search, Star } from 'lucide-react';
+import { X, Loader2, CheckCircle2, Check, Store, Search, Star, BadgeCheck } from 'lucide-react';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { useVendors } from '@/hooks/useVendors';
 import {
@@ -365,6 +365,14 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                         <span className='flex flex-col' style={{ flex: 1, gap: '3px', minWidth: 0 }}>
                           <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                             {v.business_name}
+                            {v.verified && (
+                              <BadgeCheck
+                                size={13}
+                                color='#064E3B'
+                                style={{ display: 'inline', marginLeft: '5px', verticalAlign: '-2px' }}
+                                aria-label='Verified by Qlozet'
+                              />
+                            )}
                             {alreadyRequested && (
                               <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '2px 6px' }}>
                                 Requested
