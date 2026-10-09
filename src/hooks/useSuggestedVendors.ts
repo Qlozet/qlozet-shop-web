@@ -1,0 +1,148 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+
+// Ranked tailors for one bespoke design —
+// GET /bespoke/designs/:id/suggested-vendors.
+//
+// Design-scoped rather than the generic vendor list, because the two best
+// signals depend on the design: who supplies its fabric (and so avoids the
+// cross-vendor transfer cost) and who makes that kind of garment. The generic
+// list knows neither, and returns vendors in no order at all.
+
+export interface SuggestionReason {
+  code:
+    | 'fabric_owner'
+    | 'category_match'
+    | 'well_rated'
+    | 'reliable'
+    | 'experienced'
+    | 'new_here';
+  label: string;
+}
+
+export interface SuggestedVendor {
+  _id: string;
+  business_name: string;
+  business_logo_url?: string;
+  business_logo_svg_url?: string;
+  business_category?: string;
+  city?: string;
+  state?: string;
+  average_rating: number;
+  total_ratings: number;
+  success_rate?: number;
+  total_items_sold?: number;
+  accepts_external_fabric?: boolean;
+  reasons: SuggestionReason[];
+}
+
+interface Payload {
+  vendors: SuggestedVendor[];
+  total: number;
+  ranked_by: string[];
+}
+
+const EMPTY: Payload = { vendors: [], total: 0, ranked_by: [] };
+
+// Same envelope dig as the other hooks: the interceptor wraps the service's
+// `{ data }` in its own, so the payload sits a couple of levels down.
+function dig(value: unknown): Payload {
+  let node = value as Record<string, unknown> | undefined;
+  for (let i = 0; i < 4; i += 1) {
+    if (!node || typeof node !== 'object') return EMPTY;
+    if (Array.isArray((node as unknown as Payload).vendors)) break;
+    node = node.data as Record<string, unknown> | undefined;
+  }
+  const payload = node as unknown as Payload | undefined;
+  if (!payload || !Array.isArray(payload.vendors)) return EMPTY;
+  return {
+    vendors: payload.vendors,
+    total: typeof payload.total === 'number' ? payload.total : payload.vendors.length,
+    ranked_by: Array.isArray(payload.ranked_by) ? payload.ranked_by : [],
+  };
+}
+
+export function useSuggestedVendors(
+  designId: string | null | undefined,
+  opts: { enabled?: boolean; limit?: number } = {}
+) {
+  const { enabled = true, limit = 8 } = opts;
+  const [payload, setPayload] = useState<Payload>(EMPTY);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!enabled || !designId) return;
+    setLoading(true);
+    try {
+      const res = await api.get(
+        `/bespoke/designs/${encodeURIComponent(designId)}/suggested-vendors`,
+        { params: { limit } }
+      );
+      setPayload(dig(res.data));
+      setError(null);
+    } catch {
+      // The caller falls back to the plain vendor list, so this is a quiet
+      // degradation rather than a dead end.
+      setError('Could not rank tailors for this design.');
+      setPayload(EMPTY);
+    } finally {
+      setLoading(false);
+    }
+  }, [designId, enabled, limit]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return { ...payload, loading, error, refetch: load };
+}
+
+
+/**
+ * The same ranking before the design exists.
+ *
+ * The studio only saves a design when quotes are requested, so a first quote
+ * request has no id to rank against — which is the usual case. Category and
+ * fabric are all the ranking needs, and the studio has both.
+ */
+export function useSuggestedVendorsForCriteria(opts: {
+  category?: string;
+  fabricId?: string;
+  enabled?: boolean;
+  limit?: number;
+}) {
+  const { category, fabricId, enabled = true, limit = 8 } = opts;
+  const [payload, setPayload] = useState<Payload>(EMPTY);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!enabled) return;
+    setLoading(true);
+    try {
+      const res = await api.get('/bespoke/suggested-vendors', {
+        params: {
+          limit,
+          ...(category ? { category } : {}),
+          ...(fabricId ? { fabric_id: fabricId } : {}),
+        },
+      });
+      setPayload(dig(res.data));
+      setError(null);
+    } catch {
+      setError('Could not rank tailors for this design.');
+      setPayload(EMPTY);
+    } finally {
+      setLoading(false);
+    }
+  }, [category, fabricId, enabled, limit]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return { ...payload, loading, error, refetch: load };
+}
