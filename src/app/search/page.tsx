@@ -40,7 +40,35 @@ function darkenHex(hex: string, amount: number = 0.65): string {
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const query = searchParams.get('q') || '';
+  const urlQuery = searchParams.get('q') || '';
+
+  // The live search term.
+  //
+  // It used to read straight off the URL. Submitting a search while already
+  // on this page dispatches an event, the page pushes /search?q=<new>, and
+  // the term was expected to come back round through useSearchParams — but it
+  // did not, so every search after the first one refetched the first term.
+  // The request in the network tab still said ?search=dress however many
+  // times you searched for something else.
+  //
+  // Holding it in state removes that round trip from the path that matters.
+  // The URL is still updated, so the page stays shareable and back/forward
+  // still work; it is just no longer the thing the results depend on.
+  const [query, setQuery] = useState(urlQuery);
+
+  // Keep up with the URL changing underneath us — arriving from another page,
+  // or the back button. Adjusting state during render rather than in an
+  // effect is React's own recipe for this, and avoids a wasted pass.
+  //
+  // The comparison is against the last URL we SAW, not against `query`.
+  // Comparing with `query` would mean a URL that has not caught up yet looks
+  // like a fresh change and snaps the term back to the previous search — the
+  // very bug being fixed. So nothing but this block may set lastUrlQuery.
+  const [lastUrlQuery, setLastUrlQuery] = useState(urlQuery);
+  if (urlQuery !== lastUrlQuery) {
+    setLastUrlQuery(urlQuery);
+    setQuery(urlQuery);
+  }
   const { wishlist, toggleWishlist, gender } = useApp();
   const trackEvent = useTrackEvent();
   const { ask, response: aiResponse, loading: aiLoading, error: aiError, reset: resetAI, history: chatHistory } = useAskFashion();
@@ -338,10 +366,16 @@ function SearchContent() {
       const query = (e as CustomEvent).detail as string;
       if (!query) return;
       if (viewMode === 'ai') {
-        // AI mode: send to Ask
+        // AI mode: send to Ask. Record the question too, or the stale-thread
+        // banner fires on the answer that is about to arrive.
+        setQuery(query);
+        setAskedFor(query);
         ask(query);
+        router.push(`/search?q=${encodeURIComponent(query)}`);
       } else {
-        // Search mode: update URL for product search
+        // Drive the results from state, and keep the URL in step so the
+        // search is still shareable. The push alone was not enough.
+        setQuery(query);
         router.push(`/search?q=${encodeURIComponent(query)}`);
       }
     };
@@ -584,7 +618,10 @@ function SearchContent() {
                   <button
                     key={suggestion}
                     type="button"
-                    onClick={() => router.push(`/search?q=${encodeURIComponent(suggestion)}`)}
+                    onClick={() => {
+                      setQuery(suggestion);
+                      router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+                    }}
                     className="flex items-center transition-colors text-left"
                     style={{
                       padding: '14px 20px',
