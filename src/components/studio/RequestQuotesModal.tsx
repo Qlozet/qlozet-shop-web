@@ -4,9 +4,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { X, Loader2, CheckCircle2, Check, Store } from 'lucide-react';
+import { X, Loader2, CheckCircle2, Check, Store, Search, Star } from 'lucide-react';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { useVendors } from '@/hooks/useVendors';
+import {
+  useSuggestedVendors,
+  useSuggestedVendorsForCriteria,
+} from '@/hooks/useSuggestedVendors';
 import { enrichSelections } from '@/data/studio-options';
 import type { DesignSelections } from './SaveDesignModal';
 import { fetchPublicConfig } from '@/lib/public-config';
@@ -44,13 +48,65 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
 }) => {
   const router = useRouter();
   const { saveDesign, requestQuotes } = useBespokeDesigns();
+  // ─── Which tailors to offer ───────────────────────────────────
+  // Two modes. By default, a ranked shortlist for THIS design: the tailor who
+  // supplies its fabric first (everyone else adds a cross-vendor transfer
+  // cost), then whoever makes this kind of garment, then rating and
+  // reliability. Searching or asking to see everyone falls back to the plain
+  // list.
+  //
+  // The ranking is design-scoped because the generic vendor list cannot know
+  // either of the two best signals — and it returns vendors in no order at
+  // all, so whoever registered first was collecting the work.
+  const [query, setQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const browsing = showAll || query.trim().length > 0;
+
+  // The fabric slot can also hold a style-library id, which owns nothing.
+  const fabricId =
+    selections?.fabric && /^[0-9a-f]{24}$/i.test(selections.fabric)
+      ? selections.fabric
+      : undefined;
+
+  const {
+    vendors: suggested,
+    total: suggestedTotal,
+    loading: suggestedLoading,
+    error: suggestedError,
+  } = useSuggestedVendors(designId ?? null, {
+    enabled: isOpen && !browsing,
+  });
+
+  // Criteria form, for the usual case: the design is only saved when quotes
+  // are requested, so on a first request there is no id to rank against.
+  const {
+    vendors: suggestedByCriteria,
+    total: criteriaTotal,
+    loading: criteriaLoading,
+  } = useSuggestedVendorsForCriteria({
+    category,
+    fabricId,
+    enabled: isOpen && !browsing && !designId,
+  });
+
   // Only vendors who take bespoke work. A design can go to a few vendors at
   // once, so offering a shop that does not sew spends one of the customer's
   // slots on someone who will never answer - and the API now rejects it.
-  const { vendors, loading: vendorsLoading } = useVendors({
+  const { vendors: allVendors, loading: allLoading } = useVendors({
     limit: 50,
     bespoke: true,
+    ...(query.trim() ? { search: query.trim() } : {}),
   });
+
+  const ranked = designId ? suggested : suggestedByCriteria;
+  const rankedTotal = designId ? suggestedTotal : criteriaTotal;
+  const rankedLoading = designId ? suggestedLoading : criteriaLoading;
+
+  // If the ranking fails, the plain list is still a usable way to pick a
+  // tailor — a degraded order beats an empty modal.
+  const useRanked = !browsing && !suggestedError && ranked.length > 0;
+  const vendors: any[] = useRanked ? ranked : allVendors;
+  const vendorsLoading = useRanked ? rankedLoading : allLoading;
 
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -191,9 +247,75 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                 </p>
               </div>
 
+              {/* Search. Secondary on purpose: this is a discovery moment, not
+                  a lookup — but someone who already has a tailor in mind
+                  should not have to scroll a ranked list to find them. */}
+              <div
+                className='flex items-center'
+                style={{
+                  gap: '8px', padding: '0 12px', borderRadius: '12px',
+                  border: '1px solid var(--border-glass)',
+                  background: 'var(--bg-surface-elevated)',
+                }}
+              >
+                <Search size={14} color='var(--text-muted)' />
+                <input
+                  id='tailor-search'
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder='Search tailors by name or speciality'
+                  style={{
+                    flex: 1, padding: '10px 0', border: 'none', outline: 'none',
+                    background: 'transparent', fontSize: '13px',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
+                    aria-label='Clear search'
+                  >
+                    <X size={13} color='var(--text-muted)' />
+                  </button>
+                )}
+              </div>
+
+              {/* Say what the order is, rather than asserting "recommended"
+                  and leaving people to wonder whether it was paid for. */}
+              {useRanked && (
+                <div className='flex items-center justify-between' style={{ gap: '12px', padding: '0 4px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Best matches for this design
+                  </span>
+                  {rankedTotal > vendors.length && (
+                    <button
+                      onClick={() => setShowAll(true)}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#064E3B' }}
+                    >
+                      See all {rankedTotal}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {browsing && (
+                <div className='flex items-center justify-between' style={{ gap: '12px', padding: '0 4px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {query.trim() ? `Results for "${query.trim()}"` : 'All tailors'}
+                  </span>
+                  <button
+                    onClick={() => { setShowAll(false); setQuery(''); }}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#064E3B' }}
+                  >
+                    Best matches
+                  </button>
+                </div>
+              )}
+
               <div
                 style={{
-                  maxHeight: '320px', overflowY: 'auto', display: 'flex',
+                  maxHeight: '360px', overflowY: 'auto', display: 'flex',
                   flexDirection: 'column', gap: '8px',
                 }}
               >
@@ -203,7 +325,9 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                   </div>
                 ) : vendors.length === 0 ? (
                   <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>
-                    No tailors available right now.
+                    {query.trim()
+                      ? `No tailors match "${query.trim()}".`
+                      : 'No tailors available right now.'}
                   </p>
                 ) : (
                   vendors.map((v: any) => {
@@ -218,7 +342,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                         key={id}
                         onClick={() => toggle(id)}
                         disabled={disabled}
-                        className='flex items-center transition-all'
+                        className='flex items-start transition-all'
                         style={{
                           gap: '12px', padding: '10px 12px', borderRadius: '14px',
                           border: `1.5px solid ${isSel ? '#064E3B' : 'var(--border-glass)'}`,
@@ -238,16 +362,50 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                             <Store size={16} color='var(--text-muted)' />
                           )}
                         </div>
-                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {v.business_name}
-                          {alreadyRequested && (
-                            <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '2px 6px' }}>
-                              Requested
+                        <span className='flex flex-col' style={{ flex: 1, gap: '3px', minWidth: 0 }}>
+                          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {v.business_name}
+                            {alreadyRequested && (
+                              <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '2px 6px' }}>
+                                Requested
+                              </span>
+                            )}
+                          </span>
+
+                          {/* The rating, which this list could not show at all
+                              before — it is not in the vendor-list projection,
+                              so customers were picking tailors blind. */}
+                          {typeof v.average_rating === 'number' && v.total_ratings > 0 && (
+                            <span className='flex items-center' style={{ gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <Star size={10} fill='#B8941F' color='#B8941F' />
+                              {v.average_rating.toFixed(1)}
+                              <span style={{ opacity: 0.7 }}>({v.total_ratings})</span>
+                            </span>
+                          )}
+
+                          {/* Why this one is here. An unexplained ranking
+                              invites the suspicion that it was bought. */}
+                          {Array.isArray(v.reasons) && v.reasons.length > 0 && (
+                            <span className='flex flex-wrap' style={{ gap: '4px', marginTop: '1px' }}>
+                              {v.reasons.slice(0, 2).map((r: any) => (
+                                <span
+                                  key={r.code}
+                                  style={{
+                                    fontSize: '9.5px', fontWeight: 600, lineHeight: 1.5,
+                                    padding: '2px 6px', borderRadius: '6px',
+                                    color: r.code === 'fabric_owner' ? '#064E3B' : 'var(--text-muted)',
+                                    background: r.code === 'fabric_owner' ? 'rgba(6,78,59,0.08)' : 'var(--bg-surface)',
+                                    border: '1px solid var(--border-glass)',
+                                  }}
+                                >
+                                  {r.label}
+                                </span>
+                              ))}
                             </span>
                           )}
                         </span>
                         <span
-                          className='flex items-center justify-center'
+                          className='flex items-center justify-center flex-shrink-0'
                           style={{
                             width: '22px', height: '22px', borderRadius: '50%',
                             border: `1.5px solid ${isSel ? '#064E3B' : 'var(--border-glass)'}`,
