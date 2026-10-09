@@ -48,7 +48,11 @@ export function useVendors(params: VendorQueryParams = {}): UseVendorsReturn {
 
   const paramsKey = JSON.stringify(params);
 
-  const fetchVendors = useCallback(async () => {
+  // `stillWanted` lets the effect below discard an answer that arrived after
+  // a newer request. Without it, searching twice in quick succession left
+  // whichever request happened to finish last on screen — which is how the
+  // results stayed on the previous query.
+  const fetchVendors = useCallback(async (stillWanted: () => boolean = () => true) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const cleanParams: Record<string, string | number> = {};
@@ -60,17 +64,23 @@ export function useVendors(params: VendorQueryParams = {}): UseVendorsReturn {
 
       const res = await api.get('/business/public', { params: cleanParams });
       const payload: ApiBusinessPaginated = res.data?.data ?? res.data;
+      if (!stillWanted()) return;
       setState({ data: payload, loading: false, error: null });
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Failed to fetch vendors';
+      if (!stillWanted()) return;
       setState({ data: null, loading: false, error: message });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramsKey]);
 
   useEffect(() => {
-    fetchVendors();
+    let cancelled = false;
+    void fetchVendors(() => !cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [fetchVendors]);
 
   const { data } = state;
