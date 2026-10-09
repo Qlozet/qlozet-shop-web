@@ -39,20 +39,42 @@ function dig(v: unknown): UnreadCounts {
 export function useUnreadOrderMessages(enabled: boolean) {
   const [counts, setCounts] = useState<UnreadCounts>(EMPTY);
 
+  const fetchCounts = useCallback(async () => {
+    const res = await api.get('/orders/messages/unread');
+    return dig(res.data);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Guarded so a slow answer cannot land after a newer one and put back a
+    // badge the reader just cleared. Nothing sets state before the first
+    // await either, which keeps this off React's cascading-render path.
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const next = await fetchCounts();
+        if (!cancelled) setCounts(next);
+      } catch {
+        // A badge is not worth surfacing an error for; leave the last known
+        // counts in place rather than flashing them to zero.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, fetchCounts]);
+
   const refresh = useCallback(async () => {
     if (!enabled) return;
     try {
-      const res = await api.get('/orders/messages/unread');
-      setCounts(dig(res.data));
+      setCounts(await fetchCounts());
     } catch {
-      // A badge is not worth surfacing an error for; leave the last known
-      // counts in place rather than flashing them to zero.
+      // As above.
     }
-  }, [enabled]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  }, [enabled, fetchCounts]);
 
   return { ...counts, refresh };
 }

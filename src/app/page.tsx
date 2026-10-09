@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -15,11 +15,15 @@ import { ShopByCategory } from '@/components/ShopByCategory';
 import { FollowingBar } from '@/components/FollowingBar';
 import { ForYouSection } from '@/components/ForYouSection';
 import { useProducts } from '@/hooks/useProducts';
+import {
+  useCategoryVendors,
+  type CategoryVendor,
+} from '@/hooks/useCategoryVendors';
 import { useVendors } from '@/hooks/useVendors';
 import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
 import { ProductCarousel } from '@/components/discover/ProductCarousel';
 import { getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
-import type { ApiProduct, ApiBusinessPublic, ApiFeedItem } from '@/lib/api-types';
+import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 
 // ─── Category Section Config ──────────────────────────────────────
 const FEED_SECTIONS = [
@@ -32,16 +36,14 @@ const FEED_SECTIONS = [
 // ─── Scrollable Vendor Row ────────────────────────────────────────
 function VendorRow({
   vendors,
-  vendorProductMap,
   followedVendors,
   onToggleFollow,
-  section,
 }: {
-  vendors: ApiBusinessPublic[];
-  vendorProductMap: Map<string, ApiProduct[]>;
+  // Each vendor arrives with its own matching products, already filtered by
+  // kind on the server — so there is nothing to look up or re-filter here.
+  vendors: CategoryVendor[];
   followedVendors: string[];
   onToggleFollow: (id: string) => void;
-  section?: typeof FEED_SECTIONS[number];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -59,19 +61,7 @@ function VendorRow({
         style={{ gap: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {vendors.map((vendor) => {
-          let vendorProducts = vendorProductMap.get(vendor._id) ?? [];
-          
-          if (section) {
-            vendorProducts = vendorProducts.filter((p) => {
-              if (p.kind !== section.kind) return false;
-              if (section.kind === 'clothing' && 'clothingType' in section) {
-                if (p.clothing?.type !== section.clothingType) return false;
-              }
-              return true;
-            });
-          }
-
-          // Skip vendors with no products to display
+          const vendorProducts = vendor.products ?? [];
           if (vendorProducts.length === 0) return null;
 
           return (
@@ -108,6 +98,73 @@ function VendorRow({
           <ChevronRight size={18} color="var(--text-primary)" />
         </button>
       )}
+    </div>
+  );
+}
+
+// ─── One category row ─────────────────────────────────────────────
+// A component rather than a loop body because each row does its own fetch,
+// and a hook cannot live inside .map().
+//
+// The row used to be derived from a shared pool of the 50 newest products
+// site-wide: a vendor appeared only if one of their items happened to be in
+// that window, the order came from the unsorted vendor list (so, registration
+// date), and a category with no recent uploads disappeared from the page
+// altogether. Now each row asks for its own kind and gets a ranked answer.
+function CategorySection({
+  section,
+  audience,
+  followedVendors,
+  onToggleFollow,
+}: {
+  section: typeof FEED_SECTIONS[number];
+  audience: string;
+  followedVendors: string[];
+  onToggleFollow: (id: string) => void;
+}) {
+  const { vendors, loading } = useCategoryVendors({
+    kind: section.kind,
+    clothingType: 'clothingType' in section ? section.clothingType : undefined,
+    audience,
+    limit: 8,
+  });
+
+  // Nothing to say yet, and nothing worth a spinner — the rest of the page is
+  // already up. An empty category hides itself.
+  if (loading || vendors.length === 0) return null;
+
+  return (
+    <div className="flex flex-col" style={{ gap: '16px' }}>
+      <Link
+        href={section.href}
+        className="flex items-center group/sec"
+        style={{ gap: '8px', textDecoration: 'none' }}
+      >
+        <h3
+          style={{
+            fontSize: '13px',
+            fontWeight: 800,
+            color: 'var(--text-primary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            fontFamily: 'var(--font-display)',
+          }}
+        >
+          {section.label}
+        </h3>
+        <ChevronRight
+          size={14}
+          color="var(--text-primary)"
+          className="transition-transform group-hover/sec:translate-x-1"
+        />
+        <div style={{ height: '1px', flex: 1, background: 'var(--border-glass)' }} />
+      </Link>
+
+      <VendorRow
+        vendors={vendors}
+        followedVendors={followedVendors}
+        onToggleFollow={onToggleFollow}
+      />
     </div>
   );
 }
@@ -198,37 +255,6 @@ export default function HomePage() {
   };
 
   // ── Build vendor → products lookup ──────────────────────────────
-  const vendorProductMap = useMemo(() => {
-    const map = new Map<string, ApiProduct[]>();
-    for (const p of allProducts) {
-      const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
-      if (!bizId) continue;
-      if (!map.has(bizId)) map.set(bizId, []);
-      map.get(bizId)!.push(p);
-    }
-    return map;
-  }, [allProducts]);
-
-  // ── Derive vendor "category" from their products (Option B) ────
-  const sectionVendors = useMemo(() => {
-    const result: Record<string, ApiBusinessPublic[]> = {};
-    for (const section of FEED_SECTIONS) {
-      const vendorIds = new Set<string>();
-      for (const p of allProducts) {
-        const bizId = typeof p.business === 'string' ? p.business : p.business?._id;
-        if (!bizId) continue;
-        if (p.kind !== section.kind) continue;
-        // For clothing sections, also check clothing type
-        if (section.kind === 'clothing' && 'clothingType' in section) {
-          if (p.clothing?.type !== section.clothingType) continue;
-        }
-        vendorIds.add(bizId);
-      }
-      result[section.key] = allVendors.filter((v) => vendorIds.has(v._id));
-    }
-    return result;
-  }, [allProducts, allVendors]);
-
   // ─── Determine which view to show ──────────────────────────────
   const showFeed = genderSelected || !!user;
 
@@ -458,48 +484,18 @@ export default function HomePage() {
       {/* Shop by Category — Amazon-style grid */}
       <ShopByCategory products={allProducts} />
 
-      {/* Category Sections */}
-      {FEED_SECTIONS.map((section) => {
-        const vendors = sectionVendors[section.key] ?? [];
+      {/* Category Sections — one fetch each, so they cannot starve one
+          another the way a shared 50-product pool did. */}
+      {FEED_SECTIONS.map((section) => (
+        <CategorySection
+          key={section.key}
+          section={section}
+          audience={audience}
+          followedVendors={followedVendors}
+          onToggleFollow={toggleFollowVendor}
+        />
+      ))}
 
-        // Only show vendors that have products in this category — no fallback to generic vendors
-        const displayVendors = vendors.slice(0, 8);
-
-        if (displayVendors.length === 0) return null;
-
-        return (
-          <div key={section.key} className="flex flex-col" style={{ gap: '16px' }}>
-            {/* Section Header */}
-            <Link href={section.href} className="flex items-center group/sec" style={{ gap: '8px', textDecoration: 'none' }}>
-              <h3
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  color: 'var(--text-primary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  fontFamily: 'var(--font-display)',
-                }}
-              >
-                {section.label}
-              </h3>
-              <ChevronRight size={14} color="var(--text-primary)" className="transition-transform group-hover/sec:translate-x-1" />
-              <div style={{ height: '1px', flex: 1, background: 'var(--border-glass)' }} />
-            </Link>
-
-            {/* Vendor Cards Row */}
-            <VendorRow
-              vendors={displayVendors}
-              vendorProductMap={vendorProductMap}
-              followedVendors={followedVendors}
-              onToggleFollow={toggleFollowVendor}
-              section={section}
-            />
-          </div>
-        );
-      })}
-
-      {/* ── Recommendation Engine Rows ──────────────────────────── */}
       {/* NOTE: the personalized "For You" carousel now lives on the Explore
           page (/discover); the home surfaces For You via the hero card below. */}
 

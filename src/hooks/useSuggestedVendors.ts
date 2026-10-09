@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
 // Ranked tailors for one bespoke design —
-// GET /bespoke/designs/:id/suggested-vendors.
+// GET /bespoke/designs/:id/suggested-vendors, or
+// GET /bespoke/suggested-vendors?category=&fabric_id= before the design is
+// saved, which is the usual case.
 //
 // Design-scoped rather than the generic vendor list, because the two best
 // signals depend on the design: who supplies its fabric (and so avoids the
-// cross-vendor transfer cost) and who makes that kind of garment. The generic
-// list knows neither, and returns vendors in no order at all.
+// cross-vendor transfer cost) and who makes that kind of garment.
 
 export interface SuggestionReason {
   code:
@@ -67,42 +68,80 @@ function dig(value: unknown): Payload {
   };
 }
 
+const FAILED = 'Could not rank tailors for this design.';
+
+/**
+ * Shared machinery for both forms below.
+ *
+ * The effect sets no state before its first await, which keeps it off
+ * React's cascading-render path, and it guards against a slow answer landing
+ * after a newer one — changing the fabric mid-flight should not resurrect the
+ * previous ranking.
+ */
+function useRankedVendors(fetcher: () => Promise<Payload>, enabled: boolean) {
+  const [payload, setPayload] = useState<Payload>(EMPTY);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const next = await fetcher();
+        if (cancelled) return;
+        setPayload(next);
+        setError(null);
+      } catch {
+        if (cancelled) return;
+        // The caller falls back to the plain vendor list, so this is a quiet
+        // degradation rather than a dead end.
+        setError(FAILED);
+        setPayload(EMPTY);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, fetcher]);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      setPayload(await fetcher());
+      setError(null);
+    } catch {
+      setError(FAILED);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetcher]);
+
+  return { ...payload, loading, error, refetch };
+}
+
 export function useSuggestedVendors(
   designId: string | null | undefined,
   opts: { enabled?: boolean; limit?: number } = {}
 ) {
   const { enabled = true, limit = 8 } = opts;
-  const [payload, setPayload] = useState<Payload>(EMPTY);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!enabled || !designId) return;
-    setLoading(true);
-    try {
-      const res = await api.get(
-        `/bespoke/designs/${encodeURIComponent(designId)}/suggested-vendors`,
-        { params: { limit } }
-      );
-      setPayload(dig(res.data));
-      setError(null);
-    } catch {
-      // The caller falls back to the plain vendor list, so this is a quiet
-      // degradation rather than a dead end.
-      setError('Could not rank tailors for this design.');
-      setPayload(EMPTY);
-    } finally {
-      setLoading(false);
-    }
-  }, [designId, enabled, limit]);
+  const fetcher = useCallback(async () => {
+    if (!designId) return EMPTY;
+    const res = await api.get(
+      `/bespoke/designs/${encodeURIComponent(designId)}/suggested-vendors`,
+      { params: { limit } }
+    );
+    return dig(res.data);
+  }, [designId, limit]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { ...payload, loading, error, refetch: load };
+  return useRankedVendors(fetcher, enabled && Boolean(designId));
 }
-
 
 /**
  * The same ranking before the design exists.
@@ -118,34 +157,17 @@ export function useSuggestedVendorsForCriteria(opts: {
   limit?: number;
 }) {
   const { category, fabricId, enabled = true, limit = 8 } = opts;
-  const [payload, setPayload] = useState<Payload>(EMPTY);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!enabled) return;
-    setLoading(true);
-    try {
-      const res = await api.get('/bespoke/suggested-vendors', {
-        params: {
-          limit,
-          ...(category ? { category } : {}),
-          ...(fabricId ? { fabric_id: fabricId } : {}),
-        },
-      });
-      setPayload(dig(res.data));
-      setError(null);
-    } catch {
-      setError('Could not rank tailors for this design.');
-      setPayload(EMPTY);
-    } finally {
-      setLoading(false);
-    }
-  }, [category, fabricId, enabled, limit]);
+  const fetcher = useCallback(async () => {
+    const res = await api.get('/bespoke/suggested-vendors', {
+      params: {
+        limit,
+        ...(category ? { category } : {}),
+        ...(fabricId ? { fabric_id: fabricId } : {}),
+      },
+    });
+    return dig(res.data);
+  }, [category, fabricId, limit]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { ...payload, loading, error, refetch: load };
+  return useRankedVendors(fetcher, enabled);
 }
