@@ -49,11 +49,30 @@ function SearchContent() {
   const [viewMode, setViewMode] = useState<'search' | 'ai'>('search');
   const [showSteps, setShowSteps] = useState(false);
 
-  // When toggling to AI mode with an existing query, fire ask once
+  // Which query the AI thread is actually about.
+  //
+  // The gate used to be `chatHistory.length === 0`, so the first question
+  // ever asked was the only one: after that the history was never empty, and
+  // switching to AI mode on a NEW search showed the previous answer and never
+  // asked about what you had just typed.
+  //
+  // Still only on switching to AI mode, not on every search — /ask is an LLM
+  // call, and firing it for every search anyone runs would be real money.
+  const [askedFor, setAskedFor] = useState<string | null>(null);
+  const askIsStale = Boolean(query) && askedFor !== query;
+
+  const askAbout = (q: string) => {
+    // Clear the previous thread first: it was about a different question, and
+    // leaving it above the new answer reads as one conversation.
+    if (askedFor !== null) resetAI();
+    setAskedFor(q);
+    ask(q);
+  };
+
   const handleSetViewMode = (mode: 'search' | 'ai') => {
     setViewMode(mode);
-    if (mode === 'ai' && query && chatHistory.length === 0) {
-      ask(query);
+    if (mode === 'ai' && query && askedFor !== query) {
+      askAbout(query);
     }
   };
 
@@ -338,6 +357,35 @@ function SearchContent() {
       <div className="flex flex-col h-full" style={{ minHeight: '60vh' }}>
         {/* Chat messages area */}
         <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '16px' }}>
+          {/* The thread below answers an earlier search. Say so and offer to
+              ask again, rather than presenting it as the answer to this one —
+              and rather than firing an LLM call nobody asked for. */}
+          {askIsStale && hasHistory && !aiLoading && (
+            <div
+              className="animate-fade-in mx-auto flex flex-wrap items-center"
+              style={{
+                gap: '10px', maxWidth: '800px', marginBottom: '16px',
+                padding: '12px 14px', borderRadius: '12px',
+                border: '1px solid var(--border-glass)',
+                background: 'var(--bg-surface-elevated)',
+              }}
+            >
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, flex: 1, minWidth: '180px' }}>
+                This answer is about an earlier search.
+              </p>
+              <button
+                onClick={() => askAbout(query)}
+                style={{
+                  fontSize: '13px', fontWeight: 700, color: '#D4AF37',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  textDecoration: 'underline', padding: 0,
+                }}
+              >
+                Ask about &ldquo;{query}&rdquo;
+              </button>
+            </div>
+          )}
+
           {/* Empty state */}
           {!hasHistory && !aiLoading && (
             <div className="flex flex-col items-center justify-center" style={{ gap: '12px', padding: '60px 20px' }}>
@@ -407,7 +455,7 @@ function SearchContent() {
             <div className="animate-fade-in flex items-center" style={{ gap: '8px', padding: '12px 0', maxWidth: '800px', margin: '0 auto' }}>
               <p style={{ fontSize: '14px', color: '#CC3333' }}>{aiError}</p>
               <button
-                onClick={() => { resetAI(); }}
+                onClick={() => { resetAI(); setAskedFor(null); }}
                 style={{ fontSize: '13px', color: '#D4AF37', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
               >
                 Retry
@@ -498,7 +546,7 @@ function SearchContent() {
 
         {/* Compose icon — new conversation */}
         <button
-          onClick={() => { resetAI(); }}
+          onClick={() => { resetAI(); setAskedFor(null); }}
           className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
           style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
         >
