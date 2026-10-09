@@ -68,34 +68,63 @@ export function useCategoryVendors(opts: UseCategoryVendorsOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const fetchVendors = useCallback(async (): Promise<Payload> => {
+    const res = await api.get('/products/discover/vendors', {
+      params: {
+        kind,
+        limit,
+        per_vendor: perVendor,
+        ...(clothingType ? { clothing_type: clothingType } : {}),
+        ...(audience ? { audience } : {}),
+      },
+    });
+    return dig(res.data);
+  }, [kind, clothingType, audience, limit, perVendor]);
+
+  useEffect(() => {
     if (!enabled) return;
+
+    // Guarded so a slow answer for the previous audience cannot land after a
+    // newer one and show men's vendors on the women's feed. Nothing sets
+    // state before the first await either, which keeps this off React's
+    // cascading-render path.
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const next = await fetchVendors();
+        if (cancelled) return;
+        setPayload(next);
+        setError(null);
+      } catch {
+        if (cancelled) return;
+        // A row that cannot load hides itself rather than showing an error —
+        // it is one of four on a browse page, not the page itself.
+        setError('Could not load this category.');
+        setPayload(EMPTY);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, fetchVendors]);
+
+  // For an explicit retry from a button. Unlike the effect this does show the
+  // loading state, because the person asked for it and deserves feedback.
+  const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/products/discover/vendors', {
-        params: {
-          kind,
-          limit,
-          per_vendor: perVendor,
-          ...(clothingType ? { clothing_type: clothingType } : {}),
-          ...(audience ? { audience } : {}),
-        },
-      });
-      setPayload(dig(res.data));
+      setPayload(await fetchVendors());
       setError(null);
     } catch {
-      // A row that cannot load hides itself rather than showing an error —
-      // it is one of four on a browse page, not the page itself.
       setError('Could not load this category.');
-      setPayload(EMPTY);
     } finally {
       setLoading(false);
     }
-  }, [kind, clothingType, audience, limit, perVendor, enabled]);
+  }, [fetchVendors]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { ...payload, loading, error, refetch: load };
+  return { ...payload, loading, error, refetch };
 }
