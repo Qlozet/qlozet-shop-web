@@ -669,8 +669,11 @@ function SearchContent() {
       {/* ─── Content ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center" style={{ paddingBottom: '20px' }}>
         <div className="w-full" style={{ maxWidth: viewMode === 'ai' ? '800px' : undefined }}>
-          {!query ? (
-            /* ─── Suggestions — shown when no query yet ─── */
+          {!query && !(viewMode === 'ai' && (chatHistory.length > 0 || aiLoading)) ? (
+            /* ─── Suggestions — shown when no query yet, unless a thread is
+                   open. A conversation resumed from the history sheet lives
+                   in state, not the URL: on mobile you reach /search with no
+                   ?q= at all, and the thread was being hidden behind this. ─── */
             <div className="flex flex-col items-center animate-fade-in" style={{ gap: '32px', paddingTop: '40px' }}>
               <div className="flex flex-col items-center" style={{ gap: '8px' }}>
                 <Wand2 size={28} color="#D4AF37" strokeWidth={1.5} />
