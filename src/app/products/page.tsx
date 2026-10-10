@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryBar, type CategoryKind } from '@/components/CategoryBar';
@@ -43,7 +43,6 @@ const PRICE_MAX = 200000;
 // ─── CatalogContent ───────────────────────────────────────────────
 function CatalogContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { wishlist, toggleWishlist } = useApp();
 
   // ── State ─────────────────────────────────────────────────────
@@ -115,7 +114,9 @@ function CatalogContent() {
     setOnSale(false);
     setInStock(false);
     setPage(1);
-    router.push('/products');
+    // Same route, query dropped: a router.push here never commits (see the
+    // search page); the History API updates the URL in place.
+    window.history.pushState(null, '', '/products');
   };
 
   // ── Pagination handlers ───────────────────────────────────────

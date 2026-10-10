@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
@@ -39,7 +39,6 @@ function darkenHex(hex: string, amount: number = 0.65): string {
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const urlQuery = searchParams.get('q') || '';
 
   // The live search term.
@@ -371,17 +370,27 @@ function SearchContent() {
         setQuery(query);
         setAskedFor(query);
         ask(query);
-        router.push(`/search?q=${encodeURIComponent(query)}`);
+        window.history.pushState(null, '', `/search?q=${encodeURIComponent(query)}`);
       } else {
         // Drive the results from state, and keep the URL in step so the
-        // search is still shareable. The push alone was not enough.
+        // search is still shareable.
+        //
+        // NOT router.push. Measured on production: a router.push that changes
+        // only the search params of the route already open never commits -
+        // no pushState, URL unchanged - and the next navigation makes Next
+        // fall back to a hard document reload, landing back on the previous
+        // term and wiping the correct results. That reload was the "every
+        // search refreshes the page" report. The native History API is what
+        // Next documents for exactly this case: it updates the URL in place,
+        // useSearchParams follows it, nothing is fetched and nothing
+        // transitions.
         setQuery(query);
-        router.push(`/search?q=${encodeURIComponent(query)}`);
+        window.history.pushState(null, '', `/search?q=${encodeURIComponent(query)}`);
       }
     };
     window.addEventListener('shell-search', handleShellSearch);
     return () => window.removeEventListener('shell-search', handleShellSearch);
-  }, [viewMode, ask, router]);
+  }, [viewMode, ask]);
 
   const renderAIResponse = () => {
     const aiProducts = aiResponse?.products ?? [];
@@ -620,7 +629,9 @@ function SearchContent() {
                     type="button"
                     onClick={() => {
                       setQuery(suggestion);
-                      router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+                      // Same reason as the listener above: a same-route
+                      // router.push hangs here; the History API does not.
+                      window.history.pushState(null, '', `/search?q=${encodeURIComponent(suggestion)}`);
                     }}
                     className="flex items-center transition-colors text-left"
                     style={{

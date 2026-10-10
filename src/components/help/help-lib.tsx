@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   BookOpen,
   CreditCard,
@@ -101,7 +100,6 @@ export function HelpRail({
   categories: string[];
   active?: string;
 }) {
-  const router = useRouter();
   const [q, setQ] = useState('');
 
   return (
@@ -150,7 +148,14 @@ export function HelpRail({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            router.push(q.trim() ? `/help?q=${encodeURIComponent(q.trim())}` : '/help');
+            // This box renders on /help itself, so this is a push to the route
+            // already open with only the query changed. Measured on
+            // production, router.push never commits that and the next
+            // navigation hard-reloads the page; the native History API is
+            // what Next integrates with useSearchParams for exactly this.
+            window.history.pushState(
+              null, '', q.trim() ? `/help?q=${encodeURIComponent(q.trim())}` : '/help',
+            );
           }}
           className="flex items-center"
           style={{
