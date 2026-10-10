@@ -9,6 +9,7 @@ import type {
   ApiVendorFeedItem,
   ApiVendorFeedResponse,
   ApiAskResponse,
+  ApiAskConversation,
   ApiProduct,
   FeedQueryParams,
 } from '@/lib/api-types';
@@ -351,11 +352,15 @@ export function useCompleteTheLook(
 // AI fashion assistant — returns a mutation function (not auto-fetching).
 // Maintains conversation history for multi-turn chat.
 //
+// The thread is also remembered server-side: the first answer comes back
+// with a `conversation_id`, every later question carries it, and the
+// history sheet on the search page can `resume()` any saved thread.
+//
 // Usage:
 //   const { ask, response, loading, error, history } = useAskFashion();
 //   const result = await ask('Show me red dresses for a wedding under 50k');
 
-interface ChatMessage {
+export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
@@ -368,8 +373,12 @@ export interface UseAskFashionReturn {
   error: string | null;
   /** Full conversation history */
   history: ChatMessage[];
-  /** Reset state and conversation history */
+  /** Reset state and conversation history — the next ask starts a new saved thread */
   reset: () => void;
+  /** The saved thread the next ask continues; null until the first answer */
+  conversationId: string | null;
+  /** Load a saved conversation into the thread, latest reply's products included */
+  resume: (conversation: ApiAskConversation) => void;
 }
 
 export function useAskFashion(): UseAskFashionReturn {
@@ -380,6 +389,7 @@ export function useAskFashion(): UseAskFashionReturn {
     error: null,
   });
   const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const ask = useCallback(
     async (
@@ -405,9 +415,13 @@ export function useAskFashion(): UseAskFashionReturn {
         const res = await api.post('/recommendations/ask', {
           query,
           history, // Send conversation history for context (prior turns)
+          // Name the saved thread so the server appends to it (and uses its
+          // stored turns as context — a resumed thread has no client copy).
+          ...(conversationId ? { conversation_id: conversationId } : {}),
           ...(filters ? { filters } : {}),
         });
         const payload: ApiAskResponse = res.data?.data ?? res.data;
+        if (payload.conversation_id) setConversationId(payload.conversation_id);
 
         // Append only the assistant reply — the user turn is already shown.
         if (payload.reply) {
@@ -426,12 +440,34 @@ export function useAskFashion(): UseAskFashionReturn {
         return null;
       }
     },
-    [user?.id, history]
+    [user?.id, history, conversationId]
   );
 
   const reset = useCallback(() => {
     setState({ data: null, loading: false, error: null });
     setHistory([]);
+    setConversationId(null);
+  }, []);
+
+  const resume = useCallback((conversation: ApiAskConversation) => {
+    const turns = conversation.messages ?? [];
+    setHistory(turns.map((m) => ({ role: m.role, content: m.content })));
+    setConversationId(conversation._id);
+    // The products grid under the thread shows the latest reply's picks, the
+    // same way it does after a live answer.
+    const lastReply = [...turns].reverse().find((m) => m.role === 'assistant');
+    setState({
+      data: lastReply
+        ? {
+            reply: lastReply.content,
+            products: lastReply.products ?? [],
+            tokensUsed: 0,
+            conversation_id: conversation._id,
+          }
+        : null,
+      loading: false,
+      error: null,
+    });
   }, []);
 
   return {
@@ -441,5 +477,7 @@ export function useAskFashion(): UseAskFashionReturn {
     error: state.error,
     history,
     reset,
+    conversationId,
+    resume,
   };
 }
