@@ -399,6 +399,30 @@ export interface ApiAskResponse {
   reply: string;
   products: ApiProduct[];
   tokensUsed: number;
+  /** The saved thread this exchange belongs to; send it back to continue it. Null for signed-out callers. */
+  conversation_id?: string | null;
+}
+
+/** One row of the stylist history list. */
+export interface ApiAskConversationSummary {
+  _id: string;
+  title: string;
+  message_count: number;
+  last_message_at: string;
+  createdAt: string;
+}
+
+/** A saved stylist conversation, with the products each reply showed. */
+export interface ApiAskConversation {
+  _id: string;
+  title: string;
+  last_message_at: string;
+  messages: {
+    role: 'user' | 'assistant';
+    content: string;
+    at: string;
+    products: ApiProduct[];
+  }[];
 }
 
 // ─── Query Parameter Types ────────────────────────────────────

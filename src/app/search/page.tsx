@@ -10,6 +10,8 @@ import { getProductName, getProductImage, getProductPrice, getProductOriginalPri
 import type { ApiProduct } from '@/lib/api-types';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useAskFashion, useTrendingProducts } from '@/hooks/useRecommendations';
+import { useAskConversations } from '@/hooks/useAskConversations';
+import { AskHistorySheet } from '@/components/AskHistorySheet';
 import { Markdown } from '@/components/Markdown';
 import {
   Search,
@@ -68,9 +70,21 @@ function SearchContent() {
     setLastUrlQuery(urlQuery);
     setQuery(urlQuery);
   }
-  const { wishlist, toggleWishlist, gender } = useApp();
+  const { wishlist, toggleWishlist, gender, user } = useApp();
   const trackEvent = useTrackEvent();
-  const { ask, response: aiResponse, loading: aiLoading, error: aiError, reset: resetAI, history: chatHistory } = useAskFashion();
+  const {
+    ask, response: aiResponse, loading: aiLoading, error: aiError, reset: resetAI,
+    history: chatHistory, conversationId, resume: resumeConversation,
+  } = useAskFashion();
+
+  // The clock button: saved stylist conversations. The list is fetched each
+  // time the sheet opens, so a thread saved a moment ago is already in it.
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const {
+    conversations, loading: historyLoading, error: historyError,
+    load: loadConversation, remove: removeConversation, removeAll: removeAllConversations,
+  } = useAskConversations(historyOpen && !!user);
 
   // Toggle: 'search' for product results, 'ai' for AI response
   const [viewMode, setViewMode] = useState<'search' | 'ai'>('search');
@@ -101,6 +115,44 @@ function SearchContent() {
     if (mode === 'ai' && query && askedFor !== query) {
       askAbout(query);
     }
+  };
+
+  // Pick a saved thread back up: it becomes the thread on the page, in AI
+  // mode, and the next question continues it. Recorded as the question the
+  // thread is "about" so the stale-thread banner does not fire on it - the
+  // reader chose this thread knowingly - and no LLM call is made.
+  const openConversation = async (id: string) => {
+    setOpeningId(id);
+    const conversation = await loadConversation(id);
+    setOpeningId(null);
+    if (!conversation) return;
+    resumeConversation(conversation);
+    setAskedFor(query || conversation.title);
+    setViewMode('ai');
+    setHistoryOpen(false);
+  };
+
+  const startNewConversation = () => {
+    resetAI();
+    setAskedFor(null);
+    setViewMode('ai');
+    setHistoryOpen(false);
+  };
+
+  const deleteConversation = (id: string) => {
+    void removeConversation(id);
+    // Deleting the thread that is open on the page: the next question must
+    // start a new one rather than append to a thread that no longer exists.
+    if (id === conversationId) {
+      resetAI();
+      setAskedFor(null);
+    }
+  };
+
+  const clearConversations = () => {
+    void removeAllConversations();
+    resetAI();
+    setAskedFor(null);
   };
 
   // Track search event when query changes
@@ -549,8 +601,10 @@ function SearchContent() {
     <div className="flex flex-col min-h-[80vh] py-4 lg:py-6 animate-fade-in">
       {/* ─── Top Bar ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between" style={{ marginBottom: '28px' }}>
-        {/* History icon */}
+        {/* History icon — saved stylist conversations */}
         <button
+          onClick={() => setHistoryOpen(true)}
+          aria-label="Your conversations"
           className="flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
           style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
         >
@@ -596,6 +650,21 @@ function SearchContent() {
           <PenLine size={18} color="var(--text-primary)" />
         </button>
       </div>
+
+      <AskHistorySheet
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        conversations={conversations}
+        loading={historyLoading}
+        error={historyError}
+        activeId={conversationId}
+        openingId={openingId}
+        signedIn={!!user}
+        onSelect={(id) => { void openConversation(id); }}
+        onDelete={deleteConversation}
+        onClearAll={clearConversations}
+        onNew={startNewConversation}
+      />
 
       {/* ─── Content ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center" style={{ paddingBottom: '20px' }}>
