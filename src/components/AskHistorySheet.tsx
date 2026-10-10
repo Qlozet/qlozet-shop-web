@@ -187,7 +187,12 @@ export const AskHistorySheet: React.FC<AskHistorySheetProps> = (props) => {
 
   return (
     <>
-      {/* ══════ MOBILE: Bottom Sheet ══════ */}
+      {/* ══════ MOBILE: Bottom Sheet ══════
+          Portalled like the desktop panel: the search page's root carries a
+          finished fade-in transform, which makes it a stacking context, so a
+          z-[70] sheet rendered inside it still sat under the shell's z-50
+          bottom bar and search pill. */}
+      {typeof document !== 'undefined' && createPortal(
       <div className="lg:hidden">
         <div
           className={`fixed inset-0 z-[60] bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -212,7 +217,9 @@ export const AskHistorySheet: React.FC<AskHistorySheetProps> = (props) => {
             {Footer}
           </div>
         </div>
-      </div>
+      </div>,
+        document.body
+      )}
 
       {/* ══════ DESKTOP: Floating side panel ══════ */}
       {typeof document !== 'undefined' && createPortal(
