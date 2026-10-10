@@ -132,9 +132,16 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    setIsSearchFocused(false);
+    if (isSearchPage) {
+      // Same path as a typed search: a push to the route we are already on
+      // does not reliably re-read the query, so the page is told directly.
+      window.dispatchEvent(new CustomEvent('shell-search', { detail: suggestion }));
+      setSearchQuery('');
+      return;
+    }
     setSearchQuery(suggestion);
     router.push(`/search?q=${encodeURIComponent(suggestion)}`);
-    setIsSearchFocused(false);
   };
 
   // Bottom tab items for mobile
