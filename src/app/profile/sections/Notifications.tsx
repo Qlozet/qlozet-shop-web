@@ -138,7 +138,17 @@ export default function Notifications() {
   const openNotification = (n: AppNotification) => {
     if (!n.is_read) markRead(n._id);
     if (n.action_url && n.action_url.startsWith('/')) {
-      router.push(n.action_url);
+      // Most of these point back into /profile?tab=… — the page this inbox is
+      // already on. A router.push that only changes the query of the open
+      // route never commits on this deployment and later hard-reloads, so
+      // same-page targets go through the History API (the profile page
+      // follows ?tab= reactively); anything else is a real navigation.
+      const targetPath = n.action_url.split('?')[0];
+      if (targetPath === window.location.pathname) {
+        window.history.pushState(null, '', n.action_url);
+      } else {
+        router.push(n.action_url);
+      }
     }
   };
 
