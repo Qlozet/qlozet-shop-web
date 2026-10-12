@@ -155,21 +155,26 @@ function SearchContent() {
     setAskedFor(null);
   };
 
-  // Track search event when query changes
-  useEffect(() => {
-    if (query) {
-      trackEvent({
-        eventType: 'search',
-        metadata: { query },
-        context: { surface: 'search_page' },
-      });
-    }
-  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { products: allProducts, loading: productsLoading } = useProducts({ search: query || undefined, size: 50 });
   // Vendors reflect the same search as the items: matched by their own fields
   // or by having products that match the query.
   const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 6, search: query || undefined });
+
+  // Track the search once its results have settled, with how many came back.
+  // The count is what lets the platform see demand nobody is supplying: a
+  // term searched often that returns nothing. One event per query.
+  const trackedQueryRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!query || productsLoading || vendorsLoading) return;
+    if (trackedQueryRef.current === query) return;
+    trackedQueryRef.current = query;
+    trackEvent({
+      eventType: 'search',
+      metadata: { query, results: allProducts.length, vendors: allVendors.length },
+      context: { surface: 'search_page' },
+    });
+  }, [query, productsLoading, vendorsLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fallback pool for zero-result searches ──────────────────
   // When the exact query returns nothing we never leave the user on a blank

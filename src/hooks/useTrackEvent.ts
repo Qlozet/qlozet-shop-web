@@ -40,6 +40,9 @@ export interface EventContext {
 }
 
 export interface EventMetadata {
+  /** Search page: how many products and vendors the search returned, once settled. */
+  results?: number;
+  vendors?: number;
   /** Reason codes for why something was shown */
   reasonCodes?: string[];
   /** Product IDs seen on screen (for impression batches) */
