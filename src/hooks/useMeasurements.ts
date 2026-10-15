@@ -21,6 +21,7 @@ export interface BodyShape {
   stomach?: 'flat' | 'average' | 'slightly_protruding' | 'protruding';
   shoulders?: 'narrow' | 'average' | 'broad';
   legs?: 'short' | 'average' | 'long';
+  thighs?: 'slim' | 'average' | 'full';
 }
 
 // ─── Backend response shape ───────────────────────────────────
