@@ -13,6 +13,16 @@ import type {
 } from '@/app/profile/types';
 import { EMPTY_MEASUREMENTS, tailoringLabel } from '@/app/profile/types';
 
+// ─── Body shape, in the person's own words ────────────────────
+// Four optional descriptors sent with height/weight/gender; the backend
+// nudges the model's estimate towards where the weight actually sits.
+export interface BodyShape {
+  build?: 'slim' | 'average' | 'broad';
+  stomach?: 'flat' | 'average' | 'slightly_protruding' | 'protruding';
+  shoulders?: 'narrow' | 'average' | 'broad';
+  legs?: 'short' | 'average' | 'long';
+}
+
 // ─── Backend response shape ───────────────────────────────────
 interface BackendMeasurementSet {
   _id?: string;
@@ -240,6 +250,7 @@ export function useMeasurements() {
     weight: number,
     gender: 'male' | 'female',
     notes?: string,
+    shape?: BodyShape,
   ): Promise<ParsedPrediction | null> => {
     setIsPredicting(true);
     setPredictionError(null);
@@ -251,6 +262,7 @@ export function useMeasurements() {
         weight,
         gender,
         notes: notes || '',
+        ...(shape ?? {}),
       });
 
       const data = res?.data?.data || res?.data;
