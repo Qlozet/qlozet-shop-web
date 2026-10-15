@@ -12,6 +12,10 @@ interface InsufficientTokensModalProps {
   cost: number;
   onClose: () => void;
   onPurchaseComplete?: () => void;
+  /** What the tokens are for, as the end of "You need N tokens to …". */
+  purpose?: string;
+  /** Label of the button on the success step. */
+  actionLabel?: string;
 }
 
 export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = ({
@@ -20,6 +24,8 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
   cost,
   onClose,
   onPurchaseComplete,
+  purpose = 'generate a design',
+  actionLabel = 'Generate Now',
 }) => {
   const { walletBalance, getTokenPrice, purchaseTokens, fundWallet, pollTransaction, silentRefresh } = useWallet();
 
@@ -152,7 +158,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
                 Insufficient Tokens
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '300px' }}>
-                You need <strong style={{ color: 'var(--text-primary)' }}>{cost} tokens</strong> to generate a design
+                You need <strong style={{ color: 'var(--text-primary)' }}>{cost} tokens</strong> to {purpose}
                 but only have <strong style={{ color: '#EF4444' }}>{balance}</strong>.
               </p>
             </div>
@@ -349,7 +355,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Tokens Added!</h3>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                You now have enough tokens. Tap below to generate your design.
+                You now have enough tokens. Tap below to continue.
               </p>
             </div>
             <button
@@ -370,7 +376,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
                 marginTop: '8px',
               }}
             >
-              Generate Now
+              {actionLabel}
             </button>
           </div>
         )}
