@@ -84,6 +84,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     stomach: 'average',
     shoulders: 'average',
     legs: 'average',
+    thighs: 'average',
   });
 
   // Sync gender from app context
@@ -513,6 +514,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               { key: 'stomach', label: 'Stomach', options: [['flat', 'Flat'], ['average', 'Average'], ['slightly_protruding', 'Slightly out'], ['protruding', 'Rounded']] },
               { key: 'shoulders', label: 'Shoulders', options: [['narrow', 'Narrow'], ['average', 'Average'], ['broad', 'Broad']] },
               { key: 'legs', label: 'Legs', options: [['short', 'Short'], ['average', 'Average'], ['long', 'Long']] },
+              { key: 'thighs', label: 'Thighs', options: [['slim', 'Slim'], ['average', 'Average'], ['full', 'Full']] },
             ] as { key: keyof BodyShape; label: string; options: [string, string][] }[]
           ).map((row) => (
             <div key={row.key} className="flex flex-col" style={{ gap: '6px' }}>
