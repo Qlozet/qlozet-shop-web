@@ -6,6 +6,7 @@ import { cardStyle } from '../styles';
 import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringMeta, TailoringTier } from '../types';
 import { MEASUREMENT_LABELS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
 import { useMeasurements, type BodyShape } from '@/hooks/useMeasurements';
+import { InsufficientTokensModal } from '@/components/studio/InsufficientTokensModal';
 import { MeasurementSkeleton } from '../components/Skeleton';
 import { useApp } from '@/context/AppContext';
 
@@ -44,6 +45,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     isPredicting,
     predictionResult,
     predictionError,
+    insufficientTokens,
+    dismissInsufficientTokens,
     setPredictionResult,
     saveMeasurement,
     updateMeasurement,
@@ -578,6 +581,20 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               'Get Measurement'
             )}
           </button>
+
+          {/* Not enough tokens: the studio's top-up modal, then the estimate runs itself. */}
+          <InsufficientTokensModal
+            isOpen={!!insufficientTokens}
+            balance={insufficientTokens?.balance ?? 0}
+            cost={insufficientTokens?.cost ?? 0}
+            purpose="estimate your measurements"
+            actionLabel="Get Measurement"
+            onClose={dismissInsufficientTokens}
+            onPurchaseComplete={() => {
+              dismissInsufficientTokens();
+              void handlePredict();
+            }}
+          />
         </div>
       );
     }

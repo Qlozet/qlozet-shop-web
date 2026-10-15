@@ -217,6 +217,10 @@ export function useMeasurements() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState<MeasurementValues | null>(null);
   const [predictionError, setPredictionError] = useState<string | null>(null);
+  // Set when the estimate costs tokens the person does not have. The form
+  // opens the same top-up modal the bespoke studio uses, then retries.
+  const [insufficientTokens, setInsufficientTokens] = useState<{ balance: number; cost: number } | null>(null);
+  const dismissInsufficientTokens = useCallback(() => setInsufficientTokens(null), []);
 
   // ─── Fetch all profiles ─────────────────────────────────────
   const fetchProfiles = useCallback(async () => {
@@ -256,6 +260,35 @@ export function useMeasurements() {
     setIsPredicting(true);
     setPredictionError(null);
     setPredictionResult(null);
+    setInsufficientTokens(null);
+
+    // Ask before spending: the estimate is priced by a platform setting
+    // (0 = free). Short, the form shows the top-up modal instead of a
+    // red error the person cannot act on.
+    let knownBalance: number | null = null;
+    let knownCost = 0;
+    try {
+      const [balanceRes, settingsRes] = await Promise.all([
+        api.get('/token/balance'),
+        api.get('/users/platform-settings'),
+      ]);
+      const balance = Number(balanceRes.data?.tokens ?? balanceRes.data?.data?.tokens ?? 0);
+      const cost = Number(
+        settingsRes.data?.run_prediction_token_price ??
+        settingsRes.data?.data?.run_prediction_token_price ??
+        0,
+      );
+      knownBalance = balance;
+      knownCost = cost;
+      if (cost > 0 && balance < cost) {
+        setInsufficientTokens({ balance, cost });
+        setIsPredicting(false);
+        return null;
+      }
+    } catch {
+      // The server enforces the price anyway; a failed pre-check just means
+      // we learn about a shortfall from its 400 below.
+    }
 
     try {
       const res = await api.post('/measurements/run-prediction', {
@@ -283,8 +316,14 @@ export function useMeasurements() {
       return result;
     } catch (err: any) {
       const status = err?.response?.status;
-      let msg = err?.response?.data?.message || err?.message || 'Prediction failed';
-      if (status === 400) msg = 'Insufficient tokens or invalid input. Please check and try again.';
+      const serverMsg = String(err?.response?.data?.message ?? '');
+      if (status === 400 && /insufficient tokens/i.test(serverMsg)) {
+        // The pre-check missed it (race, or it failed) - same modal, same retry.
+        setInsufficientTokens({ balance: knownBalance ?? 0, cost: knownCost });
+        return null;
+      }
+      let msg = serverMsg || err?.message || 'Prediction failed';
+      if (status === 400 && !serverMsg) msg = 'Please check your height, weight and gender and try again.';
       if (status === 500) msg = 'The AI prediction service is temporarily unavailable. Please try again later.';
       console.error('[Measurements] runPrediction error:', msg);
       setPredictionError(msg);
@@ -413,6 +452,8 @@ export function useMeasurements() {
     isPredicting,
     predictionResult,
     predictionError,
+    insufficientTokens,
+    dismissInsufficientTokens,
     setPredictionResult,
     saveMeasurement,
     updateMeasurement,
