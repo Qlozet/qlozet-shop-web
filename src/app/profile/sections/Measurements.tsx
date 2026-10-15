@@ -5,7 +5,7 @@ import { ArrowLeft, Ruler, ChevronRight, ChevronDown, Plus, Minus, Trash2, Spark
 import { cardStyle } from '../styles';
 import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringMeta, TailoringTier } from '../types';
 import { MEASUREMENT_LABELS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
-import { useMeasurements } from '@/hooks/useMeasurements';
+import { useMeasurements, type BodyShape } from '@/hooks/useMeasurements';
 import { MeasurementSkeleton } from '../components/Skeleton';
 import { useApp } from '@/context/AppContext';
 
@@ -78,6 +78,13 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   // always converted to kg before it reaches the AI prediction.
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [formGender, setFormGender] = useState<'male' | 'female'>(gender);
+  // Body shape: optional, defaults to "average" everywhere, which sends nothing.
+  const [formShape, setFormShape] = useState<Required<BodyShape>>({
+    build: 'average',
+    stomach: 'average',
+    shoulders: 'average',
+    legs: 'average',
+  });
 
   // Sync gender from app context
   useEffect(() => { setFormGender(gender); }, [gender]);
@@ -239,7 +246,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
         <div className="flex flex-col" style={{ gap: '12px' }}>
           {[
             { key: 'scan' as MeasurementMethod, label: 'Get Scanned' },
-            { key: 'no-scan' as MeasurementMethod, label: 'No Scans?' },
+            { key: 'no-scan' as MeasurementMethod, label: 'Estimate from height & weight' },
             { key: 'manual' as MeasurementMethod, label: 'Manually input your sizes' },
           ].map((opt) => (
             <button
@@ -345,7 +352,10 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             ? Math.round(entered * 0.45359237 * 10) / 10
             : entered;
 
-        const result = await runPrediction(heightCm, weight, formGender);
+        const shape: BodyShape = Object.fromEntries(
+          Object.entries(formShape).filter(([, v]) => v !== 'average'),
+        );
+        const result = await runPrediction(heightCm, weight, formGender, undefined, shape);
         if (result) {
           setEditValues(result.values);
           setTailoringValues(
@@ -494,6 +504,46 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               ))}
             </div>
           </div>
+
+          {/* Body shape - where the weight sits. The model only knows
+              height, weight and gender; these move its estimate. */}
+          {(
+            [
+              { key: 'build', label: 'Build', options: [['slim', 'Slim'], ['average', 'Average'], ['broad', 'Broad']] },
+              { key: 'stomach', label: 'Stomach', options: [['flat', 'Flat'], ['average', 'Average'], ['slightly_protruding', 'Slightly out'], ['protruding', 'Rounded']] },
+              { key: 'shoulders', label: 'Shoulders', options: [['narrow', 'Narrow'], ['average', 'Average'], ['broad', 'Broad']] },
+              { key: 'legs', label: 'Legs', options: [['short', 'Short'], ['average', 'Average'], ['long', 'Long']] },
+            ] as { key: keyof BodyShape; label: string; options: [string, string][] }[]
+          ).map((row) => (
+            <div key={row.key} className="flex flex-col" style={{ gap: '6px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {row.label}
+                <span style={{ marginLeft: '6px', fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>optional</span>
+              </label>
+              <div className="flex" style={{ gap: '8px' }}>
+                {row.options.map(([value, label]) => {
+                  const active = formShape[row.key] === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setFormShape((prev) => ({ ...prev, [row.key]: value }))}
+                      className="flex-1 transition-all"
+                      style={{
+                        padding: '10px 6px', borderRadius: '12px',
+                        border: active ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
+                        background: 'var(--bg-surface-elevated)',
+                        fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
           {/* Error */}
           {predictionError && (
