@@ -73,6 +73,21 @@ export const MEASUREMENT_LABELS: Record<keyof MeasurementValues, string> = {
   shoulder_to_crotch: 'Torso Length',
 };
 
+/**
+ * Where the tape goes, for the points people measure differently. These match
+ * the definitions the AI estimate uses (BodyM / ANSUR), so a typed value and
+ * an estimated one mean the same thing to the tailor. Shown under the label.
+ */
+export const MEASUREMENT_HINTS: Partial<Record<keyof MeasurementValues, string>> = {
+  chest: 'Around the fullest part of the chest, tape level.',
+  waist: 'Around the natural waist, just above the navel.',
+  hip: 'Around the fullest part of the hips and seat.',
+  shoulder_breadth: 'Straight line between the two shoulder bones, across the back. Not along a shirt seam.',
+  arm_length: 'Shoulder bone to wrist bone, arm relaxed at your side.',
+  leg_length: 'From the crotch straight down to the floor.',
+  shoulder_to_crotch: 'Top of the shoulder, down the front, to the crotch.',
+};
+
 export const EMPTY_MEASUREMENTS: MeasurementValues = {
   chest: 0, waist: 0, hip: 0, shoulder_breadth: 0,
   arm_length: 0, leg_length: 0, bicep: 0, forearm: 0,

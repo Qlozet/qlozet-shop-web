@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Ruler, ChevronRight, ChevronDown, Plus, Minus, Trash2, Sparkles, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { cardStyle } from '../styles';
 import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringMeta, TailoringTier } from '../types';
-import { MEASUREMENT_LABELS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
+import { MEASUREMENT_LABELS, MEASUREMENT_HINTS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
 import { useMeasurements, type BodyShape } from '@/hooks/useMeasurements';
 import { InsufficientTokensModal } from '@/components/studio/InsufficientTokensModal';
 import { MeasurementSkeleton } from '../components/Skeleton';
@@ -134,6 +134,19 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   );
 
   // ─── Shared: Stepper Row ────────────────────────────────────
+  // Label plus, where the tape could go two ways, one line saying where it goes.
+  const MeasurementLabel = ({ fieldKey }: { fieldKey: keyof MeasurementValues }) => {
+    const hint = MEASUREMENT_HINTS[fieldKey];
+    return (
+      <div className="flex flex-col" style={{ gap: '2px', minWidth: 0 }}>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{MEASUREMENT_LABELS[fieldKey]}</span>
+        {hint && (
+          <span style={{ fontSize: '11px', lineHeight: 1.35, color: 'var(--text-muted)' }}>{hint}</span>
+        )}
+      </div>
+    );
+  };
+
   const StepperRow = ({ fieldKey, value, displayUnit, onChange }: {
     fieldKey: keyof MeasurementValues;
     value: number; // always stored in cm
@@ -143,9 +156,9 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     const displayed = toDisplay(value, displayUnit);
     const step = displayUnit === 'inch' ? 0.25 : 0.5;
     return (
-      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)' }}>
-        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{MEASUREMENT_LABELS[fieldKey]}</span>
-        <div className="flex items-center" style={{ gap: '0' }}>
+      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '12px' }}>
+        <MeasurementLabel fieldKey={fieldKey} />
+        <div className="flex items-center shrink-0" style={{ gap: '0' }}>
           <button
             onClick={() => onChange(fieldKey, toCm(Math.max(0, Math.round((displayed - step) * 100) / 100), displayUnit))}
             className="flex items-center justify-center transition-all active:scale-90"
@@ -934,8 +947,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                   className="flex items-center justify-between"
                   style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)' }}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{MEASUREMENT_LABELS[key]}</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{toDisplay(cmValue || 0, unit)} {unit === 'inch' ? 'in' : 'cm'}</span>
+                  <MeasurementLabel fieldKey={key} />
+                  <span className="shrink-0" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{toDisplay(cmValue || 0, unit)} {unit === 'inch' ? 'in' : 'cm'}</span>
                 </div>
               );
             })}
