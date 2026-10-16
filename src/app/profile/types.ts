@@ -58,7 +58,9 @@ export const MEASUREMENT_LABELS: Record<keyof MeasurementValues, string> = {
   chest: 'Chest',
   waist: 'Waist',
   hip: 'Hips',
-  shoulder_breadth: 'Shoulder Width',
+  // The model's value is the straight line between the shoulder bones, not a
+  // tailor's seam-to-seam width; the label says so, so manual entries match.
+  shoulder_breadth: 'Shoulder Breadth',
   arm_length: 'Arm Length',
   leg_length: 'Leg Length',
   bicep: 'Bicep',
