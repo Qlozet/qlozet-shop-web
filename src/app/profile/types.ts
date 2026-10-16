@@ -127,6 +127,8 @@ export const TAILORING_LABELS: Record<string, string> = {
   inseam: 'Inside Leg (Inseam)',
   outseam: 'Outside Leg (Outseam)',
   sleeve_length: 'Sleeve Length',
+  shoulder_width: 'Shoulder Width (seam to seam)',
+  across_back: 'Across Back',
   nape_to_waist: 'Back Length (Nape–Waist)',
   neck: 'Neck',
   neck_base: 'Neck Base',
