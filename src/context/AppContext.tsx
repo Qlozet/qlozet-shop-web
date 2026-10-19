@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from 'sonner';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import { trackEventDirect } from '@/hooks/useTrackEvent';
@@ -39,6 +40,14 @@ export interface CartItem {
   note?: string;
   /** Saved measurement-set NAME a custom garment is sewn to (Fit section). */
   measurement_set?: string;
+  /** The server's id for this line (items[]._id); absent until it is saved. */
+  line_id?: string;
+  /**
+   * The line's identity, fixed when it is first added. The server stores it,
+   * so a line read back from the server keeps the same identity even though
+   * its selections come back in a different shape.
+   */
+  line_key?: string;
 }
 
 /**
@@ -51,8 +60,9 @@ export function cartLineId(
   item: Pick<
     CartItem,
     'id' | 'size' | 'color' | 'applied_fabric_id' | 'selections' | 'measurement_set'
-  >,
+  > & { line_key?: string },
 ): string {
+  if (item.line_key) return item.line_key;
   return [
     item.id,
     item.size ?? '',
@@ -147,8 +157,49 @@ function mapBackendCartItem(item: any): CartItem {
     applied_fabric_yards: item.applied_fabric_yards ?? undefined,
     applied_fabric_size: item.applied_fabric_size ?? undefined,
     note: item.note ?? undefined,
+    size: item.size ?? undefined,
+    color: item.color ?? undefined,
+    measurement_set: item.measurement_set ?? undefined,
+    line_id: item._id ? String(item._id) : undefined,
+    // Legacy server lines have no key; their product id was their identity.
+    line_key:
+      item.line_key ??
+      (p?._id ?? (typeof item.product_id === 'string' ? item.product_id : undefined)),
   };
 }
+
+/** The body the API takes to add a cart line. */
+function cartLinePayload(item: Omit<CartItem, 'quantity'>, quantity: number) {
+  return {
+    productId: item.id,
+    quantity,
+    lineKey: cartLineId(item),
+    ...(item.size ? { size: item.size } : {}),
+    ...(item.color ? { color: item.color } : {}),
+    ...(item.measurement_set ? { measurementSet: item.measurement_set } : {}),
+    ...(item.selections ? { selections: item.selections } : {}),
+    ...(item.applied_fabric_id ? { appliedFabricId: item.applied_fabric_id } : {}),
+    ...(item.applied_fabric_yards ? { appliedFabricYards: item.applied_fabric_yards } : {}),
+    ...(item.applied_fabric_size ? { appliedFabricSize: item.applied_fabric_size } : {}),
+    ...(item.note ? { note: item.note } : {}),
+  };
+}
+
+/** Unwrap { data: cart } | cart and map its lines. */
+function cartFromResponse(raw: unknown): CartItem[] {
+  type Shape = { data?: unknown; cart?: unknown; items?: unknown[] };
+  const body = ((raw as Shape)?.data ?? raw) as Shape;
+  const cart = (body?.cart ?? body) as Shape;
+  return (cart?.items ?? []).map(mapBackendCartItem);
+}
+
+/**
+ * Set while a signed-out shopper builds a cart in this browser. At the next
+ * sign-in that cart is moved into the account once and the flag is cleared;
+ * a signed-in browser never pushes its copy to the server again, which is
+ * what brought removed items back.
+ */
+const GUEST_CART_FLAG = 'qlozet_cart_is_guest';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Global States
@@ -158,6 +209,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isInitialized, setIsInitialized] = useState(false);
   const [followedVendors, setFollowedVendors] = useState<string[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+  // Handlers read the cart synchronously (which line is being removed); a
+  // state updater runs later, so reading inside one gave an empty answer and
+  // the remove was never sent.
+  const cartRef = useRef<CartItem[]>([]);
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
+  /** Show the server's cart and cache it in this browser. */
+  const applyServerCart = (raw: unknown) => {
+    const items = cartFromResponse(raw);
+    setCart(items);
+    localStorage.setItem('qlozet_cart', JSON.stringify(items));
+    return items;
+  };
+
+  /** Re-read the account's cart, e.g. after a change the server refused. */
+  const reloadServerCart = async () => {
+    try {
+      const res = await api.get('/cart');
+      applyServerCart(res.data);
+    } catch {
+      /* keep what is on screen */
+    }
+  };
+
+  /**
+   * Signed in, the account's cart is the cart. A cart built while signed out
+   * in this browser is merged in once (POST /cart/merge adds only lines the
+   * account lacks, so a repeat cannot double anything), then this browser's
+   * copy is just a cache of the server's.
+   */
+  const syncCartWithAccount = async () => {
+    const guestFlag = localStorage.getItem(GUEST_CART_FLAG) === '1';
+    const localRaw = localStorage.getItem('qlozet_cart');
+    const localCart: CartItem[] = localRaw ? JSON.parse(localRaw) : [];
+    try {
+      if (guestFlag && localCart.length) {
+        const res = await api.post('/cart/merge', {
+          items: localCart.map((item) => cartLinePayload(item, item.quantity)),
+        });
+        localStorage.removeItem(GUEST_CART_FLAG);
+        applyServerCart(res.data);
+        const skipped = (res.data?.data ?? res.data)?.skipped ?? [];
+        if (skipped.length) {
+          toast.message(
+            `${skipped.length} item${skipped.length === 1 ? ' is' : 's are'} no longer available and ${skipped.length === 1 ? 'was' : 'were'} left out of your cart.`,
+          );
+        }
+        return;
+      }
+      localStorage.removeItem(GUEST_CART_FLAG);
+      const res = await api.get('/cart');
+      applyServerCart(res.data);
+    } catch {
+      /* offline or the API is down: keep the cached cart on screen */
+    }
+  };
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [jobs, setJobs] = useState<TryOnJob[]>([]);
   const [reservations, setReservations] = useState<FabricReservation[]>([]);
@@ -245,49 +354,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }).catch(() => { /* token fetch failed, keep default */ });
 
           // ── Sync Cart & Wishlist from backend ─────────────────
-          const localCartRaw = localStorage.getItem('qlozet_cart');
-          const localCart: CartItem[] = localCartRaw ? JSON.parse(localCartRaw) : [];
+          void syncCartWithAccount();
 
           Promise.allSettled([
-            api.get('/cart'),
             api.get('/users/wishlist'),
-          ]).then(([cartResult, wishResult]) => {
-            // -- Cart sync --
-            if (cartResult.status === 'fulfilled') {
-              const rawCart = cartResult.value.data;
-              // API returns { data: { items: [...] } } — unwrap correctly
-              const backendCartData = rawCart?.data ?? rawCart;
-              const backendItems: CartItem[] = (backendCartData?.items ?? []).map(mapBackendCartItem);
-
-              // Merge local guest items that aren't already in the backend cart.
-              // NOTE: the backend cart is keyed by product id ONLY (its addItem
-              // merges variants and does quantity += quantity). A composite
-              // lineId therefore never round-trips — mapBackendCartItem can't
-              // reconstruct size/colour — so comparing by lineId re-flagged every
-              // already-synced variant as "guest-only" on each page load and
-              // re-POSTed it, inflating quantity without bound (the "200 items"
-              // bug). Dedupe by product id to match the backend's real identity.
-              const backendProductIds = new Set(backendItems.map((i: CartItem) => i.id));
-              const guestOnly = localCart.filter((i) => !backendProductIds.has(i.id));
-
-              // Push guest-only items to backend silently (include selections)
-              for (const item of guestOnly) {
-                api.post('/cart/add', {
-                  productId: item.id,
-                  quantity: item.quantity,
-                  ...(item.selections ? { selections: item.selections } : {}),
-                  ...(item.applied_fabric_id ? { appliedFabricId: item.applied_fabric_id } : {}),
-                  ...(item.applied_fabric_yards ? { appliedFabricYards: item.applied_fabric_yards } : {}),
-                  ...(item.applied_fabric_size ? { appliedFabricSize: item.applied_fabric_size } : {}),
-                  ...(item.note ? { note: item.note } : {}),
-                }).catch(() => {});
-              }
-
-              const merged = [...backendItems, ...guestOnly];
-              setCart(merged);
-              saveState('qlozet_cart', merged);
-            }
-
+          ]).then(([wishResult]) => {
             // -- Wishlist sync --
             if (wishResult.status === 'fulfilled') {
               const backendWishlist = wishResult.value.data;
@@ -395,6 +466,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(key, JSON.stringify(data));
   };
 
+
   const login = (email: string, name: string = 'Kemi Ayomi') => {
     const savedUserStr = localStorage.getItem('qlozet_user');
     let userProfile: User;
@@ -475,6 +547,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setUser(mappedUser);
     localStorage.setItem('qlozet_user', JSON.stringify(mappedUser));
+    isAuthenticated.current = true;
+    void syncCartWithAccount();
 
     // Fetch real token balance from dedicated endpoint
     try {
@@ -510,57 +584,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('qlozet_access_token');
     localStorage.removeItem('qlozet_refresh_token');
     localStorage.removeItem('qlozet_user_id');
+    // The cart belongs to the account; leaving it here would put this
+    // person's items into whoever signs in on this browser next.
+    setCart([]);
+    localStorage.removeItem('qlozet_cart');
+    localStorage.removeItem(GUEST_CART_FLAG);
   };
 
   // Cart Handlers
+  //
+  // Signed in: change the line on screen at once, send the change, then show
+  // the cart the server returns. If the server refuses, say so and show the
+  // server's cart again, so the screen never drifts from the account.
+  // Signed out: the cart lives in this browser until sign-in.
+  const writeLocal = (updated: CartItem[]) => {
+    saveState('qlozet_cart', updated);
+    if (!isAuthenticated.current) localStorage.setItem(GUEST_CART_FLAG, '1');
+  };
+
   const addToCart = (newItem: Omit<CartItem, 'quantity'>) => {
-    const newLineId = cartLineId(newItem);
+    const lineKey = cartLineId(newItem);
+    const keyed = { ...newItem, line_key: lineKey };
     setCart((prev) => {
-      const existing = prev.find((i) => cartLineId(i) === newLineId);
-      let updated;
-      if (existing) {
-        // Same product AND same variant/selections → bump quantity.
-        updated = prev.map((i) => (cartLineId(i) === newLineId ? { ...i, quantity: i.quantity + 1 } : i));
-      } else {
-        // Same product but a different size/colour/selection → its own line.
-        updated = [...prev, { ...newItem, quantity: 1 }];
-      }
-      saveState('qlozet_cart', updated);
+      const existing = prev.find((i) => cartLineId(i) === lineKey);
+      const updated = existing
+        ? prev.map((i) => (cartLineId(i) === lineKey ? { ...i, quantity: i.quantity + 1 } : i))
+        : [...prev, { ...keyed, quantity: 1 }];
+      writeLocal(updated);
       return updated;
     });
-    // Sync to backend (include selections if present)
     if (isAuthenticated.current) {
-      api.post('/cart/add', {
-        productId: newItem.id,
-        quantity: 1,
-        ...(newItem.selections ? { selections: newItem.selections } : {}),
-        ...(newItem.applied_fabric_id ? { appliedFabricId: newItem.applied_fabric_id } : {}),
-        ...(newItem.applied_fabric_yards ? { appliedFabricYards: newItem.applied_fabric_yards } : {}),
-        ...(newItem.applied_fabric_size ? { appliedFabricSize: newItem.applied_fabric_size } : {}),
-        ...(newItem.note ? { note: newItem.note } : {}),
-      }).then((res) => {
-        // Adopt the backend's authoritative unit_price (base + components,
-        // discount applied) so the displayed line price = what's charged,
-        // instead of the client-side customization estimate.
-        const backendCart = res.data?.data ?? res.data;
-        const backendItem = backendCart?.items?.find((it: any) => {
-          const pid = typeof it.product_id === 'object' ? it.product_id?._id : it.product_id;
-          return pid === newItem.id;
+      api
+        .post('/cart/add', cartLinePayload(keyed, 1))
+        .then((res) => applyServerCart(res.data))
+        .catch((error) => {
+          const msg = error.response?.data?.message || error.message;
+          toast.error(`Could not add this to your cart: ${msg}`);
+          void reloadServerCart();
         });
-        if (backendItem && typeof backendItem.unit_price === 'number') {
-          setCart((prev) => {
-            const updated = prev.map((i) =>
-              cartLineId(i) === newLineId ? { ...i, price: backendItem.unit_price } : i,
-            );
-            saveState('qlozet_cart', updated);
-            return updated;
-          });
-        }
-      }).catch((error) => {
-        const msg = error.response?.data?.message || error.message;
-        alert(`Failed to add item to cart on server: ${msg}`);
-        // Optional: revert local cart state here if needed, but alerting is the priority
-      });
     }
     // Track add_to_cart event
     if (user?.id) {
@@ -573,40 +634,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const removeFromCart = (lineId: string) => {
-    let removedProductId: string | undefined;
-    setCart((prev) => {
-      removedProductId = prev.find((i) => cartLineId(i) === lineId)?.id;
-      const updated = prev.filter((i) => cartLineId(i) !== lineId);
-      saveState('qlozet_cart', updated);
-      return updated;
-    });
-    // Sync to backend (backend cart is keyed by product id — best-effort).
-    if (isAuthenticated.current && removedProductId) {
-      api.delete(`/cart/remove/${removedProductId}`).catch(() => {});
+    const target = cartRef.current.find((i) => cartLineId(i) === lineId);
+    if (!target) return;
+    const updated = cartRef.current.filter((i) => cartLineId(i) !== lineId);
+    cartRef.current = updated;
+    setCart(updated);
+    writeLocal(updated);
+
+    if (isAuthenticated.current) {
+      const request = async () => {
+        let serverLineId = target.line_id;
+        if (!serverLineId) {
+          // Added a moment ago and not saved yet: find its server line by key.
+          const res = await api.get('/cart');
+          const fresh = cartFromResponse(res.data);
+          serverLineId = fresh.find((i) => cartLineId(i) === lineId)?.line_id;
+          if (!serverLineId) return res;
+        }
+        return api.delete(`/cart/lines/${serverLineId}`);
+      };
+      request()
+        .then((res) => res && applyServerCart(res.data))
+        .catch((error) => {
+          const msg = error.response?.data?.message || error.message;
+          toast.error(`Could not remove ${target.title}: ${msg}`);
+          void reloadServerCart();
+        });
     }
     // Track remove_from_cart event
     if (user?.id) {
       trackEventDirect(user.id, {
         eventType: 'remove_from_cart',
-        properties: { itemId: removedProductId ?? lineId },
+        properties: { itemId: target.id },
       });
     }
   };
 
   const updateQuantity = (lineId: string, qty: number) => {
-    setCart((prev) => {
-      const updated = prev.map((i) => (cartLineId(i) === lineId ? { ...i, quantity: Math.max(1, qty) } : i));
-      saveState('qlozet_cart', updated);
-      return updated;
-    });
+    const quantity = Math.max(1, Math.min(999, Math.floor(qty) || 1));
+    const target = cartRef.current.find((i) => cartLineId(i) === lineId);
+    if (!target) return;
+    const updated = cartRef.current.map((i) =>
+      cartLineId(i) === lineId ? { ...i, quantity } : i,
+    );
+    cartRef.current = updated;
+    setCart(updated);
+    writeLocal(updated);
+
+    if (isAuthenticated.current && target.line_id) {
+      api
+        .patch(`/cart/lines/${target.line_id}`, { quantity })
+        .then((res) => applyServerCart(res.data))
+        .catch((error) => {
+          const msg = error.response?.data?.message || error.message;
+          toast.error(`Could not change the quantity: ${msg}`);
+          void reloadServerCart();
+        });
+    }
   };
 
   const clearCart = () => {
     setCart([]);
+    cartRef.current = [];
     localStorage.removeItem('qlozet_cart');
-    // Sync to backend
+    localStorage.removeItem(GUEST_CART_FLAG);
     if (isAuthenticated.current) {
-      api.delete('/cart/clear').catch(() => {});
+      api.delete('/cart/clear').catch(() => {
+        void reloadServerCart();
+      });
     }
   };
 
