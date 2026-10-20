@@ -9,6 +9,7 @@ import { useApp, cartLineId } from '@/context/AppContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useCheckout } from '@/hooks/useCheckout';
 import { api } from '@/lib/api';
+import { CancellationNotice } from '@/components/CancellationNotice';
 import { openPaystackModal } from '@/lib/paystack';
 import type { CheckoutPreviewResponse } from '@/lib/api-types';
 import {
@@ -908,6 +909,11 @@ export default function CheckoutPage() {
               `Pay ₦${total.toLocaleString()}${isConverted ? ` (≈ ${fmtMoney(total)})` : ''}`
             )}
           </button>
+          {cart.some(
+            (i) =>
+              i.measurement_set ||
+              ((i.selections as { style_selections?: unknown[] } | undefined)?.style_selections?.length ?? 0) > 0,
+          ) && <CancellationNotice style={{ marginTop: '10px' }} />}
         </div>
 
         {/* ══════ RIGHT COLUMN — Order Summary ══════ */}

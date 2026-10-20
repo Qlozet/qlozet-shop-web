@@ -399,10 +399,40 @@ export default function OrdersSection({
 
   const handleCancelOrder = async (o: Order) => {
     if (!canCancel(o)) return;
-    if (!window.confirm(`Cancel order ${o.orderNumber}? You'll be refunded to your wallet.`)) return;
     setCancellingRef(o.orderNumber);
+    // Ask the server what cancelling would refund and keep, so the customer
+    // decides with the real numbers in front of them.
+    let message = `Cancel order ${o.orderNumber}? You'll be refunded to your wallet.`;
     try {
-      await api.patch(`/orders/customer/cancel/${o.orderNumber}`);
+      const res = await api.get(`/orders/customer/cancel-preview/${o.orderNumber}`);
+      const q = res.data?.data ?? res.data;
+      if (q && q.cancellable === false) {
+        window.alert(q.reason || 'This order can no longer be cancelled.');
+        setCancellingRef(null);
+        return;
+      }
+      if (q && q.fee_total > 0) {
+        const kept = (q.lines ?? [])
+          .map((l: { name: string; fee: number }) => `• ${l.name}: ₦${Number(l.fee).toLocaleString()}`)
+          .join('\n');
+        message =
+          `Cancel order ${o.orderNumber}?\n\n` +
+          `Your tailor has already started work, so ${q.fee_percent}% of these pieces is kept to cover it:\n${kept}\n\n` +
+          `₦${Number(q.refund_total).toLocaleString()} will be refunded to your wallet.`;
+      } else if (q && q.paid_total > 0) {
+        message = `Cancel order ${o.orderNumber}? ₦${Number(q.refund_total).toLocaleString()} will be refunded to your wallet.`;
+      }
+    } catch {
+      /* fall back to the plain confirmation; the server still applies its rules */
+    }
+    if (!window.confirm(message)) {
+      setCancellingRef(null);
+      return;
+    }
+    try {
+      const res = await api.patch(`/orders/customer/cancel/${o.orderNumber}`);
+      const done = res.data?.message;
+      if (done) toast.success(done);
       refetch();
       setActiveSection('orders');
     } catch (err: unknown) {
