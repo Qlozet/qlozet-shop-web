@@ -690,19 +690,29 @@ export default function OrdersSection({
             )}
 
             <Section title="Support">
-              {/* Delivered: any problem. Shipped: only a parcel that has not
-                  arrived (the backend checks it is genuinely overdue). */}
-              <button
-                onClick={() => {
-                  if ((order.status === 'Delivered' || order.status === 'Shipped') && item.businessId) {
-                    setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image, shipped: order.status === 'Shipped' });
-                  }
-                }}
-                disabled={!((order.status === 'Delivered' || order.status === 'Shipped') && item.businessId)}
-                className="w-full transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: (order.status === 'Delivered' || order.status === 'Shipped') && item.businessId ? 'pointer' : 'not-allowed', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {order.status === 'Shipped' ? 'Parcel not arrived?' : 'Report a Problem'}
-              </button>
+              {/* This item's own parcel decides: delivered → any problem;
+                  on its way → only "never arrived" (the backend checks it is
+                  overdue). Payouts and returns are per parcel, so another
+                  vendor's parcel still travelling must not block this. */}
+              {(() => {
+                const parcel = order.parcels?.find((p) => p.businessId && p.businessId === item.businessId);
+                const itemDelivered = order.status === 'Delivered' || parcel?.status === 'delivered';
+                const itemOnItsWay = !itemDelivered && (order.status === 'Shipped' || parcel?.status === 'in_transit' || parcel?.status === 'shipped' || parcel?.status === 'failed');
+                const can = (itemDelivered || itemOnItsWay) && Boolean(item.businessId);
+                return (
+                  <button
+                    onClick={() => {
+                      if (can && item.businessId) {
+                        setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image, shipped: !itemDelivered });
+                      }
+                    }}
+                    disabled={!can}
+                    className="w-full transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: can ? 'pointer' : 'not-allowed', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {itemOnItsWay ? 'Parcel not arrived?' : 'Report a Problem'}
+                  </button>
+                );
+              })()}
               {/* Live return status for THIS item (from GET /returns/my). */}
               {(() => {
                 const activeReturn = item.productId
@@ -728,7 +738,7 @@ export default function OrdersSection({
               {/* Returns are only valid after delivery (backend also enforces a
                   return window), never for tailored/bespoke items, and not
                   while a return is already in flight for this item. */}
-              {!hasTailoring && order.status === 'Delivered' && !(item.productId && findReturnFor(myReturns, order.orderNumber, item.productId) && ['requested','vendor_approved','return_shipped','received'].includes(findReturnFor(myReturns, order.orderNumber, item.productId)!.status)) && (
+              {!hasTailoring && (order.status === 'Delivered' || order.parcels?.some((p) => p.businessId && p.businessId === item.businessId && p.status === 'delivered')) && !(item.productId && findReturnFor(myReturns, order.orderNumber, item.productId) && ['requested','vendor_approved','return_shipped','received'].includes(findReturnFor(myReturns, order.orderNumber, item.productId)!.status)) && (
                 <button onClick={onRequestReturn} className="w-full transition-all hover:opacity-90"
                   style={{ padding: '10px', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', background: 'rgba(239,68,68,0.04)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Request Return

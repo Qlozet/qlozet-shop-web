@@ -264,6 +264,8 @@ export interface ParcelEvent {
 
 export interface Parcel {
   id: string;
+  /** The vendor sending this parcel (matches OrderItem.businessId). */
+  businessId?: string;
   vendor?: string;
   courier?: string;
   trackingNumber?: string;
