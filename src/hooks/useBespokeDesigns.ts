@@ -39,6 +39,8 @@ export interface BespokeQuote {
   total_amount?: number;
   currency?: string;
   line_items?: QuoteLineItem[];
+  /** Days the tailor needs to make it, counted from payment. Delivery is on top. */
+  estimated_completion_days?: number;
   notes?: string;
   expires_at?: string;
   created_at: string;
