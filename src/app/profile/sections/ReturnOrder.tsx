@@ -267,7 +267,7 @@ export default function ReturnOrder({ setActiveSection, selectedOrder, selectedI
               </div>
               <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.6, borderTop: '1px solid var(--border-glass)', paddingTop: '12px', margin: 0 }}>
                 Once the vendor approves your return and receives the items back, your refund of{' '}
-                <b style={{ color: 'var(--text-primary)' }}>₦{item.price.toLocaleString()}</b> is processed to your original payment method.
+                <b style={{ color: 'var(--text-primary)' }}>₦{item.price.toLocaleString()}</b> goes to your Qlozet wallet.
               </p>
             </div>
           </div>
