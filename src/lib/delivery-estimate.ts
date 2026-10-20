@@ -2,7 +2,10 @@
 //
 // The range is built from two real parts: the product's own turnaround_days
 // (the vendor's making time, clothing only) plus a platform-wide courier
-// transit buffer that admins tune in Settings → Orders. It is an ESTIMATE for
+// transit buffer that admins tune in Settings → Orders. An item with no making
+// time of its own (fabric, accessories) may ship the same day or as late as
+// the platform's default time to ship, so that window widens only the end of
+// the range. It is an ESTIMATE for
 // display — the On-Time Promise machinery works off order deadlines, not this.
 
 import { fetchPublicConfig, PUBLIC_CONFIG_DEFAULTS } from './public-config';
@@ -10,6 +13,8 @@ import { fetchPublicConfig, PUBLIC_CONFIG_DEFAULTS } from './public-config';
 export interface TransitBuffer {
   min: number;
   max: number;
+  /** Platform default time to ship, for items with no turnaround of their own. */
+  shipWithin?: number;
 }
 
 // Matches the backend schema defaults; also covers deployed backends that
@@ -17,6 +22,7 @@ export interface TransitBuffer {
 export const DEFAULT_TRANSIT_BUFFER: TransitBuffer = {
   min: PUBLIC_CONFIG_DEFAULTS.delivery_transit_min_days,
   max: PUBLIC_CONFIG_DEFAULTS.delivery_transit_max_days,
+  shipWithin: PUBLIC_CONFIG_DEFAULTS.default_turnaround_days,
 };
 
 /** Fetch the admin-tuned transit buffer once per page load; never throws. */
@@ -24,6 +30,7 @@ export function fetchTransitBuffer(): Promise<TransitBuffer> {
   return fetchPublicConfig().then((cfg) => ({
     min: cfg.delivery_transit_min_days,
     max: Math.max(cfg.delivery_transit_min_days, cfg.delivery_transit_max_days),
+    shipWithin: cfg.default_turnaround_days,
   }));
 }
 
@@ -39,9 +46,9 @@ export function deliveryRange(
   buffer: TransitBuffer,
   from: Date = new Date(),
 ): DeliveryRange {
-  const lead = turnaroundDays ?? 0;
-  const start = addDays(from, lead + buffer.min);
-  const end = addDays(from, lead + buffer.max);
+  const own = turnaroundDays && turnaroundDays > 0 ? turnaroundDays : null;
+  const start = addDays(from, (own ?? 0) + buffer.min);
+  const end = addDays(from, (own ?? buffer.shipWithin ?? 0) + buffer.max);
   return { start, end, label: formatRange(start, end) };
 }
 
