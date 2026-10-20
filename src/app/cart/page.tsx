@@ -142,7 +142,6 @@ export default function CartPage() {
 
   // Computations
   const subtotal = cart.reduce((acc, item) => acc + effectivePrice(item) * item.quantity, 0);
-  const shipping = subtotal > 100000 || subtotal === 0 ? 0 : 5000;
 
   const { products: allProducts } = useProducts({ size: 20 });
 
@@ -589,8 +588,11 @@ export default function CartPage() {
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Delivery</span>
                 <Info size={12} color="var(--text-muted)" />
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {shipping === 0 ? 'Free' : fmtMoney(shipping)}
+              {/* The real fee is per vendor and per courier, so it is only
+                  known at checkout; a guessed number here was wrong for most
+                  carts. */}
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                At checkout
               </span>
             </div>
 

@@ -358,6 +358,15 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       </div>
                     </div>
 
+                    {/* The tailor's days are a ship-by promise (late shipping
+                        is compensated), counted from payment; the courier's
+                        time comes after. */}
+                    {typeof q.estimated_completion_days === 'number' && q.estimated_completion_days > 0 && (
+                      <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+                        Ready to ship {q.estimated_completion_days} day{q.estimated_completion_days === 1 ? '' : 's'} after you pay, then delivery.
+                      </p>
+                    )}
+
                     {(q.line_items ?? []).length > 0 && (
                       <div className='flex flex-col' style={{ gap: '4px', marginBottom: '12px' }}>
                         {(q.line_items ?? []).map((li: any, i: number) => (
