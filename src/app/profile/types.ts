@@ -238,6 +238,8 @@ export interface Order {
   shippingFee?: number;
   tracking?: string;
   courier?: string;
+  /** One per vendor delivery, each with its own courier and timeline. */
+  parcels?: Parcel[];
   paymentStatus?: 'unpaid' | 'paid';
   refundStatus?: 'none' | 'partial' | 'refunded';
   /** Bespoke design attached to a custom outfit order (real data). */
@@ -252,6 +254,22 @@ export interface Order {
     /** Structured design selections (styles, fabric, colour…) with name/image. */
     choices: DesignChoice[];
   };
+}
+
+export interface ParcelEvent {
+  status: string;
+  at: string;
+  message?: string | null;
+}
+
+export interface Parcel {
+  id: string;
+  vendor?: string;
+  courier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  status?: string;
+  events: ParcelEvent[];
 }
 
 export interface DesignChoice {
