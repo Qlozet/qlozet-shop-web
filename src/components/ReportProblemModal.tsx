@@ -1,16 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { X, Loader2, Check, AlertTriangle } from 'lucide-react';
+import { X, Loader2, Check, AlertTriangle, Upload } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useUpload } from '@/hooks/useUpload';
+
+const MAX_PHOTOS = 3;
 
 // ─── ReportProblemModal ───────────────────────────────────────
-// Files a dispute against a vendor for a delivered order → POST /disputes.
-// The backend only accepts disputes for completed (delivered) orders whose
-// vendor payout hasn't been released yet, so this is opened from a delivered
-// order's item. Admin arbitrates the outcome (refund / partial / release).
+// Files a dispute against a vendor → POST /disputes. A delivered order can
+// report any problem; a shipped one only that the parcel has not arrived (the
+// backend checks it is genuinely overdue and says when to come back if not).
+// The vendor payout must not have been released yet. Admin arbitrates the
+// outcome (refund / partial / release).
 
 interface ReportProblemModalProps {
   isOpen: boolean;
@@ -20,6 +24,8 @@ interface ReportProblemModalProps {
   productName: string;
   productImage?: string;
   onSubmitted?: () => void;
+  /** Shipped but not delivered: only "Never arrived" can be reported. */
+  notYetDelivered?: boolean;
 }
 
 // Customer-facing dispute reasons (the vendor-raised measurement flag is omitted).
@@ -28,6 +34,7 @@ const REASON_OPTIONS: { value: string; label: string }[] = [
   { value: 'damaged', label: 'Arrived damaged' },
   { value: 'wrong_item', label: 'Wrong item received' },
   { value: 'missing_items', label: 'Missing items' },
+  { value: 'not_received', label: 'Never arrived' },
   { value: 'poor_quality', label: 'Poor quality' },
   { value: 'other', label: 'Something else' },
 ];
@@ -40,8 +47,15 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
   productName,
   productImage,
   onSubmitted,
+  notYetDelivered = false,
 }) => {
   const [reason, setReason] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { uploadOutfitImages, isUploading, uploadError } = useUpload();
+  const reasons = notYetDelivered
+    ? REASON_OPTIONS.filter((o) => o.value === 'not_received')
+    : REASON_OPTIONS;
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,14 +63,23 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setReason('');
+      setReason(notYetDelivered ? 'not_received' : '');
+      setPhotos([]);
       setDescription('');
       setError(null);
       setDone(false);
     }
-  }, [isOpen]);
+  }, [isOpen, notYetDelivered]);
 
   if (!isOpen) return null;
+
+  const addPhotos = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const list = Array.from(files).slice(0, Math.max(0, MAX_PHOTOS - photos.length));
+    if (!list.length) return;
+    const results = await uploadOutfitImages(list);
+    if (results.length) setPhotos((prev) => [...prev, ...results.map((r) => r.imageUrl)]);
+  };
 
   const submit = async () => {
     if (!reason) {
@@ -75,7 +98,7 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
         business_id: businessId,
         reason,
         description: description.trim(),
-        evidence_urls: [],
+        evidence_urls: photos,
       });
       setDone(true);
       onSubmitted?.();
@@ -108,7 +131,9 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
         Report a Problem
       </h3>
       <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '18px' }}>
-        Tell us what happened — we&apos;ll open a case with the vendor.
+        {notYetDelivered
+          ? 'Tell us about the parcel that has not arrived — we’ll take it up with the vendor and the courier.'
+          : 'Tell us what happened — we’ll open a case with the vendor.'}
       </p>
 
       <div className="flex flex-col" style={{ gap: '16px' }}>
@@ -129,7 +154,7 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
         <div className="flex flex-col" style={{ gap: '8px' }}>
           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>What went wrong?</span>
           <div className="flex flex-wrap" style={{ gap: '8px' }}>
-            {REASON_OPTIONS.map((opt) => {
+            {reasons.map((opt) => {
               const active = reason === opt.value;
               return (
                 <button
@@ -163,6 +188,54 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
           style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', fontSize: '13px', color: 'var(--text-primary)', resize: 'none', outline: 'none' }}
         />
 
+        {/* Photos — optional, up to 3. Of the damage, the wrong item, or a
+            screenshot of tracking that has not moved. */}
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            Photos <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>(optional, up to {MAX_PHOTOS})</span>
+          </span>
+          <div className="flex flex-wrap" style={{ gap: '8px' }}>
+            {photos.map((url, i) => (
+              <div key={url} className="relative overflow-hidden" style={{ width: '64px', height: '64px', borderRadius: '10px', background: 'var(--bg-surface-elevated)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Photo ${i + 1}`} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                <button
+                  type="button"
+                  onClick={() => setPhotos((prev) => prev.filter((u) => u !== url))}
+                  className="absolute top-1 right-1 flex items-center justify-center"
+                  style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer' }}
+                  aria-label="Remove photo"
+                >
+                  <X size={11} color="#FFF" />
+                </button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={isUploading}
+                className="flex flex-col items-center justify-center"
+                style={{ width: '64px', height: '64px', borderRadius: '10px', border: '2px dashed var(--border-glass)', background: 'none', cursor: isUploading ? 'wait' : 'pointer', gap: '4px' }}
+              >
+                {isUploading
+                  ? <Loader2 size={16} color="var(--text-muted)" className="animate-spin" />
+                  : <Upload size={16} color="var(--text-muted)" />}
+                <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)' }}>{isUploading ? 'Uploading…' : 'Add photo'}</span>
+              </button>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { addPhotos(e.target.files); e.target.value = ''; }}
+            />
+          </div>
+          {uploadError && <p style={{ fontSize: '11px', color: '#DC2626', margin: 0 }}>{uploadError}</p>}
+        </div>
+
         <div className="flex items-start" style={{ gap: '8px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(245,166,35,0.08)' }}>
           <AlertTriangle size={15} color="#B8860B" style={{ flexShrink: 0, marginTop: '1px' }} />
           <span style={{ fontSize: '11px', color: '#B8860B', lineHeight: 1.5 }}>
@@ -176,7 +249,7 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
 
         <button
           onClick={submit}
-          disabled={submitting}
+          disabled={submitting || isUploading}
           className="w-full flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: submitting ? 'wait' : 'pointer', gap: '8px' }}
         >

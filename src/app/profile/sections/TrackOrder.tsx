@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Package, ClipboardCheck, Settings, Truck, PackageCheck, Clock, Phone, RotateCcw, CheckCircle2, Box, RefreshCw, Wrench } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, Package, ClipboardCheck, Settings, Truck, PackageCheck, Clock, LifeBuoy, MessageCircle, RotateCcw, CheckCircle2, Box, RefreshCw, Wrench } from 'lucide-react';
 import { cardStyle } from '../styles';
 import type { ActiveSection, Order } from '../types';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS, type CustomerReturn } from '@/hooks/useCustomerReturns';
@@ -236,40 +237,36 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
         </div>
       </div>
 
-      {/* ─── Contact Support Card ─── */}
+      {/* ─── Contact Support Card ───
+          Support is Qlozet's, not the vendor's, and there is no phone line:
+          this opens the support form. */}
       <div style={cardStyle}>
-        <div className="flex items-center justify-between" style={{ padding: '16px 20px' }}>
+        <Link
+          href="/help/contact"
+          className="flex items-center justify-between transition-opacity hover:opacity-90"
+          style={{ padding: '16px 20px' }}
+        >
           <div className="flex items-center" style={{ gap: '14px' }}>
-            <div className="overflow-hidden flex-shrink-0" style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-surface-elevated)' }}>
-              <Image
-                src={item?.vendorLogo || item?.image || '/image/product-1.png'}
-                alt="Support"
-                width={48}
-                height={48}
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-              />
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', color: 'var(--brand-brown)' }}>
+              <LifeBuoy size={22} />
             </div>
             <div className="flex flex-col">
               <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {item?.vendor || 'Obus'}
+                Need help with this order?
               </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Contact Support</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Contact Qlozet support{order.orderNumber ? ` · include order ${order.orderNumber}` : ''}
+              </span>
             </div>
           </div>
-          <button
-            className="flex items-center justify-center transition-all hover:opacity-80 active:scale-95"
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '50%',
-              background: 'var(--brand-fill)',
-              border: 'none',
-              cursor: 'pointer',
-            }}
+          <span
+            aria-hidden
+            className="flex items-center justify-center"
+            style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--brand-fill)' }}
           >
-            <Phone size={18} color="var(--brand-fill-text)" />
-          </button>
-        </div>
+            <MessageCircle size={18} color="var(--brand-fill-text)" />
+          </span>
+        </Link>
       </div>
     </div>
   );

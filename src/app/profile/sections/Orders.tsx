@@ -377,7 +377,9 @@ export default function OrdersSection({
 }: OrdersSectionProps) {
   const [orderFilter, setOrderFilter] = useState<'All' | OrderStatus>('All');
   const [reviewFor, setReviewFor] = useState<{ productId: string; name: string; image: string } | null>(null);
-  const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string } | null>(null);
+  // `shipped`: on its way but not delivered, so the only problem that can be
+  // reported is a parcel that has not arrived.
+  const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string; shipped?: boolean } | null>(null);
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
   const { orders, loading, loadingMore, error, totalItems, hasMore, loadMore, refetch } = useCustomerOrders();
@@ -451,6 +453,20 @@ export default function OrdersSection({
     if (o.paymentStatus === 'paid') return { label: 'Paid', ...statusColors['Delivered'] };
     return { label: 'Unpaid', ...statusColors['Pending'] };
   };
+
+  // Rendered by both the item and the order screens. It used to live only in
+  // the item screen, so the order screen's Report a Problem did nothing.
+  const disputeModal = disputeFor ? (
+    <ReportProblemModal
+      isOpen
+      onClose={() => setDisputeFor(null)}
+      orderReference={disputeFor.orderReference}
+      businessId={disputeFor.businessId}
+      productName={disputeFor.name}
+      productImage={disputeFor.image}
+      notYetDelivered={disputeFor.shipped}
+    />
+  ) : null;
 
   // ═══════════════ ITEM DETAIL ═══════════════
   if (activeSection === 'order-item-detail' && selectedOrder) {
@@ -674,18 +690,18 @@ export default function OrdersSection({
             )}
 
             <Section title="Support">
-              {/* Disputes can only be filed once the order is delivered
-                  (backend requires completed + unreleased payout). */}
+              {/* Delivered: any problem. Shipped: only a parcel that has not
+                  arrived (the backend checks it is genuinely overdue). */}
               <button
                 onClick={() => {
-                  if (order.status === 'Delivered' && item.businessId) {
-                    setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image });
+                  if ((order.status === 'Delivered' || order.status === 'Shipped') && item.businessId) {
+                    setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image, shipped: order.status === 'Shipped' });
                   }
                 }}
-                disabled={!(order.status === 'Delivered' && item.businessId)}
+                disabled={!((order.status === 'Delivered' || order.status === 'Shipped') && item.businessId)}
                 className="w-full transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: order.status === 'Delivered' && item.businessId ? 'pointer' : 'not-allowed', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Report a Problem
+                style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: (order.status === 'Delivered' || order.status === 'Shipped') && item.businessId ? 'pointer' : 'not-allowed', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {order.status === 'Shipped' ? 'Parcel not arrived?' : 'Report a Problem'}
               </button>
               {/* Live return status for THIS item (from GET /returns/my). */}
               {(() => {
@@ -739,16 +755,7 @@ export default function OrdersSection({
           />
         )}
 
-        {disputeFor && (
-          <ReportProblemModal
-            isOpen
-            onClose={() => setDisputeFor(null)}
-            orderReference={disputeFor.orderReference}
-            businessId={disputeFor.businessId}
-            productName={disputeFor.name}
-            productImage={disputeFor.image}
-          />
-        )}
+        {disputeModal}
 
         {chatFor && (
           <OrderChatModal
@@ -844,19 +851,19 @@ export default function OrdersSection({
         <Section title="Support">
           {/* Disputes are per-vendor: a single-vendor order can be reported
               directly; a multi-vendor order needs the specific item opened. */}
-          {order.status === 'Delivered' && (
+          {(order.status === 'Delivered' || order.status === 'Shipped') && (
             <button
               onClick={() => {
                 const vendorIds = Array.from(new Set(order.items.map((i) => i.businessId).filter(Boolean)));
                 if (vendorIds.length === 1 && vendorIds[0]) {
-                  setDisputeFor({ orderReference: order.orderNumber, businessId: vendorIds[0]!, name: `Order ${order.orderNumber}`, image: order.images[0] ?? '' });
+                  setDisputeFor({ orderReference: order.orderNumber, businessId: vendorIds[0]!, name: `Order ${order.orderNumber}`, image: order.images[0] ?? '', shipped: order.status === 'Shipped' });
                 } else {
                   toast('This order has multiple vendors', { description: 'Open the item you have an issue with to report it.' });
                 }
               }}
               className="w-full transition-all hover:opacity-90"
               style={{ padding: '10px', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Report a Problem
+              {order.status === 'Shipped' ? 'Parcel not arrived?' : 'Report a Problem'}
             </button>
           )}
           {canCancel(order) && (
@@ -870,6 +877,7 @@ export default function OrdersSection({
             </button>
           )}
         </Section>
+        {disputeModal}
       </div>
     );
   }
@@ -894,8 +902,10 @@ export default function OrdersSection({
             </p>
           </div>
 
-          {/* On-Time Promise — surfaces the automatic late-delivery
-              compensation the platform already pays into the wallet. */}
+          {/* On-Time Promise — surfaces the automatic late-SHIPPING
+              compensation the platform pays into the wallet. It is measured
+              against the vendor's ship-by deadline; courier delays after
+              pickup are not compensated, so the copy must not say "delivers". */}
           <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: '16px', padding: '16px 20px', border: '1px solid var(--border-glass)', maxWidth: '260px' }}>
             <div className="flex items-center" style={{ gap: '8px', marginBottom: '8px' }}>
               <div className="flex items-center justify-center" style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)' }}>
@@ -904,7 +914,7 @@ export default function OrdersSection({
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>On-Time Promise</span>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              If a vendor delivers late, we automatically credit compensation to your wallet — no need to ask.
+              If a vendor ships your order late, we automatically credit compensation to your wallet — no need to ask.
             </p>
           </div>
         </div>

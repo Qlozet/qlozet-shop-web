@@ -2087,23 +2087,25 @@ export default function ProductDetailsPage() {
               />
             )}
 
-            {/* Free Delivery Note */}
+            {/* Delivery note. There is no free-delivery offer: each vendor's
+                courier is chosen and priced at checkout. */}
             <div className="flex flex-col items-center" style={{ gap: '6px', padding: '14px 0', borderTop: '1px solid var(--border-glass)' }}>
               <div className="flex items-center" style={{ gap: '8px' }}>
                 <Truck size={16} style={{ color: 'var(--text-secondary)' }} />
                 <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                  Free delivery on qualifying orders
+                  Delivery is chosen and priced at checkout
                 </span>
               </div>
-              <button
+              <Link
+                href="/help"
                 className="hover:text-gray-800 transition-colors"
                 style={{
-                  background: 'none', border: 'none', fontSize: '12px', color: 'var(--text-muted)',
-                  cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px',
+                  fontSize: '12px', color: 'var(--text-muted)',
+                  textDecoration: 'underline', textUnderlineOffset: '2px',
                 }}
               >
-                View our Delivery &amp; Return Policy
-              </button>
+                Delivery &amp; returns help
+              </Link>
             </div>
 
             {/* Product Details Accordion */}
