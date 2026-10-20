@@ -437,7 +437,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         >
                           Pay with card
                         </button>
-                        <CancellationNotice style={{ justifyContent: 'center' }} />
+                        <CancellationNotice variant="bespoke" style={{ justifyContent: 'center' }} />
                         {isConverted && (
                           <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
                             You&apos;ll be charged {naira(payable)} — the converted price is an estimate.

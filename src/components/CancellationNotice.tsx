@@ -40,10 +40,18 @@ export function useCancellationFeePercent(): number | null {
 
 /**
  * One line, shown wherever a customer is about to pay for a custom or bespoke
- * piece: cancelling is free until the tailor confirms, then a share is kept
- * for the work already started. Renders nothing when the fee is 0.
+ * piece. A catalogue custom piece is free to cancel until its tailor confirms
+ * it; a bespoke quote is confirmed the moment it is paid (the tailor already
+ * committed by quoting), so the fee applies from payment. Renders nothing
+ * when the fee is 0.
  */
-export function CancellationNotice({ style }: { style?: React.CSSProperties }) {
+export function CancellationNotice({
+  style,
+  variant = 'custom',
+}: {
+  style?: React.CSSProperties;
+  variant?: 'custom' | 'bespoke';
+}) {
   const percent = useCancellationFeePercent();
   if (!percent) return null;
   return (
@@ -60,8 +68,9 @@ export function CancellationNotice({ style }: { style?: React.CSSProperties }) {
     >
       <Info size={13} style={{ flexShrink: 0, marginTop: '1px' }} />
       <span>
-        Free cancellation until your tailor confirms. After that, {percent}% of each
-        custom piece is kept to cover fabric and work already started.
+        {variant === 'bespoke'
+          ? `Your tailor starts as soon as you pay. If you cancel after that, ${percent}% is kept for fabric and work; the rest goes back to your wallet.`
+          : `Free cancellation until your tailor confirms. After that, ${percent}% of each custom piece is kept to cover fabric and work already started.`}
       </span>
     </p>
   );
