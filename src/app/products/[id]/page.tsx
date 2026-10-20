@@ -29,6 +29,7 @@ import {
 } from '@/lib/api-types';
 import type { ApiProduct, ApiFeedItem, CartSelections } from '@/lib/api-types';
 import { api } from '@/lib/api';
+import { CancellationNotice } from '@/components/CancellationNotice';
 import {
   DEFAULT_TRANSIT_BUFFER,
   deliveryRange,
@@ -2013,6 +2014,7 @@ export default function ProductDetailsPage() {
                 <ShoppingCart size={15} />
                 {productOutOfStock || selectedVariantOut ? 'Sold out' : 'Add to Cart'}
               </button>
+              {isCustomizeGarment && <CancellationNotice />}
 
               {isFabric && (
                 <button
