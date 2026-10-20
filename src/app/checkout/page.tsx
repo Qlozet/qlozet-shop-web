@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useApp, cartLineId } from '@/context/AppContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useCheckout } from '@/hooks/useCheckout';
+import { useWallet } from '@/hooks/useWallet';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
 import { openPaystackModal } from '@/lib/paystack';
@@ -172,6 +173,17 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
   const [payError, setPayError] = useState('');
 
+  // Wallet balance, so "Pay with Wallet" says up front whether it covers the
+  // order instead of failing after submit. The backend still decides.
+  const {
+    walletBalance,
+    isLoading: walletLoading,
+    fundWallet,
+    pollTransaction,
+    silentRefresh,
+  } = useWallet();
+  const [topUp, setTopUp] = useState<'idle' | 'opening' | 'waiting' | 'pending'>('idle');
+
   // Processing
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -191,6 +203,15 @@ export default function CheckoutPage() {
   const discount = promoApplied ? Math.round(subtotal * 0.15) : 0;
   const shipping = checkout.totalShipping;
   const total = subtotal - discount + shipping;
+
+  // Whole naira: the wallet and Paystack both work in ₦. Unknown until the
+  // balance has loaded, so the option is never disabled on a guess.
+  const walletShortfall = walletLoading ? 0 : Math.max(0, Math.ceil(total - walletBalance));
+  const walletShort = walletShortfall > 0;
+
+  // A wallet choice the balance no longer covers (cart grew, delivery
+  // changed) counts as no choice.
+  const chosenMethod = paymentMethod === 'wallet' && walletShort ? null : paymentMethod;
 
   // Sequential + signature-cached pricing — the parallel refire on every cart
   // change burst the backend throttler into 429s (see cart page note).
@@ -245,20 +266,21 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = async (override?: 'wallet') => {
+    const selected = override ?? chosenMethod;
     if (cart.length === 0) return;
 
     // Require an explicit payment choice. Without this, a null selection
     // silently defaulted to Paystack and returned a confusing "unable to
     // initialize payment" error when no card had been added.
-    if (!paymentMethod) {
+    if (!selected) {
       setPayError('Please choose how you want to pay — add a card or select Pay with Wallet.');
       return;
     }
     setPayError('');
     setIsProcessing(true);
 
-    const method = paymentMethod === 'wallet' ? 'wallet' : 'paystack';
+    const method = selected === 'wallet' ? 'wallet' : 'paystack';
     // Card payments charge in the selected display currency where available
     // (USD → Stripe); the hook falls back to a ₦/Paystack charge if
     // international payment isn't enabled yet.
@@ -331,6 +353,32 @@ export default function CheckoutPage() {
         setPayError(msg || 'Card payment failed. Please try again.');
       },
     });
+  };
+
+  // Top up exactly what is missing (Paystack, new tab), then pay from the
+  // wallet once the money lands. ₦100 is the smallest top-up the wallet takes.
+  const handleTopUpAndPay = async () => {
+    setPayError('');
+    setTopUp('opening');
+    const res = await fundWallet(Math.max(walletShortfall, 100));
+    if (!res.success || !res.reference) {
+      setTopUp('idle');
+      setPayError('Could not open Paystack to top up your wallet. Please try again, or pay by card.');
+      return;
+    }
+    setTopUp('waiting');
+    const outcome = await pollTransaction(res.reference);
+    if (outcome === 'success') {
+      // pollTransaction has already refreshed the balance.
+      setTopUp('idle');
+      setPaymentMethod('wallet');
+      await handleBuyNow('wallet');
+    } else if (outcome === 'failed') {
+      setTopUp('idle');
+      setPayError('The top-up did not go through, so nothing was charged. Please try again, or pay by card.');
+    } else {
+      setTopUp('pending');
+    }
   };
 
   // ── Measurements-for note (shared by both layouts) ──
@@ -786,14 +834,25 @@ export default function CheckoutPage() {
                       : 'International cards — pay securely with Stripe',
                   Icon: CreditCard,
                 },
-                { key: 'wallet', title: 'Pay with Wallet', sub: 'Use your Qlozet wallet balance', Icon: Wallet },
+                {
+                  key: 'wallet',
+                  title: 'Pay with Wallet',
+                  sub: walletLoading
+                    ? 'Use your Qlozet wallet balance'
+                    : walletShort
+                      ? `Balance ${fmtMoney(walletBalance)} · ${fmtMoney(walletShortfall)} short`
+                      : `Balance ${fmtMoney(walletBalance)}`,
+                  Icon: Wallet,
+                },
               ] as const).map(({ key, title, sub, Icon }) => {
-                const active = paymentMethod === key;
+                const active = chosenMethod === key;
+                const disabled = key === 'wallet' && walletShort;
                 return (
                   <button
                     key={key}
                     type="button"
                     onClick={() => { setPaymentMethod(key); setPayError(''); }}
+                    disabled={disabled}
                     aria-pressed={active}
                     className="w-full flex items-center gap-3 text-left transition-all"
                     style={{
@@ -801,7 +860,8 @@ export default function CheckoutPage() {
                       borderRadius: '12px',
                       border: active ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
                       background: active ? 'var(--bg-surface-elevated)' : 'var(--bg-base)',
-                      cursor: 'pointer',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.6 : 1,
                     }}
                   >
                     <span style={{ width: '36px', height: '36px', borderRadius: '9px', background: 'var(--bg-surface-elevated)', color: 'var(--brand-brown)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -826,6 +886,47 @@ export default function CheckoutPage() {
                 );
               })}
             </div>
+
+            {walletShort && (
+              <div
+                className="flex flex-col gap-2"
+                style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', marginBottom: '16px' }}
+              >
+                <p style={{ fontSize: '12px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
+                  {topUp === 'waiting'
+                    ? 'Complete the payment in the Paystack tab. Your order is placed from your wallet as soon as it goes through.'
+                    : topUp === 'pending'
+                      ? 'Still waiting for Paystack. Once the payment goes through, check again and choose Pay with Wallet.'
+                      : `Your wallet is ${fmtMoney(walletShortfall)} short for this order. Top it up and pay in one go, or pay by card.`}
+                </p>
+                {topUp === 'pending' && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await silentRefresh();
+                      setTopUp('idle');
+                    }}
+                    style={{ height: '36px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Check again
+                  </button>
+                )}
+                {(topUp === 'idle' || topUp === 'opening') && (
+                  <button
+                    type="button"
+                    onClick={handleTopUpAndPay}
+                    disabled={topUp === 'opening' || isProcessing}
+                    className="flex items-center justify-center gap-2"
+                    style={{ height: '40px', borderRadius: '10px', border: 'none', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, cursor: topUp === 'opening' ? 'wait' : 'pointer' }}
+                  >
+                    <Wallet size={14} />
+                    {topUp === 'opening'
+                      ? 'Opening Paystack…'
+                      : `Top up ${fmtMoney(Math.max(walletShortfall, 100))} and pay`}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Accepted card networks — Verve is Paystack/₦-only */}
             <div className="flex items-center justify-center gap-2.5">
@@ -880,7 +981,7 @@ export default function CheckoutPage() {
             </div>
           )}
           <button
-            onClick={handleBuyNow}
+            onClick={() => handleBuyNow()}
             disabled={isProcessing || checkout.placing || !checkout.isReady}
             className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
             style={{
