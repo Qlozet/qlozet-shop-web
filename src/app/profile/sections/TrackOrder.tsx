@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Package, ClipboardCheck, Settings, Truck, PackageCheck, Clock, LifeBuoy, MessageCircle, RotateCcw, CheckCircle2, Box, RefreshCw, Wrench } from 'lucide-react';
 import { cardStyle } from '../styles';
+import { ParcelTimeline } from './ParcelTimeline';
 import type { ActiveSection, Order } from '../types';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS, type CustomerReturn } from '@/hooks/useCustomerReturns';
 
@@ -107,7 +108,14 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
         </div>
       )}
 
-      {/* ─── Shipment summary (real) ─── */}
+      {/* ─── Deliveries: one timeline per vendor parcel ─── */}
+      {!isReturn && (order.parcels?.length ?? 0) > 0 &&
+        order.parcels!.map((p, i) => (
+          <ParcelTimeline key={p.id} parcel={p} index={i} total={order.parcels!.length} />
+        ))}
+
+      {/* ─── Shipment summary (returns, and orders from before parcels) ─── */}
+      {(isReturn || !order.parcels?.length) && (
       <div style={cardStyle}>
         <div className="flex flex-col" style={{ padding: '20px', gap: '14px' }}>
           <div className="flex items-center" style={{ gap: '12px' }}>
@@ -131,6 +139,7 @@ export default function TrackOrder({ activeSection, setActiveSection, selectedOr
           </div>
         </div>
       </div>
+      )}
 
       {/* ─── Order Info Bar (real) ─── */}
       <div className="flex" style={{ gap: '12px' }}>

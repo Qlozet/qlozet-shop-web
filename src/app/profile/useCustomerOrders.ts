@@ -11,7 +11,7 @@ import type {
   ApiOrderStatus,
   ApiProductImage,
 } from '@/lib/api-types';
-import type { DesignChoice, Order, OrderItem, OrderStatus, ProductType } from './types';
+import type { DesignChoice, Order, OrderItem, OrderStatus, Parcel, ProductType } from './types';
 
 // ─── Bespoke design payload ───────────────────────────────────
 // A design's `description` is a JSON string: { notes, selections: {...} } where
@@ -287,6 +287,32 @@ function formatDate(iso: string): string {
   });
 }
 
+/**
+ * The deliveries coming to the customer: one per vendor, each with its own
+ * courier, tracking and timeline. Fabric sent to a tailor is not a parcel the
+ * customer receives, and a declined vendor sends nothing.
+ */
+function mapParcels(o: ApiCustomerOrder, items: OrderItem[]): Parcel[] {
+  return (o.shipments ?? [])
+    .filter((s) => s.shipment_type !== 'fabric_transfer' && !s.rejected)
+    .map((s, i) => {
+      const businessId =
+        typeof s.business === 'object' ? s.business?._id : s.business;
+      const vendor =
+        (typeof s.business === 'object' ? s.business?.business_name : undefined) ??
+        items.find((it) => businessId && it.businessId === businessId)?.vendor;
+      return {
+        id: s._id ?? `${o._id}-${i}`,
+        vendor,
+        courier: s.courier_name,
+        trackingNumber: s.tracking_number,
+        trackingUrl: s.tracking_url ?? undefined,
+        status: s.status,
+        events: (s.tracking_events ?? []).filter((e) => e?.status && e?.at),
+      };
+    });
+}
+
 /** Map a backend order to the profile display shape. */
 export function mapApiOrder(o: ApiCustomerOrder): Order {
   const design =
@@ -316,6 +342,7 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
     shippingFee: o.shipping_fee,
     tracking: activeShipment?.tracking_number,
     courier: activeShipment?.courier_name,
+    parcels: mapParcels(o, items),
     paymentStatus: o.payment_status,
     refundStatus: o.refund_status,
     bespoke: design

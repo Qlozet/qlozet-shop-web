@@ -996,10 +996,19 @@ export interface ApiOrderItem {
 }
 
 export interface ApiOrderShipment {
+  _id?: string;
+  business?: string | { _id?: string; business_name?: string };
   courier_name?: string;
   tracking_number?: string;
+  /** Public tracking page, when the courier aggregator provides one. */
+  tracking_url?: string | null;
   status?: string;
   shipment_type?: string;
+  rejected?: boolean;
+  shipped_at?: string;
+  delivered_at?: string;
+  /** Every courier update, oldest first (status is the courier's own word). */
+  tracking_events?: { status: string; at: string; message?: string | null }[];
 }
 
 export interface ApiBespokeDesign {
