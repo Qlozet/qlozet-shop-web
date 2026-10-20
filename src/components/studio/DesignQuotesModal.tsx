@@ -13,6 +13,12 @@ import { useWallet } from '@/hooks/useWallet';
 import { useCurrency } from '@/context/CurrencyContext';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
+import { useMeasurements } from '@/hooks/useMeasurements';
+import {
+  ADD_MEASUREMENTS_HREF,
+  profileIsUsable,
+  resolveProfile,
+} from '@/lib/usable-measurements';
 
 interface DesignQuotesModalProps {
   isOpen: boolean;
@@ -53,6 +59,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   // the catalogue. The charge itself is still ₦ (wallet/Paystack), so the
   // converted view keeps the ₦ amount visible next to it.
   const { fmt, isConverted } = useCurrency();
+  // Loaded up front with the other hooks; used to gate paying for a quote.
+  const { profiles, isLoading: measuresLoading, error: measuresError } = useMeasurements();
   const [design, setDesign] = useState<BespokeDesign | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -156,6 +164,13 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   } catch {
     /* plain-text description — backend falls back to the active set */
   }
+
+  // The tailor sews from the measurement set this design names (else the
+  // default). The backend refuses to accept a quote without usable
+  // measurements, so say so here instead of after a tap. A failed load
+  // shows nothing and leaves the decision to the backend.
+  const needsMeasurements =
+    !measuresLoading && !measuresError && !profileIsUsable(resolveProfile(profiles, designSetName));
 
   const accept = async (quoteId: string, method: 'wallet' | 'paystack') => {
     setAcceptingId(quoteId);
@@ -391,6 +406,19 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       >
                         <Check size={14} /> Accepted
                       </div>
+                    ) : submitted && needsMeasurements ? (
+                      <a
+                        href={ADD_MEASUREMENTS_HREF}
+                        className='w-full flex items-center justify-center transition-all hover:opacity-90'
+                        style={{
+                          padding: '12px', borderRadius: '12px', background: '#FEF3C7',
+                          color: '#92400E', fontSize: '11px', fontWeight: 700,
+                          textAlign: 'center', textDecoration: 'none', lineHeight: 1.4,
+                          border: '1px solid #FDE68A',
+                        }}
+                      >
+                        Add your measurements so the tailor can make this →
+                      </a>
                     ) : submitted && addressChecked && !addressId ? (
                       <a
                         href='/profile'

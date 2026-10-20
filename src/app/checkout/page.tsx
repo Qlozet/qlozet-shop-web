@@ -11,6 +11,13 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { useWallet } from '@/hooks/useWallet';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
+import { useMeasurements } from '@/hooks/useMeasurements';
+import {
+  ADD_MEASUREMENTS_HREF,
+  isNoMeasurementsError,
+  profileIsUsable,
+  resolveProfile,
+} from '@/lib/usable-measurements';
 import { openPaystackModal } from '@/lib/paystack';
 import type { CheckoutPreviewResponse } from '@/lib/api-types';
 import {
@@ -168,6 +175,23 @@ export default function CheckoutPage() {
     .filter((i) => i.measurement_set)
     .map((i) => ({ title: i.title, set: i.measurement_set as string }));
   const distinctSets = Array.from(new Set(measurementLines.map((l) => l.set)));
+
+  // A custom garment is sewn from a saved measurement set (the one its line
+  // names, else the default); the backend refuses the order without usable
+  // measurements. Custom lines are the ones carrying a set or tailoring
+  // choices (styles / embedded fabric) — ready-to-wear carries neither.
+  const { profiles: measureProfiles, isLoading: measuresLoading, error: measuresError } = useMeasurements();
+  const unmeasuredLines = cart.filter((i) => {
+    const sel = i.selections ?? {};
+    const custom =
+      i.kind === 'clothing' &&
+      (Boolean(i.measurement_set) ||
+        (sel.style_selections?.length ?? 0) > 0 ||
+        (sel.fabric_selections?.length ?? 0) > 0);
+    return custom && !profileIsUsable(resolveProfile(measureProfiles, i.measurement_set));
+  });
+  const needsMeasurements =
+    !measuresLoading && !measuresError && unmeasuredLines.length > 0;
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
@@ -980,9 +1004,24 @@ export default function CheckoutPage() {
               <p style={{ fontSize: '11px', color: '#DC2626', lineHeight: 1.6, margin: 0 }}>{payError || checkout.error}</p>
             </div>
           )}
+          {(needsMeasurements || isNoMeasurementsError(payError || checkout.error)) && (
+            <a
+              href={ADD_MEASUREMENTS_HREF}
+              className="flex items-start gap-2"
+              style={{ padding: '12px 14px', borderRadius: '12px', background: '#FEF3C7', border: '1px solid #FDE68A', color: '#92400E', fontSize: '12px', lineHeight: 1.5, textDecoration: 'none', marginBottom: '12px' }}
+            >
+              <span>
+                <strong>Add your measurements first.</strong>{' '}
+                {unmeasuredLines.length === 1
+                  ? `${unmeasuredLines[0].title} is made to fit, so your tailor needs them.`
+                  : 'Pieces in your cart are made to fit, so your tailor needs them.'}{' '}
+                Add measurements →
+              </span>
+            </a>
+          )}
           <button
             onClick={() => handleBuyNow()}
-            disabled={isProcessing || checkout.placing || !checkout.isReady}
+            disabled={isProcessing || checkout.placing || !checkout.isReady || needsMeasurements}
             className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
             style={{
               padding: '16px',
