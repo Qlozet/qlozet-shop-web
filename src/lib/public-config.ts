@@ -9,12 +9,15 @@ export interface PublicConfig {
   delivery_transit_min_days: number;
   delivery_transit_max_days: number;
   max_quote_vendors_per_design: number;
+  /** Days a vendor has to ship an item with no making time of its own. */
+  default_turnaround_days: number;
 }
 
 export const PUBLIC_CONFIG_DEFAULTS: PublicConfig = {
   delivery_transit_min_days: 2,
   delivery_transit_max_days: 5,
   max_quote_vendors_per_design: 5,
+  default_turnaround_days: 3,
 };
 
 let cached: Promise<PublicConfig> | null = null;
@@ -41,6 +44,10 @@ export function fetchPublicConfig(): Promise<PublicConfig> {
           max_quote_vendors_per_design: num(
             d?.max_quote_vendors_per_design,
             PUBLIC_CONFIG_DEFAULTS.max_quote_vendors_per_design,
+          ),
+          default_turnaround_days: num(
+            d?.default_turnaround_days,
+            PUBLIC_CONFIG_DEFAULTS.default_turnaround_days,
           ),
         };
       })
