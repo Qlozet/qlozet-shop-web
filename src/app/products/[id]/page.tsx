@@ -886,7 +886,8 @@ export default function ProductDetailsPage() {
       image: customization.currentImage || productImage,
       kind: product.kind,
       size: selectedSize,
-      color: selectedColor,
+      // A fabric's colours describe the print; none is chosen, so none is sent.
+      color: isFabric ? undefined : selectedColor,
       selections,
       // External fabric applied to this garment (cross-vendor) — only meaningful
       // for clothing; the backend ships it to the tailor via a fabric transfer.
@@ -1571,7 +1572,26 @@ export default function ProductDetailsPage() {
                 colourways are not on offer. Leaving them visible and selected
                 was the confusing half of a real bug - the order used to carry
                 both, charging for the colourway AND the fabric. */}
-            {colors.length > 0 && !appliedFabricId && (
+            {/* A fabric's colours describe the print (shoppers filter by
+                them); they are not a choice. A fabric in several colourways
+                is listed once per colourway. */}
+            {isFabric && colors.length > 0 && (
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'block' }}>
+                  Colours in this print
+                </span>
+                <div className="flex flex-wrap items-center" style={{ gap: '6px 12px' }}>
+                  {colors.map((color) => (
+                    <span key={color.name} className="flex items-center" style={{ gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <span aria-hidden style={{ width: '14px', height: '14px', borderRadius: '50%', background: color.hex || '#CCC', border: '1px solid var(--border-glass)', flexShrink: 0 }} />
+                      {color.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {colors.length > 0 && !appliedFabricId && !isFabric && (
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '10px', display: 'block' }}>
                   Colour: <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{selectedColor}</span>
