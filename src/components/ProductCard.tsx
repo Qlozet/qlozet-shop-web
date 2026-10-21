@@ -16,6 +16,8 @@ export interface ProductCardProps {
   title: string;
   brand: string;
   price: string | number;
+  /** What the price buys when it is not one item, e.g. "/yd" for fabric. */
+  priceUnit?: string;
   originalPrice?: string | number;
   tag?: string;
   isFavorite?: boolean;
@@ -33,6 +35,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   title,
   brand,
   price,
+  priceUnit,
   originalPrice,
   tag,
   isFavorite = false,
@@ -196,6 +199,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
           >
             {formattedPrice}
+            {priceUnit && (
+              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: 0, marginLeft: '2px' }}>
+                {priceUnit}
+              </span>
+            )}
           </span>
           {formattedOriginalPrice && (
             <span

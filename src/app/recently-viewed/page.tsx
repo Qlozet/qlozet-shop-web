@@ -11,6 +11,7 @@ import {
   getProductImage,
   getProductName,
   getProductPrice,
+  getPriceUnit,
   getProductOriginalPrice,
   getProductTag,
   hasDiscount,
@@ -179,6 +180,7 @@ export default function RecentlyViewedPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}

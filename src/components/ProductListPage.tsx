@@ -9,6 +9,7 @@ import {
   getProductImage,
   getProductName,
   getProductPrice,
+  getPriceUnit,
   getProductOriginalPrice,
   getProductTag,
   hasDiscount,
@@ -179,6 +180,7 @@ export function ProductListPage({ title, subtitle, products, loading, emptyText,
               title={getProductName(product)}
               brand={businessName(product)}
               price={getProductPrice(product)}
+              priceUnit={getPriceUnit(product)}
               originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
               tag={getProductTag(product)}
               stockState={product.availability?.state}

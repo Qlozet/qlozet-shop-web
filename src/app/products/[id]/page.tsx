@@ -15,6 +15,7 @@ import { useVendorProducts } from '@/hooks/useVendors';
 import {
   getProductName,
   getProductPrice,
+  getPriceUnit,
   getProductOriginalPrice,
   getProductImage,
   getProductImages,
@@ -2311,6 +2312,7 @@ export default function ProductDetailsPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}
@@ -2336,6 +2338,7 @@ export default function ProductDetailsPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}
@@ -2361,6 +2364,7 @@ export default function ProductDetailsPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}

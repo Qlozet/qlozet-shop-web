@@ -584,6 +584,16 @@ export function getProductPrice(p: ApiProduct): number {
   return p.base_price;
 }
 
+/**
+ * What a listed price buys, when it is not one item: fabric is priced per
+ * yard, or per piece when sold only by the piece (its listing price is the
+ * piece price). Undefined for clothing and accessories.
+ */
+export function getPriceUnit(p: ApiProduct): string | undefined {
+  if (p.kind !== 'fabric') return undefined;
+  return p.fabric?.sold_by === 'piece' ? '/piece' : '/yd';
+}
+
 /** Get the original price (before discount). Returns base_price. */
 export function getProductOriginalPrice(p: ApiProduct): number {
   return p.base_price;
