@@ -362,6 +362,21 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
 
 // ─── Hook ─────────────────────────────────────────────────────
 
+/**
+ * One of the customer's orders by its reference, for a link that opens it
+ * (a notification) when it isn't on the first page of the list.
+ */
+export async function fetchCustomerOrder(reference: string): Promise<Order | null> {
+  try {
+    const res = await api.get('/orders/customer', { params: { reference, page: 1, size: 1 } });
+    const payload: ApiCustomerOrdersPaginated = res.data?.data ?? res.data;
+    const first = Array.isArray(payload?.data) ? payload.data[0] : undefined;
+    return first && first.reference === reference ? mapApiOrder(first) : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface UseCustomerOrdersReturn {
   orders: Order[];
   loading: boolean;

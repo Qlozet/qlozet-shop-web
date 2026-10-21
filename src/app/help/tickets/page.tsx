@@ -46,8 +46,17 @@ const fmtDate = (iso?: string) =>
     ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
     : '';
 
-function TicketCard({ ticket, onReplied }: { ticket: CustomerTicket; onReplied: () => void }) {
-  const [open, setOpen] = useState(false);
+function TicketCard({
+  ticket,
+  onReplied,
+  initiallyOpen = false,
+}: {
+  ticket: CustomerTicket;
+  onReplied: () => void;
+  /** Opened by a link (a "Support replied" notification). */
+  initiallyOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(initiallyOpen);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const meta = STATUS_META[ticket.status] ?? STATUS_META.open;
@@ -71,8 +80,9 @@ function TicketCard({ ticket, onReplied }: { ticket: CustomerTicket; onReplied: 
 
   return (
     <div
+      id={`ticket-${ticket._id}`}
       className="flex flex-col overflow-hidden"
-      style={{ borderRadius: '20px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)' }}
+      style={{ borderRadius: '20px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', scrollMarginTop: '96px' }}
     >
       <button
         type="button"
@@ -177,6 +187,15 @@ function MyTicketsContent() {
   const [tickets, setTickets] = useState<CustomerTicket[] | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // ?ticket=<id> (a "Support replied" notification) opens that ticket and
+  // scrolls to it once the list has loaded.
+  const linkedTicket = searchParams.get('ticket');
+  useEffect(() => {
+    if (!linkedTicket || !tickets) return;
+    const el = document.getElementById(`ticket-${linkedTicket}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [linkedTicket, tickets]);
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -265,7 +284,12 @@ function MyTicketsContent() {
       ) : (
         <div className="flex flex-col" style={{ gap: '12px' }}>
           {tickets.map((t) => (
-            <TicketCard key={t._id} ticket={t} onReplied={() => setReloadKey((k) => k + 1)} />
+            <TicketCard
+              key={t._id}
+              ticket={t}
+              initiallyOpen={t._id === linkedTicket}
+              onReplied={() => setReloadKey((k) => k + 1)}
+            />
           ))}
         </div>
       )}
