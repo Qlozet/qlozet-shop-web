@@ -43,7 +43,10 @@ export default function ReservationPage() {
 
   // ── Delivery (optional) ── most guests want their yards shipped rather
   // than collected at the event. Pickup stays the default (free).
-  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
+  // Delivery only. Event pickup was dropped: nothing moved the fabric from
+  // the vendor to the organizer, and a "handed over" tap paid the vendor with
+  // no courier record behind it. Every claim is now a tracked parcel.
+  const [deliveryMethod] = useState<'pickup' | 'delivery'>('delivery');
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
   const [quote, setQuote] = useState<{ request_token: string; rates: any[] } | null>(null);
@@ -488,33 +491,13 @@ export default function ReservationPage() {
               Minimum cut: {reservation.minCut} yd
             </p>
 
-            {/* ── Delivery method ── */}
-            <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-              How do you want your fabric?
+            {/* ── Delivery ── */}
+            <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              Delivery
             </span>
-            <div className="flex flex-col" style={{ gap: '8px', marginBottom: '16px' }}>
-              {([
-                { key: 'pickup', title: 'Pick up at the event', sub: 'The organizer hands you your yards — free' },
-                { key: 'delivery', title: 'Deliver to me', sub: 'A courier ships your cut to your address' },
-              ] as const).map(({ key, title, sub }) => {
-                const active = deliveryMethod === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setDeliveryMethod(key)}
-                    className="w-full flex items-center text-left transition-all"
-                    style={{ gap: '10px', padding: '12px 14px', borderRadius: '12px', border: active ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)', background: active ? 'var(--bg-surface-elevated)' : 'var(--bg-base)', cursor: 'pointer' }}
-                  >
-                    <span className="flex-1 min-w-0">
-                      <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{title}</span>
-                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>{sub}</span>
-                    </span>
-                    <span aria-hidden style={{ width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0, border: active ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)' }} />
-                  </button>
-                );
-              })}
-            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 12px' }}>
+              A courier brings your yards to the address you choose, such as your own or your tailor&apos;s.
+            </p>
 
             {/* ── Delivery details ── */}
             {wantsDelivery && (
