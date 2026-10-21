@@ -126,6 +126,11 @@ export interface ApiFabricSubDoc {
   pattern?: string;
   colors?: { name: string; hex: string }[];
   min_cut?: number;
+  /** 'yard' (default), 'piece' (whole pieces only) or 'both'. */
+  sold_by?: 'yard' | 'piece' | 'both';
+  /** Yards in one piece and its price, when sold by the piece. */
+  piece_yards?: number | null;
+  piece_price?: number | null;
   images?: ApiProductImage[];
   variants?: ApiVariant[];
   taxonomy?: ApiTaxonomy;
@@ -178,6 +183,8 @@ export interface ApiAvailability {
     min_cut: number;
     low_yards: number;
     available: boolean;
+    /** Whole pieces left, for a fabric sold by the piece. */
+    pieces_available?: number;
   };
   variants?: ApiVariantAvailability[];
 }
@@ -716,6 +723,8 @@ export interface CartFabricSelection {
   yardage?: number;
   size?: string;
   quantity?: number;
+  /** Whole pieces of a fabric sold by the piece. */
+  pieces?: number;
 }
 
 export interface CartStyleSelection {

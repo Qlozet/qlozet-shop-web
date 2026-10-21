@@ -163,6 +163,12 @@ export default function ReservationPage() {
         fabricName: fabricSub?.name ?? 'Fabric',
         fabricPrice: rsv.price_per_yard ?? fabricSub?.price_per_yard ?? 0,
         minCut: Math.max(1, Math.ceil(Number(fabricSub?.min_cut) || 1)),
+        // Sold only by the piece: guests claim whole pieces, priced per piece.
+        pieceYards:
+          fabricSub?.sold_by === 'piece' && Number(fabricSub?.piece_yards) > 0
+            ? Number(fabricSub.piece_yards)
+            : 0,
+        piecePrice: Number(fabricSub?.piece_price) || 0,
         fabricImage:
           pickUrl(fabricSub?.images) ??
           pickUrl(fabricProduct?.images) ??
@@ -187,7 +193,9 @@ export default function ReservationPage() {
   // room, the fabric's minimum otherwise — always clamped to what's left.
   useEffect(() => {
     if (!reservation || selectedYards > 0) return;
-    const start = Math.min(Math.max(6, reservation.minCut), remainingYards);
+    const start = reservation.pieceYards
+      ? Math.min(reservation.pieceYards, remainingYards)
+      : Math.min(Math.max(6, reservation.minCut), remainingYards);
     setSelectedYards(Math.max(start, Math.min(reservation.minCut, remainingYards)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rsv?._id]);
@@ -230,7 +238,17 @@ export default function ReservationPage() {
       ? (reservation.claimedYards / reservation.totalYards) * 100
       : 0;
 
-  const minClaim = reservation ? Math.min(reservation.minCut, remainingYards) : 1;
+  const byPiece = Boolean(reservation?.pieceYards);
+  const claimStep = byPiece ? reservation!.pieceYards : 1;
+  const minClaim = reservation
+    ? Math.min(byPiece ? reservation.pieceYards : reservation.minCut, remainingYards)
+    : 1;
+  // What the chosen yards cost: whole pieces at the piece price, else per yard.
+  const fabricCost = reservation
+    ? byPiece && reservation.piecePrice
+      ? Math.round((selectedYards / reservation.pieceYards) * reservation.piecePrice)
+      : reservation.fabricPrice * selectedYards
+    : 0;
   const canClaim =
     !isExpired && !isCompleted && !isCancelled && !isPendingActivation && remainingYards > 0;
 
@@ -386,7 +404,11 @@ export default function ReservationPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="truncate" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{reservation.fabricName}</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{fmtMoney(reservation.fabricPrice)} per yard</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {byPiece && reservation.piecePrice
+                    ? `${fmtMoney(reservation.piecePrice)} per ${reservation.pieceYards}-yard piece`
+                    : `${fmtMoney(reservation.fabricPrice)} per yard`}
+                </p>
               </div>
             </Link>
 
@@ -465,7 +487,7 @@ export default function ReservationPage() {
               style={{ padding: '12px 16px', borderRadius: '14px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', marginBottom: '8px' }}
             >
               <button
-                onClick={() => setSelectedYards((y) => Math.max(minClaim, y - 1))}
+                onClick={() => setSelectedYards((y) => Math.max(minClaim, y - claimStep))}
                 disabled={selectedYards <= minClaim}
                 aria-label="Fewer yards"
                 className="flex items-center justify-center transition-all active:scale-90 disabled:opacity-35"
@@ -478,8 +500,8 @@ export default function ReservationPage() {
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>yards</span>
               </div>
               <button
-                onClick={() => setSelectedYards((y) => Math.min(remainingYards, y + 1))}
-                disabled={selectedYards >= remainingYards}
+                onClick={() => setSelectedYards((y) => Math.min(remainingYards, y + claimStep))}
+                disabled={selectedYards + claimStep > remainingYards}
                 aria-label="More yards"
                 className="flex items-center justify-center transition-all active:scale-90 disabled:opacity-35"
                 style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer' }}
@@ -488,7 +510,9 @@ export default function ReservationPage() {
               </button>
             </div>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Minimum cut: {reservation.minCut} yd
+              {byPiece
+                ? `Whole pieces of ${reservation.pieceYards} yd · ${Math.round(selectedYards / reservation.pieceYards)} piece${Math.round(selectedYards / reservation.pieceYards) === 1 ? '' : 's'}`
+                : `Minimum cut: ${reservation.minCut} yd`}
             </p>
 
             {/* ── Delivery ── */}
@@ -586,7 +610,7 @@ export default function ReservationPage() {
             <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-glass)', marginBottom: '20px' }}>
               <div className="flex items-center justify-between" style={{ marginBottom: '4px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Fabric ({selectedYards} yd)</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtMoney(reservation.fabricPrice * selectedYards)}</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtMoney(fabricCost)}</span>
               </div>
               {wantsDelivery && (
                 <div className="flex items-center justify-between" style={{ marginBottom: '4px' }}>
@@ -599,7 +623,7 @@ export default function ReservationPage() {
               <div className="flex items-center justify-between" style={{ marginTop: '8px' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total</span>
                 <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>
-                  {fmtMoney(reservation.fabricPrice * selectedYards + deliveryFee)}
+                  {fmtMoney(fabricCost + deliveryFee)}
                 </span>
               </div>
             </div>
