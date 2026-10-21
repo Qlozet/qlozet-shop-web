@@ -303,6 +303,7 @@ function mapParcels(o: ApiCustomerOrder, items: OrderItem[]): Parcel[] {
         items.find((it) => businessId && it.businessId === businessId)?.vendor;
       return {
         id: s._id ?? `${o._id}-${i}`,
+        businessId: businessId ? String(businessId) : undefined,
         vendor,
         courier: s.courier_name,
         trackingNumber: s.tracking_number,
