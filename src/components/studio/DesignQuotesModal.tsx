@@ -151,7 +151,13 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     const vendorId = String((q.vendor as any)?._id ?? q.vendor ?? '');
     if (!vendorId || vendorId === fabricBusinessId) return 0;
     const yards = q.required_fabric_yards || fabricDoc?.fabric?.min_cut || 1;
-    return Math.round((fabricDoc?.fabric?.price_per_yard || 0) * yards);
+    // Sold only by the piece: whole pieces, as the backend charges.
+    const f = fabricDoc?.fabric;
+    if (f?.sold_by === 'piece' && Number(f.piece_yards) > 0 && Number(f.piece_price) > 0) {
+      const pieces = Math.ceil(yards / Number(f.piece_yards) - 1e-9);
+      return Math.round(pieces * Number(f.piece_price));
+    }
+    return Math.round((f?.price_per_yard || 0) * yards);
   };
 
   // "Who is this for" travels WITH the design — chosen in the studio's Fit

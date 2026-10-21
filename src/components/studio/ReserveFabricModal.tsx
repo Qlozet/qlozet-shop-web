@@ -29,6 +29,8 @@ interface ReserveFabricModalProps {
   minCut?: number;
   /** Fabric is out of stock (below min cut). */
   soldOut?: boolean;
+  /** Set when the fabric is sold only in whole pieces of this many yards. */
+  pieceYards?: number;
 }
 
 // Bulk reservations start at 6 yards, but never below the fabric's min cut.
@@ -44,13 +46,25 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
   yardsAvailable = 0,
   minCut = 0,
   soldOut = false,
+  pieceYards = 0,
 }) => {
   const { fmt: fmtMoney, currency } = useCurrency();
-  const floor = Math.max(RESERVE_MIN, Math.ceil(minCut));
+  // Sold only by the piece: reserve whole pieces (the backend refuses a part
+  // piece), stepping a piece at a time.
+  const byPiece = pieceYards > 0;
+  const stepYards = byPiece ? pieceYards : 6;
+  const floor = byPiece
+    ? Math.ceil(Math.max(RESERVE_MIN, minCut) / pieceYards - 1e-9) * pieceYards
+    : Math.max(RESERVE_MIN, Math.ceil(minCut));
   // Can't reserve more than what's left; can't reserve at all below the floor.
-  const cap = yardsAvailable > 0 ? Math.floor(yardsAvailable) : 0;
+  const cap =
+    yardsAvailable > 0
+      ? byPiece
+        ? Math.floor(yardsAvailable / pieceYards + 1e-9) * pieceYards
+        : Math.floor(yardsAvailable)
+      : 0;
   const canReserve = !soldOut && cap >= floor;
-  const startYards = Math.min(12, cap >= floor ? cap : floor);
+  const startYards = byPiece ? floor : Math.min(12, cap >= floor ? cap : floor);
 
   const [step, setStep] = useState<Step>('form');
   const [eventName, setEventName] = useState('');
@@ -213,7 +227,7 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
               <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Yards to Reserve</label>
               <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderRadius: '14px', border: '1.5px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', opacity: canReserve ? 1 : 0.5 }}>
                 <button
-                  onClick={() => setYards(Math.max(floor, yards - 6))}
+                  onClick={() => setYards(Math.max(floor, yards - stepYards))}
                   disabled={!canReserve || yards <= floor}
                   className="flex items-center justify-center hover:bg-[var(--bg-surface-elevated)] transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ width: '36px', height: '36px', border: 'none', background: 'var(--bg-surface)', cursor: 'pointer' }}
@@ -223,12 +237,12 @@ export const ReserveFabricModal: React.FC<ReserveFabricModalProps> = ({
                 <div className="flex flex-col items-center">
                   <span style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>{yards}</span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    yards{cap > 0 ? ` · ${cap} available` : ''}
+                    yards{byPiece ? ` · ${Math.round(yards / pieceYards)} piece${Math.round(yards / pieceYards) === 1 ? '' : 's'}` : ''}{cap > 0 ? ` · ${cap} available` : ''}
                   </span>
                 </div>
                 <button
-                  onClick={() => setYards(Math.min(cap, yards + 6))}
-                  disabled={!canReserve || yards + 6 > cap}
+                  onClick={() => setYards(Math.min(cap, yards + stepYards))}
+                  disabled={!canReserve || yards + stepYards > cap}
                   className="flex items-center justify-center hover:bg-[var(--bg-surface-elevated)] transition-colors rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ width: '36px', height: '36px', border: 'none', background: 'var(--bg-surface)', cursor: 'pointer' }}
                 >

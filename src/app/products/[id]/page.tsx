@@ -114,6 +114,8 @@ export default function ProductDetailsPage() {
   const [appliedFabricInfo, setAppliedFabricInfo] = useState<{
     name?: string;
     image?: string;
+    /** Set when the fabric is sold only in whole pieces of this many yards. */
+    piecesOf?: number;
   } | null>(null);
 
   // ── Fetch product from API ─────────────────────────────────────
@@ -136,6 +138,12 @@ export default function ProductDetailsPage() {
           setAppliedFabricInfo({
             name: fab?.fabric?.name ?? fab?.name,
             image: typeof img === 'string' ? img : img?.url,
+            // Sold only by the piece: the yards needed round up to whole
+            // pieces (the backend does the same when pricing).
+            piecesOf:
+              fab?.fabric?.sold_by === 'piece' && Number(fab?.fabric?.piece_yards) > 0
+                ? Number(fab.fabric.piece_yards)
+                : undefined,
           });
           // Leave appliedFabricYards unset so it defaults to the garment's
           // requirement (resolveGarmentYards) at use time; the input still lets
@@ -181,6 +189,14 @@ export default function ProductDetailsPage() {
   // price_per_yard × yards, with the vendor's min cut as the floor/default.
   const fabricMinCut = Math.max(0.5, Number(product?.fabric?.min_cut) || 1);
   const fabricPricePerYard = Number(product?.fabric?.price_per_yard) || 0;
+  // Sold by the piece (Ankara in 6-yard pieces, lace in 5): whole pieces at
+  // their own price, instead of ('piece') or as well as ('both') by the yard.
+  const fabricSoldBy = product?.fabric?.sold_by ?? 'yard';
+  const pieceYards = Number(product?.fabric?.piece_yards) || 0;
+  const piecePrice = Number(product?.fabric?.piece_price) || 0;
+  const fabricSellsPieces =
+    isFabric && fabricSoldBy !== 'yard' && pieceYards > 0 && piecePrice > 0;
+  const fabricPiecesOnly = fabricSellsPieces && fabricSoldBy === 'piece';
   const rating = product?.average_rating ?? 0;
   const totalReviews = product?.total_ratings ?? 0; 
 
@@ -229,6 +245,10 @@ export default function ProductDetailsPage() {
   const [selectedColor, setSelectedColor] = useState('');
   // Yards of fabric the customer wants (fabric PDP only). Defaults to min cut.
   const [fabricYards, setFabricYards] = useState<number>(1);
+  // Buying whole pieces (fabric sold by the piece) and how many.
+  // The customer's choice between yards and pieces; null = the default.
+  const [fabricModeChoice, setFabricMode] = useState<'yard' | 'piece' | null>(null);
+  const [fabricPieces, setFabricPieces] = useState<number>(1);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   // Whether the hero shows the AI preview (true) or the original product photo.
   const [showAiPreview, setShowAiPreview] = useState(false);
@@ -337,6 +357,10 @@ export default function ProductDetailsPage() {
   useEffect(() => {
     if (isFabric) setFabricYards(fabricMinCut);
   }, [isFabric, fabricMinCut]);
+  // A fabric sold by the piece opens on the piece (the cheaper way to buy a
+  // full length); one sold only by the piece cannot be bought any other way.
+  const fabricMode = fabricModeChoice ?? (fabricSellsPieces ? 'piece' : 'yard');
+  const buyingPieces = fabricSellsPieces && (fabricPiecesOnly || fabricMode === 'piece');
 
   // Zoom state
   const [isZoomed, setIsZoomed] = useState(false);
@@ -575,9 +599,11 @@ export default function ProductDetailsPage() {
   // tracks the yardage slider immediately; the server value overrides once it
   // returns. Other kinds use base price + customization extras.
   const localEstimate =
-    isFabric && fabricPricePerYard > 0
-      ? fabricPricePerYard * Math.max(fabricMinCut, fabricYards || fabricMinCut)
-      : productPrice + customizationExtra;
+    isFabric && buyingPieces
+      ? piecePrice * Math.max(1, fabricPieces)
+      : isFabric && fabricPricePerYard > 0
+        ? fabricPricePerYard * Math.max(fabricMinCut, fabricYards || fabricMinCut)
+        : productPrice + customizationExtra;
   const displayPrice = serverPrice ?? localEstimate;
   // Cost of the customizations shown next to the price. Prefer the server
   // breakdown (before-discount extras = everything above base) so it stays
@@ -710,13 +736,25 @@ export default function ProductDetailsPage() {
           .filter(Boolean) as any;
       }
     } else if (product.kind === 'fabric') {
-      selections.fabric_selections = [{
-        fabric_id: product._id,
-        // Customer-chosen yardage (defaults to / floored at the min cut).
-        yardage: Math.max(fabricMinCut, fabricYards || fabricMinCut),
-        size: selectedSize || undefined,
-        quantity: 1,
-      }];
+      selections.fabric_selections = [
+        buyingPieces
+          ? {
+              // Whole pieces: the backend prices them per piece and stores
+              // yardage = piece length × quantity = pieces.
+              fabric_id: product._id,
+              pieces: Math.max(1, fabricPieces),
+              yardage: pieceYards,
+              size: selectedSize || undefined,
+              quantity: Math.max(1, fabricPieces),
+            }
+          : {
+              fabric_id: product._id,
+              // Customer-chosen yardage (defaults to / floored at the min cut).
+              yardage: Math.max(fabricMinCut, fabricYards || fabricMinCut),
+              size: selectedSize || undefined,
+              quantity: 1,
+            },
+      ];
     } else if (product.kind === 'accessory' && product.accessory) {
       // Match what the customer actually picked. This used to take
       // variants[0] unconditionally, so choosing a colour or size changed
@@ -739,7 +777,7 @@ export default function ProductDetailsPage() {
     }
     return selections;
   }, [product, selectedColor, selectedSize, resolveGarmentYards,
-    fabricMinCut, fabricYards,
+    fabricMinCut, fabricYards, buyingPieces, fabricPieces, pieceYards,
     customization.selectedFabric, customization.selectedSilhouette,
     customization.selectedNeckline, customization.selectedSleeve,
     customization.selectedCollar, customization.selectedSkirt,
@@ -805,6 +843,9 @@ export default function ProductDetailsPage() {
   // Fabric: yards remaining (cap the yardage picker at this).
   const fabricYardsLeft =
     availability?.fabric?.yard_length ?? Number(product?.fabric?.yard_length) ?? 0;
+  const fabricPiecesLeft =
+    availability?.fabric?.pieces_available ??
+    (pieceYards > 0 ? Math.floor(fabricYardsLeft / pieceYards) : 0);
   // The specific clothing variant the customer picked, and whether it's out.
   const selectedVariant =
     product?.kind === 'clothing' && !isCustomizeGarment && availability?.variants
@@ -1478,7 +1519,9 @@ export default function ProductDetailsPage() {
                   {fmtMoney(displayPrice)}
                 </span>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  for {fabricYards} yd{fabricPricePerYard > 0 ? ` · ${fmtMoney(fabricPricePerYard)}/yd` : ''}
+                  {buyingPieces
+                    ? `for ${fabricPieces} piece${fabricPieces === 1 ? '' : 's'} (${fabricPieces * pieceYards} yd) · ${fmtMoney(piecePrice)} per piece`
+                    : `for ${fabricYards} yd${fabricPricePerYard > 0 ? ` · ${fmtMoney(fabricPricePerYard)}/yd` : ''}`}
                 </span>
               </div>
             ) : (
@@ -1912,11 +1955,95 @@ export default function ProductDetailsPage() {
                     />
                     <span style={{ fontSize: '12px', color: '#7C6BA0' }}>min {appliedFabricMinCut} yd</span>
                   </label>
+                  {appliedFabricInfo?.piecesOf ? (() => {
+                    const need = appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut;
+                    const pieces = Math.max(1, Math.ceil(need / appliedFabricInfo.piecesOf - 1e-9));
+                    return (
+                      <p style={{ fontSize: '12px', color: '#7C6BA0', margin: '6px 0 0' }}>
+                        Sold in {appliedFabricInfo.piecesOf}-yard pieces: you buy {pieces} piece{pieces === 1 ? '' : 's'} ({pieces * appliedFabricInfo.piecesOf} yd).
+                      </p>
+                    );
+                  })() : null}
+                </div>
+              )}
+
+              {/* By the yard or the full piece — only when the vendor sells both. */}
+              {isFabric && fabricSellsPieces && !fabricPiecesOnly && (
+                <div className="grid grid-cols-2" style={{ gap: '8px' }} role="radiogroup" aria-label="How to buy">
+                  {([
+                    { key: 'piece', title: `Full piece (${pieceYards} yd)`, sub: `${fmtMoney(piecePrice)} each` },
+                    { key: 'yard', title: 'By the yard', sub: fabricPricePerYard > 0 ? `${fmtMoney(fabricPricePerYard)}/yd` : 'Any length' },
+                  ] as const).map((o) => {
+                    const active = fabricMode === o.key;
+                    return (
+                      <button
+                        key={o.key}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setFabricMode(o.key)}
+                        className="text-left transition-all"
+                        style={{ padding: '10px 12px', borderRadius: '12px', border: active ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)', background: active ? 'var(--bg-surface-elevated)' : 'var(--bg-base)', cursor: 'pointer' }}
+                      >
+                        <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{o.title}</span>
+                        <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>{o.sub}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Whole pieces — how many to buy. */}
+              {isFabric && buyingPieces && (
+                <div
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: '10px',
+                    padding: '14px 16px', borderRadius: '14px',
+                    background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)',
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Pieces
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      {pieceYards} yd each · {fmtMoney(piecePrice)}
+                    </span>
+                  </div>
+                  <div className="flex items-center" style={{ gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFabricPieces((n) => Math.max(1, n - 1))}
+                      aria-label="Fewer pieces"
+                      disabled={fabricPieces <= 1}
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-[var(--border-glass)] disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
+                    >
+                      −
+                    </button>
+                    <span className="text-center" style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {fabricPieces} · {fabricPieces * pieceYards} yd
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFabricPieces((n) => (fabricPiecesLeft > 0 ? Math.min(n + 1, fabricPiecesLeft) : n + 1))}
+                      aria-label="More pieces"
+                      disabled={fabricPiecesLeft > 0 && fabricPieces >= fabricPiecesLeft}
+                      className="flex items-center justify-center transition-all active:scale-90 hover:bg-[var(--border-glass)] disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Sold in whole pieces
+                    {lowStock && fabricPiecesLeft > 0 ? ` · only ${fabricPiecesLeft} left` : ''}
+                  </span>
                 </div>
               )}
 
               {/* Fabric yardage selector — how many yards to buy. */}
-              {isFabric && (
+              {isFabric && !buyingPieces && (
                 <div
                   style={{
                     display: 'flex', flexDirection: 'column', gap: '10px',
@@ -2080,10 +2207,12 @@ export default function ProductDetailsPage() {
                 fabricId={product._id}
                 fabricName={productName}
                 fabricImage={productImage}
-                fabricPrice={productPrice}
+                // The real per-yard price: the listing price can be a piece's.
+                fabricPrice={fabricPricePerYard || productPrice}
                 yardsAvailable={fabricYardsLeft}
                 minCut={fabricMinCut}
                 soldOut={productOutOfStock}
+                pieceYards={fabricPiecesOnly ? pieceYards : undefined}
               />
             )}
 

@@ -365,6 +365,21 @@ export default function CartPage() {
                       </div>
                     )}
 
+                    {/* How much fabric: whole pieces, or yards. */}
+                    {item.kind === 'fabric' && item.selections?.fabric_selections?.[0] && (() => {
+                      const fs = item.selections.fabric_selections[0];
+                      const pieces = Number(fs.pieces) || 0;
+                      const yards = pieces > 0 ? pieces * (Number(fs.yardage) || 0) : Number(fs.yardage) || 0;
+                      if (!yards) return null;
+                      return (
+                        <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {pieces > 0
+                            ? `${pieces} piece${pieces === 1 ? '' : 's'} (${yards} yd)`
+                            : `${yards} yd`}
+                        </p>
+                      );
+                    })()}
+
                     {/* Applied external fabric — which fabric the customer is using */}
                     {item.applied_fabric_id && fabricInfo[item.applied_fabric_id] && (
                       <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
