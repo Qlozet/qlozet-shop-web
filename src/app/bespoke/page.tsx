@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { consumeDeepLink } from '@/lib/deep-link';
 import { useApp } from '@/context/AppContext';
 import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
 import { DesignQuotesModal } from '@/components/studio/DesignQuotesModal';
@@ -460,6 +461,31 @@ function BespokeContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalStep, setModalStep] = useState<ModalStep>(null);
   const [quotesDesignId, setQuotesDesignId] = useState<string | null>(null);
+
+  // A link that opens one design's quotes (a "Quote received" notification):
+  // ?quotes=<design id>, or ?quote=<quote id> from older notifications that
+  // only carried the quote.
+  const searchParams = useSearchParams();
+  const linkedDesign = searchParams.get('quotes');
+  const linkedQuote = searchParams.get('quote');
+  const linkNonce = searchParams.get('n');
+  useEffect(() => {
+    if (!linkedDesign && !linkedQuote) return;
+    if (!consumeDeepLink(`quotes:${linkedDesign ?? linkedQuote}:${linkNonce ?? ''}`)) return;
+    const designId: Promise<string | null> = linkedDesign
+      ? Promise.resolve(linkedDesign)
+      : api
+          .get(`/bespoke/quotes/${encodeURIComponent(linkedQuote as string)}`)
+          .then((res) => {
+            const q = res.data?.data?.data ?? res.data?.data ?? res.data;
+            const d = q?.design;
+            return d ? String(typeof d === 'object' ? d._id : d) : null;
+          })
+          .catch(() => null);
+    designId.then((id) => {
+      if (id) setQuotesDesignId(id);
+    });
+  }, [linkedDesign, linkedQuote, linkNonce]);
 
   // Map backend designs to display format
   const STATUS_MAP: Record<string, DesignStatus> = {

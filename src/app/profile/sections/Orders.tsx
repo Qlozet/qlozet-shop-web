@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   Package, ChevronRight, ArrowLeft, MessageCircle, Ruler, Truck,
@@ -10,7 +11,8 @@ import {
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { cardStyle, statusColors } from '../styles';
-import { useCustomerOrders } from '../useCustomerOrders';
+import { useCustomerOrders, fetchCustomerOrder } from '../useCustomerOrders';
+import { consumeDeepLink } from '@/lib/deep-link';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
@@ -384,6 +386,39 @@ export default function OrdersSection({
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
   const { orders, loading, loadingMore, error, totalItems, hasMore, loadMore, refetch } = useCustomerOrders();
+
+  // A link that opens one order (a notification): ?tab=orders&order=REF,
+  // optionally &view=track for its delivery timeline or &view=chat for the
+  // tailor's messages. Opened once per link,
+  // so going back to the list doesn't spring it open again.
+  const searchParams = useSearchParams();
+  const linkedRef = searchParams.get('order');
+  const linkedView = searchParams.get('view');
+  const linkNonce = searchParams.get('n');
+  useEffect(() => {
+    if (!linkedRef || loading) return;
+    if (!consumeDeepLink(`order:${linkedRef}:${linkNonce ?? ''}`)) return;
+    const inList = orders.find((o) => o.orderNumber === linkedRef);
+    Promise.resolve(inList ?? fetchCustomerOrder(linkedRef)).then((order) => {
+      if (!order) {
+        toast.error('We couldn’t find that order.');
+        return;
+      }
+      setSelectedOrder(order);
+      setSelectedItemIdx(0);
+      if (linkedView === 'chat') {
+        // The chat lives on the item screen.
+        setActiveSection('order-item-detail');
+        setChatFor({
+          orderReference: order.orderNumber,
+          vendorName: order.items[0]?.vendor,
+          canSend: order.status === 'Processing' || order.status === 'Shipped',
+        });
+        return;
+      }
+      setActiveSection(linkedView === 'track' ? 'track-order' : 'order-detail');
+    });
+  }, [linkedRef, linkedView, linkNonce, loading, orders, setSelectedOrder, setSelectedItemIdx, setActiveSection]);
   // Return requests — powers the item-level return-status banner.
   const { returns: myReturns } = useCustomerReturns();
 

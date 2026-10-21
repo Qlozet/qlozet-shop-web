@@ -8,6 +8,7 @@ import {
 import { cardStyle } from '../styles';
 import { useApp } from '@/context/AppContext';
 import { useNotifications, type AppNotification } from '@/hooks/useNotifications';
+import { notificationTarget } from '@/lib/notification-target';
 
 // ─── Category presentation ───────────────────────────────────
 const CATEGORY_META: Record<string, { icon: React.ElementType; bg: string; color: string; label: string }> = {
@@ -137,17 +138,19 @@ export default function Notifications() {
 
   const openNotification = (n: AppNotification) => {
     if (!n.is_read) markRead(n._id);
-    if (n.action_url && n.action_url.startsWith('/')) {
+    // The exact order, chat, quote or ticket the notification is about.
+    const target = notificationTarget(n);
+    if (target) {
       // Most of these point back into /profile?tab=… — the page this inbox is
       // already on. A router.push that only changes the query of the open
       // route never commits on this deployment and later hard-reloads, so
       // same-page targets go through the History API (the profile page
       // follows ?tab= reactively); anything else is a real navigation.
-      const targetPath = n.action_url.split('?')[0];
+      const targetPath = target.split('?')[0];
       if (targetPath === window.location.pathname) {
-        window.history.pushState(null, '', n.action_url);
+        window.history.pushState(null, '', target);
       } else {
-        router.push(n.action_url);
+        router.push(target);
       }
     }
   };
