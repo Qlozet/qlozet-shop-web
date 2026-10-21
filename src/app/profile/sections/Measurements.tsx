@@ -304,7 +304,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>AI-Powered Sizing</span>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '10px' }}>
-            Our AI analyzes your height, weight, and body type to predict accurate measurements across 14 body points — no tape measure needed.
+            Our AI estimates 14 body measurements from your height, weight and build. It’s a good starting point, not a tape measure: check the ones marked Verify, and correct any you know. Your tailor sees that these are estimates.
           </p>
         </div>
 
