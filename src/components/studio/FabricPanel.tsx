@@ -59,7 +59,10 @@ export const FabricPanel: React.FC<FabricPanelProps> = ({
   // Garment fabric requirement (yards) for the chosen size — bill of materials.
   const garmentYards = (() => {
     const list = (product?.clothing as { yardage_per_size?: Array<{ size?: string; yards?: number }> } | undefined)?.yardage_per_size;
-    const gy = list?.find((y) => (y.size ?? '').toLowerCase() === (selectedSize ?? '').toLowerCase());
+    // A size of '*' is the vendor's one-piece figure (made to measure, no size).
+    const gy =
+      (selectedSize ? list?.find((y) => (y.size ?? '').toLowerCase() === selectedSize.toLowerCase()) : undefined) ??
+      list?.find((y) => y.size === '*');
     return gy?.yards;
   })();
 

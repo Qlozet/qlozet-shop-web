@@ -9,6 +9,7 @@ import type { ApiProduct } from '@/lib/api-types';
 import {
   getProductName,
   getProductPrice,
+  getPriceUnit,
   getProductOriginalPrice,
   getProductImage,
   getProductTag,
@@ -84,6 +85,7 @@ export function ProductCarousel({ title, products, href, onHeaderClick }: Produc
                 title={getProductName(product)}
                 brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
                 price={getProductPrice(product)}
+                priceUnit={getPriceUnit(product)}
                 originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
                 tag={getProductTag(product)}
                 stockState={product.availability?.state}

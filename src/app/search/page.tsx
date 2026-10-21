@@ -6,7 +6,8 @@ import { useApp } from '@/context/AppContext';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
-import { getProductName, getProductImage, getProductPrice, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
+import { getProductName, getProductImage, getProductPrice,
+  getPriceUnit, getProductOriginalPrice, getProductTag, hasDiscount } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useAskFashion, useTrendingProducts } from '@/hooks/useRecommendations';
@@ -215,6 +216,7 @@ function SearchContent() {
           title={getProductName(product)}
           brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
           price={getProductPrice(product)}
+          priceUnit={getPriceUnit(product)}
           originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
           tag={getProductTag(product)}
           isFavorite={wishlist.includes(product._id)}
@@ -581,6 +583,7 @@ function SearchContent() {
                         title={getProductName(product)}
                         brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
                         price={getProductPrice(product)}
+                        priceUnit={getPriceUnit(product)}
                         originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
                         tag={getProductTag(product)}
                         isFavorite={wishlist.includes(productId)}

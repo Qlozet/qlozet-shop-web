@@ -584,6 +584,16 @@ export function getProductPrice(p: ApiProduct): number {
   return p.base_price;
 }
 
+/**
+ * What a listed price buys, when it is not one item: fabric is priced per
+ * yard, or per piece when sold only by the piece (its listing price is the
+ * piece price). Undefined for clothing and accessories.
+ */
+export function getPriceUnit(p: ApiProduct): string | undefined {
+  if (p.kind !== 'fabric') return undefined;
+  return p.fabric?.sold_by === 'piece' ? '/piece' : '/yd';
+}
+
 /** Get the original price (before discount). Returns base_price. */
 export function getProductOriginalPrice(p: ApiProduct): number {
   return p.base_price;
@@ -693,9 +703,15 @@ export function getProductTag(p: ApiProduct): string {
   return '';
 }
 
-/** Get turnaround days (clothing only) */
+/**
+ * The vendor's making time: made-to-order clothing only. A ready-to-wear
+ * piece ships within the platform's standard time, so it has none of its own
+ * (older listings carry a stray 2 from the vendor form).
+ */
 export function getTurnaroundDays(p: ApiProduct): number | null {
-  if (p.kind === 'clothing' && p.clothing) return p.clothing.turnaround_days;
+  if (p.kind === 'clothing' && p.clothing?.type === 'customize') {
+    return p.clothing.turnaround_days || null;
+  }
   return null;
 }
 

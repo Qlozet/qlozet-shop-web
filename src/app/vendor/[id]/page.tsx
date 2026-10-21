@@ -11,7 +11,8 @@ import { useVendorCollections, useCollectionProducts } from '@/hooks/useCollecti
 import { VendorSidebarModal } from '@/components/VendorSidebarModal';
 import { VendorPromotionsModal } from '@/components/VendorPromotionsModal';
 import {
-  getProductImage, getProductName, getProductPrice, getProductOriginalPrice,
+  getProductImage, getProductName, getProductPrice,
+  getPriceUnit, getProductOriginalPrice,
   getProductTag, hasDiscount,
 } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
@@ -595,7 +596,12 @@ export default function VendorPage() {
                   <div className="flex flex-col gap-1 px-1" style={{ marginTop: '10px' }}>
                     <h3 className="text-white text-[13px] font-bold truncate leading-tight">{prodName}</h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-white text-sm font-bold">{fmtMoney(prodPrice)}</span>
+                      <span className="text-white text-sm font-bold">
+                        {fmtMoney(prodPrice)}
+                        {getPriceUnit(product) && (
+                          <span className="ml-0.5 text-[11px] font-medium opacity-80">{getPriceUnit(product)}</span>
+                        )}
+                      </span>
                       {prodOrigPrice && (
                         <span className="text-white/35 text-xs line-through">{fmtMoney(prodOrigPrice)}</span>
                       )}

@@ -15,6 +15,7 @@ import { useVendorProducts } from '@/hooks/useVendors';
 import {
   getProductName,
   getProductPrice,
+  getPriceUnit,
   getProductOriginalPrice,
   getProductImage,
   getProductImages,
@@ -90,6 +91,16 @@ function ProductDetailSkeleton() {
       </div>
     </div>
   );
+}
+
+/** "Women / " for the size chart's subtitle, from the listing's audience. */
+function sizeGuideAudience(product: unknown): string {
+  const p = product as { kind?: string } & Record<string, { taxonomy?: { audience?: string } } | undefined>;
+  const audience = String((p?.kind && p[p.kind]?.taxonomy?.audience) || '').toLowerCase();
+  if (audience === 'men' || audience === 'male') return 'Men / ';
+  if (audience === 'women' || audience === 'female') return 'Women / ';
+  if (audience === 'unisex') return 'Unisex / ';
+  return '';
 }
 
 export default function ProductDetailsPage() {
@@ -503,7 +514,10 @@ export default function ProductDetailsPage() {
   // that drives fabric pricing (embedded + external) and the yardage sent to cart.
   const resolveGarmentYards = useCallback((size: string | null): number | undefined => {
     const list = (product?.clothing as { yardage_per_size?: Array<{ size?: string; yards?: number }> } | undefined)?.yardage_per_size;
-    const gy = list?.find((y) => (y.size ?? '').toLowerCase() === (size ?? '').toLowerCase());
+    // A size of '*' is the vendor's one-piece figure (made to measure, no size).
+    const gy =
+      (size ? list?.find((y) => (y.size ?? '').toLowerCase() === size.toLowerCase()) : undefined) ??
+      list?.find((y) => y.size === '*');
     return gy?.yards;
   }, [product]);
 
@@ -864,10 +878,19 @@ export default function ProductDetailsPage() {
   // setting); mirror it here so we don't offer "apply fabric" on a garment that
   // will be rejected at add-to-cart. Undefined = allowed; only explicit false
   // blocks it.
+  // Only a made-to-order piece can be cut from another vendor's fabric; a
+  // ready-to-wear one is already made.
+  const fabricPolicy = product as unknown as
+    | {
+        clothing?: { type?: string; accepts_external_fabric?: boolean | null };
+        business?: { accepts_external_fabric?: boolean | null };
+      }
+    | undefined;
   const garmentAcceptsFabric =
-    (product as any)?.clothing?.accepts_external_fabric ??
-    (product as any)?.accepts_external_fabric ??
-    true;
+    fabricPolicy?.clothing?.type === 'customize' &&
+    (fabricPolicy?.clothing?.accepts_external_fabric ??
+      fabricPolicy?.business?.accepts_external_fabric ??
+      true);
   const canApplyFabric =
     !!appliedFabricId && product?.kind === 'clothing' && garmentAcceptsFabric;
 
@@ -1037,7 +1060,7 @@ export default function ProductDetailsPage() {
       <SizeGuideModal
         isOpen={showSizeGuide}
         onClose={() => setShowSizeGuide(false)}
-        category={`Men / ${kindLabel}`}
+        category={`${sizeGuideAudience(product)}${kindLabel}`}
         guideData={sizeGuideData}
       />
       <div
@@ -2311,6 +2334,7 @@ export default function ProductDetailsPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}
@@ -2336,6 +2360,7 @@ export default function ProductDetailsPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}
@@ -2361,6 +2386,7 @@ export default function ProductDetailsPage() {
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                     price={getProductPrice(p)}
+                    priceUnit={getPriceUnit(p)}
                     originalPrice={hasDiscount(p) ? getProductOriginalPrice(p) : undefined}
                     tag={getProductTag(p)}
                     stockState={p.availability?.state}

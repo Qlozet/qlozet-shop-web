@@ -168,7 +168,7 @@ const SizeGuideContent: React.FC<{
                 </th>
                 {guideData.body_parts.map((bp) => (
                   <th key={bp} style={{ textAlign: 'center', padding: '12px 10px', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
-                    {bp}
+                    {bp.replace(/_/g, ' ')}
                   </th>
                 ))}
               </tr>
@@ -273,10 +273,12 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
   category = 'Men / Kaftan',
   guideData,
 }) => {
-  const [unit, setUnit] = useState<'CM' | 'IN'>('IN');
+  // Opens in the unit the vendor wrote the chart in; the shopper can switch.
+  const [unitChoice, setUnit] = useState<'CM' | 'IN' | null>(null);
+  const unit: 'CM' | 'IN' = unitChoice ?? (guideData?.unit === 'cm' ? 'CM' : 'IN');
   const [showHowTo, setShowHowTo] = useState(false);
 
-  const handleReset = () => { setUnit('IN'); setShowHowTo(false); };
+  const handleReset = () => { setUnit(null); setShowHowTo(false); };
 
   const closeBtnStyle: React.CSSProperties = {
     width: '32px', height: '32px', borderRadius: '50%',

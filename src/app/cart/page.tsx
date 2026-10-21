@@ -11,7 +11,8 @@ import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
 import { useCompleteTheLook } from '@/hooks/useRecommendations';
-import { getProductName, getProductImage, getProductPrice, getProductTag } from '@/lib/api-types';
+import { getProductName, getProductImage, getProductPrice,
+  getPriceUnit, getProductTag } from '@/lib/api-types';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
 import { useCheckout } from '@/hooks/useCheckout';
 import {
@@ -531,6 +532,7 @@ export default function CartPage() {
                     title={getProductName(lookingProduct)}
                     brand={typeof lookingProduct.business === 'object' ? lookingProduct.business?.business_name ?? '' : ''}
                     price={getProductPrice(lookingProduct)}
+                    priceUnit={getPriceUnit(lookingProduct)}
                     originalPrice={undefined}
                     tag={getProductTag(lookingProduct)}
                     isFavorite={wishlist.includes(lookingProduct._id)}
@@ -564,6 +566,7 @@ export default function CartPage() {
                       title={getProductName(p)}
                       brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}
                       price={getProductPrice(p)}
+                      priceUnit={getPriceUnit(p)}
                       originalPrice={undefined}
                       tag={getProductTag(p)}
                       isFavorite={wishlist.includes(p._id)}

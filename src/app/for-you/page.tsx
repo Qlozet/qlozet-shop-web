@@ -30,6 +30,7 @@ import {
   getProductImage,
   getProductName,
   getProductPrice,
+  getPriceUnit,
   getProductOriginalPrice,
   getProductTag,
   hasDiscount,
@@ -303,6 +304,7 @@ export default function ForYouPage() {
                 title={getProductName(product)}
                 brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
                 price={getProductPrice(product)}
+                priceUnit={getPriceUnit(product)}
                 originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
                 tag={getProductTag(product)}
                 stockState={product.availability?.state}

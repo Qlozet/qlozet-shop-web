@@ -13,7 +13,8 @@ import {
 import { useProducts } from '@/hooks/useProducts';
 import { useTrendingProducts, useNewArrivals, usePersonalizedFeed } from '@/hooks/useRecommendations';
 import type { ApiProduct, ApiFeedItem } from '@/lib/api-types';
-import { getProductTag, getProductImage, getProductName, getProductPrice, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
+import { getProductTag, getProductImage, getProductName, getProductPrice,
+  getPriceUnit, getProductOriginalPrice, hasDiscount } from '@/lib/api-types';
 import { DiscoverBreadcrumb } from '@/components/discover/DiscoverBreadcrumb';
 import { CollectionsGrid } from '@/components/discover/CollectionsGrid';
 import { usePlatformCollections } from '@/hooks/useCollections';
@@ -359,6 +360,7 @@ export default function DiscoverSlugPage() {
                   title={getProductName(product)}
                   brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}
                   price={getProductPrice(product)}
+                  priceUnit={getPriceUnit(product)}
                   originalPrice={hasDiscount(product) ? getProductOriginalPrice(product) : undefined}
                   tag={getProductTag(product)}
                   stockState={product.availability?.state}
