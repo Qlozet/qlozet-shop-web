@@ -14,6 +14,7 @@ import { useCustomerOrders } from '../useCustomerOrders';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
+import { MeasurementQuestionsCard } from '@/components/MeasurementQuestionsCard';
 import { OrderChatModal } from '@/components/chat/OrderChatModal';
 import { useUnreadOrderMessages } from '@/hooks/useUnreadOrderMessages';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS } from '@/hooks/useCustomerReturns';
@@ -279,7 +280,7 @@ function FitFeedbackCard({ order, refetch }: { order: Order; refetch: () => void
   return (
     <Section title="How did it fit?">
       <p style={{ fontSize: '12.5px', color: MUTE, lineHeight: 1.6, margin: 0 }}>
-        Your honest answer keeps your measurements accurate and holds tailors to their fit record.
+        Your honest answer goes on this tailor’s fit record, so other shoppers can see how well their pieces fit. If it doesn’t fit, check your saved measurements too.
       </p>
       <div className="flex flex-wrap" style={{ gap: '8px' }}>
         {FIT_OPTIONS.map((o) => {
@@ -379,7 +380,7 @@ export default function OrdersSection({
   const [reviewFor, setReviewFor] = useState<{ productId: string; name: string; image: string } | null>(null);
   // `shipped`: on its way but not delivered, so the only problem that can be
   // reported is a parcel that has not arrived.
-  const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string; shipped?: boolean } | null>(null);
+  const [disputeFor, setDisputeFor] = useState<{ orderReference: string; businessId: string; name: string; image: string; shipped?: boolean; madeToFit?: boolean } | null>(null);
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
   const { orders, loading, loadingMore, error, totalItems, hasMore, loadMore, refetch } = useCustomerOrders();
@@ -465,6 +466,7 @@ export default function OrdersSection({
       productName={disputeFor.name}
       productImage={disputeFor.image}
       notYetDelivered={disputeFor.shipped}
+      madeToFit={disputeFor.madeToFit}
     />
   ) : null;
 
@@ -703,7 +705,7 @@ export default function OrdersSection({
                   <button
                     onClick={() => {
                       if (can && item.businessId) {
-                        setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image, shipped: !itemDelivered });
+                        setDisputeFor({ orderReference: order.orderNumber, businessId: item.businessId, name: item.name, image: item.image, shipped: !itemDelivered, madeToFit: Boolean(item.measurementSetName) || order.type === 'bespoke' });
                       }
                     }}
                     disabled={!can}
@@ -815,6 +817,11 @@ export default function OrdersSection({
           </div>
         </div>
 
+        {/* A tailor's question about the measurements, before cutting. */}
+        {(isBespokeOrder || order.items.some((i) => i.measurementSetName)) && (
+          <MeasurementQuestionsCard orderReference={order.orderNumber} />
+        )}
+
         {/* Bespoke: approve the finished piece before it ships. Keyed on the
             preship state so a fresh submission remounts with the new photos. */}
         {isBespokeOrder && order.preship && (
@@ -866,7 +873,7 @@ export default function OrdersSection({
               onClick={() => {
                 const vendorIds = Array.from(new Set(order.items.map((i) => i.businessId).filter(Boolean)));
                 if (vendorIds.length === 1 && vendorIds[0]) {
-                  setDisputeFor({ orderReference: order.orderNumber, businessId: vendorIds[0]!, name: `Order ${order.orderNumber}`, image: order.images[0] ?? '', shipped: order.status === 'Shipped' });
+                  setDisputeFor({ orderReference: order.orderNumber, businessId: vendorIds[0]!, name: `Order ${order.orderNumber}`, image: order.images[0] ?? '', shipped: order.status === 'Shipped', madeToFit: order.type === 'bespoke' || order.items.some((i) => i.measurementSetName) });
                 } else {
                   toast('This order has multiple vendors', { description: 'Open the item you have an issue with to report it.' });
                 }

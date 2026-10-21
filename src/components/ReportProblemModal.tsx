@@ -26,6 +26,8 @@ interface ReportProblemModalProps {
   onSubmitted?: () => void;
   /** Shipped but not delivered: only "Never arrived" can be reported. */
   notYetDelivered?: boolean;
+  /** Made to the customer's measurements: offers "Doesn't fit as measured". */
+  madeToFit?: boolean;
 }
 
 // Customer-facing dispute reasons (the vendor-raised measurement flag is omitted).
@@ -35,6 +37,7 @@ const REASON_OPTIONS: { value: string; label: string }[] = [
   { value: 'wrong_item', label: 'Wrong item received' },
   { value: 'missing_items', label: 'Missing items' },
   { value: 'not_received', label: 'Never arrived' },
+  { value: 'poor_fit', label: 'Doesn’t fit as measured' },
   { value: 'poor_quality', label: 'Poor quality' },
   { value: 'other', label: 'Something else' },
 ];
@@ -48,14 +51,17 @@ export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
   productImage,
   onSubmitted,
   notYetDelivered = false,
+  madeToFit = false,
 }) => {
   const [reason, setReason] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const { uploadOutfitImages, isUploading, uploadError } = useUpload();
+  // A fit problem is only a reason for a piece made to measure; anything
+  // else can be returned instead.
   const reasons = notYetDelivered
     ? REASON_OPTIONS.filter((o) => o.value === 'not_received')
-    : REASON_OPTIONS;
+    : REASON_OPTIONS.filter((o) => madeToFit || o.value !== 'poor_fit');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
