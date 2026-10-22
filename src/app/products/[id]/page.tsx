@@ -961,27 +961,33 @@ export default function ProductDetailsPage() {
       }
     }
 
+    setShowSizeRecPopover(true);
+    await fetchSizeRecommendation(true);
+  };
+
+  /**
+   * The shopper's size from their saved measurements. Shared by the AI button
+   * beside the sizes (which picks it straight away) and the size chart's
+   * "Find my size" (which offers it).
+   */
+  const fetchSizeRecommendation = async (autoSelect: boolean) => {
     if (!user) {
       setSizeRecError('Please sign in to get AI size recommendations');
-      setShowSizeRecPopover(true);
       return;
     }
     if (!sizeGuideData?._id) {
       setSizeRecError('No size guide available for this product');
-      setShowSizeRecPopover(true);
       return;
     }
     try {
       setSizeRecLoading(true);
       setSizeRecError(null);
-      setShowSizeRecPopover(true);
       const res = await api.post(`/size-guides/${sizeGuideData._id}/recommend`, {
         preferred_unit: 'cm',
       });
       const data = res.data?.data ?? res.data;
       setSizeRec(data);
-      // Auto-select the recommended size
-      if (data.recommended_size) {
+      if (autoSelect && data.recommended_size) {
         setSelectedSize(data.recommended_size);
       }
     } catch (err: unknown) {
@@ -1062,6 +1068,20 @@ export default function ProductDetailsPage() {
         onClose={() => setShowSizeGuide(false)}
         category={`${sizeGuideAudience(product)}${kindLabel}`}
         guideData={sizeGuideData}
+        findSize={{
+          signedIn: Boolean(user),
+          recommendation: sizeRec,
+          loading: sizeRecLoading,
+          error: sizeRecError,
+          onFind: () => void fetchSizeRecommendation(false),
+          onSignIn: () => router.push('/auth/login'),
+          selectableSizes: sizes,
+          selectedSize: selectedSize || null,
+          onSelect: (size) => {
+            setSelectedSize(size);
+            setShowSizeGuide(false);
+          },
+        }}
       />
       <div
         className="flex flex-col animate-fade-in relative lg:overflow-x-clip"
