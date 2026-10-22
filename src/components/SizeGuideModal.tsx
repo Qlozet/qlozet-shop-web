@@ -3,15 +3,33 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { X, ChevronDown, Minus, Plus, Ruler } from 'lucide-react';
+import { X, ChevronDown, Minus, Plus, Ruler, Sparkles, Check } from 'lucide-react';
+import Link from 'next/link';
 
-import type { ApiSizeGuide } from '@/lib/api-types';
+import type { ApiSizeGuide, ApiSizeRecommendation } from '@/lib/api-types';
 
 interface SizeGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
   category?: string; // e.g. "Men / Kaftan"
   guideData?: ApiSizeGuide | null;
+  /**
+   * "Find my size": the same check as the AI button beside the sizes, run
+   * against the shopper's saved measurements. Left out, the chart has no
+   * footer at all.
+   */
+  findSize?: {
+    signedIn: boolean;
+    recommendation: ApiSizeRecommendation | null;
+    loading: boolean;
+    error: string | null;
+    onFind: () => void;
+    onSignIn: () => void;
+    /** Sizes on sale in the chosen colour; only these can be selected. */
+    selectableSizes: string[];
+    selectedSize: string | null;
+    onSelect: (size: string) => void;
+  };
 }
 
 // "Part – instruction" pairs; the part renders bold, the instruction muted.
@@ -46,7 +64,9 @@ const SizeGuideContent: React.FC<{
   showHowTo: boolean;
   setShowHowTo: (v: boolean) => void;
   guideData?: ApiSizeGuide | null;
-}> = ({ unit, setUnit, showHowTo, setShowHowTo, guideData }) => {
+  /** The shopper's size from "Find my size", marked in the chart. */
+  highlightSize?: string | null;
+}> = ({ unit, setUnit, showHowTo, setShowHowTo, guideData, highlightSize }) => {
 
   const [selectedFitIdx, setSelectedFitIdx] = useState(0);
   const [showFitDropdown, setShowFitDropdown] = useState(false);
@@ -175,9 +195,14 @@ const SizeGuideContent: React.FC<{
             </thead>
             <tbody>
               {sortedSizes.map((row, idx) => (
-                <tr key={row.label} style={{ background: idx % 2 === 1 ? 'color-mix(in srgb, var(--bg-surface-elevated) 45%, transparent)' : 'transparent', borderTop: '1px solid var(--border-glass)' }}>
+                <tr key={row.label} style={{ background: row.label === highlightSize ? 'color-mix(in srgb, var(--brand-fill) 14%, transparent)' : idx % 2 === 1 ? 'color-mix(in srgb, var(--bg-surface-elevated) 45%, transparent)' : 'transparent', borderTop: '1px solid var(--border-glass)' }}>
                   <td style={{ position: 'sticky', left: 0, background: idx % 2 === 1 ? 'var(--bg-surface-elevated)' : 'var(--bg-base)', padding: '12px 14px', fontSize: '13px', fontWeight: 800, color: 'var(--brand-brown)', whiteSpace: 'nowrap' }}>
                     {row.label}
+                    {row.label === highlightSize && (
+                      <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: 'var(--brand-fill)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>
+                        Your size
+                      </span>
+                    )}
                   </td>
                   {guideData.body_parts.map(bp => {
                     const m = row.measurements.find(x => x.body_part === bp);
@@ -272,13 +297,13 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
   onClose,
   category = 'Men / Kaftan',
   guideData,
+  findSize,
 }) => {
   // Opens in the unit the vendor wrote the chart in; the shopper can switch.
   const [unitChoice, setUnit] = useState<'CM' | 'IN' | null>(null);
   const unit: 'CM' | 'IN' = unitChoice ?? (guideData?.unit === 'cm' ? 'CM' : 'IN');
   const [showHowTo, setShowHowTo] = useState(false);
-
-  const handleReset = () => { setUnit(null); setShowHowTo(false); };
+  const recommended = findSize?.recommendation?.recommended_size ?? null;
 
   const closeBtnStyle: React.CSSProperties = {
     width: '32px', height: '32px', borderRadius: '50%',
@@ -297,23 +322,74 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
     </>
   );
 
-  const Footer = (
-    <>
-      <button
-        onClick={handleReset}
-        className="flex-1 transition-colors hover:opacity-90"
-        style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-      >
-        Reset
-      </button>
-      <button
-        onClick={onClose}
-        className="flex-1 transition-opacity hover:opacity-90"
-        style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-      >
-        Done
-      </button>
-    </>
+  // The chart is read-only: no Reset or Done (the X and tapping outside
+  // close it). The one action worth a button is answering "which size am I?".
+  const hasChart = Boolean(guideData?.sizes?.length);
+  const measurementsMissing = Boolean(findSize?.error && /measurement/i.test(findSize.error));
+  const Footer = !findSize || !hasChart ? null : !findSize.signedIn ? (
+    <button
+      onClick={findSize.onSignIn}
+      className="flex-1 transition-colors hover:opacity-90 flex items-center justify-center"
+      style={{ gap: '8px', padding: '14px', borderRadius: '14px', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+    >
+      <Sparkles size={15} /> Sign in to find your size
+    </button>
+  ) : recommended ? (
+    <div className="flex-1 flex items-center justify-between" style={{ gap: '12px' }}>
+      <div className="flex flex-col" style={{ gap: '2px' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Your size</span>
+        <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
+          {recommended}
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '6px' }}>
+            {Math.round((findSize.recommendation?.confidence ?? 0) * 100)}% match
+          </span>
+        </span>
+      </div>
+      {findSize.selectedSize === recommended ? (
+        <span className="flex items-center" style={{ gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+          <Check size={15} /> Selected
+        </span>
+      ) : findSize.selectableSizes.includes(recommended) ? (
+        <button
+          onClick={() => findSize.onSelect(recommended)}
+          className="transition-opacity hover:opacity-90"
+          style={{ padding: '12px 18px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+        >
+          Select {recommended}
+        </button>
+      ) : (
+        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', textAlign: 'right', maxWidth: '160px' }}>
+          Not available in this colour
+        </span>
+      )}
+    </div>
+  ) : (
+    <div className="flex-1 flex flex-col" style={{ gap: '8px' }}>
+      {findSize.error && (
+        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          {findSize.error}
+          {measurementsMissing && (
+            <>
+              {' '}
+              <Link href="/profile?tab=measurements" style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'underline' }}>
+                Add measurements
+              </Link>
+            </>
+          )}
+        </span>
+      )}
+      {!measurementsMissing && (
+        <button
+          onClick={findSize.onFind}
+          disabled={findSize.loading}
+          className="transition-opacity hover:opacity-90 flex items-center justify-center"
+          style={{ gap: '8px', padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 700, border: 'none', cursor: findSize.loading ? 'default' : 'pointer', opacity: findSize.loading ? 0.75 : 1 }}
+        >
+          <Sparkles size={15} />
+          {findSize.loading ? 'Checking your measurements…' : 'Find my size'}
+        </button>
+      )}
+    </div>
   );
 
   return (
@@ -348,13 +424,16 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
               unit={unit} setUnit={setUnit}
               showHowTo={showHowTo} setShowHowTo={setShowHowTo}
               guideData={guideData}
+              highlightSize={recommended}
             />
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px', borderTop: '1px solid var(--border-glass)' }}>
-            {Footer}
-          </div>
+          {Footer && (
+            <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px', borderTop: '1px solid var(--border-glass)' }}>
+              {Footer}
+            </div>
+          )}
         </div>
       </div>
 
@@ -379,13 +458,16 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
                 unit={unit} setUnit={setUnit}
                 showHowTo={showHowTo} setShowHowTo={setShowHowTo}
                 guideData={guideData}
+                highlightSize={recommended}
               />
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px', borderTop: '1px solid var(--border-glass)' }}>
-              {Footer}
-            </div>
+            {Footer && (
+              <div className="shrink-0 flex items-center gap-3" style={{ padding: '16px 24px 24px 24px', borderTop: '1px solid var(--border-glass)' }}>
+                {Footer}
+              </div>
+            )}
           </aside>
         </div>,
         document.body

@@ -30,7 +30,9 @@ export function useNotifications(enabled: boolean) {
     if (append) setLoadingMore(true);
     else setLoading(true);
     try {
-      const res = await api.get('/notifications', { params: { page: p, limit: 20 } });
+      // The shop's own inbox: a login that also works for a vendor never
+      // sees that store's notifications here.
+      const res = await api.get('/notifications', { params: { page: p, limit: 20, audience: 'customer' } });
       const rows: AppNotification[] = res.data?.data ?? [];
       setNotifications((prev) => (append ? [...prev, ...rows] : rows));
       setPage(res.data?.meta?.page ?? p);
@@ -62,7 +64,7 @@ export function useNotifications(enabled: boolean) {
 
   const markAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    api.patch('/notifications/mark-all-read').catch(() => undefined);
+    api.patch('/notifications/mark-all-read', undefined, { params: { audience: 'customer' } }).catch(() => undefined);
   };
 
   return {
@@ -83,7 +85,7 @@ export function useUnreadNotificationCount(enabled: boolean) {
 
   const refresh = useCallback(() => {
     if (!enabled) return;
-    api.get('/notifications/unread-count')
+    api.get('/notifications/unread-count', { params: { audience: 'customer' } })
       .then((res) => setCount(res.data?.data?.total ?? 0))
       .catch(() => undefined);
   }, [enabled]);
