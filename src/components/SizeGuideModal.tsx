@@ -7,6 +7,7 @@ import { X, ChevronDown, Minus, Plus, Ruler, Sparkles, Check } from 'lucide-reac
 import Link from 'next/link';
 
 import type { ApiSizeGuide, ApiSizeRecommendation } from '@/lib/api-types';
+import { MEASUREMENT_LABELS, MEASUREMENT_HINTS } from '@/app/profile/types';
 
 interface SizeGuideModalProps {
   isOpen: boolean;
@@ -32,14 +33,16 @@ interface SizeGuideModalProps {
   };
 }
 
-// "Part – instruction" pairs; the part renders bold, the instruction muted.
-const HOW_TO_MEASURE_STEPS: [string, string][] = [
-  ['Neck', 'Measure around the base of the neck, where a shirt collar sits.'],
-  ['Chest', 'Measure around the fullest part with arms lowered, keeping the tape flat across the back.'],
-  ['Waist', 'Measure around the narrowest point of the waistline.'],
-  ['Hips', 'With feet together, measure around the fullest part.'],
-  ['Inside leg', 'Measure from the highest point of the crotch down to the ankle bone.'],
-];
+// Where the tape goes, for the chart's own columns, in the same words as My
+// Measurement, the AI estimate and the tailor's sheet: one definition of each
+// measurement everywhere, so a number taken here means what the chart means.
+const labelFor = (part: string): string =>
+  (MEASUREMENT_LABELS as Record<string, string>)[part] ??
+  part.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+const hintFor = (part: string): string | undefined =>
+  (MEASUREMENT_HINTS as Record<string, string>)[part];
+/** When there is no chart: the measurements most garments are cut from. */
+const DEFAULT_PARTS = ['chest', 'waist', 'hip', 'shoulder_breadth', 'arm_length', 'leg_length'];
 
 // ─── Shared Size Guide Content ────────────────────────────────────
 
@@ -188,7 +191,7 @@ const SizeGuideContent: React.FC<{
                 </th>
                 {guideData.body_parts.map((bp) => (
                   <th key={bp} style={{ textAlign: 'center', padding: '12px 10px', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
-                    {bp.replace(/_/g, ' ')}
+                    {labelFor(bp)}
                   </th>
                 ))}
               </tr>
@@ -271,18 +274,15 @@ const SizeGuideContent: React.FC<{
             </div>
           </div>
 
-          {/* Steps */}
+          {/* The chart's own columns (or the usual ones when there's no chart). */}
           <div className="flex flex-col" style={{ gap: '10px' }}>
-            {HOW_TO_MEASURE_STEPS.map(([part, instruction], i) => (
-              <div key={part} className="flex" style={{ gap: '10px' }}>
-                <span className="flex items-center justify-center shrink-0" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', fontSize: '10px', fontWeight: 800, color: 'var(--brand-brown)', marginTop: '1px' }}>
-                  {i + 1}
-                </span>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                  <b style={{ color: 'var(--text-primary)' }}>{part}</b> — {instruction}
+            {(guideData?.body_parts?.length ? guideData.body_parts : DEFAULT_PARTS)
+              .filter((part) => hintFor(part))
+              .map((part) => (
+                <p key={part} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  <b style={{ color: 'var(--text-primary)' }}>{labelFor(part)}</b> — {hintFor(part)}
                 </p>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}

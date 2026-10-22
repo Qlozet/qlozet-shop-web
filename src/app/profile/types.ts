@@ -86,6 +86,13 @@ export const MEASUREMENT_HINTS: Partial<Record<keyof MeasurementValues, string>>
   arm_length: 'Shoulder bone to wrist bone, arm relaxed at your side.',
   leg_length: 'From the crotch straight down to the floor.',
   shoulder_to_crotch: 'Top of the shoulder, down the front, to the crotch.',
+  bicep: 'Around the fullest part of the upper arm, arm relaxed.',
+  forearm: 'Around the fullest part of the forearm.',
+  thigh: 'Around the fullest part of the thigh, just below the crotch.',
+  calf: 'Around the fullest part of the calf.',
+  wrist: 'Around the wrist bone.',
+  ankle: 'Around the ankle bone.',
+  height: 'Standing straight against a wall, without shoes.',
 };
 
 export const EMPTY_MEASUREMENTS: MeasurementValues = {
