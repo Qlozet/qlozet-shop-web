@@ -419,7 +419,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto flex flex-col gap-5 hide-scrollbar" style={{ padding: '0 24px 24px 24px' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-5 hide-scrollbar [&>*]:shrink-0" style={{ padding: '0 24px 24px 24px' }}>
             <SizeGuideContent
               unit={unit} setUnit={setUnit}
               showHowTo={showHowTo} setShowHowTo={setShowHowTo}
@@ -453,7 +453,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto flex flex-col gap-5 hide-scrollbar" style={{ padding: '0 24px 24px 24px' }}>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-5 hide-scrollbar [&>*]:shrink-0" style={{ padding: '0 24px 24px 24px' }}>
               <SizeGuideContent
                 unit={unit} setUnit={setUnit}
                 showHowTo={showHowTo} setShowHowTo={setShowHowTo}
