@@ -445,3 +445,21 @@
    bottom: 0;
    pointer-events: none;
  }
+
+/* Product descriptions: the vendor editor's formatting (paragraphs, bold,
+   italics, lists, headings, quotes, links). The CSS reset strips list
+   markers and heading sizes, so they are put back here. */
+.product-description > * + * { margin-top: 0.75em; }
+.product-description strong, .product-description b { font-weight: 700; color: var(--text-primary); }
+.product-description em, .product-description i { font-style: italic; }
+.product-description u { text-decoration: underline; }
+.product-description s { text-decoration: line-through; }
+.product-description ul { list-style: disc; padding-left: 1.25em; }
+.product-description ol { list-style: decimal; padding-left: 1.25em; }
+.product-description li + li { margin-top: 0.25em; }
+.product-description h2, .product-description h3, .product-description h4 { font-weight: 700; color: var(--text-primary); line-height: 1.35; }
+.product-description h2 { font-size: 1.15em; }
+.product-description h3 { font-size: 1.07em; }
+.product-description h4 { font-size: 1em; }
+.product-description blockquote { border-left: 3px solid var(--border-glass); padding-left: 0.75em; font-style: italic; }
+.product-description a { color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px; }

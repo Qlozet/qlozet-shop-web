@@ -28,6 +28,7 @@ import {
   type ApiSizeGuide,
   type ApiSizeRecommendation,
 } from '@/lib/api-types';
+import { safeDescriptionHtml } from '@/lib/description-html';
 import type { ApiProduct, ApiFeedItem, CartSelections } from '@/lib/api-types';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
@@ -173,7 +174,8 @@ export default function ProductDetailsPage() {
   const productName = product ? getProductName(product) : '';
   const productPrice = product ? getProductPrice(product) : 0;
   const productImage = product ? getProductImage(product) : '';
-  const productDesc = product ? getProductDescription(product) : '';
+  // Cleaned before it is put on the page as HTML (see lib/description-html).
+  const productDesc = product ? safeDescriptionHtml(getProductDescription(product)) : '';
   const colors = product ? getProductColors(product) : [];
   const tag = product ? getProductTag(product) : '';
   const turnaroundDays = product ? getTurnaroundDays(product) : null;
@@ -2329,7 +2331,7 @@ export default function ProductDetailsPage() {
               <div className="animate-fade-in" style={{ paddingBottom: '8px' }}>
                 {productDesc && (
                   <div 
-                    className="prose"
+                    className="product-description"
                     style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '16px' }}
                     dangerouslySetInnerHTML={{ __html: productDesc }}
                   />
