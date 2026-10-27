@@ -171,7 +171,10 @@ function RegisterContent() {
 
   // Form Handler Step 4 (OTP Verification) — shared by typing/paste (onComplete)
   // and the submit button. Focus + paste handling lives in <OtpInputs />.
-  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  // From sign-in: what happened to the code ("We've sent a new code…").
+  const [resendMsg, setResendMsg] = useState<string | null>(
+    searchParams.get('step') === 'otp' ? searchParams.get('notice') : null,
+  );
   const resendCode = async () => {
     if (!email) return;
     setResendMsg('Sending…');
