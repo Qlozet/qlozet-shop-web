@@ -86,7 +86,7 @@
 
    --bg-app: #242427;                    /* app ground — dark grey (unchanged in dark) */
    --bg-base: #242427;                   /* component surface — dark grey (matches ground in dark) */
-   --bg-surface: #161619;                /* big content card — near-black (pops darker) */
+   --bg-surface: #0B0B0C;                /* big content card — almost black (pops darker) */
    --bg-surface-elevated: #2E2E33;       /* insets/chips ON the card (a touch lighter) */
 
    --brand-brown: #E0B486;               /* readable tan on dark (brand pop) */
