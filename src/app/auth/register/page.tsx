@@ -190,7 +190,8 @@ function RegisterContent() {
     if (code.length < 6) return;
     setError('');
     setIsLoading(true);
-    api.post('/auth/verify-email', { token: code })
+    // The email goes with the code: the server checks the code against that account.
+    api.post('/auth/verify-email', { token: code, email })
       .then(async () => {
         await authenticateUser(email, password);
         setIsLoading(false);
