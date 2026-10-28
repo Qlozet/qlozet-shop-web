@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { GenderToggle } from '@/components/GenderToggle';
 import { useApp } from '@/context/AppContext';
@@ -15,9 +15,12 @@ import { CollectionsGrid } from '@/components/discover/CollectionsGrid';
 import { usePlatformCollections } from '@/hooks/useCollections';
 import { useProducts } from '@/hooks/useProducts';
 import { useVendors } from '@/hooks/useVendors';
-import { usePersonalizedFeed } from '@/hooks/useRecommendations';
-import type { ApiBusinessPublic, ApiFeedItem, ApiProduct } from '@/lib/api-types';
-import { getProductImage, getProductTag, hasDiscount } from '@/lib/api-types';
+import { usePersonalizedFeed, useTrendingProducts } from '@/hooks/useRecommendations';
+import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
+import { api } from '@/lib/api';
+import type { ApiFeedItem, ApiProduct } from '@/lib/api-types';
+import { getProductImage, getProductTaxonomy } from '@/lib/api-types';
+import type { BrowseCategory } from '@/data/taxonomy';
 
 export default function DiscoverPage() {
   const { gender, setGender, user } = useApp();
@@ -39,7 +42,45 @@ export default function DiscoverPage() {
     .map((i) => i.product)
     .filter((p): p is ApiProduct => !!p);
 
-  const isLoading = productsLoading || vendorsLoading;
+  // ── Card rows: each card asks the backend for exactly its own products, so
+  // a card never shows something that doesn't belong in it. All follow the
+  // Men/Women toggle (the backend's audience filter also lets unisex through).
+  const card = { size: 3, audience } as const;
+  const clothingQ = useProducts({ ...card, kind: 'clothing' });
+  const accessoryQ = useProducts({ ...card, kind: 'accessory' });
+  const fabricQ = useProducts({ ...card, kind: 'fabric' });
+  const newQ = useProducts({ ...card, sortBy: 'date', order: 'desc' });
+  const saleQ = useProducts({ ...card, on_sale: true });
+  const ratedQ = useProducts({ ...card, sortBy: 'rating', order: 'desc' });
+  const { items: trendingItems, loading: trendingLoading } = useTrendingProducts(30);
+
+  // Designs: your own designs when you have some, otherwise the platform's
+  // templates. Both matched to the toggle.
+  const designGender = gender === 'male' ? 'men' : 'women';
+  const { designs: myDesigns, isLoading: myDesignsLoading } = useBespokeDesigns();
+  const [templates, setTemplates] = useState<
+    { _id: string; name: string; category: string; gender?: string; design_images?: string[] }[] | null
+  >(null);
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/bespoke/templates')
+      .then((res) => {
+        const rows = res.data?.data ?? res.data ?? [];
+        if (!cancelled) setTemplates(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => !cancelled && setTemplates([]));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const cardsLoading =
+    clothingQ.loading || accessoryQ.loading || fabricQ.loading || newQ.loading ||
+    saleQ.loading || ratedQ.loading || trendingLoading ||
+    (!!user && myDesignsLoading) || templates === null;
+
+  const isLoading = cardsLoading || productsLoading || vendorsLoading;
 
   // Only vendors that actually have products to show (hide empty shops).
   // `total_products` is undefined on older API responses — treat unknown as
@@ -82,47 +123,74 @@ export default function DiscoverPage() {
   const shopCategoryLabels = ['CLOTHING', 'ACCESSORIES', 'FABRIC', 'DESIGNS'];
   const curatedCollectionLabels = ["WHAT'S NEW", 'DISCOUNTS', 'TOP RATED', 'TRENDING'];
 
-  const processCategory = (cat: typeof BROWSE_CATEGORIES[0]) => {
-    let filtered = [...allProducts];
-    if (cat.label === 'CLOTHING') filtered = filtered.filter(p => p.kind === 'clothing');
-    else if (cat.label === 'ACCESSORIES') filtered = filtered.filter(p => p.kind === 'accessory');
-    else if (cat.label === 'FABRIC') filtered = filtered.filter(p => p.kind === 'fabric');
-    else if (cat.label === 'DESIGNS') filtered = filtered.filter(p => getProductTag(p) === 'CUSTOMIZABLE');
-    else if (cat.label === "WHAT'S NEW") filtered = [...filtered].reverse();
-    else if (cat.label === 'DISCOUNTS') filtered = filtered.filter(p => hasDiscount(p));
-    else if (cat.label === 'TOP RATED') filtered = [...filtered].sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-    else if (cat.label === 'TRENDING') {
-      // For now trending is just slicing the raw list, or based on relevance in backend
-      filtered = [...filtered]; 
-    }
+  // Trending is a marketplace-wide feed; keep the pieces meant for the
+  // toggled side (or for everyone).
+  const trendingForAudience = useMemo(() => {
+    const ok = [audience, audience === 'men' ? 'male' : 'female', 'unisex'];
+    return (trendingItems as ApiFeedItem[])
+      .map((i) => i.product)
+      .filter((p): p is ApiProduct => !!p)
+      .filter((p) => {
+        const a = (getProductTaxonomy(p) as { audience?: string } | null)?.audience;
+        return !a || ok.includes(String(a).toLowerCase());
+      });
+  }, [trendingItems, audience]);
 
-    // Smart hiding: if products are fully loaded and there are ZERO matching items, hide the card
-    if (!productsLoading && filtered.length === 0) return null;
+  // Designs card: yours first, templates otherwise. Only ones with a picture.
+  const designTiles = useMemo(() => {
+    const mine = myDesigns
+      .filter((d) => d.status !== 'cancelled' && d.design_images?.[0] && d.gender === designGender)
+      .slice(0, 3)
+      .map((d) => ({
+        image: d.design_images[0],
+        link: `/bespoke/studio?name=${encodeURIComponent(d.name)}&type=${encodeURIComponent(d.category)}&designId=${d._id}`,
+      }));
+    if (mine.length > 0) return { tiles: mine, href: '/bespoke' };
+    const tpl = (templates ?? [])
+      .filter((t) => t.design_images?.[0] && (t.gender === 'men' ? 'men' : 'women') === designGender)
+      .slice(0, 3)
+      .map((t) => ({
+        image: t.design_images?.[0] as string,
+        link: `/bespoke/studio?name=${encodeURIComponent(t.name)}&type=${encodeURIComponent(t.category)}&gender=${designGender}&template=${t._id}`,
+      }));
+    return { tiles: tpl, href: '/bespoke?tab=templates' };
+  }, [myDesigns, templates, designGender]);
 
-    if (filtered.length >= 3) {
-      const top3 = filtered.slice(0, 3);
-      return {
-        ...cat,
-        images: top3.map(p => getProductImage(p)),
-        productIds: top3.map(p => p._id),
-      };
+  const productsFor = (label: string): ApiProduct[] => {
+    switch (label) {
+      case 'CLOTHING': return clothingQ.products;
+      case 'ACCESSORIES': return accessoryQ.products;
+      case 'FABRIC': return fabricQ.products;
+      case "WHAT'S NEW": return newQ.products;
+      case 'DISCOUNTS': return saleQ.products;
+      case 'TOP RATED': return ratedQ.products.filter((p) => (p.average_rating ?? 0) > 0);
+      case 'TRENDING': return trendingForAudience;
+      default: return [];
     }
-    return cat; // fallback to static if not enough live items (but > 0)
   };
 
-  const shopCategories = useMemo(() => {
-    return BROWSE_CATEGORIES
-      .filter(c => shopCategoryLabels.includes(c.label))
-      .map(processCategory)
-      .filter(Boolean) as typeof BROWSE_CATEGORIES;
-  }, [allProducts, allVendors, productsLoading, vendorsLoading]);
+  // A card shows only real items. Nothing to show → no card. The static
+  // images in BROWSE_CATEGORIES are never used as stand-ins.
+  const buildCard = (cat: BrowseCategory): BrowseCategory | null => {
+    if (cat.label === 'DESIGNS') {
+      const { tiles, href } = designTiles;
+      if (tiles.length === 0) return null;
+      return { ...cat, href, images: tiles.map((t) => t.image), productIds: [], links: tiles.map((t) => t.link) };
+    }
+    const items = productsFor(cat.label).filter((p) => getProductImage(p)).slice(0, 3);
+    if (items.length === 0) return null;
+    return { ...cat, images: items.map((p) => getProductImage(p)), productIds: items.map((p) => p._id), links: undefined };
+  };
 
-  const curatedCollections = useMemo(() => {
-    return BROWSE_CATEGORIES
-      .filter(c => curatedCollectionLabels.includes(c.label))
-      .map(processCategory)
-      .filter(Boolean) as typeof BROWSE_CATEGORIES;
-  }, [allProducts, allVendors, productsLoading, vendorsLoading]);
+  const shopCategories = BROWSE_CATEGORIES
+    .filter((c) => shopCategoryLabels.includes(c.label))
+    .map(buildCard)
+    .filter((c): c is BrowseCategory => !!c);
+
+  const curatedCollections = BROWSE_CATEGORIES
+    .filter((c) => curatedCollectionLabels.includes(c.label))
+    .map(buildCard)
+    .filter((c): c is BrowseCategory => !!c);
 
   return (
     <div className="flex flex-col w-full animate-fade-in" style={{ gap: '32px' }}>

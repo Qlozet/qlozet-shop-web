@@ -80,14 +80,29 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                 />
               </div>
 
-              {/* Product images — fill width, always 3 */}
+              {/* Images — always 3 slots so every card is the same height. A
+                  card with fewer real items leaves the rest as quiet blanks. */}
               <div className="flex relative z-10 flex-1" style={{ gap: '12px', padding: '0 16px 16px' }}>
-                {cat.images.slice(0, 3).map((img, i) => {
+                {[0, 1, 2].map((i) => {
+                  const img = cat.images[i];
+                  if (!img) {
+                    return (
+                      <div
+                        key={i}
+                        aria-hidden
+                        className={i === 2 ? 'hidden lg:block' : ''}
+                        style={{ flex: 1, aspectRatio: '3 / 4', borderRadius: '16px', background: 'rgba(255,255,255,0.08)' }}
+                      />
+                    );
+                  }
                   const productId = cat.productIds?.[i];
-                  return productId ? (
+                  const href = cat.links?.[i] ?? (productId ? `/products/${productId}` : undefined);
+                  // Designs and templates can live on hosts next/image isn't set up for.
+                  const unoptimized = !!cat.links?.[i];
+                  return href ? (
                     <Link
                       key={i}
-                      href={`/products/${productId}`}
+                      href={href}
                       onClick={(e) => e.stopPropagation()}
                       className={`relative overflow-hidden${i === 2 ? ' hidden lg:block' : ''}`}
                       style={{
@@ -97,7 +112,7 @@ export function BrowseCategoriesGrid({ categories, title = 'Browse Categories' }
                         background: 'var(--bg-surface-elevated)',
                       }}
                     >
-                      <Image src={img} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                      <Image src={img} alt="" fill unoptimized={unoptimized} className="object-cover hover:scale-105 transition-transform duration-300" />
                     </Link>
                   ) : (
                     <div

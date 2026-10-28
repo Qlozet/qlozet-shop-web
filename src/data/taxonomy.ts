@@ -182,6 +182,7 @@ export interface BrowseCategory {
   href: string;
   images: string[]; // 2-3 thumbnail images
   productIds?: string[]; // matching product IDs for each image
+  links?: string[]; // where each image opens when it isn't a product (designs, templates)
   color?: string;   // Optional accent
   size?: 'large' | 'medium' | 'small'; // For bento box layout
 }
