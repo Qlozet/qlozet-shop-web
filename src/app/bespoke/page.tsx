@@ -469,6 +469,12 @@ function BespokeContent() {
   const linkedDesign = searchParams.get('quotes');
   const linkedQuote = searchParams.get('quote');
   const linkNonce = searchParams.get('n');
+  // ?tab=templates — the Discover "Designs" card opens here when you have no
+  // designs of your own yet.
+  const linkedTab = searchParams.get('tab');
+  useEffect(() => {
+    if (linkedTab === 'templates') setActiveTab('templates');
+  }, [linkedTab]);
   useEffect(() => {
     if (!linkedDesign && !linkedQuote) return;
     if (!consumeDeepLink(`quotes:${linkedDesign ?? linkedQuote}:${linkNonce ?? ''}`)) return;
