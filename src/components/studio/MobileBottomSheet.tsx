@@ -13,9 +13,11 @@ import { RequestQuotesModal } from './RequestQuotesModal';
 interface MobileBottomSheetProps {
   customization: CustomizationState;
   designId?: string | null;
+  /** Called when Get Quotes saves the design for the first time. */
+  onDesignSaved?: (id: string) => void;
 }
 
-export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId }) => {
+export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId, onDesignSaved }) => {
   const { expandedSection, setExpandedSection, isGenerating, handleGenerate } = customization;
 
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -244,7 +246,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                 </p>
               )}
               <div className="flex items-center gap-3 pointer-events-auto">
-                <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} className="flex-[3]" />
+                <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} className="flex-[3]" />
                 <button
                   disabled={!hasGeneratedImages}
                   onClick={() => hasGeneratedImages && setShowOrderModal(true)}
@@ -286,7 +288,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         designName={customization.designName}
         category={designCategory}
         gender={designGender}
-        designImages={customization.generatedImages}
+        designImages={customization.imagesForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,
@@ -300,6 +302,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           userPrompt: customization.userPrompt,
         }}
         designId={designId}
+        onSaved={onDesignSaved}
+        syncSaved
       />
     </>
   );

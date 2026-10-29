@@ -150,9 +150,11 @@ function StudioContent() {
         console.log('[Studio] Resolved design:', design?.name, 'images:', design?.design_images?.length);
 
         // Load generated images onto the canvas
+        // Saved newest-first with the chosen version as the cover; the
+        // studio keeps versions oldest-first, so flip and show the cover.
         if (design?.design_images?.length > 0) {
-          customization.setGeneratedImages(design.design_images);
-          customization.setActiveImageIndex(0);
+          customization.setGeneratedImages([...design.design_images].reverse());
+          customization.setActiveImageIndex(design.design_images.length - 1);
         }
 
         // Load reference images
@@ -230,8 +232,8 @@ function StudioContent() {
         const t = await fetchTemplateUse(templateId);
         if (cancelled || !t) return;
         if (Array.isArray(t.design_images) && t.design_images.length > 0) {
-          customization.setGeneratedImages(t.design_images);
-          customization.setActiveImageIndex(0);
+          customization.setGeneratedImages([...t.design_images].reverse());
+          customization.setActiveImageIndex(t.design_images.length - 1);
         }
         if (Array.isArray(t.reference_images) && t.reference_images.length > 0) {
           customization.setReferenceImages(t.reference_images.slice(0, 3));
@@ -297,7 +299,7 @@ function StudioContent() {
           : 'Design',
         gender: customization.designGender === 'male' ? 'men' : 'women',
         fabric_id: fabricId,
-        design_images: [...customization.generatedImages].reverse(),
+        design_images: [...customization.imagesForSave].reverse(),
         reference_images: customization.referenceImages.length
           ? customization.referenceImages
           : undefined,
@@ -569,6 +571,9 @@ function StudioContent() {
         isGenerating={customization.isGenerating}
         referenceImages={customization.referenceImages}
         isLoading={!!loadId && !designLoaded}
+        versions={customization.generatedImages}
+        activeIndex={customization.activeImageIndex}
+        onSelectVersion={customization.setActiveImageIndex}
       />
 
       {/* Desktop Floating Toolbar */}
@@ -578,12 +583,12 @@ function StudioContent() {
 
       {/* Mobile Bottom Sheet */}
       <div style={!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : undefined}>
-        <MobileBottomSheet customization={customization} designId={designId} />
+        <MobileBottomSheet customization={customization} designId={savedId} onDesignSaved={handleDesignSaved} />
       </div>
 
       {/* Desktop Config Panel & CTAs */}
       <div style={!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : undefined}>
-        <DesktopConfigPanel customization={customization} designId={designId} />
+        <DesktopConfigPanel customization={customization} designId={savedId} onDesignSaved={handleDesignSaved} />
       </div>
 
       {/* Save modal — page level so it opens on BOTH desktop and mobile. It
@@ -601,7 +606,7 @@ function StudioContent() {
             : 'Design'
         }
         gender={customization.designGender === 'male' ? 'men' : 'women'}
-        designImages={customization.generatedImages}
+        designImages={customization.imagesForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,

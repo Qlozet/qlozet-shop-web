@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useUpload } from '@/hooks/useUpload';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
@@ -126,6 +126,14 @@ export interface CustomizationState {
   currentImage: string | null;
   tokenBalance: number;
   editTokenCost: number; // real edit_garment_token_price from platform settings
+  /** Real outfit_generation_token_price from platform settings (admin-set). */
+  generationCost: number;
+  /**
+   * The versions to save or send to tailors, oldest first with the one on
+   * screen LAST. Save and quote requests reverse this list, so the chosen
+   * version becomes the design's cover (design_images[0]).
+   */
+  imagesForSave: string[];
   generationError: string | null;
   insufficientTokensInfo: { show: boolean; balance: number; cost: number };
   dismissInsufficientTokens: () => void;
@@ -199,6 +207,8 @@ export function useCustomization({
   const [tokenBalance, setTokenBalance] = useState(user?.tokenBalance ?? 0);
   // Real edit-garment cost (default matches backend edit_garment_token_price).
   const [editTokenCost, setEditTokenCost] = useState(45);
+  // Shown on the Generate button; the admin can change it, so never hard-code.
+  const [generationCost, setGenerationCost] = useState(GENERATION_COST);
 
   useEffect(() => {
     api.get('/token/balance').then((res) => {
@@ -208,6 +218,8 @@ export function useCustomization({
     api.get('/users/platform-settings').then((res) => {
       const c = res.data?.data?.edit_garment_token_price ?? res.data?.edit_garment_token_price;
       if (typeof c === 'number' && c > 0) setEditTokenCost(c);
+      const g = res.data?.data?.outfit_generation_token_price ?? res.data?.outfit_generation_token_price;
+      if (typeof g === 'number' && g > 0) setGenerationCost(g);
     }).catch(() => {});
   }, []);
 
@@ -287,6 +299,8 @@ export function useCustomization({
     setGenerationError(null);
 
     // ── 1. Check token balance ──────────────────────────────────
+    // What this generation costs, for the local balance shown after it.
+    let spend = generationCost;
     try {
       const [balanceRes, settingsRes] = await Promise.all([
         api.get('/token/balance'),
@@ -297,6 +311,10 @@ export function useCustomization({
         settingsRes.data?.outfit_generation_token_price ??
         settingsRes.data?.data?.outfit_generation_token_price ??
         GENERATION_COST;
+      if (typeof cost === 'number' && cost > 0) {
+        setGenerationCost(cost);
+        spend = cost;
+      }
 
       console.log('[Generate] Token check — balance:', balance, 'cost:', cost, 'raw balance:', balanceRes.data, 'raw settings:', settingsRes.data);
 
@@ -476,7 +494,7 @@ export function useCustomization({
         const bal = res.data?.data?.tokens ?? res.data?.tokens ?? 0;
         setTokenBalance(bal);
       }).catch(() => {});
-      deductTokens(GENERATION_COST); // Also update context for profile display
+      deductTokens(spend); // Also update context for profile display
     } catch (err: any) {
       console.error('[Generate] Error:', err?.message);
       if (err?.response) {
@@ -495,7 +513,7 @@ export function useCustomization({
     selectedSilhouette, selectedNeckline, selectedSleeve, selectedCollar,
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedFabric, selectedColor, selectedAccessories, selectedFit,
-    referenceImages, styleLibrary, fabricLibrary, deductTokens,
+    referenceImages, styleLibrary, fabricLibrary, deductTokens, generationCost,
   ]);
 
   // Product-mode preview via the edit-garment image API. The caller (product
@@ -589,6 +607,12 @@ export function useCustomization({
     generatedImages, setGeneratedImages, activeImageIndex, setActiveImageIndex,
     isGenerating, handleGenerate, generateProductPreview, currentImage, tokenBalance,
     editTokenCost,
+    generationCost,
+    imagesForSave: useMemo(() => {
+      const current = generatedImages[activeImageIndex];
+      if (!current) return generatedImages;
+      return [...generatedImages.filter((_, i) => i !== activeImageIndex), current];
+    }, [generatedImages, activeImageIndex]),
     generationError,
     insufficientTokensInfo,
     dismissInsufficientTokens: useCallback(() => setInsufficientTokensInfo({ show: false, balance: 0, cost: 0 }), []),

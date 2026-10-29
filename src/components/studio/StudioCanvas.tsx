@@ -9,12 +9,19 @@ interface StudioCanvasProps {
   isGenerating: boolean;
   referenceImages: string[];
   isLoading?: boolean;
+  /** Every version made in this design, oldest first. */
+  versions?: string[];
+  activeIndex?: number;
+  onSelectVersion?: (index: number) => void;
 }
 
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   currentImage,
   isGenerating,
   isLoading = false,
+  versions = [],
+  activeIndex = 0,
+  onSelectVersion,
 }) => (
   // lg:pr-[540px] reserves the right-hand furniture instead of ignoring it.
   // The config panel sits at right:24px and is 380px wide, and the floating
@@ -84,6 +91,61 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
               Select a style, fabric, and details — then tap Generate to preview your outfit.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Versions — every Generate is kept; tap one to bring it back. The
+          one on screen is what Save and Get Quotes use as the cover. Top on
+          phones (the bottom sheet covers the lower half), bottom on desktop. */}
+      {versions.length > 1 && !isLoading && (
+        <div
+          className="absolute z-10 left-1/2 -translate-x-1/2 top-3 lg:top-auto lg:bottom-6 flex items-center max-w-[calc(100%-24px)] overflow-x-auto"
+          style={{
+            gap: '6px',
+            padding: '6px',
+            borderRadius: '14px',
+            background: 'var(--bg-base)',
+            border: '1px solid var(--border-glass)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
+          }}
+          role="group"
+          aria-label="Versions"
+        >
+          {versions.map((src, i) => {
+            const active = i === activeIndex;
+            return (
+              <button
+                key={`${i}-${src}`}
+                type="button"
+                onClick={() => onSelectVersion?.(i)}
+                disabled={isGenerating}
+                aria-label={`Version ${i + 1}${active ? ' (showing)' : ''}`}
+                aria-pressed={active}
+                className="relative flex-shrink-0 overflow-hidden transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2"
+                style={{
+                  width: '40px',
+                  height: '52px',
+                  borderRadius: '9px',
+                  padding: 0,
+                  cursor: isGenerating ? 'default' : 'pointer',
+                  background: 'var(--bg-surface-elevated)',
+                  border: active ? '2px solid var(--text-primary)' : '2px solid transparent',
+                  opacity: active ? 1 : 0.75,
+                }}
+              >
+                <Image src={src} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
+                <span
+                  className="absolute"
+                  style={{
+                    left: '3px', bottom: '3px', fontSize: '9px', fontWeight: 800,
+                    color: '#FFF', background: 'rgba(0,0,0,0.55)', borderRadius: '4px', padding: '0 3px', lineHeight: '13px',
+                  }}
+                >
+                  {i + 1}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

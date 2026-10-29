@@ -3,12 +3,13 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { TokenIcon } from '../icons/TokenIcon';
-import { GENERATION_COST } from '@/data/studio-options';
 
 interface GenerateButtonProps {
   isGenerating: boolean;
   onGenerate: () => void;
   disabled?: boolean;
+  /** Tokens one generation costs (from platform settings). */
+  cost: number;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   isGenerating,
   onGenerate,
   disabled = false,
+  cost,
   className = '',
 }) => {
   const isInactive = disabled || isGenerating;
@@ -51,7 +53,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
           <span>GENERATE</span>
           <div className="flex items-center gap-1" style={{ opacity: 0.8 }}>
             <TokenIcon size={14} color="#D4AF37" />
-            <span>{GENERATION_COST}</span>
+            <span>{cost}</span>
           </div>
         </>
       )}

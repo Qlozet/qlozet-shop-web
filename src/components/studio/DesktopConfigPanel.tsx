@@ -14,9 +14,11 @@ import { InsufficientTokensModal } from './InsufficientTokensModal';
 interface DesktopConfigPanelProps {
   customization: CustomizationState;
   designId?: string | null;
+  /** Called when Get Quotes saves the design for the first time. */
+  onDesignSaved?: (id: string) => void;
 }
 
-export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customization, designId }) => {
+export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customization, designId, onDesignSaved }) => {
   const { expandedSection, tokenBalance, isGenerating, handleGenerate, generatedImages, setShowSaveModal } = customization;
 
   const [showOrderModal, setShowOrderModal] = React.useState(false);
@@ -108,7 +110,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
 
       {/* Bottom CTAs */}
       <div className="flex-shrink-0 flex flex-col w-full" style={{ gap: '10px' }}>
-        <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} />
+        <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} />
         {customization.generationError && (
           <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', padding: '0 8px' }}>
             ⚠ {customization.generationError}
@@ -176,7 +178,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         designName={customization.designName}
         category={designCategory}
         gender={designGender}
-        designImages={generatedImages}
+        designImages={customization.imagesForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,
@@ -190,6 +192,8 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
           userPrompt: customization.userPrompt,
         }}
         designId={designId}
+        onSaved={onDesignSaved}
+        syncSaved
       />
       {/* Insufficient Tokens Modal */}
       <InsufficientTokensModal

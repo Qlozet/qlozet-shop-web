@@ -19,7 +19,6 @@ import {
   AlertCircle,
   Sparkles,
   Upload,
-  ArrowRight,
   X,
   Quote,
   Users,
@@ -223,13 +222,9 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
               </div>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '8px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
             </p>
-            <button className="flex items-center" style={{ gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Learn more</span>
-              <ArrowRight size={12} color="var(--text-primary)" />
-            </button>
           </div>
           <button
             onClick={() => setStep('name')}
@@ -259,17 +254,6 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
               placeholder="e.g. My Wedding Agbada"
               style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', borderBottom: '1.5px solid var(--border-glass)', outline: 'none', padding: '10px 0' }}
             />
-          </div>
-          <div style={{ padding: '16px 18px', borderRadius: '14px', background: 'var(--bg-surface-elevated)' }}>
-            <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
-              <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
-                <Scissors size={12} color="#EA580C" />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
-            </p>
           </div>
           <button
             onClick={() => setStep('category')}
