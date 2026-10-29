@@ -89,60 +89,94 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         </div>
       )}
 
-      {/* Versions — every Generate is kept; tap one to bring it back. The
-          one on screen is what Save and Get Quotes use as the cover. Top on
-          phones (the bottom sheet covers the lower half), bottom on desktop. */}
-      {versions.length > 1 && !isLoading && (
-        <div
-          className="absolute z-10 left-1/2 -translate-x-1/2 top-3 lg:top-auto lg:bottom-6 flex items-center max-w-[calc(100%-24px)] overflow-x-auto"
-          style={{
-            gap: '6px',
-            padding: '6px',
-            borderRadius: '14px',
-            background: 'var(--bg-base)',
-            border: '1px solid var(--border-glass)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
-          }}
-          role="group"
-          aria-label="Versions"
-        >
-          {versions.map((src, i) => {
-            const active = i === activeIndex;
-            return (
-              <button
-                key={`${i}-${src}`}
-                type="button"
-                onClick={() => onSelectVersion?.(i)}
-                disabled={isGenerating}
-                aria-label={`Version ${i + 1}${active ? ' (showing)' : ''}`}
-                aria-pressed={active}
-                className="relative flex-shrink-0 overflow-hidden transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2"
-                style={{
-                  width: '40px',
-                  height: '52px',
-                  borderRadius: '9px',
-                  padding: 0,
-                  cursor: isGenerating ? 'default' : 'pointer',
-                  background: 'var(--bg-surface-elevated)',
-                  border: active ? '2px solid var(--text-primary)' : '2px solid transparent',
-                  opacity: active ? 1 : 0.75,
-                }}
-              >
-                <Image src={src} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
-                <span
-                  className="absolute"
-                  style={{
-                    left: '3px', bottom: '3px', fontSize: '9px', fontWeight: 800,
-                    color: '#FFF', background: 'rgba(0,0,0,0.55)', borderRadius: '4px', padding: '0 3px', lineHeight: '13px',
-                  }}
-                >
-                  {i + 1}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Versions on desktop: centred under the design, inside its frame. */}
+      <VersionStrip
+        className="hidden lg:flex bottom-6 max-w-[calc(100%-24px)]"
+        versions={versions}
+        activeIndex={activeIndex}
+        onSelect={onSelectVersion}
+        disabled={isGenerating}
+        show={versions.length > 1 && !isLoading}
+      />
     </div>
+
+    {/* Versions on phones: pinned to the canvas just below the 72px header.
+        The picture frame runs up behind the header there, so a strip placed
+        inside it ended up hidden; the bottom sheet covers the lower half. */}
+    <VersionStrip
+      className="flex lg:hidden top-[84px] max-w-[calc(100%-32px)]"
+      versions={versions}
+      activeIndex={activeIndex}
+      onSelect={onSelectVersion}
+      disabled={isGenerating}
+      show={versions.length > 1 && !isLoading}
+    />
   </div>
 );
+
+/**
+ * Every version made in this design — each Generate or Refine is kept; tap
+ * one to bring it back. The one on screen is what Save and Get Quotes use as
+ * the cover.
+ */
+const VersionStrip: React.FC<{
+  className: string;
+  versions: string[];
+  activeIndex: number;
+  onSelect?: (index: number) => void;
+  disabled: boolean;
+  show: boolean;
+}> = ({ className, versions, activeIndex, onSelect, disabled, show }) => {
+  if (!show) return null;
+  return (
+    <div
+      className={`absolute z-10 left-1/2 -translate-x-1/2 items-center overflow-x-auto ${className}`}
+      style={{
+        gap: '6px',
+        padding: '6px',
+        borderRadius: '14px',
+        background: 'var(--bg-base)',
+        border: '1px solid var(--border-glass)',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
+      }}
+      role="group"
+      aria-label="Versions"
+    >
+      {versions.map((src, i) => {
+        const active = i === activeIndex;
+        return (
+          <button
+            key={`${i}-${src}`}
+            type="button"
+            onClick={() => onSelect?.(i)}
+            disabled={disabled}
+            aria-label={`Version ${i + 1}${active ? ' (showing)' : ''}`}
+            aria-pressed={active}
+            className="relative flex-shrink-0 overflow-hidden transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2"
+            style={{
+              width: '40px',
+              height: '52px',
+              borderRadius: '9px',
+              padding: 0,
+              cursor: disabled ? 'default' : 'pointer',
+              background: 'var(--bg-surface-elevated)',
+              border: active ? '2px solid var(--text-primary)' : '2px solid transparent',
+              opacity: active ? 1 : 0.75,
+            }}
+          >
+            <Image src={src} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
+            <span
+              className="absolute"
+              style={{
+                left: '3px', bottom: '3px', fontSize: '9px', fontWeight: 800,
+                color: '#FFF', background: 'rgba(0,0,0,0.55)', borderRadius: '4px', padding: '0 3px', lineHeight: '13px',
+              }}
+            >
+              {i + 1}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
