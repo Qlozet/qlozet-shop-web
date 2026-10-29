@@ -245,8 +245,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                   ⚠ {customization.generationError}
                 </p>
               )}
-              <div className="flex items-center gap-3 pointer-events-auto">
-                <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} className="flex-[3]" />
+              <div className="flex items-end gap-3 pointer-events-auto">
+                <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} summary={customization.selectionSummary} className="flex-[3]" />
                 <button
                   disabled={!hasGeneratedImages}
                   onClick={() => hasGeneratedImages && setShowOrderModal(true)}
@@ -265,7 +265,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                     opacity: hasGeneratedImages ? 1 : 0.4,
                   }}
                 >
-                  Order Now
+                  Get quotes
                 </button>
               </div>
             </div>

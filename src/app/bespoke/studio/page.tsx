@@ -37,6 +37,27 @@ function fetchTemplateUse(id: string): Promise<any> {
   return templateFetchCache[id];
 }
 
+// Same reason as templateFetchCache: both studio instances read the photo,
+// but the photo is only sent for reading once.
+type ReferenceAnalysis = {
+  matched_styles?: Record<string, { style_id?: string; style_name?: string }>;
+  suggested_prompt?: string;
+};
+const analysisCache: Record<string, Promise<ReferenceAnalysis | null>> = {};
+function analyzeOnce(url: string): Promise<ReferenceAnalysis | null> {
+  if (!analysisCache[url]) {
+    analysisCache[url] = (async () => {
+      const res = await api.post('/measurements/analyze-reference', { image_url: url });
+      const jobId = res?.data?.data?.jobId || res?.data?.jobId;
+      if (jobId) return (await pollJobStatus(jobId)) ?? null;
+      return (res?.data?.data ?? res?.data ?? null) as ReferenceAnalysis | null;
+    })();
+    // A failed read can be retried.
+    analysisCache[url].catch(() => delete analysisCache[url]);
+  }
+  return analysisCache[url];
+}
+
 function StudioContent() {
   const { user } = useApp();
   const searchParams = useSearchParams();
@@ -422,7 +443,9 @@ function StudioContent() {
   }, [duplicating, customization, createDesign, designName, buildPayload]);
 
   // ─── Reference Upload Overlay ────────────────────────────────
-  const [showRefOverlay, setShowRefOverlay] = useState(method === 'reference');
+  // A photo picked on the start screen arrives already uploaded as ?ref=.
+  const refParam = searchParams.get('ref');
+  const [showRefOverlay, setShowRefOverlay] = useState(method === 'reference' || !!refParam);
 
   // CustomerShell mounts the page TWICE (mobile + desktop layout branches,
   // each display:none'd by breakpoint). The overlay portals to <body>, which
@@ -454,91 +477,86 @@ function StudioContent() {
     return results?.[0]?.imageUrl || results?.[0]?.image_url || null;
   }, []);
 
+  // Read a photo's styles and apply them: auto-selects the matched styles and
+  // fills the notes. Used by the in-studio upload and by ?ref=.
+  const analyzeReference = useCallback(async (url: string, addAsReference = false) => {
+    if (addAsReference && !customization.referenceImages.includes(url)) {
+      customization.setReferenceImages([...customization.referenceImages, url].slice(0, 3));
+    }
+    setIsAnalyzing(true);
+    setAnalyzeError(null);
+    setAnalyzeStatus('Reading the styles in your photo…');
+    try {
+      const result = await analyzeOnce(url);
+      const matched = result?.matched_styles || {};
+      const detected: string[] = [];
+      if (matched.neckline?.style_name) {
+        customization.setSelectedNeckline(matched.neckline.style_id || matched.neckline.style_name);
+        detected.push(matched.neckline.style_name);
+      }
+      if (matched.sleeve?.style_name) {
+        customization.setSelectedSleeve(matched.sleeve.style_id || matched.sleeve.style_name);
+        detected.push(matched.sleeve.style_name);
+      }
+      if (matched.silhouette?.style_name) {
+        customization.setSelectedSilhouette(matched.silhouette.style_id || matched.silhouette.style_name);
+        detected.push(matched.silhouette.style_name);
+      }
+      if (matched.collar?.style_name) {
+        customization.setSelectedCollar(matched.collar.style_id || matched.collar.style_name);
+        detected.push(matched.collar.style_name);
+      }
+      if (result?.suggested_prompt) customization.setUserPrompt(result.suggested_prompt);
+      setDetectedStyles(detected);
+      setAnalyzeStatus(null);
+      // Show what was found briefly, then get out of the way.
+      setTimeout(() => setShowRefOverlay(false), detected.length > 0 ? 2500 : 0);
+    } catch (err: any) {
+      console.error('[Studio] Reference analysis error:', err);
+      setAnalyzeError(
+        err?.response?.data?.message ||
+          "We couldn't read the styles in that photo. It's kept under Photo & Notes, so you can pick styles yourself.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [customization]);
+
   const handleReferenceUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsAnalyzing(true);
-    setAnalyzeStatus('Uploading reference...');
+    setAnalyzeStatus('Uploading your photo…');
     setAnalyzeError(null);
-
+    let url: string | null = null;
     try {
-      // Upload to Cloudinary via the existing upload hook first
-      const cloudinaryUrl = await uploadToCloudinary(file);
-      if (!cloudinaryUrl) {
-        throw new Error('Failed to upload reference image');
-      }
-      console.log('[Studio] Reference uploaded to Cloudinary:', cloudinaryUrl);
-
-      // Keep the photo as a design reference regardless of how analysis goes —
-      // it must show up in the Photo & Notes section and travel with the design.
-      if (!customization.referenceImages.includes(cloudinaryUrl)) {
-        customization.setReferenceImages([...customization.referenceImages, cloudinaryUrl].slice(0, 3));
-      }
-
-      setAnalyzeStatus('Analyzing your reference photo...');
-      const res = await api.post('/measurements/analyze-reference', {
-        image_url: cloudinaryUrl,
-      });
-
-      console.log('[Studio] Analyze response:', JSON.stringify(res?.data));
-      const jobId = res?.data?.data?.jobId || res?.data?.jobId;
-
-      if (jobId) {
-        setAnalyzeStatus('AI is detecting styles...');
-        const result = await pollJobStatus(jobId);
-
-        if (result) {
-          console.log('[Studio] Analysis result:', JSON.stringify(result));
-          const matched = result.matched_styles || {};
-          const detected: string[] = [];
-
-          // Auto-select matched styles
-          if (matched.neckline?.style_name) {
-            customization.setSelectedNeckline(matched.neckline.style_id || matched.neckline.style_name);
-            detected.push(matched.neckline.style_name);
-          }
-          if (matched.sleeve?.style_name) {
-            customization.setSelectedSleeve(matched.sleeve.style_id || matched.sleeve.style_name);
-            detected.push(matched.sleeve.style_name);
-          }
-          if (matched.silhouette?.style_name) {
-            customization.setSelectedSilhouette(matched.silhouette.style_id || matched.silhouette.style_name);
-            detected.push(matched.silhouette.style_name);
-          }
-          if (matched.collar?.style_name) {
-            customization.setSelectedCollar(matched.collar.style_id || matched.collar.style_name);
-            detected.push(matched.collar.style_name);
-          }
-
-          // Pre-fill the user prompt
-          if (result.suggested_prompt) {
-            customization.setUserPrompt(result.suggested_prompt);
-          }
-
-          setDetectedStyles(detected);
-          setAnalyzeStatus(null);
-
-          // Close overlay after showing detected styles briefly
-          setTimeout(() => {
-            setShowRefOverlay(false);
-          }, 2500);
-        }
-      } else {
-        // No jobId — synchronous response; keep any prompt it carried
-        const sync = res?.data?.data ?? res?.data;
-        if (sync?.suggested_prompt) {
-          customization.setUserPrompt(sync.suggested_prompt);
-        }
-        setShowRefOverlay(false);
-      }
-    } catch (err: any) {
-      console.error('[Studio] Reference analysis error:', err);
-      setAnalyzeError(err?.response?.data?.message || err?.message || 'Analysis failed — if your photo uploaded, it was kept in Photo & Notes.');
-    } finally {
-      setIsAnalyzing(false);
+      url = await uploadToCloudinary(file);
+    } catch {
+      url = null;
     }
-  }, [customization, uploadToCloudinary]);
+    if (!url) {
+      setIsAnalyzing(false);
+      setAnalyzeError("We couldn't upload that photo. Check your connection and try again.");
+      return;
+    }
+    // Keep the photo as a design reference however the reading goes — it
+    // must show up in Photo & Notes and travel with the design.
+    if (!customization.referenceImages.includes(url)) {
+      customization.setReferenceImages([...customization.referenceImages, url].slice(0, 3));
+    }
+    await analyzeReference(url);
+  }, [customization, uploadToCloudinary, analyzeReference]);
+
+  // Photo from the start screen: add it and read it as the studio opens.
+  useEffect(() => {
+    if (!refParam) return;
+    // Next tick, so the studio has painted before the reading starts.
+    const t = setTimeout(() => void analyzeReference(refParam, true), 0);
+    return () => clearTimeout(t);
+    // Once per studio (the studio remounts whenever its URL changes).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refParam]);
 
   return (
     <div

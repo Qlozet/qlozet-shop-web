@@ -134,6 +134,9 @@ export interface CustomizationState {
    * version becomes the design's cover (design_images[0]).
    */
   imagesForSave: string[];
+  /** Plain names of what's picked (styles, fabric, fit), for the line above
+   *  Generate, so nobody spends tokens on the wrong combination. */
+  selectionSummary: string[];
   generationError: string | null;
   insufficientTokensInfo: { show: boolean; balance: number; cost: number };
   dismissInsufficientTokens: () => void;
@@ -581,6 +584,28 @@ export function useCustomization({
 
   const currentImage = generatedImages[activeImageIndex] ?? null;
 
+  const selectionSummary = useMemo(() => {
+    const styleName = (id: string | null) =>
+      id ? styleLibrary.find((st) => st._id === id)?.name : undefined;
+    const fabricName =
+      appliedFabric?.name ?? fabricLibrary.find((f) => f.id === selectedFabric)?.name;
+    return [
+      styleName(selectedFullBody),
+      styleName(selectedSilhouette),
+      styleName(selectedNeckline),
+      styleName(selectedSleeve),
+      styleName(selectedCollar),
+      styleName(selectedSkirt),
+      styleName(selectedTrouser),
+      fabricName,
+      FIT_OPTIONS.find((f) => f.id === selectedFit)?.label,
+    ].filter((x): x is string => !!x);
+  }, [
+    styleLibrary, fabricLibrary, appliedFabric, selectedFabric, selectedFit,
+    selectedFullBody, selectedSilhouette, selectedNeckline, selectedSleeve,
+    selectedCollar, selectedSkirt, selectedTrouser,
+  ]);
+
   return {
     designName, setDesignName,
     designGender, setDesignGender,
@@ -608,6 +633,7 @@ export function useCustomization({
     isGenerating, handleGenerate, generateProductPreview, currentImage, tokenBalance,
     editTokenCost,
     generationCost,
+    selectionSummary,
     imagesForSave: useMemo(() => {
       const current = generatedImages[activeImageIndex];
       if (!current) return generatedImages;

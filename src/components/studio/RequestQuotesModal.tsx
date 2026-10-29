@@ -261,8 +261,8 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                   Choose Tailors
                 </h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
-                  Pick up to {remainingSlots} tailor{remainingSlots === 1 ? '' : 's'} to send this design to. Each will
-                  send you a quote — you choose the one you like.
+                  Pick up to {remainingSlots} tailor{remainingSlots === 1 ? '' : 's'} to send this design to. Each
+                  replies with a price and a delivery time. You only pay when you accept one.
                 </p>
               </div>
 
