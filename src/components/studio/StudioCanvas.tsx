@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { GeneratingView } from './GeneratingView';
 
 interface StudioCanvasProps {
   currentImage: string | null;
@@ -13,6 +14,10 @@ interface StudioCanvasProps {
   versions?: string[];
   activeIndex?: number;
   onSelectVersion?: (index: number) => void;
+  /** A refine is running (the wait shows the version being changed). */
+  isRefining?: boolean;
+  /** What's picked, shown while a new version is made. */
+  summary?: string[];
 }
 
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({
@@ -22,6 +27,8 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   versions = [],
   activeIndex = 0,
   onSelectVersion,
+  isRefining = false,
+  summary = [],
 }) => (
   // lg:pr-[540px] reserves the right-hand furniture instead of ignoring it.
   // The config panel sits at right:24px and is 380px wide, and the floating
@@ -54,19 +61,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
           </div>
         </div>
       ) : isGenerating ? (
-        // Generating state
-        <div className="flex flex-col items-center animate-pulse" style={{ gap: '16px' }}>
-          <div
-            className="flex items-center justify-center"
-            style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(124,58,237,0.08)' }}
-          >
-            <Loader2 size={32} color="#7C3AED" className="animate-spin" />
-          </div>
-          <div className="text-center">
-            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Generating your outfit...</p>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>This may take a moment</p>
-          </div>
-        </div>
+        <GeneratingView refining={isRefining} baseImage={currentImage} summary={summary} />
       ) : currentImage ? (
         // Generated image
         <div className="relative animate-fade-in w-full h-full lg:max-w-[680px] lg:max-h-[95%]">

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Save, Scissors } from 'lucide-react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Dices } from 'lucide-react';
 import { TokenIcon } from '../icons/TokenIcon';
 import { resetCurrentSection } from './resetSection';
 import { type CustomizationState } from '@/hooks/useCustomization';
@@ -10,6 +10,7 @@ import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
 import { RequestQuotesModal } from './RequestQuotesModal';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
+import { RefineBar } from './RefineBar';
 
 interface DesktopConfigPanelProps {
   customization: CustomizationState;
@@ -71,6 +72,28 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
             {sectionLabel[expandedSection] || ''}
           </span>
           <div className="flex items-center" style={{ gap: '8px' }}>
+            <button
+              type="button"
+              aria-label="Surprise me: pick styles, fabric and fit at random"
+              title="Surprise me"
+              onClick={customization.surpriseMe}
+              className="flex items-center transition-transform hover:scale-105 active:scale-95"
+              style={{
+                gap: '5px',
+                height: '30px',
+                padding: '0 10px',
+                borderRadius: '100px',
+                background: 'var(--bg-surface-elevated)',
+                border: '1px solid var(--border-glass)',
+                color: 'var(--text-secondary)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <Dices size={14} />
+              <span>Surprise me</span>
+            </button>
             {/* Clears the open section only — same behaviour as the mobile
                 sheet's reset arrow, which shares this helper. */}
             <button
@@ -110,6 +133,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
 
       {/* Bottom CTAs */}
       <div className="flex-shrink-0 flex flex-col w-full" style={{ gap: '10px' }}>
+        <RefineBar customization={customization} />
         <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} summary={customization.selectionSummary} />
         {customization.generationError && (
           <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', padding: '0 8px' }}>
@@ -206,7 +230,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         balance={customization.insufficientTokensInfo.balance}
         cost={customization.insufficientTokensInfo.cost}
         onClose={customization.dismissInsufficientTokens}
-        onPurchaseComplete={handleGenerate}
+        onPurchaseComplete={customization.retryLast}
       />
     </div>
   );

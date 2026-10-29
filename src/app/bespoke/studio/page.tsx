@@ -16,6 +16,7 @@ import { Upload, Loader2, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
+import { makeShareCard } from '@/lib/shareCard';
 import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 
 import { type ClothingType, type DesignGender, enrichSelections } from '@/data/studio-options';
@@ -85,6 +86,7 @@ function StudioContent() {
     initialDesignName: designName,
     initialClothingType: clothingType,
     initialGender: designGender,
+    initialGarment: rawType ?? undefined,
   });
 
   // ─── Applied "Use Fabric" fabric ─────────────────────────────
@@ -371,6 +373,32 @@ function StudioContent() {
       return;
     }
     const name = (customization.designName || designName || 'My Qlozet design').trim();
+
+    // A branded picture first: the design with the Qlozet band. Phones share
+    // it as a file; elsewhere it downloads. If it can't be drawn, share the
+    // image link as before.
+    const card = await makeShareCard(img, name);
+    if (card) {
+      const fileName = `${name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'qlozet-design'}.png`;
+      const file = new File([card], fileName, { type: 'image/png' });
+      try {
+        if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: name, text: `${name}, designed on Qlozet` });
+          return;
+        }
+      } catch (e: unknown) {
+        if ((e as { name?: string })?.name === 'AbortError') return; // closed the share sheet
+      }
+      const href = URL.createObjectURL(card);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = fileName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(href), 2000);
+      toast.success('Picture saved', { description: 'Post it or send it to anyone.' });
+      return;
+    }
+
     try {
       if (typeof navigator.share === 'function') {
         await navigator.share({
@@ -592,6 +620,8 @@ function StudioContent() {
         versions={customization.generatedImages}
         activeIndex={customization.activeImageIndex}
         onSelectVersion={customization.setActiveImageIndex}
+        isRefining={customization.isRefining}
+        summary={customization.selectionSummary}
       />
 
       {/* Desktop Floating Toolbar */}

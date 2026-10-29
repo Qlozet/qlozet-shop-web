@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useRef, useState } from 'react';
-import { ArrowDownUp, Bookmark, RotateCcw } from 'lucide-react';
+import { ArrowDownUp, Bookmark, RotateCcw, Dices } from 'lucide-react';
 import { STUDIO_TABS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
@@ -9,6 +9,7 @@ import { GenerateButton } from './GenerateButton';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 import { resetCurrentSection } from './resetSection';
 import { RequestQuotesModal } from './RequestQuotesModal';
+import { RefineBar } from './RefineBar';
 
 interface MobileBottomSheetProps {
   customization: CustomizationState;
@@ -200,6 +201,15 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
               </button>
               <button
                 type="button"
+                aria-label="Surprise me: pick styles, fabric and fit at random"
+                onClick={customization.surpriseMe}
+                className="transition-transform active:scale-90"
+                style={{ background: 'transparent', border: 'none', padding: '6px', margin: '-6px', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex' }}
+              >
+                <Dices size={20} />
+              </button>
+              <button
+                type="button"
                 aria-label="Reset this section"
                 onClick={() => resetCurrentSection(customization)}
                 className="transition-transform active:scale-90"
@@ -233,7 +243,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: '100px' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages ? '170px' : '110px' }}>
             <SectionContent customization={customization} />
           </div>
 
@@ -244,6 +254,11 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                 <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', marginBottom: '8px' }}>
                   ⚠ {customization.generationError}
                 </p>
+              )}
+              {hasGeneratedImages && (
+                <div className="pointer-events-auto" style={{ marginBottom: '10px' }}>
+                  <RefineBar customization={customization} compact />
+                </div>
               )}
               <div className="flex items-end gap-3 pointer-events-auto">
                 <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} summary={customization.selectionSummary} className="flex-[3]" />
@@ -278,7 +293,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         balance={customization.insufficientTokensInfo.balance}
         cost={customization.insufficientTokensInfo.cost}
         onClose={customization.dismissInsufficientTokens}
-        onPurchaseComplete={handleGenerate}
+        onPurchaseComplete={customization.retryLast}
       />
 
       {/* Request Quotes (Order Now) Modal */}
