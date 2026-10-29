@@ -28,6 +28,8 @@ interface SaveDesignModalProps {
   category: string;
   gender: 'men' | 'women';
   designImages: string[];
+  /** Back views of those versions, saved with the design. */
+  backViews?: { front: string; back: string }[];
   referenceImages: string[];
   selections?: DesignSelections;
   designId?: string | null;
@@ -43,6 +45,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
   category,
   gender,
   designImages,
+  backViews,
   referenceImages,
   selections,
   designId,
@@ -87,6 +90,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
       gender,
       fabric_id: fabricId,
       design_images: [...designImages].reverse(),
+      back_views: backViews,
       reference_images: referenceImages.length > 0 ? referenceImages : undefined,
       description: descriptionPayload,
     };

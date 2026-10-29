@@ -52,6 +52,8 @@ export interface EditGarmentPayload {
   fit?: string;
   style_notes?: string;
   metadata_json?: unknown;
+  /** 'back' turns the base image round: the same garment from behind. */
+  view?: 'front' | 'back';
 }
 
 export interface CustomizationState {
@@ -124,8 +126,26 @@ export interface CustomizationState {
   handleGenerate: () => Promise<void>;
   // Product mode: generate a preview of the configured garment via the
   // edit-garment image API (distinct from studio's generate-outfit).
-  generateProductPreview: (payload: EditGarmentPayload) => Promise<void>;
+  generateProductPreview: (
+    payload: EditGarmentPayload,
+    onImage?: (url: string) => void,
+  ) => Promise<void>;
+  /** The front of the version on screen (what refines and saves work from). */
   currentImage: string | null;
+  /** What the canvas shows: the back view when it's switched on, else the front. */
+  displayImage: string | null;
+  /** Back views by the front version they were made from. */
+  backViews: Record<string, string>;
+  setBackViews: (views: Record<string, string>) => void;
+  showingBack: boolean;
+  setShowingBack: (on: boolean) => void;
+  /** Make (or remake) the back of the version on screen. */
+  makeBackView: () => Promise<void>;
+  isMakingBack: boolean;
+  /** Delete a version (and its back view). It never reaches a tailor. */
+  removeVersion: (index: number) => void;
+  /** Back views of the versions being saved, for the design record. */
+  backViewsForSave: { front: string; back: string }[];
   tokenBalance: number;
   editTokenCost: number; // real edit_garment_token_price from platform settings
   /** Real outfit_generation_token_price from platform settings (admin-set). */
@@ -138,8 +158,8 @@ export interface CustomizationState {
   imagesForSave: string[];
   /** Change the version on screen in plain words ("make the sleeves longer"). */
   refineCurrent: (instruction: string) => Promise<void>;
-  /** Run again whatever was last tried (Generate or a refine) — used after
-   *  buying tokens, so a refine isn't replaced by a full Generate. */
+  /** Run again whatever was last tried (Generate, a refine or a back view) —
+   *  used after buying tokens, so a refine isn't replaced by a full Generate. */
   retryLast: () => void;
   /** True while a refine (not a fresh Generate) is running. */
   isRefining: boolean;
@@ -159,6 +179,9 @@ export interface CustomizationState {
   // Mode
   mode: CustomizationMode;
 }
+
+// Marks "the last thing tried was a back view" for retryLast.
+const BACK_VIEW = '\u0000back-view';
 
 export function useCustomization({
   mode = 'studio',
@@ -216,7 +239,11 @@ export function useCustomization({
   const [insufficientTokensInfo, setInsufficientTokensInfo] = useState<{ show: boolean; balance: number; cost: number }>({ show: false, balance: 0, cost: 0 });
   const [showSaveModal, setShowSaveModal] = useState(false);
   // The last refine asked for, so buying tokens mid-refine retries the refine.
+  // BACK_VIEW means the last thing tried was a back view.
   const lastRefine = useRef<string | null>(null);
+  const [backViews, setBackViews] = useState<Record<string, string>>({});
+  const [showingBack, setShowingBack] = useState(false);
+  const [isMakingBack, setIsMakingBack] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -505,6 +532,7 @@ export function useCustomization({
           setActiveImageIndex(updated.length - 1);
           return updated;
         });
+        setShowingBack(false);
       }
 
       // Refresh token balance from API after generation
@@ -536,7 +564,11 @@ export function useCustomization({
 
   // Product-mode preview via the edit-garment image API. The caller (product
   // page / customize panel) builds the payload from the product + selections.
-  const generateProductPreview = useCallback(async (payload: EditGarmentPayload) => {
+  const generateProductPreview = useCallback(async (
+    payload: EditGarmentPayload,
+    // Where the result goes; by default it becomes a new version.
+    onImage?: (url: string) => void,
+  ) => {
     if (isGenerating) return;
     setGenerationError(null);
 
@@ -571,12 +603,15 @@ export function useCustomization({
       if (!jobId) throw new Error('No job ID returned from edit-garment');
 
       const result = await pollJobStatus(jobId);
-      if (result.image_url) {
+      if (result.image_url && onImage) {
+        onImage(result.image_url);
+      } else if (result.image_url) {
         setGeneratedImages((prev) => {
           const updated = [...prev, result.image_url];
           setActiveImageIndex(updated.length - 1);
           return updated;
         });
+        setShowingBack(false);
       } else {
         throw new Error('Preview generated but no image was returned.');
       }
@@ -598,6 +633,17 @@ export function useCustomization({
   }, [isGenerating, editTokenCost]);
 
   const currentImage = generatedImages[activeImageIndex] ?? null;
+  const currentBack = currentImage ? backViews[currentImage] : undefined;
+  const displayImage = showingBack && currentBack ? currentBack : currentImage;
+
+  // The fabric on the design, as a URL the image editor can fetch.
+  const fabricImageForEdits = useMemo(() => {
+    const isRemote = (u?: string) => !!u && /^https?:\/\//i.test(u);
+    const img = isRemote(appliedFabric?.image)
+      ? appliedFabric?.image
+      : fabricLibrary.find((f) => f.id === selectedFabric)?.image;
+    return isRemote(img) ? img : undefined;
+  }, [appliedFabric, fabricLibrary, selectedFabric]);
 
   // What the garment is, in words, for the image editor. It must always be
   // sent: the backend falls back to "women's flare mini dress" otherwise.
@@ -619,24 +665,72 @@ export function useCustomization({
     if (!currentImage || !note) return;
     lastRefine.current = note;
     setIsRefining(true);
-    // Send the design's real fabric too: the editor puts the exact print back
-    // on after the change, instead of the model's imitation of it.
-    const isRemote = (u?: string) => !!u && /^https?:\/\//i.test(u);
-    const fabricImage = isRemote(appliedFabric?.image)
-      ? appliedFabric?.image
-      : fabricLibrary.find((f) => f.id === selectedFabric)?.image;
+    // Refining while the back is on screen changes the back: it replaces that
+    // version's back view instead of becoming a new version.
+    const front = currentImage;
+    const onBack = showingBack && !!backViews[front];
     try {
-      await generateProductPreview({
-        base_image_url: currentImage,
-        fabric_image_url: isRemote(fabricImage) ? fabricImage : undefined,
-        garment_type: garmentWords,
-        fit: FIT_OPTIONS.find((f) => f.id === selectedFit)?.label.toLowerCase() ?? '',
-        style_notes: `Change only this and keep everything else exactly as it is: ${note}`,
-      });
+      await generateProductPreview(
+        {
+          base_image_url: onBack ? backViews[front] : front,
+          // The design's real fabric, so the editor keeps the print.
+          fabric_image_url: fabricImageForEdits,
+          garment_type: garmentWords,
+          fit: FIT_OPTIONS.find((f) => f.id === selectedFit)?.label.toLowerCase() ?? '',
+          style_notes: `Change only this and keep everything else exactly as it is: ${note}`,
+        },
+        onBack ? (url) => setBackViews((prev) => ({ ...prev, [front]: url })) : undefined,
+      );
     } finally {
       setIsRefining(false);
     }
-  }, [currentImage, garmentWords, selectedFit, generateProductPreview, appliedFabric, fabricLibrary, selectedFabric]);
+  }, [currentImage, garmentWords, selectedFit, generateProductPreview, fabricImageForEdits, showingBack, backViews]);
+
+  const makeBackView = useCallback(async () => {
+    if (!currentImage) return;
+    lastRefine.current = BACK_VIEW;
+    const front = currentImage;
+    setIsMakingBack(true);
+    try {
+      await generateProductPreview(
+        {
+          base_image_url: front,
+          fabric_image_url: fabricImageForEdits,
+          garment_type: garmentWords,
+          fit: FIT_OPTIONS.find((f) => f.id === selectedFit)?.label.toLowerCase() ?? '',
+          // What they asked for may say something about the back ("open back").
+          style_notes: userPrompt.trim(),
+          view: 'back',
+        },
+        (url) => {
+          setBackViews((prev) => ({ ...prev, [front]: url }));
+          setShowingBack(true);
+        },
+      );
+    } finally {
+      setIsMakingBack(false);
+    }
+  }, [currentImage, fabricImageForEdits, garmentWords, selectedFit, userPrompt, generateProductPreview]);
+
+  const removeVersion = useCallback((index: number) => {
+    const gone = generatedImages[index];
+    if (gone === undefined) return;
+    const remaining = generatedImages.filter((_, i) => i !== index);
+    setGeneratedImages(remaining);
+    // Keep the same version on screen; deleting the one on screen shows the
+    // one before it (or the next, if it was the first).
+    setActiveImageIndex((active) => {
+      if (index < active) return active - 1;
+      if (index > active) return active;
+      return Math.max(0, Math.min(active - 1 < 0 ? 0 : active - 1, remaining.length - 1));
+    });
+    setBackViews((prev) => {
+      const next = { ...prev };
+      delete next[gone];
+      return next;
+    });
+    if (index === activeImageIndex) setShowingBack(false);
+  }, [generatedImages, activeImageIndex]);
 
   const surpriseMe = useCallback(() => {
     const pick = <T,>(arr: T[]): T | undefined =>
@@ -710,14 +804,30 @@ export function useCustomization({
     isUploading, uploadStatus, uploadError,
     userPrompt, setUserPrompt, suggestedPrompt, isAnalyzing,
     expandedSection, setExpandedSection, toggleSection,
-    generatedImages, setGeneratedImages, activeImageIndex, setActiveImageIndex,
+    generatedImages, setGeneratedImages, activeImageIndex,
+    setActiveImageIndex: useCallback((i: number) => {
+      setActiveImageIndex(i);
+      setShowingBack(false);
+    }, []),
     isGenerating, handleGenerate, generateProductPreview, currentImage, tokenBalance,
+    displayImage,
+    backViews, setBackViews,
+    showingBack, setShowingBack,
+    makeBackView, isMakingBack,
+    removeVersion,
+    backViewsForSave: useMemo(
+      () => generatedImages
+        .filter((front) => backViews[front])
+        .map((front) => ({ front, back: backViews[front] })),
+      [generatedImages, backViews],
+    ),
     editTokenCost,
     generationCost,
     refineCurrent,
     isRefining,
     retryLast: () => {
-      if (lastRefine.current) void refineCurrent(lastRefine.current);
+      if (lastRefine.current === BACK_VIEW) void makeBackView();
+      else if (lastRefine.current) void refineCurrent(lastRefine.current);
       else void handleGenerate();
     },
     surpriseMe,

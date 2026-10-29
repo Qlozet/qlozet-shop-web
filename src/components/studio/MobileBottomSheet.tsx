@@ -304,6 +304,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         category={designCategory}
         gender={designGender}
         designImages={customization.imagesForSave}
+        backViews={customization.backViewsForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,
