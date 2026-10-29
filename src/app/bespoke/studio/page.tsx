@@ -179,6 +179,11 @@ function StudioContent() {
           customization.setGeneratedImages([...design.design_images].reverse());
           customization.setActiveImageIndex(design.design_images.length - 1);
         }
+        if (Array.isArray(design?.back_views) && design.back_views.length > 0) {
+          const views: Record<string, string> = {};
+          for (const v of design.back_views) if (v?.front && v?.back) views[v.front] = v.back;
+          customization.setBackViews(views);
+        }
 
         // Load reference images
         if (design?.reference_images?.length > 0) {
@@ -323,6 +328,7 @@ function StudioContent() {
         gender: customization.designGender === 'male' ? 'men' : 'women',
         fabric_id: fabricId,
         design_images: [...customization.imagesForSave].reverse(),
+        back_views: customization.backViewsForSave,
         reference_images: customization.referenceImages.length
           ? customization.referenceImages
           : undefined,
@@ -620,8 +626,16 @@ function StudioContent() {
         versions={customization.generatedImages}
         activeIndex={customization.activeImageIndex}
         onSelectVersion={customization.setActiveImageIndex}
+        onDeleteVersion={customization.removeVersion}
         isRefining={customization.isRefining}
         summary={customization.selectionSummary}
+        displayImage={customization.displayImage}
+        hasBack={!!(customization.currentImage && customization.backViews[customization.currentImage])}
+        showingBack={customization.showingBack}
+        onShowBack={customization.setShowingBack}
+        onMakeBack={user ? () => void customization.makeBackView() : undefined}
+        isMakingBack={customization.isMakingBack}
+        backCost={customization.editTokenCost}
       />
 
       {/* Desktop Floating Toolbar */}
@@ -655,6 +669,7 @@ function StudioContent() {
         }
         gender={customization.designGender === 'male' ? 'men' : 'women'}
         designImages={customization.imagesForSave}
+        backViews={customization.backViewsForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,

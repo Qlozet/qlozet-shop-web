@@ -21,7 +21,10 @@ interface RequestQuotesModalProps {
   designName: string;
   category: string;
   gender: 'men' | 'women';
+  /** Versions oldest first, the chosen one (on screen) LAST. */
   designImages: string[];
+  /** Back views of those versions. */
+  backViews?: { front: string; back: string }[];
   referenceImages: string[];
   selections?: DesignSelections;
   designId?: string | null;
@@ -48,6 +51,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   category,
   gender,
   designImages,
+  backViews,
   referenceImages,
   selections,
   designId,
@@ -126,6 +130,12 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   // failed quote request doesn't create a duplicate design.
   const savedIdRef = useRef<string | null>(null);
   const [maxVendors, setMaxVendors] = useState(DEFAULT_MAX_VENDORS);
+  // Tailors always get the chosen version (and its back); the others only if
+  // the customer wants them to see the ideas they kept.
+  const [showOthers, setShowOthers] = useState(true);
+  const chosen = designImages[designImages.length - 1];
+  const chosenBack = backViews?.find((v) => v.front === chosen)?.back;
+  const otherCount = Math.max(0, designImages.length - 1);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -180,6 +190,8 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
             ? selections.fabric
             : undefined,
         design_images: [...designImages].reverse(),
+        back_views: backViews,
+        show_other_versions: showOthers,
         reference_images: referenceImages.length ? referenceImages : undefined,
         description: JSON.stringify({ notes: '', selections: enrichSelections(selections) }),
       };
@@ -265,6 +277,47 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                   replies with a price and a delivery time. You only pay when you accept one.
                 </p>
               </div>
+
+              {/* What the tailors get. Studio only: other screens send the
+                  design as it was saved. */}
+              {syncSaved && chosen && (
+                <div
+                  className='flex items-center'
+                  style={{
+                    gap: '12px', padding: '10px', borderRadius: '14px',
+                    background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)',
+                  }}
+                >
+                  <div className='flex flex-shrink-0' style={{ gap: '4px' }}>
+                    {[chosen, chosenBack].filter(Boolean).map((src, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={src}
+                        src={src}
+                        alt={i === 0 ? 'Front' : 'Back'}
+                        style={{ width: '44px', height: '58px', objectFit: 'contain', borderRadius: '8px', background: 'var(--bg-base)' }}
+                      />
+                    ))}
+                  </div>
+                  <div className='flex flex-col' style={{ gap: '6px', minWidth: 0 }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                      Tailors make the version on screen{chosenBack ? ', front and back' : ''}.
+                    </span>
+                    {otherCount > 0 && (
+                      <label htmlFor='quote-show-others' className='flex items-center' style={{ gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <input
+                          id='quote-show-others'
+                          type='checkbox'
+                          checked={showOthers}
+                          onChange={(e) => setShowOthers(e.target.checked)}
+                          style={{ accentColor: '#064E3B' }}
+                        />
+                        Also show them my other {otherCount === 1 ? 'version' : `${otherCount} versions`}
+                      </label>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Search. Secondary on purpose: this is a discovery moment, not
                   a lookup — but someone who already has a tailor in mind

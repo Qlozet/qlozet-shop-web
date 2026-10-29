@@ -14,6 +14,8 @@ export interface BespokeDesign {
   category: string;
   gender: 'men' | 'women';
   design_images: string[];
+  back_views?: { front: string; back: string }[];
+  show_other_versions?: boolean;
   reference_images: string[];
   fabric_id?: string;
   description?: string;
@@ -71,6 +73,10 @@ export interface CreateDesignPayload {
   category: string;
   gender: 'men' | 'women';
   design_images: string[];
+  /** Back views, each tied to a front in design_images. */
+  back_views?: { front: string; back: string }[];
+  /** false: tailors see only the chosen version (design_images[0]) and its back. */
+  show_other_versions?: boolean;
   reference_images?: string[];
   fabric_id?: string;
   description?: string;

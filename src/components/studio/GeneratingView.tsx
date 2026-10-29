@@ -9,6 +9,7 @@ import { Scissors } from 'lucide-react';
 // percentage, and the last step holds until the picture arrives.
 const NEW_STEPS = ['Reading your choices', 'Cutting the pattern', 'Draping your fabric', 'Adding the details', 'Final stitches'];
 const REFINE_STEPS = ['Reading your change', 'Unpicking the seams', 'Making your change', 'Final stitches'];
+const BACK_STEPS = ['Turning it round', 'Matching the fabric', 'Drawing the back', 'Final stitches'];
 const STEP_MS = 7000;
 
 export const GeneratingView: React.FC<{
@@ -17,8 +18,12 @@ export const GeneratingView: React.FC<{
   baseImage?: string | null;
   /** What's picked, as chips, so the wait shows what's being made. */
   summary?: string[];
-}> = ({ refining, baseImage, summary = [] }) => {
-  const steps = refining ? REFINE_STEPS : NEW_STEPS;
+  /** Making the back of the version on screen. */
+  backView?: boolean;
+}> = ({ refining: refiningProp, baseImage, summary = [], backView = false }) => {
+  // A back view works from the version on screen, like a refine.
+  const refining = refiningProp || backView;
+  const steps = backView ? BACK_STEPS : refining ? REFINE_STEPS : NEW_STEPS;
   const [step, setStep] = useState(0);
   const [seconds, setSeconds] = useState(0);
 

@@ -208,6 +208,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         category={designCategory}
         gender={designGender}
         designImages={customization.imagesForSave}
+        backViews={customization.backViewsForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,
