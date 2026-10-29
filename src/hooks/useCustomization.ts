@@ -619,9 +619,16 @@ export function useCustomization({
     if (!currentImage || !note) return;
     lastRefine.current = note;
     setIsRefining(true);
+    // Send the design's real fabric too: the editor puts the exact print back
+    // on after the change, instead of the model's imitation of it.
+    const isRemote = (u?: string) => !!u && /^https?:\/\//i.test(u);
+    const fabricImage = isRemote(appliedFabric?.image)
+      ? appliedFabric?.image
+      : fabricLibrary.find((f) => f.id === selectedFabric)?.image;
     try {
       await generateProductPreview({
         base_image_url: currentImage,
+        fabric_image_url: isRemote(fabricImage) ? fabricImage : undefined,
         garment_type: garmentWords,
         fit: FIT_OPTIONS.find((f) => f.id === selectedFit)?.label.toLowerCase() ?? '',
         style_notes: `Change only this and keep everything else exactly as it is: ${note}`,
@@ -629,7 +636,7 @@ export function useCustomization({
     } finally {
       setIsRefining(false);
     }
-  }, [currentImage, garmentWords, selectedFit, generateProductPreview]);
+  }, [currentImage, garmentWords, selectedFit, generateProductPreview, appliedFabric, fabricLibrary, selectedFabric]);
 
   const surpriseMe = useCallback(() => {
     const pick = <T,>(arr: T[]): T | undefined =>
