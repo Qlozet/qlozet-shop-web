@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useUpload } from '@/hooks/useUpload';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
@@ -29,6 +29,8 @@ export interface UseCustomizationOptions {
   initialDesignName?: string;
   initialClothingType?: ClothingType;
   initialGender?: DesignGender;
+  /** The garment picked on the start screen ("Kaftan", "Skirts", "Pants"). */
+  initialGarment?: string;
 }
 
 // A customer-supplied external fabric applied via "Use Fabric": its image drives
@@ -126,6 +128,26 @@ export interface CustomizationState {
   currentImage: string | null;
   tokenBalance: number;
   editTokenCost: number; // real edit_garment_token_price from platform settings
+  /** Real outfit_generation_token_price from platform settings (admin-set). */
+  generationCost: number;
+  /**
+   * The versions to save or send to tailors, oldest first with the one on
+   * screen LAST. Save and quote requests reverse this list, so the chosen
+   * version becomes the design's cover (design_images[0]).
+   */
+  imagesForSave: string[];
+  /** Change the version on screen in plain words ("make the sleeves longer"). */
+  refineCurrent: (instruction: string) => Promise<void>;
+  /** Run again whatever was last tried (Generate or a refine) — used after
+   *  buying tokens, so a refine isn't replaced by a full Generate. */
+  retryLast: () => void;
+  /** True while a refine (not a fresh Generate) is running. */
+  isRefining: boolean;
+  /** Fill the style, fabric and fit choices at random for this garment. */
+  surpriseMe: () => void;
+  /** Plain names of what's picked (styles, fabric, fit), for the line above
+   *  Generate, so nobody spends tokens on the wrong combination. */
+  selectionSummary: string[];
   generationError: string | null;
   insufficientTokensInfo: { show: boolean; balance: number; cost: number };
   dismissInsufficientTokens: () => void;
@@ -144,6 +166,7 @@ export function useCustomization({
   initialDesignName = '',
   initialClothingType,
   initialGender,
+  initialGarment,
 }: UseCustomizationOptions): CustomizationState {
   const { user, deductTokens } = useApp();
   const { uploadOutfitImages, isUploading, uploadStatus, uploadError } = useUpload();
@@ -192,6 +215,8 @@ export function useCustomization({
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [insufficientTokensInfo, setInsufficientTokensInfo] = useState<{ show: boolean; balance: number; cost: number }>({ show: false, balance: 0, cost: 0 });
   const [showSaveModal, setShowSaveModal] = useState(false);
+  // The last refine asked for, so buying tokens mid-refine retries the refine.
+  const lastRefine = useRef<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -199,6 +224,8 @@ export function useCustomization({
   const [tokenBalance, setTokenBalance] = useState(user?.tokenBalance ?? 0);
   // Real edit-garment cost (default matches backend edit_garment_token_price).
   const [editTokenCost, setEditTokenCost] = useState(45);
+  // Shown on the Generate button; the admin can change it, so never hard-code.
+  const [generationCost, setGenerationCost] = useState(GENERATION_COST);
 
   useEffect(() => {
     api.get('/token/balance').then((res) => {
@@ -208,6 +235,8 @@ export function useCustomization({
     api.get('/users/platform-settings').then((res) => {
       const c = res.data?.data?.edit_garment_token_price ?? res.data?.edit_garment_token_price;
       if (typeof c === 'number' && c > 0) setEditTokenCost(c);
+      const g = res.data?.data?.outfit_generation_token_price ?? res.data?.outfit_generation_token_price;
+      if (typeof g === 'number' && g > 0) setGenerationCost(g);
     }).catch(() => {});
   }, []);
 
@@ -283,10 +312,13 @@ export function useCustomization({
 
   const handleGenerate = useCallback(async () => {
     if (isGenerating || mode !== 'studio') return;
+    lastRefine.current = null;
 
     setGenerationError(null);
 
     // ── 1. Check token balance ──────────────────────────────────
+    // What this generation costs, for the local balance shown after it.
+    let spend = generationCost;
     try {
       const [balanceRes, settingsRes] = await Promise.all([
         api.get('/token/balance'),
@@ -297,6 +329,10 @@ export function useCustomization({
         settingsRes.data?.outfit_generation_token_price ??
         settingsRes.data?.data?.outfit_generation_token_price ??
         GENERATION_COST;
+      if (typeof cost === 'number' && cost > 0) {
+        setGenerationCost(cost);
+        spend = cost;
+      }
 
       console.log('[Generate] Token check — balance:', balance, 'cost:', cost, 'raw balance:', balanceRes.data, 'raw settings:', settingsRes.data);
 
@@ -476,7 +512,7 @@ export function useCustomization({
         const bal = res.data?.data?.tokens ?? res.data?.tokens ?? 0;
         setTokenBalance(bal);
       }).catch(() => {});
-      deductTokens(GENERATION_COST); // Also update context for profile display
+      deductTokens(spend); // Also update context for profile display
     } catch (err: any) {
       console.error('[Generate] Error:', err?.message);
       if (err?.response) {
@@ -495,7 +531,7 @@ export function useCustomization({
     selectedSilhouette, selectedNeckline, selectedSleeve, selectedCollar,
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedFabric, selectedColor, selectedAccessories, selectedFit,
-    referenceImages, styleLibrary, fabricLibrary, deductTokens,
+    referenceImages, styleLibrary, fabricLibrary, deductTokens, generationCost,
   ]);
 
   // Product-mode preview via the edit-garment image API. The caller (product
@@ -563,6 +599,87 @@ export function useCustomization({
 
   const currentImage = generatedImages[activeImageIndex] ?? null;
 
+  // What the garment is, in words, for the image editor. It must always be
+  // sent: the backend falls back to "women's flare mini dress" otherwise.
+  const garmentWords = useMemo(() => {
+    const who = designGender === 'male' ? "men's" : "women's";
+    const raw = (initialGarment || '').toLowerCase();
+    const named: Record<string, string> = {
+      tops: 'top', shirts: 'shirt', blouses: 'blouse', dresses: 'dress', skirts: 'skirt',
+      pants: 'trousers', trousers: 'trousers', jumpsuits: 'jumpsuit', sets: 'two-piece set',
+      suits: 'suit', kaftan: 'kaftan', agbada: 'agbada',
+    };
+    const byType: Record<string, string> = { top: 'top', bottom: 'trousers', full_body: 'outfit' };
+    return `${who} ${named[raw] ?? (clothingType ? byType[clothingType] : 'outfit')}`;
+  }, [designGender, clothingType, initialGarment]);
+
+  const [isRefining, setIsRefining] = useState(false);
+  const refineCurrent = useCallback(async (instruction: string) => {
+    const note = instruction.trim();
+    if (!currentImage || !note) return;
+    lastRefine.current = note;
+    setIsRefining(true);
+    try {
+      await generateProductPreview({
+        base_image_url: currentImage,
+        garment_type: garmentWords,
+        fit: FIT_OPTIONS.find((f) => f.id === selectedFit)?.label.toLowerCase() ?? '',
+        style_notes: `Change only this and keep everything else exactly as it is: ${note}`,
+      });
+    } finally {
+      setIsRefining(false);
+    }
+  }, [currentImage, garmentWords, selectedFit, generateProductPreview]);
+
+  const surpriseMe = useCallback(() => {
+    const pick = <T,>(arr: T[]): T | undefined =>
+      arr.length ? arr[Math.floor(Math.random() * arr.length)] : undefined;
+    const forThem = styleLibrary.filter(
+      (st) => st.is_active !== false && (!designGender || st.gender === designGender || st.gender === 'unisex'),
+    );
+    const of = (cat: string) => pick(forThem.filter((st) => st.category === cat))?._id ?? null;
+    const raw = (initialGarment || '').toLowerCase();
+
+    if (clothingType === 'top') {
+      setSelectedNeckline(of('neckline'));
+      setSelectedSleeve(of('sleeve'));
+      setSelectedCollar(of('collar'));
+    } else if (clothingType === 'bottom') {
+      // A skirt design gets a skirt style, trousers get a trouser style.
+      if (raw === 'skirts') setSelectedSkirt(of('skirt'));
+      else setSelectedTrouser(of('trouser'));
+    } else {
+      setSelectedFullBody(of('full_body'));
+      setSelectedNeckline(of('neckline'));
+      setSelectedSleeve(of('sleeve'));
+    }
+    // Keep a fabric the customer brought ("Use my fabric"); otherwise pick one.
+    if (!appliedFabric) setSelectedFabric(pick(fabricLibrary)?.id ?? null);
+    setSelectedFit(pick(FIT_OPTIONS)?.id ?? null);
+  }, [styleLibrary, fabricLibrary, designGender, clothingType, initialGarment, appliedFabric]);
+
+  const selectionSummary = useMemo(() => {
+    const styleName = (id: string | null) =>
+      id ? styleLibrary.find((st) => st._id === id)?.name : undefined;
+    const fabricName =
+      appliedFabric?.name ?? fabricLibrary.find((f) => f.id === selectedFabric)?.name;
+    return [
+      styleName(selectedFullBody),
+      styleName(selectedSilhouette),
+      styleName(selectedNeckline),
+      styleName(selectedSleeve),
+      styleName(selectedCollar),
+      styleName(selectedSkirt),
+      styleName(selectedTrouser),
+      fabricName,
+      FIT_OPTIONS.find((f) => f.id === selectedFit)?.label,
+    ].filter((x): x is string => !!x);
+  }, [
+    styleLibrary, fabricLibrary, appliedFabric, selectedFabric, selectedFit,
+    selectedFullBody, selectedSilhouette, selectedNeckline, selectedSleeve,
+    selectedCollar, selectedSkirt, selectedTrouser,
+  ]);
+
   return {
     designName, setDesignName,
     designGender, setDesignGender,
@@ -589,6 +706,20 @@ export function useCustomization({
     generatedImages, setGeneratedImages, activeImageIndex, setActiveImageIndex,
     isGenerating, handleGenerate, generateProductPreview, currentImage, tokenBalance,
     editTokenCost,
+    generationCost,
+    refineCurrent,
+    isRefining,
+    retryLast: () => {
+      if (lastRefine.current) void refineCurrent(lastRefine.current);
+      else void handleGenerate();
+    },
+    surpriseMe,
+    selectionSummary,
+    imagesForSave: useMemo(() => {
+      const current = generatedImages[activeImageIndex];
+      if (!current) return generatedImages;
+      return [...generatedImages.filter((_, i) => i !== activeImageIndex), current];
+    }, [generatedImages, activeImageIndex]),
     generationError,
     insufficientTokensInfo,
     dismissInsufficientTokens: useCallback(() => setInsufficientTokensInfo({ show: false, balance: 0, cost: 0 }), []),

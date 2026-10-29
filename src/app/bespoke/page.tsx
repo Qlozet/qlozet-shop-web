@@ -19,7 +19,6 @@ import {
   AlertCircle,
   Sparkles,
   Upload,
-  ArrowRight,
   X,
   Quote,
   Users,
@@ -132,20 +131,35 @@ const QUOTE_STATUS_MAP = {
 // ═══════════════════════════════════════════════════════════════
 //  NEW DESIGN MODAL FLOW
 // ═══════════════════════════════════════════════════════════════
-type ModalStep = null | 'start' | 'name' | 'category' | 'upload';
+type ModalStep = null | 'start';
 
-const REFERENCE_ANALYSIS_COST = 15; // tokens
+// What a garment type is called in a default design name ("My Kaftan").
+const SINGULAR: Record<string, string> = {
+  Tops: 'Top', Dresses: 'Dress', Skirts: 'Skirt', Pants: 'Trousers', Jumpsuits: 'Jumpsuit',
+  Sets: 'Set', Kaftan: 'Kaftan', Agbada: 'Agbada', Shirts: 'Shirt', Suits: 'Suit',
+};
 
+/**
+ * Start a design — one screen. The side (men/women) starts from the shop's
+ * own toggle, the garment is one tap, and a photo can be picked right here.
+ * The name is asked at save time; until then it's "My <garment>".
+ */
 function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: ModalStep) => void }) {
   const router = useRouter();
-  const [designMethod, setDesignMethod] = useState<'reference' | 'scratch'>('reference');
-  const [styleName, setStyleName] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Dresses');
-  const [gender, setGender] = useState<'men' | 'women'>('women');
+  const { gender: shopGender } = useApp();
+  const [designMethod, setDesignMethod] = useState<'reference' | 'scratch'>('scratch');
+  const [gender, setGender] = useState<'men' | 'women'>(shopGender === 'male' ? 'men' : 'women');
+  const [selectedCategory, setSelectedCategory] = useState(shopGender === 'male' ? 'Kaftan' : 'Dresses');
   const refFileInput = useRef<HTMLInputElement | null>(null);
   const { uploadOutfitImages } = useUpload();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<{ file: File; preview: string } | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+
+  // Free the preview URL when the photo changes or the sheet closes.
+  useEffect(() => () => {
+    if (photo) URL.revokeObjectURL(photo.preview);
+  }, [photo]);
 
   if (!step || typeof document === 'undefined') return null;
 
@@ -174,192 +188,199 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
         Sets: { src: '/image/bespoke-outfit-3.webp' },
       };
 
-  // ─── Shared step content (used in both mobile + desktop) ───
+  const switchGender = (g: 'men' | 'women') => {
+    setGender(g);
+    setSelectedCategory(g === 'men' ? 'Kaftan' : 'Dresses');
+  };
+
+  const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // picking the same file again still fires
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setStartError('That photo is over 10 MB. Pick a smaller one.');
+      return;
+    }
+    setStartError(null);
+    setPhoto({ file, preview: URL.createObjectURL(file) });
+  };
+
+  const start = async () => {
+    if (starting) return;
+    const name = encodeURIComponent(`My ${SINGULAR[selectedCategory] ?? selectedCategory}`);
+    // `s` nonce: gives every new design a unique studio URL so the keyed
+    // remount always fires and per-URL resume state (refresh survival after
+    // save) can never collide with an older design.
+    const nonce = Date.now().toString(36);
+    const base = `/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&s=${nonce}`;
+
+    if (designMethod === 'reference' && photo) {
+      setStarting(true);
+      setStartError(null);
+      const uploaded = await uploadOutfitImages([photo.file]).catch(() => []);
+      setStarting(false);
+      const url = uploaded[0]?.imageUrl;
+      if (!url) {
+        setStartError("We couldn't upload that photo. Check your connection and try again.");
+        return;
+      }
+      setStep(null);
+      setPhoto(null);
+      // The studio reads the photo's styles as it opens.
+      router.push(`${base}&ref=${encodeURIComponent(url)}`);
+      return;
+    }
+    setStep(null);
+    router.push(designMethod === 'reference' ? `${base}&method=reference` : base);
+  };
+
+  const methodBtn = (id: 'scratch' | 'reference', label: string, hint: string, Icon: typeof Sparkles) => {
+    const active = designMethod === id;
+    return (
+      <button
+        type="button"
+        onClick={() => setDesignMethod(id)}
+        aria-pressed={active}
+        className="flex-1 flex flex-col items-start text-left transition-all"
+        style={{
+          gap: '6px', padding: '12px 14px', borderRadius: '14px', cursor: 'pointer',
+          background: 'var(--bg-surface-elevated)',
+          border: active ? '1.5px solid var(--text-primary)' : '1.5px solid transparent',
+        }}
+      >
+        <Icon size={16} color={id === 'scratch' ? '#D4AF37' : 'var(--brand-brown)'} />
+        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{hint}</span>
+      </button>
+    );
+  };
+
   const stepContent = (
-    <>
-      {step === 'start' && (
-        <div className="flex flex-col" style={{ gap: '24px' }}>
-          <div>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
-              Start Your Bespoke<br />Journey
-            </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
-              Use pictures of an existing product or design from scratch
-            </p>
-          </div>
-          <div className="flex flex-col" style={{ gap: '10px' }}>
-            <button
-              onClick={() => setDesignMethod('reference')}
-              className="w-full flex items-center justify-between transition-all"
-              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'reference' ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)', border: designMethod === 'reference' ? '1.5px solid var(--brand-fill)' : '1.5px solid transparent', cursor: 'pointer' }}
-            >
-              <div className="flex items-center" style={{ gap: '14px' }}>
-                <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(139,90,43,0.08)' }}>
-                  <Upload size={16} color="var(--brand-brown)" />
-                </div>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upload Reference</span>
-                <span className="inline-flex items-center" style={{ fontSize: '9px', fontWeight: 700, color: '#D4AF37', background: 'rgba(212,175,55,0.12)', padding: '2px 8px', borderRadius: '6px', marginLeft: '6px', gap: '3px' }}><TokenIcon size={10} color="#D4AF37" /> {REFERENCE_ANALYSIS_COST}</span>
-              </div>
-              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'reference' ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)' }} />
-            </button>
-            <button
-              onClick={() => setDesignMethod('scratch')}
-              className="w-full flex items-center justify-between transition-all"
-              style={{ padding: '16px 20px', borderRadius: '16px', background: designMethod === 'scratch' ? 'var(--bg-surface-elevated)' : 'var(--bg-surface-elevated)', border: designMethod === 'scratch' ? '1.5px solid var(--brand-fill)' : '1.5px solid transparent', cursor: 'pointer' }}
-            >
-              <div className="flex items-center" style={{ gap: '14px' }}>
-                <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(212,175,55,0.08)' }}>
-                  <Sparkles size={16} color="#D4AF37" />
-                </div>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Start from Scratch</span>
-              </div>
-              <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: designMethod === 'scratch' ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)' }} />
-            </button>
-          </div>
-          <div style={{ padding: '16px 18px', borderRadius: '14px', background: 'var(--bg-surface-elevated)' }}>
-            <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
-              <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
-                <Scissors size={12} color="#EA580C" />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '8px' }}>
-              We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
-            </p>
-            <button className="flex items-center" style={{ gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Learn more</span>
-              <ArrowRight size={12} color="var(--text-primary)" />
-            </button>
-          </div>
-          <button
-            onClick={() => setStep('name')}
-            className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
-          >
-            Continue
-          </button>
-        </div>
-      )}
+    <div className="flex flex-col" style={{ gap: '18px' }}>
+      <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2, paddingRight: '36px' }}>
+        Start a design
+      </h3>
 
-      {step === 'name' && (
-        <div className="flex flex-col" style={{ gap: '24px' }}>
-          <div>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
-              Name Your<br />Masterpiece
-            </h3>
-          </div>
-          <div>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-              Style Name
-            </label>
-            <input
-              type="text"
-              value={styleName}
-              onChange={(e) => setStyleName(e.target.value)}
-              placeholder="e.g. My Wedding Agbada"
-              style={{ width: '100%', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', background: 'none', border: 'none', borderBottom: '1.5px solid var(--border-glass)', outline: 'none', padding: '10px 0' }}
-            />
-          </div>
-          <div style={{ padding: '16px 18px', borderRadius: '14px', background: 'var(--bg-surface-elevated)' }}>
-            <div className="flex items-center" style={{ gap: '10px', marginBottom: '8px' }}>
-              <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(234,88,12,0.08)' }}>
-                <Scissors size={12} color="#EA580C" />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Fabric Usage</span>
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              We&apos;ll automatically calculate and apply the right amount of fabric you need for your custom or bespoke design.
-            </p>
-          </div>
+      {/* Men / Women — starts from the shop toggle */}
+      <div className="flex" role="group" aria-label="Who it's for" style={{ gap: '6px', padding: '4px', borderRadius: '12px', background: 'var(--bg-surface-elevated)', alignSelf: 'flex-start' }}>
+        {(['women', 'men'] as const).map((g) => (
           <button
-            onClick={() => setStep('category')}
-            className="transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer', maxWidth: '320px', margin: '0 auto', width: '100%' }}
-          >
-            Continue
-          </button>
-        </div>
-      )}
-
-      {step === 'category' && (
-        <div className="flex flex-col" style={{ gap: '24px' }}>
-          <div className="text-center">
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', lineHeight: 1.2 }}>
-              Create Your Masterpiece
-            </h3>
-            <div className="flex items-center justify-center" style={{ gap: '16px', marginTop: '12px' }}>
-              <button onClick={() => setGender('men')} style={{ fontSize: '12px', fontWeight: gender === 'men' ? 800 : 500, color: gender === 'men' ? 'var(--text-primary)' : 'var(--text-muted)', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'men' ? '2px solid var(--text-primary)' : '2px solid transparent', padding: '4px 0' }}>
-                Men
-              </button>
-              <button onClick={() => setGender('women')} style={{ fontSize: '12px', fontWeight: gender === 'women' ? 800 : 500, color: gender === 'women' ? 'var(--text-primary)' : 'var(--text-muted)', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', borderBottom: gender === 'women' ? '2px solid var(--text-primary)' : '2px solid transparent', padding: '4px 0' }}>
-                Women
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {GARMENT_TYPES.map((type) => {
-              const active = selectedCategory === type;
-              const sample = CATEGORY_SAMPLES[type];
-              return (
-                <button
-                  key={type}
-                  onClick={() => setSelectedCategory(type)}
-                  className="flex flex-col transition-all active:scale-[0.97]"
-                  style={{
-                    padding: 0, borderRadius: '16px', overflow: 'hidden',
-                    background: active ? 'rgba(107,114,128,0.12)' : 'var(--bg-surface-elevated)',
-                    border: active ? '2px solid var(--text-primary)' : '2px solid transparent',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '100%', aspectRatio: '4 / 5', background: 'var(--bg-surface-elevated)' }}>
-                    {sample ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={sample.src}
-                        alt={type}
-                        loading="lazy"
-                        style={{
-                          width: '100%', height: '100%', objectFit: 'cover',
-                          objectPosition: sample.pos ?? 'center',
-                          opacity: active ? 1 : 0.92,
-                        }}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center" style={{ width: '100%', height: '100%' }}>
-                        <Scissors size={24} color={active ? 'var(--text-primary)' : 'var(--text-muted)'} />
-                      </div>
-                    )}
-                  </div>
-                  <span style={{ padding: '8px 4px 10px', fontSize: '10px', fontWeight: 700, color: active ? 'var(--text-primary)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '100%' }}>
-                    {type}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <button
-            onClick={() => {
-              setStep(null);
-              const name = encodeURIComponent(styleName || 'Untitled Design');
-              // `s` nonce: gives every new design a unique studio URL so the
-              // keyed remount always fires and per-URL resume state (refresh
-              // survival after save) can never collide with an older design.
-              const nonce = Date.now().toString(36);
-              if (designMethod === 'reference') {
-                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&method=reference&s=${nonce}`);
-              } else {
-                router.push(`/bespoke/studio?name=${name}&type=${selectedCategory}&gender=${gender}&s=${nonce}`);
-              }
+            key={g}
+            type="button"
+            onClick={() => switchGender(g)}
+            aria-pressed={gender === g}
+            style={{
+              padding: '6px 16px', borderRadius: '9px', border: 'none', cursor: 'pointer',
+              fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+              background: gender === g ? 'var(--bg-base)' : 'transparent',
+              color: gender === g ? 'var(--text-primary)' : 'var(--text-muted)',
+              boxShadow: gender === g ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
             }}
-            className="w-full transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: 'pointer' }}
           >
-            Get Started
+            {g}
           </button>
-        </div>
+        ))}
+      </div>
+
+      {/* What are we making? */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {GARMENT_TYPES.map((type) => {
+          const active = selectedCategory === type;
+          const sample = CATEGORY_SAMPLES[type];
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setSelectedCategory(type)}
+              aria-pressed={active}
+              className="flex flex-col transition-all active:scale-[0.97]"
+              style={{
+                padding: 0, borderRadius: '14px', overflow: 'hidden',
+                background: active ? 'rgba(107,114,128,0.12)' : 'var(--bg-surface-elevated)',
+                border: active ? '2px solid var(--text-primary)' : '2px solid transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ width: '100%', aspectRatio: '1 / 1', background: 'var(--bg-surface-elevated)' }}>
+                {sample ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={sample.src}
+                    alt=""
+                    loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: sample.pos ?? 'center', opacity: active ? 1 : 0.92 }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center" style={{ width: '100%', height: '100%' }}>
+                    <Scissors size={22} color={active ? 'var(--text-primary)' : 'var(--text-muted)'} />
+                  </div>
+                )}
+              </div>
+              <span style={{ padding: '6px 4px 8px', fontSize: '10px', fontWeight: 700, color: active ? 'var(--text-primary)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '100%' }}>
+                {type}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* How to start */}
+      <div className="flex" style={{ gap: '8px' }}>
+        {methodBtn('scratch', 'From scratch', 'Pick styles, fabric and fit', Sparkles)}
+        {methodBtn('reference', 'From a photo', 'We match the styles in it', Upload)}
+      </div>
+
+      {designMethod === 'reference' && (
+        <button
+          type="button"
+          onClick={() => refFileInput.current?.click()}
+          className="flex items-center transition-all hover:border-[var(--brand-fill)]"
+          style={{
+            gap: '12px', padding: photo ? '8px' : '14px', borderRadius: '14px', cursor: 'pointer', textAlign: 'left',
+            border: '1.5px dashed var(--border-glass)', background: 'var(--bg-surface-elevated)',
+          }}
+        >
+          {photo ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo.preview} alt="" style={{ width: '44px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Photo added · <span style={{ color: 'var(--brand-brown)', textDecoration: 'underline' }}>change</span>
+              </span>
+            </>
+          ) : (
+            <>
+              <ImagePlus size={18} color="var(--brand-brown)" />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Add a photo of the look you want{' '}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>(PNG or JPG, up to 10 MB)</span>
+              </span>
+            </>
+          )}
+        </button>
       )}
-    </>
+      <input ref={refFileInput} type="file" accept="image/*" onChange={pickPhoto} style={{ display: 'none' }} />
+
+      {startError && (
+        <p role="alert" style={{ fontSize: '12px', color: '#DC2626' }}>{startError}</p>
+      )}
+
+      <div className="flex flex-col" style={{ gap: '8px' }}>
+        <button
+          type="button"
+          onClick={start}
+          disabled={starting}
+          className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+          style={{ gap: '8px', padding: '16px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: 'none', cursor: starting ? 'default' : 'pointer', opacity: starting ? 0.7 : 1 }}
+        >
+          {starting && <Loader2 size={14} className="animate-spin" />}
+          {starting ? 'Uploading photo…' : 'Open the studio'}
+        </button>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+          You&apos;ll name it when you save.
+        </p>
+      </div>
+    </div>
   );
 
   return createPortal(
@@ -1133,7 +1154,8 @@ function BespokeContent() {
       />
 
       {/* ─── Modal ─── */}
-      <NewDesignModal step={modalStep} setStep={setModalStep} />
+      {/* Keyed on open, so each opening starts fresh from the shop's Men/Women toggle. */}
+      <NewDesignModal key={modalStep ?? 'closed'} step={modalStep} setStep={setModalStep} />
     </div>
   );
 }

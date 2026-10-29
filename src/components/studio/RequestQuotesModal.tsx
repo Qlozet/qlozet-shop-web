@@ -28,6 +28,13 @@ interface RequestQuotesModalProps {
   /** Vendors that already hold an ACTIVE quote on this design — shown but
    *  not selectable, and they consume slots from the vendor cap. */
   excludeVendorIds?: string[];
+  /** Told the design's id when this modal saves it, so the studio's own
+   *  Save updates that design instead of creating a second one. */
+  onSaved?: (id: string) => void;
+  /** Studio only: bring an already-saved design up to date with what's on
+   *  screen before asking for quotes. Off for screens that only hold the
+   *  saved copy (e.g. Add tailors), which must never rewrite it. */
+  syncSaved?: boolean;
 }
 
 // Fallback while /config/public loads (or on backends without it). The real
@@ -45,6 +52,8 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
   selections,
   designId,
   excludeVendorIds,
+  onSaved,
+  syncSaved = false,
 }) => {
   const router = useRouter();
   const { saveDesign, requestQuotes } = useBespokeDesigns();
@@ -156,9 +165,11 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
     setBusy(true);
     setErr(null);
 
-    // Ensure the design is saved first (need a designId to request quotes).
+    // Tailors quote on what's saved, so save what's on screen first: create
+    // the design if it's new, otherwise bring it up to date (a version made
+    // after the last save would otherwise never reach the tailors).
     let id = designId ?? savedIdRef.current;
-    if (!id) {
+    {
       const payload: CreateDesignPayload = {
         name: (designName || 'My design').trim(),
         category,
@@ -172,16 +183,24 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
         reference_images: referenceImages.length ? referenceImages : undefined,
         description: JSON.stringify({ notes: '', selections: enrichSelections(selections) }),
       };
-      const saved = await saveDesign(payload, null);
+      if (id && syncSaved) {
+        // Best effort: a design already past quoting can't change, and the
+        // request below still goes out on the saved version.
+        await saveDesign(payload, id);
+      }
+      const saved = id ? { _id: id } : await saveDesign(payload, null);
       if (!saved?._id) {
         setErr('Could not save the design. Please try again.');
         setBusy(false);
         return;
       }
+      if (!id) {
+        // Same signal as add-to-cart/wishlist — the design is now in My Designs.
+        toast.success('Design saved', { description: payload.name });
+        onSaved?.(saved._id);
+      }
       id = saved._id;
       savedIdRef.current = id;
-      // Same signal as add-to-cart/wishlist — the design is now in My Designs.
-      toast.success('Design saved', { description: payload.name });
     }
 
     const ok = await requestQuotes(id, selected);
@@ -242,8 +261,8 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                   Choose Tailors
                 </h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>
-                  Pick up to {remainingSlots} tailor{remainingSlots === 1 ? '' : 's'} to send this design to. Each will
-                  send you a quote — you choose the one you like.
+                  Pick up to {remainingSlots} tailor{remainingSlots === 1 ? '' : 's'} to send this design to. Each
+                  replies with a price and a delivery time. You only pay when you accept one.
                 </p>
               </div>
 

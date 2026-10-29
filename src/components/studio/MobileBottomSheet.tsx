@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useRef, useState } from 'react';
-import { ArrowDownUp, Bookmark, RotateCcw } from 'lucide-react';
+import { ArrowDownUp, Bookmark, RotateCcw, Dices } from 'lucide-react';
 import { STUDIO_TABS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
@@ -9,13 +9,16 @@ import { GenerateButton } from './GenerateButton';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 import { resetCurrentSection } from './resetSection';
 import { RequestQuotesModal } from './RequestQuotesModal';
+import { RefineBar } from './RefineBar';
 
 interface MobileBottomSheetProps {
   customization: CustomizationState;
   designId?: string | null;
+  /** Called when Get Quotes saves the design for the first time. */
+  onDesignSaved?: (id: string) => void;
 }
 
-export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId }) => {
+export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId, onDesignSaved }) => {
   const { expandedSection, setExpandedSection, isGenerating, handleGenerate } = customization;
 
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -198,6 +201,15 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
               </button>
               <button
                 type="button"
+                aria-label="Surprise me: pick styles, fabric and fit at random"
+                onClick={customization.surpriseMe}
+                className="transition-transform active:scale-90"
+                style={{ background: 'transparent', border: 'none', padding: '6px', margin: '-6px', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex' }}
+              >
+                <Dices size={20} />
+              </button>
+              <button
+                type="button"
                 aria-label="Reset this section"
                 onClick={() => resetCurrentSection(customization)}
                 className="transition-transform active:scale-90"
@@ -231,7 +243,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: '100px' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages ? '170px' : '110px' }}>
             <SectionContent customization={customization} />
           </div>
 
@@ -243,8 +255,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                   ⚠ {customization.generationError}
                 </p>
               )}
-              <div className="flex items-center gap-3 pointer-events-auto">
-                <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} className="flex-[3]" />
+              {hasGeneratedImages && (
+                <div className="pointer-events-auto" style={{ marginBottom: '10px' }}>
+                  <RefineBar customization={customization} compact />
+                </div>
+              )}
+              <div className="flex items-end gap-3 pointer-events-auto">
+                <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} summary={customization.selectionSummary} className="flex-[3]" />
                 <button
                   disabled={!hasGeneratedImages}
                   onClick={() => hasGeneratedImages && setShowOrderModal(true)}
@@ -263,7 +280,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                     opacity: hasGeneratedImages ? 1 : 0.4,
                   }}
                 >
-                  Order Now
+                  Get quotes
                 </button>
               </div>
             </div>
@@ -276,7 +293,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         balance={customization.insufficientTokensInfo.balance}
         cost={customization.insufficientTokensInfo.cost}
         onClose={customization.dismissInsufficientTokens}
-        onPurchaseComplete={handleGenerate}
+        onPurchaseComplete={customization.retryLast}
       />
 
       {/* Request Quotes (Order Now) Modal */}
@@ -286,7 +303,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         designName={customization.designName}
         category={designCategory}
         gender={designGender}
-        designImages={customization.generatedImages}
+        designImages={customization.imagesForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,
@@ -300,6 +317,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           userPrompt: customization.userPrompt,
         }}
         designId={designId}
+        onSaved={onDesignSaved}
+        syncSaved
       />
     </>
   );

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Save, ShoppingCart } from 'lucide-react';
-import { RotateCcw } from 'lucide-react';
+import { Save, Scissors } from 'lucide-react';
+import { RotateCcw, Dices } from 'lucide-react';
 import { TokenIcon } from '../icons/TokenIcon';
 import { resetCurrentSection } from './resetSection';
 import { type CustomizationState } from '@/hooks/useCustomization';
@@ -10,13 +10,16 @@ import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
 import { RequestQuotesModal } from './RequestQuotesModal';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
+import { RefineBar } from './RefineBar';
 
 interface DesktopConfigPanelProps {
   customization: CustomizationState;
   designId?: string | null;
+  /** Called when Get Quotes saves the design for the first time. */
+  onDesignSaved?: (id: string) => void;
 }
 
-export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customization, designId }) => {
+export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customization, designId, onDesignSaved }) => {
   const { expandedSection, tokenBalance, isGenerating, handleGenerate, generatedImages, setShowSaveModal } = customization;
 
   const [showOrderModal, setShowOrderModal] = React.useState(false);
@@ -69,6 +72,28 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
             {sectionLabel[expandedSection] || ''}
           </span>
           <div className="flex items-center" style={{ gap: '8px' }}>
+            <button
+              type="button"
+              aria-label="Surprise me: pick styles, fabric and fit at random"
+              title="Surprise me"
+              onClick={customization.surpriseMe}
+              className="flex items-center transition-transform hover:scale-105 active:scale-95"
+              style={{
+                gap: '5px',
+                height: '30px',
+                padding: '0 10px',
+                borderRadius: '100px',
+                background: 'var(--bg-surface-elevated)',
+                border: '1px solid var(--border-glass)',
+                color: 'var(--text-secondary)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <Dices size={14} />
+              <span>Surprise me</span>
+            </button>
             {/* Clears the open section only — same behaviour as the mobile
                 sheet's reset arrow, which shares this helper. */}
             <button
@@ -108,14 +133,15 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
 
       {/* Bottom CTAs */}
       <div className="flex-shrink-0 flex flex-col w-full" style={{ gap: '10px' }}>
-        <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} />
+        <RefineBar customization={customization} />
+        <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} summary={customization.selectionSummary} />
         {customization.generationError && (
           <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', padding: '0 8px' }}>
             ⚠ {customization.generationError}
           </p>
         )}
 
-        {/* Save Design / Order Now */}
+        {/* Save Design / Get quotes */}
         {hasGeneratedImages ? (
           <div className="flex w-full" style={{ gap: '8px' }}>
             <button
@@ -133,15 +159,16 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
             </button>
             <button
               onClick={() => setShowOrderModal(true)}
-              className="flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-md"
+              className="flex-1 flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] shadow-md"
               style={{
-                padding: '16px 20px', borderRadius: '16px', background: '#064E3B',
+                padding: '16px', borderRadius: '16px', background: '#064E3B',
                 color: '#FFF', fontSize: '12px', fontWeight: 800,
                 textTransform: 'uppercase', letterSpacing: '0.08em',
                 border: 'none', cursor: 'pointer', gap: '8px',
               }}
             >
-              <ShoppingCart size={16} />
+              <Scissors size={16} />
+              <span>Get quotes</span>
             </button>
           </div>
         ) : (
@@ -160,11 +187,15 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
               pointerEvents: hasGeneratedImages ? 'auto' : 'none',
             }}
           >
-            <ShoppingCart size={16} />
-            <span>Order Now</span>
+            <Scissors size={16} />
+            <span>Get quotes from tailors</span>
           </button>
         )}
       </div>
+
+      <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, marginTop: '-4px' }}>
+        Tailors reply with a price and delivery time. You only pay when you accept a quote.
+      </p>
 
       {/* Save modal renders at the PAGE level (bespoke/studio/page.tsx) so it
           also opens on mobile — this panel is lg-only, and a modal nested here
@@ -176,7 +207,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         designName={customization.designName}
         category={designCategory}
         gender={designGender}
-        designImages={generatedImages}
+        designImages={customization.imagesForSave}
         referenceImages={customization.referenceImages}
         selections={{
           neckline: customization.selectedNeckline,
@@ -190,6 +221,8 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
           userPrompt: customization.userPrompt,
         }}
         designId={designId}
+        onSaved={onDesignSaved}
+        syncSaved
       />
       {/* Insufficient Tokens Modal */}
       <InsufficientTokensModal
@@ -197,7 +230,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         balance={customization.insufficientTokensInfo.balance}
         cost={customization.insufficientTokensInfo.cost}
         onClose={customization.dismissInsufficientTokens}
-        onPurchaseComplete={handleGenerate}
+        onPurchaseComplete={customization.retryLast}
       />
     </div>
   );
