@@ -64,6 +64,18 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
   const atLowest = sheetHeight < 28;
   useEffect(() => { onLowestChange?.(atLowest); }, [atLowest, onLowestChange]);
 
+  // Height of the pinned Generate / Get quotes row, so Change something can
+  // sit just above it.
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [actionsHeight, setActionsHeight] = useState(96);
+  useEffect(() => {
+    const el = actionsRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setActionsHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     isDragging.current = true;
     dragStartY.current = e.touches[0].clientY;
@@ -255,13 +267,16 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
             <SectionContent customization={customization} />
           </div>
 
-          {/* Sticky Change something + Generate + Order. Pinned to the bottom,
-              but this frame starts under the tabs: when the sheet gets too
-              short, margin-top:auto drops to 0, so the block stops just under
-              the tabs and slides down with them (the buttons go out of view
-              below) instead of riding up over them. */}
-          <div className="absolute inset-0 z-30 flex flex-col overflow-hidden pointer-events-none">
-            <div className="relative" style={{ marginTop: 'auto', background: 'var(--bg-base)', padding: '6px 20px 20px' }}>
+          {/* Change something sits just above the buttons. Its frame starts
+              under the tabs, so when the sheet gets too short margin-top:auto
+              drops to 0: it stops just under the tabs and moves down with
+              them, sliding behind the buttons, instead of riding up over the
+              tabs. */}
+          <div
+            className="absolute inset-0 z-30 flex flex-col overflow-hidden pointer-events-none"
+            style={{ paddingBottom: `${actionsHeight}px` }}
+          >
+            <div className="relative" style={{ marginTop: 'auto', background: 'var(--bg-base)', padding: '6px 20px 10px' }}>
               <div
                 aria-hidden
                 className="absolute left-0 right-0 bottom-full"
@@ -273,10 +288,19 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                 </p>
               )}
               {hasGeneratedImages && (
-                <div className="pointer-events-auto" style={{ marginBottom: '10px' }}>
+                <div className="pointer-events-auto">
                   <RefineBar customization={customization} compact />
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Generate + Get quotes: always pinned to the bottom. */}
+          <div
+            ref={actionsRef}
+            className="absolute bottom-0 left-0 right-0 z-40"
+            style={{ background: 'var(--bg-base)', padding: '0 20px 20px' }}
+          >
               <div className="flex items-end gap-3 pointer-events-auto">
                 <GenerateButton isGenerating={isGenerating} onGenerate={handleGenerate} disabled={!canGenerate} cost={customization.generationCost} summary={customization.selectionSummary} className="flex-[3]" />
                 <button
@@ -300,7 +324,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                   Get quotes
                 </button>
               </div>
-            </div>
           </div>
           </div>
         </div>
