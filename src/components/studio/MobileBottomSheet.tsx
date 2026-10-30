@@ -59,13 +59,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
   const dragStartHeight = useRef(0);
   const isDragging = useRef(false);
 
-  // At the lowest snap there's no room for "Change something" to sit pinned
-  // over the content, so it scrolls with the content instead. The page also
-  // hides the versions bar so the design shows clear. (< 28 is where a drag
-  // snaps to the lowest.)
+  // At the lowest snap the page hides the versions bar so the design shows
+  // clear. (< 28 is where a drag snaps to the lowest.)
   const atLowest = sheetHeight < 28;
   useEffect(() => { onLowestChange?.(atLowest); }, [atLowest, onLowestChange]);
-  const refineInline = hasGeneratedImages && atLowest;
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     isDragging.current = true;
@@ -252,25 +249,30 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
             ))}
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages && !refineInline ? '170px' : '110px' }}>
-            {refineInline && (
-              <div style={{ padding: '14px 20px 0' }}>
-                <RefineBar customization={customization} compact />
-              </div>
-            )}
+          {/* Content, with Change something + the buttons pinned over its foot */}
+          <div className="relative flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages ? '170px' : '110px' }}>
             <SectionContent customization={customization} />
           </div>
 
-          {/* Sticky Generate + Order Buttons */}
-          <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
-            <div style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--bg-base) 0%, transparent) 0%, color-mix(in srgb, var(--bg-base) 85%, transparent) 30%, var(--bg-base) 60%)', padding: '40px 20px 20px' }}>
+          {/* Sticky Change something + Generate + Order. Pinned to the bottom,
+              but this frame starts under the tabs: when the sheet gets too
+              short, margin-top:auto drops to 0, so the block stops just under
+              the tabs and slides down with them (the buttons go out of view
+              below) instead of riding up over them. */}
+          <div className="absolute inset-0 z-30 flex flex-col overflow-hidden pointer-events-none">
+            <div className="relative" style={{ marginTop: 'auto', background: 'var(--bg-base)', padding: '6px 20px 20px' }}>
+              <div
+                aria-hidden
+                className="absolute left-0 right-0 bottom-full"
+                style={{ height: '34px', background: 'linear-gradient(to bottom, color-mix(in srgb, var(--bg-base) 0%, transparent), var(--bg-base))' }}
+              />
               {customization.generationError && (
                 <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', marginBottom: '8px' }}>
                   ⚠ {customization.generationError}
                 </p>
               )}
-              {hasGeneratedImages && !refineInline && (
+              {hasGeneratedImages && (
                 <div className="pointer-events-auto" style={{ marginBottom: '10px' }}>
                   <RefineBar customization={customization} compact />
                 </div>
@@ -299,6 +301,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                 </button>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
