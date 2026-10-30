@@ -245,6 +245,8 @@ function StudioContent() {
   const { createDesign, cancelDesign } = useBespokeDesigns();
   const [duplicating, setDuplicating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Phones: the bottom sheet is at its lowest, so the versions bar hides.
+  const [sheetLowest, setSheetLowest] = useState(false);
   // The saved design this studio session points at. Starts as the URL param;
   // set after the first Save so subsequent saves update instead of duplicating.
   // ─── Seed from a platform template (?template=<id>) ─────────
@@ -636,6 +638,7 @@ function StudioContent() {
         onMakeBack={user ? () => void customization.makeBackView() : undefined}
         isMakingBack={customization.isMakingBack}
         backCost={customization.editTokenCost}
+        hideMobileBar={sheetLowest}
       />
 
       {/* Desktop Floating Toolbar */}
@@ -645,7 +648,7 @@ function StudioContent() {
 
       {/* Mobile Bottom Sheet */}
       <div style={!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : undefined}>
-        <MobileBottomSheet customization={customization} designId={savedId} onDesignSaved={handleDesignSaved} />
+        <MobileBottomSheet customization={customization} designId={savedId} onDesignSaved={handleDesignSaved} onLowestChange={setSheetLowest} />
       </div>
 
       {/* Desktop Config Panel & CTAs */}
