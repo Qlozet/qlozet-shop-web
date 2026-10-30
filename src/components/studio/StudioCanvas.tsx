@@ -32,6 +32,8 @@ interface StudioCanvasProps {
   isMakingBack?: boolean;
   /** Tokens a back view costs (same as a refine). */
   backCost?: number;
+  /** Phones: slide the versions bar away (the bottom sheet is at its lowest). */
+  hideMobileBar?: boolean;
 }
 
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({
@@ -51,6 +53,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   onMakeBack,
   isMakingBack = false,
   backCost,
+  hideMobileBar = false,
 }) => {
   const shown = displayImage ?? currentImage;
   const bar = (className: string) => (
@@ -147,7 +150,9 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
       {/* Phones: pinned to the canvas just below the 72px header. The picture
           frame runs up behind the header there, so a bar placed inside it
           ended up hidden; the bottom sheet covers the lower half. */}
-      {bar('flex lg:hidden top-[84px] max-w-[calc(100%-32px)]')}
+      {bar(`flex lg:hidden top-[84px] max-w-[calc(100%-32px)] transition-all duration-300 motion-reduce:transition-none ${
+        hideMobileBar ? '-translate-y-[220%] opacity-0 pointer-events-none' : ''
+      }`)}
     </div>
   );
 };

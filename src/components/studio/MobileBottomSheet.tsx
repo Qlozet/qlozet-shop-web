@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDownUp, Bookmark, RotateCcw, Dices } from 'lucide-react';
 import { STUDIO_TABS } from '@/data/studio-options';
 import { type CustomizationState } from '@/hooks/useCustomization';
@@ -16,9 +16,11 @@ interface MobileBottomSheetProps {
   designId?: string | null;
   /** Called when Get Quotes saves the design for the first time. */
   onDesignSaved?: (id: string) => void;
+  /** Tells the page when the sheet is at (or heading to) its lowest. */
+  onLowestChange?: (lowest: boolean) => void;
 }
 
-export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId, onDesignSaved }) => {
+export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customization, designId, onDesignSaved, onLowestChange }) => {
   const { expandedSection, setExpandedSection, isGenerating, handleGenerate } = customization;
 
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -56,6 +58,14 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
   const isDragging = useRef(false);
+
+  // At the lowest snap there's no room for "Change something" to sit pinned
+  // over the content, so it scrolls with the content instead. The page also
+  // hides the versions bar so the design shows clear. (< 28 is where a drag
+  // snaps to the lowest.)
+  const atLowest = sheetHeight < 28;
+  useEffect(() => { onLowestChange?.(atLowest); }, [atLowest, onLowestChange]);
+  const refineInline = hasGeneratedImages && atLowest;
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     isDragging.current = true;
@@ -243,7 +253,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages ? '170px' : '110px' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages && !refineInline ? '170px' : '110px' }}>
+            {refineInline && (
+              <div style={{ padding: '14px 20px 0' }}>
+                <RefineBar customization={customization} compact />
+              </div>
+            )}
             <SectionContent customization={customization} />
           </div>
 
@@ -255,7 +270,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
                   ⚠ {customization.generationError}
                 </p>
               )}
-              {hasGeneratedImages && (
+              {hasGeneratedImages && !refineInline && (
                 <div className="pointer-events-auto" style={{ marginBottom: '10px' }}>
                   <RefineBar customization={customization} compact />
                 </div>
