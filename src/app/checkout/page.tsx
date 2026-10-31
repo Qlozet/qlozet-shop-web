@@ -340,7 +340,8 @@ export default function CheckoutPage() {
     const reference = result.transaction?.reference || result.payment?.reference;
 
     if (!accessCode) {
-      // No inline access code — fall back to Paystack's hosted checkout page.
+      // No inline access code: Paystack's hosted page, or Flutterwave's when
+      // Paystack was down. Both return to /payment/verify?reference=.
       if (paymentUrl) {
         window.location.href = paymentUrl;
         return;
@@ -387,7 +388,7 @@ export default function CheckoutPage() {
     const res = await fundWallet(Math.max(walletShortfall, 100));
     if (!res.success || !res.reference) {
       setTopUp('idle');
-      setPayError('Could not open Paystack to top up your wallet. Please try again, or pay by card.');
+      setPayError('Could not open the payment page to top up your wallet. Please try again, or pay by card.');
       return;
     }
     setTopUp('waiting');
@@ -851,10 +852,10 @@ export default function CheckoutPage() {
                   key: 'card',
                   title: 'Credit / Debit Card',
                   // USD checkouts charge through Stripe (international cards);
-                  // ₦ checkouts stay on Paystack.
+                  // ₦ checkouts go to Paystack, or Flutterwave if Paystack is down.
                   sub:
                     currency === 'NGN'
-                      ? 'Pay securely with Paystack'
+                      ? 'Pay securely by card, bank transfer or USSD'
                       : 'International cards — pay securely with Stripe',
                   Icon: CreditCard,
                 },
@@ -918,9 +919,9 @@ export default function CheckoutPage() {
               >
                 <p style={{ fontSize: '12px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
                   {topUp === 'waiting'
-                    ? 'Complete the payment in the Paystack tab. Your order is placed from your wallet as soon as it goes through.'
+                    ? 'Complete the payment in the new tab. Your order is placed from your wallet as soon as it goes through.'
                     : topUp === 'pending'
-                      ? 'Still waiting for Paystack. Once the payment goes through, check again and choose Pay with Wallet.'
+                      ? 'Still waiting for your payment. Once it goes through, check again and choose Pay with Wallet.'
                       : `Your wallet is ${fmtMoney(walletShortfall)} short for this order. Top it up and pay in one go, or pay by card.`}
                 </p>
                 {topUp === 'pending' && (
@@ -945,7 +946,7 @@ export default function CheckoutPage() {
                   >
                     <Wallet size={14} />
                     {topUp === 'opening'
-                      ? 'Opening Paystack…'
+                      ? 'Opening payment…'
                       : `Top up ${fmtMoney(Math.max(walletShortfall, 100))} and pay`}
                   </button>
                 )}

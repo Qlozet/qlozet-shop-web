@@ -358,7 +358,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
           <div className="flex items-center justify-between" style={{ marginBottom: '28px' }}>
             <div className="flex flex-col" style={{ gap: '4px' }}>
               <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>Fund Your Wallet</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Pay via Paystack (opens in new tab)</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Pay by card, bank transfer or USSD (opens in a new tab)</span>
             </div>
             <LockKeyhole size={18} color="#22C55E" />
           </div>
@@ -435,12 +435,12 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             }}
           >
             {isFunding && <Loader2 size={16} className="animate-spin" />}
-            {isFunding ? 'Opening Paystack...' : isPolling ? 'Waiting for payment...' : `Fund ₦${(parseFloat(fundAmount) || 0).toLocaleString()}`}
+            {isFunding ? 'Opening payment...' : isPolling ? 'Waiting for payment...' : `Fund ₦${(parseFloat(fundAmount) || 0).toLocaleString()}`}
           </button>
 
           {isPolling && (
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '12px', lineHeight: 1.5 }}>
-              Complete payment in the Paystack tab. This page will update automatically.
+              Complete the payment in the new tab. This page will update automatically.
             </p>
           )}
 
