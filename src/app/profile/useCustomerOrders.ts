@@ -329,6 +329,7 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
     id: o._id,
     type: o.type,
     preship: (o as any).preship ?? null,
+    paymentPlan: (o as any).payment_plan ?? null,
     fitFeedback: (o as any).fit_feedback ?? null,
     orderNumber: o.reference || `#${o._id.slice(-8).toUpperCase()}`,
     date: formatDate(o.createdAt),
