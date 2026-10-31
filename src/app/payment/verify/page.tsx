@@ -39,11 +39,14 @@ function PaymentVerifyInner() {
   // A guest's fabric CLAIM payment (stashed on /reserve/:id before redirect) —
   // not a cart checkout, so the cart must be left alone.
   const [claimReservationId, setClaimReservationId] = useState<string | null>(null);
+  // A bespoke deposit or balance (stashed before redirect): not a cart checkout.
+  const [bespokePayment, setBespokePayment] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setReservationId(sessionStorage.getItem('pending_reservation_id'));
       setClaimReservationId(sessionStorage.getItem('pending_claim_reservation_id'));
+      setBespokePayment(sessionStorage.getItem('pending_bespoke_payment'));
     }
   }, []);
 
@@ -99,9 +102,10 @@ function PaymentVerifyInner() {
     handled.current = true;
     sessionStorage.removeItem('pending_reservation_id');
     sessionStorage.removeItem('pending_claim_reservation_id');
-    // Only a CART checkout clears the cart — reservation fees and guest fabric
-    // claims are standalone payments that must not wipe an unrelated cart.
-    if (!reservationId && !claimReservationId) {
+    sessionStorage.removeItem('pending_bespoke_payment');
+    // Only a CART checkout clears the cart — reservation fees, guest fabric
+    // claims and bespoke payments are standalone and must not wipe a cart.
+    if (!reservationId && !claimReservationId && !bespokePayment) {
       clearCart();
       sessionStorage.removeItem('qlozet_checkout_preview');
     }
@@ -111,7 +115,7 @@ function PaymentVerifyInner() {
       origin: { y: 0.55 },
       colors: [BROWN, '#8A5A2B', '#D4AF37', GOOD, '#FFFFFF'],
     });
-  }, [status, reservationId, claimReservationId, clearCart]);
+  }, [status, reservationId, claimReservationId, bespokePayment, clearCart]);
 
   return (
     <div
@@ -149,7 +153,11 @@ function PaymentVerifyInner() {
                 ? 'Your fabric reservation is active — share the link with your guests.'
                 : claimReservationId
                   ? 'Your fabric is claimed! Your yards are secured under this event.'
-                  : 'Thank you! Your payment was successful and your order is on its way to the vendor.'}
+                  : bespokePayment === 'balance'
+                    ? 'Balance paid. Your tailor will ship your outfit.'
+                    : bespokePayment === 'deposit'
+                      ? 'Deposit paid. Your tailor is starting on your outfit; you pay the balance when they send photos of the finished piece.'
+                      : 'Thank you! Your payment was successful and your order is on its way to the vendor.'}
             </Body>
             {reference && <Ref value={reference} />}
             <Actions>

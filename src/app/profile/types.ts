@@ -226,9 +226,23 @@ export interface PreshipReview {
   customer_note?: string | null;
 }
 
+/** Bespoke deposit + balance (backend orders/bespoke-payment-plan.ts). */
+export interface PaymentPlanView {
+  kind: 'deposit';
+  quote_total: number;
+  deposit_percent: number;
+  deposit_amount: number;
+  balance_amount: number;
+  status: 'awaiting_deposit' | 'deposit_paid' | 'awaiting_balance' | 'paid' | 'forfeited';
+  balance_due_at?: string | null;
+  balance_paid_at?: string | null;
+}
+
 export interface Order {
   /** Order type from the backend ('standard' | 'bespoke' | ...). */
   type?: string;
+  /** Bespoke orders paid as a deposit, then a balance at the pre-ship photos. */
+  paymentPlan?: PaymentPlanView | null;
   /** Bespoke pre-ship checkpoint — photos the tailor sent for approval. */
   preship?: PreshipReview | null;
   /** Post-delivery fit feedback, once given. */

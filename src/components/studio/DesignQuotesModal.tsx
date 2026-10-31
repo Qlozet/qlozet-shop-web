@@ -190,7 +190,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
       );
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
       if (method === 'paystack' && url) {
-        window.location.href = url; // redirect to Paystack
+        // Not a cart checkout: the verify page must leave the cart alone.
+        try { sessionStorage.setItem('pending_bespoke_payment', 'deposit'); } catch {}
+        window.location.href = url; // redirect to the payment page
         return;
       }
       // Wallet payment is instant — the order is already confirmed.
@@ -335,7 +337,14 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                 const accepted = q.status === 'accepted';
                 const total = quoteTotal(q);
                 const fabricSurcharge = fabricSurchargeFor(q);
-                const payable = total + fabricSurcharge;
+                // Deposit now, balance when the tailor shows the finished
+                // piece (backend payment_preview). Fabric from another vendor
+                // is paid in full now.
+                const preview = (q as any).payment_preview as
+                  | { deposit_percent: number; deposit_amount: number; balance_amount: number }
+                  | null
+                  | undefined;
+                const payable = (preview ? preview.deposit_amount : total) + fabricSurcharge;
                 return (
                   <div
                     key={q._id}
@@ -480,6 +489,12 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         >
                           Pay with card
                         </button>
+                        {preview && (
+                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+                            {naira(payable)} now ({preview.deposit_percent}% deposit{fabricSurcharge > 0 ? ' + fabric' : ''}).
+                            {' '}{naira(preview.balance_amount)} when your outfit is ready and you&apos;ve seen the photos.
+                          </p>
+                        )}
                         <CancellationNotice variant="bespoke" style={{ justifyContent: 'center' }} />
                         {isConverted && (
                           <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>

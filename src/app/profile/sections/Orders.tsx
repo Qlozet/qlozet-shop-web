@@ -114,11 +114,59 @@ const apiErrMsg = (err: unknown, fallback: string) => {
 // ─── Pre-ship approval (bespoke) ─────────────────────────────
 // The tailor photographs the finished piece and the customer approves before
 // it ships. No response for 72 hours auto-clears the gate on the backend.
+// ─── Deposit + balance (bespoke) ─────────────────────────────
+// Accepting a quote paid the deposit; the balance is asked for when the
+// tailor sends photos of the finished piece, and paying it approves them.
+const owesBalance = (plan?: Order['paymentPlan']) =>
+  !!plan && (plan.status === 'deposit_paid' || plan.status === 'awaiting_balance');
+
+function PaymentPlanCard({ order }: { order: Order }) {
+  const plan = order.paymentPlan;
+  if (!plan) return null;
+  const naira = (n: number) => `₦${Math.round(n).toLocaleString()}`;
+  const due = plan.balance_due_at ? new Date(plan.balance_due_at) : null;
+  const line = (label: string, value: string, tone?: string) => (
+    <div className="flex items-center justify-between" style={{ fontSize: '12.5px' }}>
+      <span style={{ color: MUTE }}>{label}</span>
+      <span style={{ fontWeight: 700, color: tone ?? INK }}>{value}</span>
+    </div>
+  );
+  return (
+    <Section title="Payment">
+      <div className="flex flex-col" style={{ gap: '6px' }}>
+        {line(`Deposit (${plan.deposit_percent}%)`, plan.status === 'awaiting_deposit' ? `${naira(plan.deposit_amount)} due` : `${naira(plan.deposit_amount)} paid`, plan.status === 'awaiting_deposit' ? undefined : '#2D6A4F')}
+        {line(
+          'Balance',
+          plan.status === 'paid'
+            ? `${naira(plan.balance_amount)} paid`
+            : plan.status === 'forfeited'
+              ? 'Not paid'
+              : naira(plan.balance_amount),
+          plan.status === 'paid' ? '#2D6A4F' : plan.status === 'forfeited' ? '#C0362C' : undefined,
+        )}
+        {line('Total', naira(plan.quote_total))}
+      </div>
+      <p style={{ fontSize: '12px', color: MUTE, lineHeight: 1.6, margin: 0 }}>
+        {plan.status === 'deposit_paid' && 'Your tailor is making your outfit. You pay the balance when they send photos of the finished piece.'}
+        {plan.status === 'awaiting_balance' && (due
+          ? `Your outfit is ready. Pay the balance by ${due.toDateString()} and the tailor ships it.`
+          : 'Your tailor is making the changes you asked for. You pay the balance once you’re happy with the new photos.')}
+        {plan.status === 'paid' && 'Paid in full.'}
+        {plan.status === 'forfeited' && 'The balance wasn’t paid in time, so the order was closed. The deposit covered the tailor’s work.'}
+        {plan.status === 'awaiting_deposit' && 'Waiting for the deposit payment to go through.'}
+      </p>
+    </Section>
+  );
+}
+
 function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) {
   const [preship, setPreship] = useState(order.preship ?? null);
   const [requesting, setRequesting] = useState(false);
   const [note, setNote] = useState('');
-  const [busy, setBusy] = useState<'approve' | 'changes' | null>(null);
+  const [busy, setBusy] = useState<'approve' | 'changes' | 'wallet' | 'card' | null>(null);
+  const [choosingPay, setChoosingPay] = useState(false);
+  const plan = order.paymentPlan;
+  const balanceDue = owesBalance(plan);
 
   if (!preship) return null;
   // Once shipped/delivered the checkpoint is history — don't clutter the page.
@@ -147,6 +195,27 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
     }
   };
 
+  // Deposit orders: paying the balance is the approval.
+  const payBalance = async (method: 'wallet' | 'card') => {
+    setBusy(method);
+    try {
+      const res = await api.post(`/orders/${order.orderNumber}/pay-balance`, { payment_method: method });
+      const payment = res.data?.data?.payment;
+      const url = payment?.authorization_url || payment?.paymentUrl;
+      if (method === 'card' && url) {
+        try { sessionStorage.setItem('pending_bespoke_payment', 'balance'); } catch {}
+        window.location.href = url;
+        return;
+      }
+      toast.success('Balance paid. The tailor will ship your outfit.');
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMsg(err, 'Could not take the payment. Please try again.'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <Section title="Pre-ship Approval">
       {preship.status === 'approved' && (
@@ -166,9 +235,11 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
       )}
       {preship.status === 'pending_review' && (
         <p style={{ fontSize: '12.5px', color: MUTE, lineHeight: 1.6, margin: 0 }}>
-          Your outfit is finished! Check the photos below — approve it to ship, or
+          {balanceDue && plan
+            ? `Your outfit is finished! Check the photos below. Pay the ₦${Math.round(plan.balance_amount).toLocaleString()} balance to approve it and the tailor ships it, or tell them what to adjust.`
+            : <>Your outfit is finished! Check the photos below — approve it to ship, or
           tell the tailor what to adjust. If you don&apos;t respond within 72 hours it
-          ships automatically.
+          ships automatically.</>}
         </p>
       )}
 
@@ -200,7 +271,42 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
             />
           )}
           <div className="flex" style={{ gap: '8px' }}>
-            {!requesting ? (
+            {!requesting && balanceDue && plan ? (
+              choosingPay ? (
+                <>
+                  <button onClick={() => payBalance('wallet')} disabled={busy !== null}
+                    className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+                    style={{ gap: '6px', padding: '11px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {busy === 'wallet' && <Loader2 size={13} className="animate-spin" />}
+                    From wallet
+                  </button>
+                  <button onClick={() => payBalance('card')} disabled={busy !== null}
+                    className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+                    style={{ gap: '6px', padding: '11px', borderRadius: '10px', border: '1.5px solid var(--brand-fill)', background: 'none', color: INK, cursor: 'pointer', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {busy === 'card' && <Loader2 size={13} className="animate-spin" />}
+                    By card
+                  </button>
+                  <button onClick={() => setChoosingPay(false)} disabled={busy !== null}
+                    style={{ padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: MUTE, textTransform: 'uppercase' }}>
+                    Back
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setChoosingPay(true)} disabled={busy !== null}
+                    className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+                    style={{ gap: '6px', padding: '11px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <BadgeCheck size={14} />
+                    Approve &amp; pay ₦{Math.round(plan.balance_amount).toLocaleString()}
+                  </button>
+                  <button onClick={() => setRequesting(true)} disabled={busy !== null}
+                    className="flex-1 transition-all hover:opacity-90 disabled:opacity-60"
+                    style={{ padding: '11px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: INK, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Request Changes
+                  </button>
+                </>
+              )
+            ) : !requesting ? (
               <>
                 <button onClick={() => decide(true)} disabled={busy !== null}
                   className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
@@ -859,6 +965,7 @@ export default function OrdersSection({
 
         {/* Bespoke: approve the finished piece before it ships. Keyed on the
             preship state so a fresh submission remounts with the new photos. */}
+        {isBespokeOrder && order.paymentPlan && <PaymentPlanCard order={order} />}
         {isBespokeOrder && order.preship && (
           <PreshipCard key={`${order.orderNumber}-${order.preship.status}-${order.preship.submitted_at ?? ''}`} order={order} refetch={refetch} />
         )}
