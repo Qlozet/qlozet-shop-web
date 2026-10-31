@@ -274,7 +274,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               </div>
               {!hasEnoughWallet && (
                 <div style={{ fontSize: '11px', color: '#F59E0B', fontWeight: 600, background: 'rgba(245,158,11,0.08)', padding: '8px 12px', borderRadius: '8px' }}>
-                  Your wallet balance is low. You&apos;ll be redirected to fund your wallet via Paystack.
+                  Your wallet balance is low. You&apos;ll be redirected to fund your wallet.
                 </div>
               )}
             </div>
