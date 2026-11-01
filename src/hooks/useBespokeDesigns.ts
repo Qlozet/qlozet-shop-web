@@ -43,10 +43,24 @@ export interface BespokeQuote {
   line_items?: QuoteLineItem[];
   /** Days the tailor needs to make it, counted from payment. Delivery is on top. */
   estimated_completion_days?: number;
+  required_fabric_yards?: number | null;
+  /** Fabric source and price, set when the tailor sends the quote (null on older quotes). */
+  fabric_pricing?: QuoteFabricPricing | null;
   notes?: string;
   expires_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface QuoteFabricPricing {
+  /** other_vendor = billed on top, paid in full now; tailor_stock / tailor_sourced = a line of the quote. */
+  source: 'other_vendor' | 'tailor_stock' | 'tailor_sourced';
+  in_quote: boolean;
+  amount: number;
+  yards: number | null;
+  pieces: number | null;
+  name: string | null;
+  supplier_name: string | null;
 }
 
 export interface QuoteLineItem {
