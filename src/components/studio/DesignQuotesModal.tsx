@@ -139,18 +139,23 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     []) as BespokeQuote[]);
 
   // Fabric from ANOTHER vendor is billed on top of the quote at acceptance
-  // (the quote prices the tailor's own work; the fabric vendor is paid and
-  // ships the yards to the tailor). Mirror the backend's computation so the
-  // customer sees the true payable before tapping pay.
+  // (the fabric vendor is paid and ships the yards to the tailor). The
+  // backend prices it when the tailor sends the quote (q.fabric_pricing), so
+  // the shop shows that number and never guesses before the tailor has said
+  // how many yards they need.
   const fabricDoc: any = designObj?.fabric;
   const fabricBusinessId = fabricDoc?.business
     ? String((fabricDoc.business as any)?._id ?? fabricDoc.business)
     : null;
   const fabricSurchargeFor = (q: any): number => {
-    if (!fabricDoc || !fabricBusinessId) return 0;
+    if (q.status !== 'submitted' && q.status !== 'accepted') return 0;
+    const fp = q.fabric_pricing;
+    if (fp) return fp.in_quote ? 0 : Math.round(Number(fp.amount) || 0);
+    // Quotes sent before fabric pricing: same rule the backend still applies.
+    if (!fabricDoc || !fabricBusinessId || !q.required_fabric_yards) return 0;
     const vendorId = String((q.vendor as any)?._id ?? q.vendor ?? '');
     if (!vendorId || vendorId === fabricBusinessId) return 0;
-    const yards = q.required_fabric_yards || fabricDoc?.fabric?.min_cut || 1;
+    const yards = q.required_fabric_yards;
     // Sold only by the piece: whole pieces, as the backend charges.
     const f = fabricDoc?.fabric;
     if (f?.sold_by === 'piece' && Number(f.piece_yards) > 0 && Number(f.piece_price) > 0) {
@@ -335,13 +340,17 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
               {quotes.map((q) => {
                 const submitted = q.status === 'submitted';
                 const accepted = q.status === 'accepted';
+                // Only a sent quote has a price; a draft is the tailor's
+                // working copy and may still change.
+                const priced = submitted || accepted;
                 const total = quoteTotal(q);
+                const fp = q.fabric_pricing;
                 const fabricSurcharge = fabricSurchargeFor(q);
                 // Deposit now, balance when the tailor shows the finished
                 // piece (backend payment_preview). Fabric from another vendor
                 // is paid in full now.
                 const preview = (q as any).payment_preview as
-                  | { deposit_percent: number; deposit_amount: number; balance_amount: number }
+                  | { deposit_percent: number; deposit_amount: number; balance_amount: number; deposit_covers_fabric?: boolean }
                   | null
                   | undefined;
                 const payable = (preview ? preview.deposit_amount : total) + fabricSurcharge;
@@ -371,6 +380,16 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           {q.vendor?.business_name || 'Tailor'}
                         </span>
                       </div>
+                      {!priced ? (
+                        <div className='flex flex-col items-end'>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                            Price to come
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {fabricDoc ? 'Fabric is priced in the quote' : 'The tailor will price the fabric'}
+                          </span>
+                        </div>
+                      ) : (
                       <div className='flex flex-col items-end'>
                         <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
                           {isConverted ? fmt(payable) : naira(payable)}
@@ -386,6 +405,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           </span>
                         )}
                       </div>
+                      )}
                     </div>
 
                     {/* The tailor's days are a ship-by promise (late shipping
@@ -397,12 +417,19 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       </p>
                     )}
 
-                    {(q.line_items ?? []).length > 0 && (
+                    {priced && (q.line_items ?? []).length > 0 && (
                       <div className='flex flex-col' style={{ gap: '4px', marginBottom: '12px' }}>
-                        {(q.line_items ?? []).map((li: any, i: number) => (
+                        {(q.line_items ?? [])
+                          .filter((li: { total?: number; amount?: number }) => (li.total ?? li.amount ?? 0) > 0)
+                          .map((li: any, i: number) => (
                           <div key={i} className='flex items-center justify-between'>
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                               {li.description || li.label}
+                              {fp?.in_quote && /^fabric$/i.test(li.label ?? '')
+                                ? fp.source === 'tailor_sourced'
+                                  ? ' (the tailor buys it)'
+                                  : fp.yards ? ` · ${fp.yards} yd` : ''
+                                : ''}
                             </span>
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                               {isConverted
@@ -411,6 +438,17 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             </span>
                           </div>
                         ))}
+                        {fabricSurcharge > 0 && (
+                          <div className='flex items-center justify-between'>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                              Fabric{fp?.supplier_name ? ` from ${fp.supplier_name}` : ''}
+                              {fp?.yards ? ` · ${fp.yards} yd` : q.required_fabric_yards ? ` · ${q.required_fabric_yards} yd` : ''}
+                            </span>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              {isConverted ? fmt(fabricSurcharge) : naira(fabricSurcharge)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -491,7 +529,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         </button>
                         {preview && (
                           <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
-                            {naira(payable)} now ({preview.deposit_percent}% deposit{fabricSurcharge > 0 ? ' + fabric' : ''}).
+                            {naira(payable)} now ({preview.deposit_covers_fabric ? 'deposit covers the fabric' : `${preview.deposit_percent}% deposit`}{fabricSurcharge > 0 ? ' + fabric' : ''}).
                             {' '}{naira(preview.balance_amount)} when your outfit is ready and you&apos;ve seen the photos.
                           </p>
                         )}
