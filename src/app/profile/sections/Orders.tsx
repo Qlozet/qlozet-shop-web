@@ -621,8 +621,16 @@ export default function OrdersSection({
     const isCustom = t === 'custom';
     const isFabric = t === 'fabric';
     const hasTailoring = isCustom || isBespoke;
-    // Bespoke choices live on the design; custom choices live on the item.
-    const designChoices = isBespoke ? (order.bespoke?.choices ?? []) : (item.choices ?? []);
+    // Bespoke choices live on the design, plus the fabric actually used (on
+    // the item, with yards and its real picture — it replaces any fabric the
+    // studio noted); custom choices live on the item.
+    const usedFabric = (item.choices ?? []).filter((c) => c.kind === 'fabric');
+    const designChoices = isBespoke
+      ? [
+          ...(order.bespoke?.choices ?? []).filter((c) => !(usedFabric.length && c.kind === 'fabric')),
+          ...usedFabric,
+        ]
+      : (item.choices ?? []);
 
     // Real payment breakdown from the frozen snapshot; else just the item total.
     const p = item.pricing;
