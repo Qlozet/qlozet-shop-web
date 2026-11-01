@@ -227,38 +227,83 @@ function itemChoices(item: ApiOrderItem): DesignChoice[] {
   return out;
 }
 
+/**
+ * Is this the tailor's line of a bespoke order (the garment itself)? The
+ * backend always puts it first. It has no product when the fabric came from
+ * another vendor or the tailor buys it, but carries the FABRIC as its product
+ * when the tailor uses fabric from their own shop, so "no product" alone
+ * misses that case and the order showed the fabric instead of the design.
+ * Another vendor's fabric is a separate, later line and shows as itself.
+ */
+function isBespokeDesignLine(
+  item: ApiOrderItem,
+  index: number,
+  orderType?: string,
+): boolean {
+  if (orderType !== 'bespoke') return false;
+  return index === 0 || resolveName(item.product) === 'Product';
+}
+
+// The tailor's own fabric on the design line: a material of the garment.
+function tailorFabricChoice(item: ApiOrderItem): DesignChoice | null {
+  const product = item.product;
+  if (!product || typeof product === 'string' || product.kind !== 'fabric') return null;
+  const name = product.fabric?.name;
+  if (!name) return null;
+  const yards = item.fabric_selections?.[0]?.yardage;
+  return {
+    kind: 'fabric',
+    label: "Fabric from the tailor's shop",
+    name: yards ? `${name} — ${yards} yd` : name,
+    image: pickImg(product.fabric?.images),
+  };
+}
+
 function mapItem(
   item: ApiOrderItem,
   orderType?: string,
   design?: { name?: string; design_images?: string[] },
+  index = 0,
 ): OrderItem {
-  const productType = resolveProductType(item.product, orderType);
   const vendor =
     item.business && typeof item.business === 'object'
       ? item.business
       : undefined;
-  // Only the DESIGN line of a bespoke order borrows the design's identity —
-  // an attached fabric item has a real catalog product and shows as itself
-  // (its price was already its own, which made the duplicate look wrong).
-  const catalogName = resolveName(item.product);
-  const isDesignItem = orderType === 'bespoke' && catalogName === 'Product';
-  const name = isDesignItem ? design?.name || 'Custom outfit' : catalogName;
+  // The DESIGN line of a bespoke order takes the design's identity; its
+  // fabric (the tailor's own, or another vendor's applied to it) is listed
+  // as a material of the design. Another vendor's fabric line is its own
+  // catalog product and shows as itself.
+  const isDesignItem = isBespokeDesignLine(item, index, orderType);
+  const productType = isDesignItem
+    ? 'bespoke'
+    : resolveProductType(item.product, orderType);
+  const name = isDesignItem ? design?.name || 'Custom outfit' : resolveName(item.product);
   const image = isDesignItem
     ? design?.design_images?.[0] || resolveImage(item.product)
     : resolveImage(item.product);
+  const designMaterials = isDesignItem
+    ? [tailorFabricChoice(item), ...itemChoices(item).filter((c) => c.kind === 'fabric')].filter(
+        (c): c is DesignChoice => !!c,
+      )
+    : undefined;
   return {
     name,
     image,
     // No stored colour on the order — use a neutral swatch placeholder.
     fabric: '#EAEAEA',
-    size: resolveSize(item),
-    qty: resolveQty(item),
+    // The design line is one garment; its fabric yards are a material, not a size.
+    size: isDesignItem ? '—' : resolveSize(item),
+    qty: isDesignItem ? 1 : resolveQty(item),
     price: item.total_price ?? item.pricing?.final ?? 0,
     productType,
     vendor: vendor?.business_name,
     vendorLogo: vendor?.business_logo_url,
     pricing: item.pricing,
-    choices: productType === 'custom' ? itemChoices(item) : undefined,
+    choices: isDesignItem
+      ? designMaterials
+      : productType === 'custom'
+        ? itemChoices(item)
+        : undefined,
     // The order-time measurement snapshot's set name ("Dad", "Mum"…) — shown
     // so the customer can confirm WHO each garment is being sewn for.
     measurementSetName: (item as any).body_profile?.set_name ?? undefined,
@@ -320,7 +365,7 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
     o.bespoke_design && typeof o.bespoke_design === 'object'
       ? o.bespoke_design
       : undefined;
-  const items = (o.items ?? []).map((it) => mapItem(it, o.type, design));
+  const items = (o.items ?? []).map((it, i) => mapItem(it, o.type, design, i));
   const activeShipment =
     o.shipments?.find((s) => s.tracking_number) ?? o.shipments?.[0];
   const designImages = (design?.design_images ?? []).filter(Boolean);
