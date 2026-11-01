@@ -8,8 +8,9 @@ import { MEASUREMENT_LABELS, MEASUREMENT_HINTS } from '@/app/profile/types';
 
 /**
  * A tailor's questions about the measurements an order is made to, and the
- * customer's reply. Corrected numbers replace this order's copy only; the
- * saved measurement set is left as it is.
+ * customer's reply. Corrected numbers replace this order's copy, and — when
+ * the customer leaves "Also update my saved measurements" ticked — the saved
+ * set the order was measured from, so the next order starts right.
  */
 
 interface Question {
@@ -44,25 +45,39 @@ function QuestionReply({ reference, q, onDone }: { reference: string; q: Questio
   );
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
+  // On by default: a number that was wrong for this order is usually wrong in
+  // the saved set too.
+  const [saveToProfile, setSaveToProfile] = useState(true);
   const unit = q.unit === 'inch' ? 'in' : 'cm';
 
-  const send = async () => {
+  const correctionsNow = () => {
     const corrections: Record<string, number> = {};
     for (const [k, v] of Object.entries(values)) {
       const n = Number(v);
       if (v !== '' && n > 0 && n !== Number(q.measurements[k])) corrections[k] = n;
     }
+    return corrections;
+  };
+  const hasChanges = Object.keys(correctionsNow()).length > 0;
+
+  const send = async () => {
+    const corrections = correctionsNow();
     if (!Object.keys(corrections).length && !note.trim()) {
       toast.error('Change a measurement or add a note for your tailor.');
       return;
     }
     setSending(true);
     try {
-      await api.post(
+      const res = await api.post(
         `/orders/${encodeURIComponent(reference)}/measurements/questions/${q._id}/answer`,
-        { measurements: corrections, message: note.trim() || undefined },
+        {
+          measurements: corrections,
+          message: note.trim() || undefined,
+          save_to_profile: hasChanges && saveToProfile,
+        },
       );
-      toast.success('Sent. Your tailor has your answer.');
+      const body = res?.data as { message?: string; data?: { message?: string } } | undefined;
+      toast.success(body?.message || body?.data?.message || 'Sent. Your tailor has your answer.');
       onDone();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -107,9 +122,29 @@ function QuestionReply({ reference, q, onDone }: { reference: string; q: Questio
         placeholder="A note for your tailor (optional), e.g. “Measured again with a tape, the waist is right.”"
         style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', color: INK, fontSize: '12.5px', resize: 'vertical' }}
       />
-      <p style={{ fontSize: '11px', color: MUTE, margin: 0, lineHeight: 1.5 }}>
-        Changes apply to this order only. Your saved measurements stay as they are; update them in My Measurement if they were wrong there too.
-      </p>
+      {hasChanges ? (
+        <label className="flex items-start" style={{ gap: '8px', cursor: 'pointer' }}>
+          <input
+            id={`save-to-profile-${q._id}`}
+            type="checkbox"
+            checked={saveToProfile}
+            onChange={(e) => setSaveToProfile(e.target.checked)}
+            style={{ marginTop: '2px', accentColor: 'var(--brand-fill)' }}
+          />
+          <span style={{ fontSize: '11.5px', color: INK, lineHeight: 1.5 }}>
+            Also update my saved measurements{q.set_name ? ` (“${q.set_name}”)` : ''}
+            <span style={{ display: 'block', fontSize: '10.5px', color: MUTE }}>
+              {saveToProfile
+                ? 'Your next orders will use the corrected numbers.'
+                : 'Only this order changes. Your saved measurements stay as they are.'}
+            </span>
+          </span>
+        </label>
+      ) : (
+        <p style={{ fontSize: '11px', color: MUTE, margin: 0, lineHeight: 1.5 }}>
+          Change a number above if it is wrong, or add a note to confirm it.
+        </p>
+      )}
       <button
         onClick={send}
         disabled={sending}
