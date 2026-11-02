@@ -17,7 +17,7 @@ const FABRIC_DESC: Record<string, string> = {
 };
 
 interface FabricCardProps {
-  fabric: FabricOption & { pricePerYard?: number; yards?: number };
+  fabric: FabricOption & { pricePerYard?: number };
   isSelected: boolean;
   onSelect: (id: string) => void;
 }
@@ -30,6 +30,19 @@ export const FabricCard: React.FC<FabricCardProps> = ({
   const { fmt: fmtMoney } = useCurrency();
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const { showPreview, handlers, wasLongPress } = useLongPress();
+
+  // The fabric's own price, never a whole-garment estimate: the tailor sets
+  // the yards in their quote.
+  const perYard = fabric.soldBy !== 'piece' && fabric.pricePerYard ? `${fmtMoney(fabric.pricePerYard)}/yd` : '';
+  const perPiece =
+    fabric.soldBy !== 'yard' && fabric.piecePrice && fabric.pieceYards
+      ? `${fmtMoney(fabric.piecePrice)} per ${fabric.pieceYards}-yd piece`
+      : '';
+  const unitPrice = perYard || perPiece || (fabric.pricePerYard ? `${fmtMoney(fabric.pricePerYard)}/yd` : '');
+  const fullPrice = [
+    perYard && `${fmtMoney(fabric.pricePerYard!)} per yard`,
+    perPiece,
+  ].filter(Boolean).join(' · ') || unitPrice;
 
   const handleClick = () => {
     if (wasLongPress()) return;
@@ -66,15 +79,9 @@ export const FabricCard: React.FC<FabricCardProps> = ({
           }}>
             {fabric.name}
           </p>
-          {fabric.pricePerYard ? (
-            <p style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-              {fmtMoney(fabric.pricePerYard)}/yd
-              {fabric.extraCost ? (
-                <span style={{ color: '#059669' }}>
-                  {' '}· ≈ {fmtMoney(fabric.extraCost)}
-                  {fabric.yards ? ` (${fabric.yards} yd)` : ''}
-                </span>
-              ) : null}
+          {unitPrice ? (
+            <p style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px', fontVariantNumeric: 'tabular-nums' }}>
+              {unitPrice}
             </p>
           ) : fabric.extraCost !== undefined ? (
             <p style={{ fontSize: '9px', fontWeight: 700, color: fabric.extraCost > 0 ? 'var(--text-primary)' : '#059669', marginTop: '2px' }}>
@@ -98,6 +105,7 @@ export const FabricCard: React.FC<FabricCardProps> = ({
             imageUrl: fabric.image,
             description: FABRIC_DESC[fabric.id] || `${fabric.name} — a quality fabric for your bespoke garment.`,
             extraCost: fabric.extraCost,
+            priceLine: fullPrice || undefined,
           }}
           anchorRef={btnRef}
         />

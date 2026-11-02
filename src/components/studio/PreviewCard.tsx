@@ -11,6 +11,8 @@ export interface PreviewInfo {
   description?: string;
   tags?: string[];
   extraCost?: number;
+  /** A ready-made price line ("₦5,000 per yard"); shown instead of extraCost. */
+  priceLine?: string;
 }
 
 // ─── Interaction hook: hover on desktop, long-press on mobile ──
@@ -167,7 +169,11 @@ export function PreviewCard({
             ))}
           </div>
         )}
-        {info.extraCost !== undefined && (
+        {info.priceLine ? (
+          <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+            {info.priceLine}
+          </p>
+        ) : info.extraCost !== undefined && (
           <p style={{ fontSize: '11px', fontWeight: 700, color: info.extraCost > 0 ? 'var(--brand-fill)' : '#059669' }}>
             {info.extraCost > 0 ? `+${fmtMoney(info.extraCost)}` : '✓ Included'}
           </p>
