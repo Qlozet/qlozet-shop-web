@@ -1092,11 +1092,20 @@ function BespokeContent() {
             <>
               {(() => {
                 // Designs that have been sent out for quotes.
-                const quotedDesigns = backendDesigns.filter((d) =>
-                  ['quoting', 'requesting_quotes', 'quoted', 'accepted', 'in_progress', 'in_production', 'completed'].includes(
-                    (d.status as string) || '',
-                  ),
-                );
+                // Prices waiting on top, then the latest activity: a quote
+                // sent or changed (quote_summary), else the design itself.
+                const activityAt = (d: (typeof backendDesigns)[number]) =>
+                  Math.max(
+                    new Date(d.quote_summary?.last_activity_at ?? 0).getTime(),
+                    new Date(d.updatedAt ?? d.createdAt ?? 0).getTime(),
+                  );
+                const quotedDesigns = backendDesigns
+                  .filter((d) =>
+                    ['quoting', 'requesting_quotes', 'quoted', 'accepted', 'in_progress', 'in_production', 'completed'].includes(
+                      (d.status as string) || '',
+                    ),
+                  )
+                  .sort((a, b) => Number(b.status === 'quoted') - Number(a.status === 'quoted') || activityAt(b) - activityAt(a));
                 const statusLabel: Record<string, { text: string; bg: string; color: string }> = {
                   requesting_quotes: { text: 'Awaiting quotes', bg: 'rgba(245,158,11,0.1)', color: '#D97706' },
                   quoting: { text: 'Awaiting quotes', bg: 'rgba(245,158,11,0.1)', color: '#D97706' },

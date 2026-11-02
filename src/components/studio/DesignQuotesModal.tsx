@@ -252,6 +252,32 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
     ['draft', 'requesting_quotes', 'quoted'].includes(designStatus) &&
     activeVendorIds.length < 5;
 
+  // What paying a quote costs now: the deposit (or the whole quote) plus any
+  // other vendor's fabric.
+  const payableFor = (q: BespokeQuote): number => {
+    const preview = (q as BespokeQuote & { payment_preview?: { deposit_amount: number } | null }).payment_preview;
+    return (preview ? preview.deposit_amount : quoteTotal(q)) + fabricSurchargeFor(q);
+  };
+  // The ones to decide on first: the accepted quote, then prices waiting
+  // (cheapest first), then changes asked for, then still to come; declined
+  // and expired last. Same group: the latest change first.
+  const STATUS_RANK: Record<string, number> = {
+    accepted: 0, submitted: 1, revision_requested: 2, draft: 3, pending: 3, declined: 4, rejected: 4, expired: 4,
+  };
+  const changedAt = (q: BespokeQuote) => {
+    const t = q as BespokeQuote & { submitted_at?: string; updatedAt?: string; createdAt?: string };
+    return new Date(t.submitted_at || t.updatedAt || t.createdAt || 0).getTime();
+  };
+  const sortedQuotes = [...quotes].sort((a, b) => {
+    const rank = (STATUS_RANK[a.status] ?? 3) - (STATUS_RANK[b.status] ?? 3);
+    if (rank) return rank;
+    if (a.status === 'submitted') {
+      const price = payableFor(a) - payableFor(b);
+      if (price) return price;
+    }
+    return changedAt(b) - changedAt(a);
+  });
+
   return createPortal(
     <div
       className='fixed inset-0 flex items-center justify-center'
@@ -357,13 +383,12 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
             </p>
           ) : (
             <div className='flex flex-col' style={{ gap: '12px' }}>
-              {quotes.map((q) => {
+              {sortedQuotes.map((q) => {
                 const submitted = q.status === 'submitted';
                 const accepted = q.status === 'accepted';
                 // Only a sent quote has a price; a draft is the tailor's
                 // working copy and may still change.
                 const priced = submitted || accepted;
-                const total = quoteTotal(q);
                 const fp = q.fabric_pricing;
                 const fabricSurcharge = fabricSurchargeFor(q);
                 // Deposit now, balance when the tailor shows the finished
@@ -373,7 +398,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                   | { deposit_percent: number; deposit_amount: number; balance_amount: number; deposit_covers_fabric?: boolean }
                   | null
                   | undefined;
-                const payable = (preview ? preview.deposit_amount : total) + fabricSurcharge;
+                const payable = payableFor(q);
+                const closed = q.status === 'declined' || q.status === 'rejected' || q.status === 'expired';
                 return (
                   <div
                     key={q._id}
@@ -381,6 +407,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                       border: `1.5px solid ${accepted ? '#064E3B' : 'var(--border-glass)'}`,
                       borderRadius: '16px', padding: '16px',
                       background: accepted ? 'rgba(6,78,59,0.04)' : 'var(--bg-surface-elevated)',
+                      opacity: closed ? 0.55 : 1,
                     }}
                   >
                     <div className='flex items-center justify-between' style={{ marginBottom: '10px' }}>
