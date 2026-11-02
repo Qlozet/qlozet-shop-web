@@ -562,8 +562,10 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
           className="flex items-center"
           style={{
             gap: '8px',
-            padding: '8px 12px',
-            borderRadius: '12px',
+            height: '42px',
+            boxSizing: 'border-box',
+            padding: '0 16px',
+            borderRadius: '100px',
             border: '1px solid var(--border-glass)',
             background: 'var(--bg-surface-elevated)',
           }}
@@ -579,7 +581,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
             }}
             placeholder="Search lace, silk, ankara, blue…"
             aria-label="Search fabrics"
-            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: '12px', color: 'var(--text-primary)' }}
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
           />
         </label>
 
