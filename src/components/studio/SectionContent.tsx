@@ -39,9 +39,15 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         selectedCollar={customization.selectedCollar}
         onSelectCollar={(id) => customization.setSelectedCollar(id)}
         selectedSkirt={customization.selectedSkirt}
-        onSelectSkirt={(id) => customization.setSelectedSkirt(id)}
+        onSelectSkirt={(id) => {
+          customization.setSelectedSkirt(id);
+          if (customization.clothingType === 'two_piece') customization.setSelectedTrouser(null);
+        }}
         selectedTrouser={customization.selectedTrouser}
-        onSelectTrouser={(id) => customization.setSelectedTrouser(id)}
+        onSelectTrouser={(id) => {
+          customization.setSelectedTrouser(id);
+          if (customization.clothingType === 'two_piece') customization.setSelectedSkirt(null);
+        }}
         selectedFullBody={customization.selectedFullBody}
         onSelectFullBody={(id) => customization.setSelectedFullBody(id)}
         product={product}

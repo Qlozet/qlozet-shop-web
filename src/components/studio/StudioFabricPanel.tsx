@@ -3,6 +3,7 @@
 // StudioFabricPanel — the bespoke studio's fabric section.
 //
 // A garment has a main fabric and can have a contrast fabric and a lining.
+// A two-piece set is one fabric for both pieces, or a top and a bottom slot.
 // Each one is a slot: pick a fabric from the whole catalogue (search, colour
 // filter, more pages), or let the tailor choose and buy it. Prices are a first
 // guide from a rough yardage; the tailor sets the exact yards in the quote.
@@ -20,7 +21,9 @@ import {
   FABRIC_COLORS,
   FABRIC_ROLE_HINT,
   FABRIC_ROLE_LABEL,
+  FABRIC_COLOR_NAMES,
   estimateYards,
+  slotLabel,
   fabricCostFor,
   type ExtraFabricRole,
   type FabricOption,
@@ -52,6 +55,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     setSelectedColor,
     extraFabrics,
     setExtraFabric,
+    setExtraFabricColor,
     removeExtraFabric,
     clothingType,
     photoFabrics,
@@ -143,23 +147,33 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
   // The main slot is either a fabric or just a colour, never both: picking
   // one clears the other.
   const pick = (r: Role, id: string | null) => {
+    // Only a two-piece set has a bottom slot (a photo match can name one).
+    if (r === 'bottom' && clothingType !== 'two_piece') return;
     if (r !== 'main') return setExtraFabric(r, id);
     setSelectedFabric(id);
     if (id) setSelectedColor(null);
   };
-  const pickColour = (hex: string | null) => {
+  const pickColour = (r: Role, hex: string | null) => {
+    if (r !== 'main') return setExtraFabricColor(r, hex);
     setSelectedColor(hex);
     if (hex) {
       setSelectedFabric(null);
       if (appliedFabric) setAppliedFabric(null);
     }
   };
+  const slotColour = (r: Role) =>
+    r === 'main' ? selectedColor : (extraFabrics.find((x) => x.role === r)?.color ?? null);
+  const colourName = (hex: string) => FABRIC_COLOR_NAMES[hex.toUpperCase()] ?? hex;
+
+  const isSet = clothingType === 'two_piece';
+  const hasBottom = extraFabrics.some((x) => x.role === 'bottom');
+  const nameOf = (r: Role) => slotLabel(r, clothingType, hasBottom);
 
   const slots: Role[] = ['main', ...extraFabrics.map((x) => x.role)];
   const canAdd = EXTRA_ROLES.filter((r) => !extraFabrics.some((x) => x.role === r));
   const activeId = slotFabricId(role);
   const active = fabricById(activeId);
-  const yards = estimateYards(clothingType, role);
+  const yards = estimateYards(clothingType, role, hasBottom);
   const mid = (yards.low + yards.high) / 2;
 
   // The customer's own fabric (from a fabric page) leads the main slot's list.
@@ -194,6 +208,51 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* ── A set: one fabric for both pieces, or one each ── */}
+      {isSet && (
+        <label
+          htmlFor="same-fabric-both"
+          className="flex items-center"
+          style={{
+            gap: '10px',
+            padding: '10px 12px',
+            borderRadius: '14px',
+            border: '1px solid var(--border-glass)',
+            background: 'var(--bg-surface-elevated)',
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Same fabric for top and bottom
+            </span>
+            <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              {hasBottom
+                ? 'Off: pick the top and the bottom separately.'
+                : inPhoto('bottom')
+                  ? 'Your photo’s bottom looks like a different fabric. Turn this off to pick it.'
+                  : 'Turn off to give the bottom its own fabric or colour.'}
+            </span>
+          </span>
+          <input
+            id="same-fabric-both"
+            type="checkbox"
+            role="switch"
+            checked={!hasBottom}
+            onChange={(e) => {
+              if (e.target.checked) {
+                removeExtraFabric('bottom');
+                setRole('main');
+              } else {
+                setExtraFabric('bottom', null);
+                setRole('bottom');
+              }
+            }}
+            style={{ width: '18px', height: '18px', accentColor: 'var(--brand-fill)', cursor: 'pointer' }}
+          />
+        </label>
+      )}
+
       {/* ── Slots ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <span style={label}>Fabrics</span>
@@ -223,16 +282,18 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
                 >
                   {f?.image ? (
                     <Image src={f.image} alt="" fill sizes="26px" style={{ objectFit: 'cover' }} />
+                  ) : slotColour(r) ? (
+                    <span style={{ position: 'absolute', inset: 0, background: slotColour(r)! }} />
                   ) : (
                     <Scissors size={13} style={{ color: 'var(--text-muted)' }} />
                   )}
                 </span>
                 <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                    {FABRIC_ROLE_LABEL[r]}
+                    {nameOf(r)}
                   </span>
                   <span style={{ fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {f ? f.name : 'Tailor chooses'}
+                    {f ? f.name : slotColour(r) ? `${colourName(slotColour(r)!)} · tailor sources` : 'Tailor chooses'}
                   </span>
                 </span>
               </button>
@@ -286,10 +347,12 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
       >
         <div className="flex items-center justify-between" style={{ gap: '8px' }}>
           <div>
-            <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{FABRIC_ROLE_LABEL[role]}</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{FABRIC_ROLE_HINT[role]}</p>
+            <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{nameOf(role)}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              {isSet && role === 'main' ? (hasBottom ? 'The top' : 'Both pieces') : FABRIC_ROLE_HINT[role]}
+            </p>
           </div>
-          {role !== 'main' && (
+          {role !== 'main' && role !== 'bottom' && (
             <button
               type="button"
               onClick={() => removeExtraFabric(role)}
@@ -401,7 +464,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
                       Matching set{st.vendor_name ? ` from ${st.vendor_name}` : ''}
                     </span>
                     <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {st.items.map((i) => FABRIC_ROLE_LABEL[i.role]).join(' + ')} · one seller, one delivery to your tailor
+                      {st.items.map((i) => nameOf(i.role)).join(' + ')} · one seller, one delivery to your tailor
                     </span>
                   </span>
                   <button
@@ -476,7 +539,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
       })()}
 
       {/* ── Or just a colour: the tailor sources the fabric ── */}
-      {role === 'main' && (
+      {(role === 'main' || role === 'bottom') && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={label}>{activeId ? 'Or just pick a colour' : 'Colour you want'}</span>
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
@@ -486,15 +549,15 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
           </p>
           <ColorPicker
             colors={FABRIC_COLORS}
-            selectedColor={activeId ? null : selectedColor}
-            onSelect={pickColour}
+            selectedColor={activeId ? null : slotColour(role)}
+            onSelect={(hex) => pickColour(role, hex)}
           />
         </div>
       )}
 
       {/* ── Picker ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <span style={label}>Choose a fabric for {FABRIC_ROLE_LABEL[role].toLowerCase()}</span>
+        <span style={label}>Choose a fabric for {nameOf(role).toLowerCase()}</span>
         <label
           className="flex items-center"
           style={{

@@ -55,7 +55,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedAccessories, selectedColor, referenceImages,
     expandedSection, setExpandedSection, designGender,
-    selectedFabric, appliedFabric,
+    selectedFabric, appliedFabric, extraFabrics, clothingType,
   } = customization;
 
   // The swatch shows what the main fabric slot holds: the fabric's photo,
@@ -68,6 +68,25 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
   const fabricName =
     appliedFabric?.name ||
     (selectedFabric ? fabrics.find((f) => f.id === selectedFabric)?.name : undefined);
+  const bottom = clothingType === 'two_piece' ? extraFabrics.find((x) => x.role === 'bottom') : undefined;
+  const bottomImage = bottom?.fabric ? fabrics.find((f) => f.id === bottom.fabric)?.image : undefined;
+  const half = (image: string | undefined, colour: string | null | undefined, side: 'left' | 'right') => (
+    <span
+      className="absolute overflow-hidden"
+      style={{
+        top: 0,
+        bottom: 0,
+        [side]: 0,
+        width: '50%',
+        background: image ? undefined : colour || 'var(--border-glass)',
+      }}
+    >
+      {image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      )}
+    </span>
+  );
 
   const { all: allStyles } = useStyleLibrary(designGender ?? undefined);
 
@@ -141,7 +160,14 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
           style={{ width: '64px', height: '64px', borderRadius: '50%', cursor: 'pointer', alignSelf: 'center' }}
           title={fabricName ? `Fabric: ${fabricName}` : 'Fabric & Color'}
         >
-          {fabricImage ? (
+          {bottom ? (
+            // Top on the left, bottom on the right.
+            <div className="absolute inset-[3px] rounded-full overflow-hidden">
+              {half(fabricImage, selectedColor, 'left')}
+              {half(bottomImage, bottom.color, 'right')}
+              <span className="absolute" style={{ top: 0, bottom: 0, left: '50%', width: '2px', marginLeft: '-1px', background: 'var(--bg-base)' }} />
+            </div>
+          ) : fabricImage ? (
             <div className="absolute inset-[3px] rounded-full overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={fabricImage} alt={fabricName ?? 'Fabric'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

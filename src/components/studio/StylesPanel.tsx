@@ -51,6 +51,16 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
+// ─── Piece header (a two-piece set's top and bottom) ─────────
+function PieceHeader({ title, note }: { title: string; note?: string }) {
+  return (
+    <div style={{ margin: '4px 0 14px', paddingBottom: '8px', borderBottom: '1px solid var(--border-glass)' }}>
+      <span style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{title}</span>
+      {note && <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{note}</span>}
+    </div>
+  );
+}
+
 // ─── Style Section ──────────────────────────────────────────
 function StyleSection({
   title,
@@ -219,6 +229,19 @@ export const StylesPanel: React.FC<StylesPanelProps> = ({
         <>
           <StyleSection title="Skirt Style" options={skirts} selectedId={selectedSkirt ?? null} onSelect={onSelectSkirt ?? (() => {})} isLoading={isLoading} fallback={[]} />
           <StyleSection title="Trouser Style" options={trousers} selectedId={selectedTrouser ?? null} onSelect={onSelectTrouser ?? (() => {})} isLoading={isLoading} fallback={[]} />
+        </>
+      )}
+
+      {/* TWO-PIECE SET: the top's styles, then the bottom's (skirt or trousers) */}
+      {clothingType === 'two_piece' && (
+        <>
+          <PieceHeader title="Top" />
+          <StyleSection title="Neckline" options={necklines} selectedId={selectedNeckline} onSelect={onSelectNeckline} isLoading={isLoading} fallback={NECKLINES} />
+          <StyleSection title="Sleeves" options={sleeves} selectedId={selectedSleeve} onSelect={onSelectSleeve} isLoading={isLoading} fallback={SLEEVES} />
+          <StyleSection title="Collar" options={collars} selectedId={selectedCollar ?? null} onSelect={onSelectCollar ?? (() => {})} isLoading={isLoading} fallback={[]} />
+          <PieceHeader title="Bottom" note="Pick a trouser or a skirt style" />
+          <StyleSection title="Trouser Style" options={trousers} selectedId={selectedTrouser ?? null} onSelect={onSelectTrouser ?? (() => {})} isLoading={isLoading} fallback={[]} />
+          <StyleSection title="Skirt Style" options={skirts} selectedId={selectedSkirt ?? null} onSelect={onSelectSkirt ?? (() => {})} isLoading={isLoading} fallback={[]} />
         </>
       )}
 

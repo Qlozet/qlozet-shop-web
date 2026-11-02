@@ -5,15 +5,19 @@ import { toast } from 'sonner';
 import { X, Save, Loader2, CheckCircle2 } from 'lucide-react';
 import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { enrichSelections } from '@/data/studio-options';
+import type { ExtraFabricRole } from '@/data/studio-options';
 
 export interface DesignSelections {
   neckline?: string | null;
   sleeve?: string | null;
   silhouette?: string | null;
   collar?: string | null;
+  skirt?: string | null;
+  trouser?: string | null;
+  full_body?: string | null;
   fabric?: string | null;
-  /** The garment's other fabrics (contrast, lining). */
-  extra_fabrics?: { role: 'contrast' | 'lining'; fabric: string | null }[];
+  /** The garment's other fabrics (contrast, lining, a set's bottom). */
+  extra_fabrics?: { role: ExtraFabricRole; fabric: string | null; color?: string | null }[];
   color?: string | null;
   fit?: string | null;
   /** Selected embellishment ids — enriched to {id, name} on save. */
