@@ -25,6 +25,8 @@ export interface BespokeDesign {
   quotes: BespokeQuote[];
   createdAt: string;
   updatedAt: string;
+  /** On the designs list: its quotes at a glance (newer backends only). */
+  quote_summary?: { priced: number; last_activity_at: string | null };
   // Allow snake_case fallback
   created_at?: string;
   updated_at?: string;
@@ -38,7 +40,7 @@ export interface BespokeQuote {
     business_name: string;
     logo_url?: string;
   };
-  status: 'pending' | 'draft' | 'submitted' | 'accepted' | 'rejected' | 'expired' | 'revision_requested';
+  status: 'pending' | 'draft' | 'submitted' | 'accepted' | 'declined' | 'rejected' | 'expired' | 'revision_requested';
   total_amount?: number;
   currency?: string;
   line_items?: QuoteLineItem[];
