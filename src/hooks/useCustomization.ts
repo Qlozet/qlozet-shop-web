@@ -15,6 +15,8 @@ import {
   type ClothingType,
   type DesignGender,
   type ExtraFabricRole,
+  type PhotoFabrics,
+  photoFabricsFrom,
   type StudioExtraFabric,
 } from '@/data/studio-options';
 
@@ -96,6 +98,9 @@ export interface CustomizationState {
   setExtraFabrics: (list: StudioExtraFabric[]) => void;
   /** As the design saves them: only real fabric ids, else "tailor chooses". */
   extraFabricsForSave: StudioExtraFabric[];
+  /** Fabrics read from the reference photo, with the closest in-stock ones. */
+  photoFabrics: PhotoFabrics | null;
+  setPhotoFabrics: (p: PhotoFabrics | null) => void;
   selectedColor: string | null;
   setSelectedColor: (id: string | null) => void;
   selectedAccessories: string[];
@@ -229,6 +234,7 @@ export function useCustomization({
     if (fabric?.id) setSelectedFabric(fabric.id);
   }, []);
   const [extraFabrics, setExtraFabrics] = useState<StudioExtraFabric[]>([]);
+  const [photoFabrics, setPhotoFabrics] = useState<PhotoFabrics | null>(null);
   const setExtraFabric = useCallback((role: ExtraFabricRole, fabricId: string | null) => {
     setExtraFabrics((prev) => {
       const next = prev.filter((x) => x.role !== role);
@@ -346,6 +352,8 @@ export function useCustomization({
           const jobId = analyzeRes.data?.data?.jobId ?? analyzeRes.data?.jobId;
           if (jobId) {
             const result = await pollJobStatus(jobId);
+            const fromPhoto = photoFabricsFrom(result);
+            if (fromPhoto) setPhotoFabrics(fromPhoto);
             if (result?.suggested_prompt) {
               setSuggestedPrompt(result.suggested_prompt);
               console.log('[Analyze] AI suggested prompt:', result.suggested_prompt);
@@ -828,6 +836,7 @@ export function useCustomization({
     selectedFabric, setSelectedFabric,
     appliedFabric, setAppliedFabric,
     extraFabrics, setExtraFabric, removeExtraFabric, setExtraFabrics, extraFabricsForSave,
+    photoFabrics, setPhotoFabrics,
     selectedColor, setSelectedColor,
     selectedAccessories, toggleAccessory, setSelectedAccessories,
     selectedAddons, selectAddon,

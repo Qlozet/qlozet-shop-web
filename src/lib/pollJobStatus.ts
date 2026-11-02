@@ -14,6 +14,10 @@ export interface JobResult {
   suggested_prompt?: string;
   matched_styles?: Record<string, { style_id?: string; style_name?: string }>;
   metadata?: Record<string, any>;
+  /** Fabrics read from the photo, and the closest in-stock fabrics. */
+  fabrics?: unknown;
+  fabric_matches?: unknown;
+  fabric_sets?: unknown;
   [key: string]: any;
 }
 
@@ -67,6 +71,10 @@ export async function pollJobStatus(
         suggested_prompt: raw.suggested_prompt,
         matched_styles: raw.matched_styles,
         metadata: raw.metadata,
+        // Fabrics read from the photo and the closest in-stock fabrics.
+        fabrics: raw.fabrics,
+        fabric_matches: raw.fabric_matches,
+        fabric_sets: raw.fabric_sets,
       };
     }
 

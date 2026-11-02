@@ -10,11 +10,11 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Search, Plus, X, Scissors, Loader2 } from 'lucide-react';
+import { Search, Plus, X, Scissors, Loader2, Camera } from 'lucide-react';
 import { FabricCard } from './FabricCard';
 import { ColorPicker } from './ColorPicker';
 import { type CustomizationState } from '@/hooks/useCustomization';
-import { searchFabrics, useFabricLibrary } from '@/hooks/useFabricLibrary';
+import { rememberFabrics, searchFabrics, useFabricLibrary } from '@/hooks/useFabricLibrary';
 import { useCurrency } from '@/context/CurrencyContext';
 import {
   FABRIC_COLORS,
@@ -24,6 +24,7 @@ import {
   fabricCostFor,
   type ExtraFabricRole,
   type FabricOption,
+  type PhotoFabricMatch,
 } from '@/data/studio-options';
 
 type Role = 'main' | ExtraFabricRole;
@@ -50,6 +51,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     setExtraFabric,
     removeExtraFabric,
     clothingType,
+    photoFabrics,
   } = customization;
 
   const [chosenRole, setRole] = useState<Role>('main');
@@ -112,6 +114,26 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     }
     return known.find((f) => f.id === id) ?? rows.find((f) => f.id === id);
   };
+
+  // Matches from the reference photo resolve like any picked fabric.
+  useEffect(() => {
+    if (!photoFabrics) return;
+    const all = [
+      ...Object.values(photoFabrics.matches).flat(),
+      ...photoFabrics.sets.flatMap((st) => st.items.map((i) => i.match)),
+    ].filter((m): m is PhotoFabricMatch => !!m);
+    rememberFabrics(
+      all.map((m) => ({
+        id: m.fabric_id,
+        name: m.name,
+        image: m.image ?? '',
+        pricePerYard: m.price_per_yard ?? undefined,
+        extraCost: m.price_per_yard ?? undefined,
+        vendorName: m.vendor_name ?? undefined,
+      })),
+    );
+  }, [photoFabrics]);
+  const inPhoto = (r: Role) => !!photoFabrics?.fabrics.some((f) => f.role === r);
 
   const slotFabricId = (r: Role) =>
     r === 'main' ? selectedFabric : (extraFabrics.find((x) => x.role === r)?.fabric ?? null);
@@ -214,7 +236,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
                 gap: '6px',
                 padding: '6px 12px',
                 borderRadius: '9999px',
-                border: '1px dashed var(--border-glass)',
+                border: inPhoto(r) ? '1px dashed var(--brand-fill)' : '1px dashed var(--border-glass)',
                 background: 'transparent',
                 cursor: 'pointer',
                 fontSize: '11px',
@@ -224,6 +246,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
               }}
             >
               <Plus size={13} /> {FABRIC_ROLE_LABEL[r]}
+              {inPhoto(r) && <span style={{ color: 'var(--brand-fill)' }}>· in your photo</span>}
             </button>
           ))}
         </div>
@@ -321,6 +344,121 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
           </button>
         )}
       </div>
+
+      {/* ── From your photo ── */}
+      {(() => {
+        const read = photoFabrics?.fabrics.find((f) => f.role === role);
+        if (!read) return null;
+        const matches = photoFabrics?.matches[role] ?? [];
+        const sets = role === 'main' ? (photoFabrics?.sets ?? []) : [];
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span className="flex items-center" style={{ ...label, gap: '6px' }}>
+              <Camera size={13} /> From your photo
+            </span>
+            <p className="flex items-center" style={{ gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {read.colors.map((c) => (
+                <span
+                  key={c.hex}
+                  title={c.name}
+                  style={{ width: '14px', height: '14px', borderRadius: '50%', background: c.hex, border: '1px solid rgba(0,0,0,0.12)', flexShrink: 0 }}
+                />
+              ))}
+              <span>{read.description}</span>
+            </p>
+            {sets.map((st) => {
+              const applied = st.items.every((i) => slotFabricId(i.role) === i.match.fabric_id);
+              return (
+                <div
+                  key={st.vendor_id}
+                  className="flex items-center"
+                  style={{ gap: '10px', padding: '10px', borderRadius: '14px', border: '1.5px solid var(--brand-fill)', background: 'var(--bg-surface-elevated)' }}
+                >
+                  <span className="flex" style={{ gap: '4px' }}>
+                    {st.items.map((i) => (
+                      <span key={i.role} className="relative overflow-hidden" style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--border-glass)' }}>
+                        {i.match.image && <Image src={i.match.image} alt="" fill sizes="32px" style={{ objectFit: 'cover' }} />}
+                      </span>
+                    ))}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Matching set{st.vendor_name ? ` from ${st.vendor_name}` : ''}
+                    </span>
+                    <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {st.items.map((i) => FABRIC_ROLE_LABEL[i.role]).join(' + ')} · one seller, one delivery to your tailor
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    disabled={applied}
+                    onClick={() => st.items.forEach((i) => pick(i.role, i.match.fabric_id))}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: applied ? 'var(--border-glass)' : 'var(--brand-fill)',
+                      color: applied ? 'var(--text-secondary)' : 'var(--brand-on-fill, #fff)',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: applied ? 'default' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {applied ? 'Using it' : 'Use set'}
+                  </button>
+                </div>
+              );
+            })}
+            {matches.length > 0 ? (
+              <div className="grid grid-cols-2" style={{ gap: '8px' }}>
+                {matches.map((m) => {
+                  const on = activeId === m.fabric_id;
+                  return (
+                    <button
+                      key={m.fabric_id}
+                      type="button"
+                      onClick={() => pick(role, m.fabric_id)}
+                      aria-pressed={on}
+                      className="flex text-left"
+                      style={{
+                        gap: '8px',
+                        padding: '8px',
+                        borderRadius: '14px',
+                        border: on ? '2px solid var(--brand-fill)' : '1.5px solid var(--border-glass)',
+                        background: 'var(--bg-surface-elevated)',
+                        cursor: 'pointer',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <span className="relative overflow-hidden" style={{ width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0, background: 'var(--border-glass)' }}>
+                        {m.image && <Image src={m.image} alt={m.name} fill sizes="40px" style={{ objectFit: 'cover' }} />}
+                      </span>
+                      <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {m.name}
+                        </span>
+                        {m.price_per_yard ? (
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(m.price_per_yard)}/yd</span>
+                        ) : null}
+                        {m.reasons[0] && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                            {m.reasons.slice(0, 2).join(' · ')}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Nothing in stock is close to this yet. Let the tailor choose it, or search below.
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Colour, when the tailor chooses the main fabric ── */}
       {role === 'main' && !activeId && (

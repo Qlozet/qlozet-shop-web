@@ -20,7 +20,7 @@ import { makeShareCard } from '@/lib/shareCard';
 import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { rememberFabrics, toFabricOption } from '@/hooks/useFabricLibrary';
 
-import { type ClothingType, type DesignGender, enrichSelections } from '@/data/studio-options';
+import { type ClothingType, type DesignGender, enrichSelections, photoFabricsFrom } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
 //  STUDIO CONTENT
@@ -44,6 +44,9 @@ function fetchTemplateUse(id: string): Promise<any> {
 type ReferenceAnalysis = {
   matched_styles?: Record<string, { style_id?: string; style_name?: string }>;
   suggested_prompt?: string;
+  fabrics?: unknown;
+  fabric_matches?: unknown;
+  fabric_sets?: unknown;
 };
 const analysisCache: Record<string, Promise<ReferenceAnalysis | null>> = {};
 function analyzeOnce(url: string): Promise<ReferenceAnalysis | null> {
@@ -564,6 +567,13 @@ function StudioContent() {
         detected.push(matched.collar.style_name);
       }
       if (result?.suggested_prompt) customization.setUserPrompt(result.suggested_prompt);
+      // The fabrics in the photo: shown as "From your photo" in Fabric.
+      const fromPhoto = photoFabricsFrom(result);
+      if (fromPhoto) {
+        customization.setPhotoFabrics(fromPhoto);
+        const main = fromPhoto.fabrics.find((f) => f.role === 'main');
+        if (main?.description) detected.push(main.description);
+      }
       setDetectedStyles(detected);
       setAnalyzeStatus(null);
       // Show what was found briefly, then get out of the way.

@@ -52,6 +52,49 @@ export interface FabricOption {
   vendorName?: string;
 }
 
+/** Fabrics read from a reference photo, with the closest in-stock fabrics. */
+export interface PhotoFabricMatch {
+  fabric_id: string;
+  name: string;
+  image: string | null;
+  vendor_id: string | null;
+  vendor_name: string | null;
+  price_per_yard: number | null;
+  score: number;
+  reasons: string[];
+}
+export interface PhotoFabrics {
+  fabrics: {
+    role: 'main' | ExtraFabricRole;
+    colors: { name: string; hex: string }[];
+    fabric_type: string;
+    pattern: string;
+    description: string;
+  }[];
+  matches: Partial<Record<'main' | ExtraFabricRole, PhotoFabricMatch[]>>;
+  sets: {
+    vendor_id: string;
+    vendor_name: string | null;
+    score: number;
+    items: { role: 'main' | ExtraFabricRole; match: PhotoFabricMatch }[];
+  }[];
+}
+
+/** A photo's analysis result as PhotoFabrics, or null when it found none. */
+export function photoFabricsFrom(result: {
+  fabrics?: unknown;
+  fabric_matches?: unknown;
+  fabric_sets?: unknown;
+} | null | undefined): PhotoFabrics | null {
+  const fabrics = Array.isArray(result?.fabrics) ? (result!.fabrics as PhotoFabrics['fabrics']) : [];
+  if (!fabrics.length) return null;
+  return {
+    fabrics,
+    matches: (result?.fabric_matches ?? {}) as PhotoFabrics['matches'],
+    sets: Array.isArray(result?.fabric_sets) ? (result!.fabric_sets as PhotoFabrics['sets']) : [],
+  };
+}
+
 /** The garment's other fabrics, beside the main one (backend quote-fabric.ts). */
 export type ExtraFabricRole = 'contrast' | 'lining';
 export interface StudioExtraFabric {
