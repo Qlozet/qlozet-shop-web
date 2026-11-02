@@ -147,9 +147,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const fabricBusinessId = fabricDoc?.business
     ? String((fabricDoc.business as any)?._id ?? fabricDoc.business)
     : null;
-  // The garment's other fabrics (contrast, lining) are priced the same way,
+  // The garment's other fabrics (contrast, lining, a set's bottom) are priced the same way,
   // one entry each in q.extra_fabric_pricing.
-  const ROLE_NAME: Record<string, string> = { contrast: 'Contrast fabric', lining: 'Lining' };
+  const ROLE_NAME: Record<string, string> = { contrast: 'Contrast fabric', lining: 'Lining', bottom: 'Bottom fabric' };
   const designExtras = (((designObj as { extra_fabrics?: unknown } | undefined)?.extra_fabrics ?? []) as {
     role: string;
     fabric?: { name?: string } | null;

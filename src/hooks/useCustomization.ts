@@ -95,6 +95,8 @@ export interface CustomizationState {
   extraFabrics: StudioExtraFabric[];
   /** Add the role, or change its fabric (null = the tailor chooses). */
   setExtraFabric: (role: ExtraFabricRole, fabricId: string | null) => void;
+  /** Just a colour for this slot: the tailor sources the fabric. */
+  setExtraFabricColor: (role: ExtraFabricRole, color: string | null) => void;
   removeExtraFabric: (role: ExtraFabricRole) => void;
   setExtraFabrics: (list: StudioExtraFabric[]) => void;
   /** As the design saves them: only real fabric ids, else "tailor chooses". */
@@ -240,7 +242,14 @@ export function useCustomization({
     setExtraFabrics((prev) => {
       const next = prev.filter((x) => x.role !== role);
       // Contrast before lining, whatever order they were added in.
-      return [...next, { role, fabric: fabricId }].sort((a, b) => a.role.localeCompare(b.role));
+      return [...next, { role, fabric: fabricId, color: null }].sort((a, b) => a.role.localeCompare(b.role));
+    });
+  }, []);
+  // A slot is a fabric or a colour, never both.
+  const setExtraFabricColor = useCallback((role: ExtraFabricRole, color: string | null) => {
+    setExtraFabrics((prev) => {
+      const next = prev.filter((x) => x.role !== role);
+      return [...next, { role, fabric: null, color }].sort((a, b) => a.role.localeCompare(b.role));
     });
   }, []);
   const removeExtraFabric = useCallback((role: ExtraFabricRole) => {
@@ -251,6 +260,7 @@ export function useCustomization({
       extraFabrics.map((x) => ({
         role: x.role,
         fabric: x.fabric && /^[0-9a-f]{24}$/i.test(x.fabric) ? x.fabric : null,
+        color: x.fabric ? null : (x.color ?? null),
       })),
     [extraFabrics],
   );
@@ -491,7 +501,7 @@ export function useCustomization({
     // ── 6. Build garment type string ────────────────────────────
     const genderPrefix = designGender === 'female' ? 'female' : 'male';
     const garmentType = clothingType
-      ? `${genderPrefix}_${clothingType}`
+      ? `${genderPrefix}_${clothingType === 'two_piece' ? 'two_piece_set' : clothingType}`
       : genderPrefix;
 
     // ── 7. Assemble full config (must match GarmentConfigDto) ────
@@ -548,9 +558,34 @@ export function useCustomization({
     const colourName = selectedColor
       ? FABRIC_COLOR_NAMES[selectedColor.toUpperCase()] ?? selectedColor
       : null;
+    // A two-piece set: say so, and say what each piece is made of when the
+    // bottom differs. Only the main fabric goes as an image, so the bottom's
+    // fabric is described in words.
+    const isSet = clothingType === 'two_piece';
+    const bottomWord = selectedSkirt ? 'skirt' : 'trousers';
+    const bottom = isSet ? extraFabrics.find((x) => x.role === 'bottom') : undefined;
+    const bottomFabric = bottom?.fabric ? fabricLibrary.find((f) => f.id === bottom.fabric) : undefined;
+    const bottomColour = bottom?.color
+      ? FABRIC_COLOR_NAMES[bottom.color.toUpperCase()] ?? bottom.color
+      : null;
+    const bottomWords = bottomFabric
+      ? [bottomFabric.name, (bottomFabric.colors ?? []).map((c) => c.name).filter(Boolean).join(' and ')]
+          .filter(Boolean)
+          .join(', ')
+      : bottomColour;
     const promptWithColour = [
       userPrompt.trim(),
-      !fabricImageUrl && colourName ? `Make the main fabric ${colourName}.` : '',
+      isSet ? `A two-piece set: a separate top and ${bottomWord}.` : '',
+      !fabricImageUrl && colourName
+        ? bottom
+          ? `Make the top ${colourName}.`
+          : `Make the main fabric ${colourName}.`
+        : '',
+      bottom
+        ? bottomWords
+          ? `The ${bottomWord} use a different fabric from the top: ${bottomWords}.`
+          : `The ${bottomWord} use a different fabric from the top.`
+        : '',
     ].filter(Boolean).join(' ');
 
     // Send the picked fabric (and any config reference images) as ACTUAL
@@ -606,7 +641,7 @@ export function useCustomization({
     isGenerating, mode, designGender, clothingType, userPrompt,
     selectedSilhouette, selectedNeckline, selectedSleeve, selectedCollar,
     selectedSkirt, selectedTrouser, selectedFullBody,
-    selectedFabric, selectedColor, selectedAccessories, selectedFit,
+    selectedFabric, selectedColor, selectedAccessories, selectedFit, extraFabrics,
     referenceImages, styleLibrary, fabricLibrary, deductTokens, generationCost,
   ]);
 
@@ -704,8 +739,11 @@ export function useCustomization({
       suits: 'suit', kaftan: 'kaftan', agbada: 'agbada',
     };
     const byType: Record<string, string> = { top: 'top', bottom: 'trousers', full_body: 'outfit' };
+    if (clothingType === 'two_piece') {
+      return `${who} two-piece set (top and ${selectedSkirt ? 'skirt' : 'trousers'})`;
+    }
     return `${who} ${named[raw] ?? (clothingType ? byType[clothingType] : 'outfit')}`;
-  }, [designGender, clothingType, initialGarment]);
+  }, [designGender, clothingType, initialGarment, selectedSkirt]);
 
   const [isRefining, setIsRefining] = useState(false);
   const refineCurrent = useCallback(async (instruction: string) => {
@@ -797,6 +835,14 @@ export function useCustomization({
       // A skirt design gets a skirt style, trousers get a trouser style.
       if (raw === 'skirts') setSelectedSkirt(of('skirt'));
       else setSelectedTrouser(of('trouser'));
+    } else if (clothingType === 'two_piece') {
+      setSelectedNeckline(of('neckline'));
+      setSelectedSleeve(of('sleeve'));
+      setSelectedCollar(of('collar'));
+      // Women's sets are as often a skirt as trousers; men's are trousers.
+      const skirt = designGender === 'female' && Math.random() < 0.5 ? of('skirt') : null;
+      setSelectedSkirt(skirt);
+      setSelectedTrouser(skirt ? null : of('trouser'));
     } else {
       setSelectedFullBody(of('full_body'));
       setSelectedNeckline(of('neckline'));
@@ -826,7 +872,11 @@ export function useCustomization({
       styleName(selectedTrouser),
       fabricName,
       ...extraFabrics.map((x) => {
-        const name = x.fabric ? fabricLibrary.find((f) => f.id === x.fabric)?.name : undefined;
+        const name = x.fabric
+          ? fabricLibrary.find((f) => f.id === x.fabric)?.name
+          : x.color
+            ? FABRIC_COLOR_NAMES[x.color.toUpperCase()] ?? x.color
+            : undefined;
         return name ? `${name} (${x.role})` : undefined;
       }),
       FIT_OPTIONS.find((f) => f.id === selectedFit)?.label,
@@ -850,7 +900,7 @@ export function useCustomization({
     selectedFullBody, setSelectedFullBody,
     selectedFabric, setSelectedFabric,
     appliedFabric, setAppliedFabric,
-    extraFabrics, setExtraFabric, removeExtraFabric, setExtraFabrics, extraFabricsForSave,
+    extraFabrics, setExtraFabric, setExtraFabricColor, removeExtraFabric, setExtraFabrics, extraFabricsForSave,
     photoFabrics, setPhotoFabrics,
     selectedColor, setSelectedColor,
     selectedAccessories, toggleAccessory, setSelectedAccessories,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
+import type { ExtraFabricRole } from '@/data/studio-options';
 
 // ─── Types ───────────────────────────────────────────────────
 export type DesignStatus = 'draft' | 'quoting' | 'quoted' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
@@ -96,19 +97,19 @@ export interface CreateDesignPayload {
   reference_images?: string[];
   fabric_id?: string;
   /** The garment's other fabrics; fabric_id null = the tailor chooses. [] removes them. */
-  extra_fabrics?: { role: 'contrast' | 'lining'; fabric_id: string | null }[];
+  extra_fabrics?: { role: ExtraFabricRole; fabric_id: string | null; color?: string | null }[];
   description?: string;
   measurement_id?: string;
 }
 
 /** Studio extra fabrics as the design API takes them. */
 export const extraFabricsPayload = (
-  list?: { role: 'contrast' | 'lining'; fabric: string | null }[] | null,
+  list?: { role: ExtraFabricRole; fabric: string | null; color?: string | null }[] | null,
 ): CreateDesignPayload['extra_fabrics'] =>
-  (list ?? []).map((x) => ({
-    role: x.role,
-    fabric_id: x.fabric && /^[0-9a-f]{24}$/i.test(x.fabric) ? x.fabric : null,
-  }));
+  (list ?? []).map((x) => {
+    const fabric_id = x.fabric && /^[0-9a-f]{24}$/i.test(x.fabric) ? x.fabric : null;
+    return { role: x.role, fabric_id, color: fabric_id ? null : (x.color ?? null) };
+  });
 
 // The backend service returns { message, data: design } and the global
 // response interceptor wraps that AGAIN, so the design object actually

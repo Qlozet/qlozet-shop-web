@@ -17,7 +17,7 @@ export interface StyleOption {
 }
 
 // ── Clothing Types ──────────────────────────────────────────────
-export type ClothingType = 'top' | 'bottom' | 'full_body';
+export type ClothingType = 'top' | 'bottom' | 'full_body' | 'two_piece';
 export type DesignGender = 'male' | 'female' | 'unisex';
 
 export interface ClothingTypeOption {
@@ -31,6 +31,7 @@ export const CLOTHING_TYPES: ClothingTypeOption[] = [
   { id: 'top', label: 'Top', description: 'Blouse, Shirt, Crop Top', emoji: '👕' },
   { id: 'bottom', label: 'Bottom', description: 'Skirt, Trouser, Pants', emoji: '👖' },
   { id: 'full_body', label: 'Full Body', description: 'Dress, Kaftan, Agbada, Jumpsuit', emoji: '👗' },
+  { id: 'two_piece', label: 'Two-piece set', description: 'A top with trousers or a skirt', emoji: '👔' },
 ];
 
 
@@ -96,22 +97,37 @@ export function photoFabricsFrom(result: {
 }
 
 /** The garment's other fabrics, beside the main one (backend quote-fabric.ts). */
-export type ExtraFabricRole = 'contrast' | 'lining';
+/** bottom: a two-piece set's trousers or skirt in a different fabric from the top. */
+export type ExtraFabricRole = 'contrast' | 'lining' | 'bottom';
 export interface StudioExtraFabric {
   role: ExtraFabricRole;
   /** A fabric product id, or null: the tailor chooses it. */
   fabric: string | null;
+  /** The colour wanted when the tailor chooses the fabric. */
+  color?: string | null;
 }
 export const FABRIC_ROLE_LABEL: Record<'main' | ExtraFabricRole, string> = {
   main: 'Main fabric',
   contrast: 'Contrast',
   lining: 'Lining',
+  bottom: 'Bottom',
 };
 export const FABRIC_ROLE_HINT: Record<'main' | ExtraFabricRole, string> = {
   main: 'Most of the garment',
   contrast: 'Panels, yoke, cuffs or trim',
   lining: 'Inside layer',
+  bottom: 'Trousers or skirt',
 };
+
+/** What a slot is called: a set's main fabric is the top's (or both pieces'). */
+export function slotLabel(
+  role: 'main' | ExtraFabricRole,
+  clothingType: string | null | undefined,
+  hasBottom: boolean,
+): string {
+  if (role === 'main' && clothingType === 'two_piece') return hasBottom ? 'Top' : 'Top & bottom';
+  return FABRIC_ROLE_LABEL[role];
+}
 
 /**
  * Rough yards for a first price, by garment and role. The tailor sets the
@@ -120,9 +136,13 @@ export const FABRIC_ROLE_HINT: Record<'main' | ExtraFabricRole, string> = {
 export function estimateYards(
   clothingType: string | null | undefined,
   role: 'main' | ExtraFabricRole,
+  hasBottom = false,
 ): { low: number; high: number } {
-  const full = clothingType === 'full_body';
+  const full = clothingType === 'full_body' || clothingType === 'two_piece';
   if (role === 'contrast') return { low: 1, high: 2 };
+  if (role === 'bottom') return { low: 2, high: 3 };
+  // A set's top alone needs about what any top needs.
+  if (role === 'main' && clothingType === 'two_piece' && hasBottom) return { low: 2, high: 3 };
   if (role === 'lining') return full ? { low: 2, high: 3 } : { low: 1, high: 2 };
   return full ? { low: 4, high: 6 } : { low: 2, high: 3 };
 }
@@ -237,22 +257,22 @@ export const ACCESSORIES: AccessoryOption[] = [
   },
   {
     id: 'a1', name: 'Statement Buttons', emoji: '🔘',
-    appliesTo: ['top', 'full_body'],
+    appliesTo: ['top', 'full_body', 'two_piece'],
     description: 'Premium gold-toned or covered buttons that finish collars, cuffs, and front closures.',
   },
   {
     id: 'a2', name: 'Waist Belt / Sash', emoji: '🪢',
-    appliesTo: ['full_body'],
+    appliesTo: ['full_body', 'two_piece'],
     description: 'A matching structured belt or soft sash to cinch the silhouette and add definition.',
   },
   {
     id: 'a5', name: 'Sequin Detail', emoji: '✨',
-    appliesTo: ['top', 'full_body'], genders: ['female'],
+    appliesTo: ['top', 'full_body', 'two_piece'], genders: ['female'],
     description: 'Sparkling sequin detailing for evening and event wear — adds glamour and light-catching movement.',
   },
   {
     id: 'a6', name: 'Lace Trim', emoji: '🎀',
-    appliesTo: ['top', 'full_body'], genders: ['female'],
+    appliesTo: ['top', 'full_body', 'two_piece'], genders: ['female'],
     description: 'Delicate lace trim along hems, necklines, or sleeves for a feminine and elegant finish.',
   },
   {

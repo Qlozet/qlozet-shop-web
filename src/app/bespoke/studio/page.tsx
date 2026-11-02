@@ -21,6 +21,7 @@ import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from
 import { rememberFabrics, toFabricOption } from '@/hooks/useFabricLibrary';
 
 import { type ClothingType, type DesignGender, enrichSelections, photoFabricsFrom } from '@/data/studio-options';
+import type { ExtraFabricRole } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
 //  STUDIO CONTENT
@@ -76,7 +77,7 @@ function StudioContent() {
   // Map garment categories from the modal to clothing types
   const typeMap: Record<string, ClothingType> = {
     tops: 'top', shirts: 'top', blouses: 'top',
-    dresses: 'full_body', jumpsuits: 'full_body', kaftan: 'full_body', agbada: 'full_body', sets: 'full_body', suits: 'full_body',
+    dresses: 'full_body', jumpsuits: 'full_body', kaftan: 'full_body', agbada: 'full_body', sets: 'two_piece', suits: 'two_piece',
     skirts: 'bottom', pants: 'bottom', trousers: 'bottom',
   };
   const clothingType = rawType ? (typeMap[rawType.toLowerCase()] || undefined) : undefined;
@@ -197,11 +198,12 @@ function StudioContent() {
           if (populated.length) rememberFabrics(populated.map((f) => toFabricOption(f as never)));
           if (Array.isArray(design?.extra_fabrics)) {
             customization.setExtraFabrics(
-              (design.extra_fabrics as { role: 'contrast' | 'lining'; fabric?: string | { _id?: string } | null }[])
-                .filter((x) => x?.role === 'contrast' || x?.role === 'lining')
+              (design.extra_fabrics as { role: ExtraFabricRole; fabric?: string | { _id?: string } | null; color?: string | null }[])
+                .filter((x) => x?.role === 'contrast' || x?.role === 'lining' || x?.role === 'bottom')
                 .map((x) => ({
                   role: x.role,
                   fabric: typeof x.fabric === 'string' ? x.fabric : (x.fabric?._id ?? null),
+                  color: x.color ?? null,
                 })),
             );
           }
@@ -223,6 +225,9 @@ function StudioContent() {
               if (sel.sleeve) customization.setSelectedSleeve(sel.sleeve);
               if (sel.silhouette) customization.setSelectedSilhouette(sel.silhouette);
               if (sel.collar) customization.setSelectedCollar(sel.collar);
+              if (typeof sel.skirt === 'string') customization.setSelectedSkirt(sel.skirt);
+              if (typeof sel.trouser === 'string') customization.setSelectedTrouser(sel.trouser);
+              if (typeof sel.full_body === 'string') customization.setSelectedFullBody(sel.full_body);
               if (sel.fabric) customization.setSelectedFabric(sel.fabric);
               // Older designs saved a default colour beside the fabric; the fabric wins.
               if (sel.color && !sel.fabric) customization.setSelectedColor(sel.color);
@@ -334,7 +339,7 @@ function StudioContent() {
   const buildPayload = useCallback(
     (name: string): CreateDesignPayload => {
       const categoryMap: Record<string, string> = {
-        top: 'Tops', full_body: 'Dresses', bottom: 'Pants',
+        top: 'Tops', full_body: 'Dresses', bottom: 'Pants', two_piece: 'Sets',
       };
       // Studio fabrics are REAL fabric products (fabric library / applied
       // "use my fabric") — persist the id so the design, and later the order,
@@ -365,6 +370,9 @@ function StudioContent() {
             sleeve: customization.selectedSleeve,
             silhouette: customization.selectedSilhouette,
             collar: customization.selectedCollar,
+            skirt: customization.selectedSkirt ?? undefined,
+            trouser: customization.selectedTrouser ?? undefined,
+            full_body: customization.selectedFullBody ?? undefined,
             fabric: customization.selectedFabric,
             extra_fabrics: customization.extraFabricsForSave,
             color: customization.selectedColor,
@@ -697,7 +705,7 @@ function StudioContent() {
         designName={customization.designName}
         category={
           customization.clothingType
-            ? ({ top: 'Tops', full_body: 'Dresses', bottom: 'Pants' } as Record<string, string>)[
+            ? ({ top: 'Tops', full_body: 'Dresses', bottom: 'Pants', two_piece: 'Sets' } as Record<string, string>)[
                 customization.clothingType
               ] || customization.clothingType
             : 'Design'
@@ -711,6 +719,9 @@ function StudioContent() {
           sleeve: customization.selectedSleeve,
           silhouette: customization.selectedSilhouette,
           collar: customization.selectedCollar,
+          skirt: customization.selectedSkirt ?? undefined,
+          trouser: customization.selectedTrouser ?? undefined,
+          full_body: customization.selectedFullBody ?? undefined,
           fabric: customization.selectedFabric,
           extra_fabrics: customization.extraFabricsForSave,
           color: customization.selectedColor,
