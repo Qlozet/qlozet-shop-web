@@ -224,7 +224,8 @@ function StudioContent() {
               if (sel.silhouette) customization.setSelectedSilhouette(sel.silhouette);
               if (sel.collar) customization.setSelectedCollar(sel.collar);
               if (sel.fabric) customization.setSelectedFabric(sel.fabric);
-              if (sel.color) customization.setSelectedColor(sel.color);
+              // Older designs saved a default colour beside the fabric; the fabric wins.
+              if (sel.color && !sel.fabric) customization.setSelectedColor(sel.color);
               if (sel.fit) customization.setSelectedFit(sel.fit);
               // Embellishments are saved enriched ({id, name, emoji}[]) —
               // restore the raw ids the panel selects on.

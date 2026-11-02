@@ -47,6 +47,9 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     selectedFabric,
     setSelectedFabric,
     appliedFabric,
+    setAppliedFabric,
+    selectedColor,
+    setSelectedColor,
     extraFabrics,
     setExtraFabric,
     removeExtraFabric,
@@ -137,8 +140,20 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
 
   const slotFabricId = (r: Role) =>
     r === 'main' ? selectedFabric : (extraFabrics.find((x) => x.role === r)?.fabric ?? null);
-  const pick = (r: Role, id: string | null) =>
-    r === 'main' ? setSelectedFabric(id) : setExtraFabric(r, id);
+  // The main slot is either a fabric or just a colour, never both: picking
+  // one clears the other.
+  const pick = (r: Role, id: string | null) => {
+    if (r !== 'main') return setExtraFabric(r, id);
+    setSelectedFabric(id);
+    if (id) setSelectedColor(null);
+  };
+  const pickColour = (hex: string | null) => {
+    setSelectedColor(hex);
+    if (hex) {
+      setSelectedFabric(null);
+      if (appliedFabric) setAppliedFabric(null);
+    }
+  };
 
   const slots: Role[] = ['main', ...extraFabrics.map((x) => x.role)];
   const canAdd = EXTRA_ROLES.filter((r) => !extraFabrics.some((x) => x.role === r));
@@ -460,14 +475,19 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
         );
       })()}
 
-      {/* ── Colour, when the tailor chooses the main fabric ── */}
-      {role === 'main' && !activeId && (
+      {/* ── Or just a colour: the tailor sources the fabric ── */}
+      {role === 'main' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={label}>Colour you want</span>
+          <span style={label}>{activeId ? 'Or just pick a colour' : 'Colour you want'}</span>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            {activeId
+              ? 'Picking a colour swaps the fabric above for one your tailor sources.'
+              : 'Your tailor finds a fabric in this colour.'}
+          </p>
           <ColorPicker
             colors={FABRIC_COLORS}
-            selectedColor={customization.selectedColor}
-            onSelect={customization.setSelectedColor}
+            selectedColor={activeId ? null : selectedColor}
+            onSelect={pickColour}
           />
         </div>
       )}

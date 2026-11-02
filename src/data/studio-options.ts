@@ -204,6 +204,14 @@ export const FABRIC_COLORS = [
   '#FF6347', '#4B0082', '#E8D5B7', '#1A1A1A',
 ];
 
+/** Plain names for the colour picker, so the image generator gets words, not hex. */
+export const FABRIC_COLOR_NAMES: Record<string, string> = {
+  '#1B2A4A': 'navy blue', '#8B4513': 'saddle brown', '#2C1810': 'dark chocolate brown',
+  '#D4AF37': 'metallic gold', '#800020': 'burgundy', '#F5F0E8': 'off-white',
+  '#3B5998': 'royal blue', '#228B22': 'forest green', '#FF6347': 'tomato red',
+  '#4B0082': 'indigo purple', '#E8D5B7': 'beige', '#1A1A1A': 'black',
+};
+
 // ── Embellishments ──────────────────────────────────────────────
 // Finishing work the TAILOR applies to the garment (not standalone accessory
 // products — those are shopped normally). Selections ride on the design so the

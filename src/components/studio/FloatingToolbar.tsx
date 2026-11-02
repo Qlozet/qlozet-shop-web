@@ -7,6 +7,7 @@ import { ACCESSORIES } from '@/data/studio-options';
 import { ToolbarTooltip } from './ToolbarTooltip';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { useStyleLibrary, type PlatformStyle } from '@/hooks/useStyleLibrary';
+import { useFabricLibrary } from '@/hooks/useFabricLibrary';
 
 // ─── Toolbar style chip ────────────────────────────────────
 function StyleChip({
@@ -54,7 +55,19 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedAccessories, selectedColor, referenceImages,
     expandedSection, setExpandedSection, designGender,
+    selectedFabric, appliedFabric,
   } = customization;
+
+  // The swatch shows what the main fabric slot holds: the fabric's photo,
+  // else the colour, else a palette icon.
+  const { fabrics } = useFabricLibrary();
+  const fabricImage =
+    appliedFabric?.image ||
+    (selectedFabric ? fabrics.find((f) => f.id === selectedFabric)?.image : undefined) ||
+    undefined;
+  const fabricName =
+    appliedFabric?.name ||
+    (selectedFabric ? fabrics.find((f) => f.id === selectedFabric)?.name : undefined);
 
   const { all: allStyles } = useStyleLibrary(designGender ?? undefined);
 
@@ -126,9 +139,14 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
           onClick={() => setExpandedSection('fabric')}
           className="group relative flex items-center justify-center transition-all active:scale-95 bg-[var(--bg-base)] shadow-sm border border-[var(--border-glass)]"
           style={{ width: '64px', height: '64px', borderRadius: '50%', cursor: 'pointer', alignSelf: 'center' }}
-          title="Color"
+          title={fabricName ? `Fabric: ${fabricName}` : 'Fabric & Color'}
         >
-          {selectedColor ? (
+          {fabricImage ? (
+            <div className="absolute inset-[3px] rounded-full overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={fabricImage} alt={fabricName ?? 'Fabric'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          ) : selectedColor ? (
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: selectedColor, border: '3px solid var(--bg-base)', boxShadow: '0 0 0 1px rgba(0,0,0,0.1)' }} />
           ) : (
             <Palette size={26} color="var(--text-secondary)" strokeWidth={1.5} />

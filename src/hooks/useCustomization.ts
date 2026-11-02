@@ -18,6 +18,7 @@ import {
   type PhotoFabrics,
   photoFabricsFrom,
   type StudioExtraFabric,
+  FABRIC_COLOR_NAMES,
 } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
@@ -253,7 +254,7 @@ export function useCustomization({
       })),
     [extraFabrics],
   );
-  const [selectedColor, setSelectedColor] = useState<string | null>('#1B2A4A');
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
   const [measurementSetName, setMeasurementSetName] = useState<string | null>(null);
@@ -542,6 +543,16 @@ export function useCustomization({
     console.log('[Generate] Reference images:', referenceImages);
     console.log('[Generate] User prompt:', userPrompt);
 
+    // With no fabric picked, the colour the customer chose is the only hint
+    // about the cloth, so it goes in the prompt.
+    const colourName = selectedColor
+      ? FABRIC_COLOR_NAMES[selectedColor.toUpperCase()] ?? selectedColor
+      : null;
+    const promptWithColour = [
+      userPrompt.trim(),
+      !fabricImageUrl && colourName ? `Make the main fabric ${colourName}.` : '',
+    ].filter(Boolean).join(' ');
+
     // Send the picked fabric (and any config reference images) as ACTUAL
     // reference images too — otherwise the generator only sees the customer's
     // uploaded references and ignores the fabric.
@@ -552,7 +563,7 @@ export function useCustomization({
     try {
       const genRes = await api.post('/measurements/generate-outfit', {
         config,
-        userPrompt: userPrompt.trim() || undefined,
+        userPrompt: promptWithColour || undefined,
         reference_image_urls: combinedReferenceUrls.length > 0 ? combinedReferenceUrls : undefined,
       });
 
@@ -792,7 +803,11 @@ export function useCustomization({
       setSelectedSleeve(of('sleeve'));
     }
     // Keep a fabric the customer brought ("Use my fabric"); otherwise pick one.
-    if (!appliedFabric) setSelectedFabric(pick(fabricLibrary)?.id ?? null);
+    if (!appliedFabric) {
+      const fabric = pick(fabricLibrary)?.id ?? null;
+      setSelectedFabric(fabric);
+      if (fabric) setSelectedColor(null);
+    }
     setSelectedFit(pick(FIT_OPTIONS)?.id ?? null);
   }, [styleLibrary, fabricLibrary, designGender, clothingType, initialGarment, appliedFabric]);
 
