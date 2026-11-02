@@ -573,6 +573,13 @@ export function useCustomization({
           .filter(Boolean)
           .join(', ')
       : bottomColour;
+    // The set's bottom fabric goes to the generator as its own picture (the
+    // backend labels it); words alone lost its print.
+    if (isSet) config.bottomPiece = bottomWord;
+    if (bottomFabric?.image && isRemoteUrl(bottomFabric.image)) {
+      config.bottomFabricRefId = bottomFabric.image;
+    }
+
     const promptWithColour = [
       userPrompt.trim(),
       isSet ? `A two-piece set: a separate top and ${bottomWord}.` : '',
