@@ -74,18 +74,18 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
   );
 
   return (
-    // lg:pr-[540px] reserves the right-hand furniture instead of ignoring it.
-    // The config panel sits at right:24px and is 380px wide, and the floating
-    // toolbar at right:420px is about 112px across - so roughly 532px from the
-    // right edge is already spoken for. The canvas used to span the full
-    // viewport and centre a 680px image in it, which overlapped the toolbar on
-    // anything narrower than about 1744px: most laptops.
+    // Keep the design clear of the right-hand furniture. The config panel
+    // sits at right:24px (380px wide) and the floating toolbar at right:420px,
+    // so about 510px from the right edge is spoken for. A centred 680px design
+    // overlapped the toolbar on most laptops.
     //
-    // Padding the CONTAINER rather than the image matters. The image stays
-    // centred, just within the space it actually has, so it never sits
-    // off-centre in its own frame and shrinks gracefully on a small laptop
-    // rather than sliding under the controls.
-    <div className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pt-[72px] pb-4 px-4 lg:pt-0 lg:pb-0 lg:pl-0 lg:pr-[540px]">
+    // The reserve lives in globals.css (.studio-canvas-area): it pads the
+    // CONTAINER only as much as the screen needs (none on a wide screen), so
+    // the design moves left just enough and, on a small laptop, shrinks
+    // rather than sliding under the controls. It isn't a Tailwind class
+    // because the global "* { padding: 0 }" reset is unlayered and beats
+    // Tailwind's padding utilities (lg:pr-[540px] never applied).
+    <div className="studio-canvas-area absolute inset-0 z-0 flex items-center justify-center overflow-hidden pt-[72px] pb-4 px-4 lg:pt-0 lg:pb-0 lg:pl-0">
       {/* Card Wrapper */}
       <div className="relative w-full h-full lg:w-full lg:h-full lg:max-w-none lg:max-h-none max-w-[500px] max-h-[800px] flex items-center justify-center lg:bg-transparent rounded-[32px] lg:rounded-none">
 
