@@ -5,8 +5,9 @@
 // A garment has a main fabric and can have a contrast fabric and a lining.
 // A two-piece set is one fabric for both pieces, or a top and a bottom slot.
 // Each one is a slot: pick a fabric from the whole catalogue (search, colour
-// filter, more pages), or let the tailor choose and buy it. Prices are a first
-// guide from a rough yardage; the tailor sets the exact yards in the quote.
+// filter, more pages), or let the tailor choose and buy it. Cards show the
+// fabric's own price (per yard or per piece); the tailor sets the yards and
+// the total in the quote.
 // Product pages keep using FabricPanel.
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -22,9 +23,7 @@ import {
   FABRIC_ROLE_HINT,
   FABRIC_ROLE_LABEL,
   FABRIC_COLOR_NAMES,
-  estimateYards,
   slotLabel,
-  fabricCostFor,
   type ExtraFabricRole,
   type FabricOption,
   type PhotoFabricMatch,
@@ -173,8 +172,6 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
   const canAdd = EXTRA_ROLES.filter((r) => !extraFabrics.some((x) => x.role === r));
   const activeId = slotFabricId(role);
   const active = fabricById(activeId);
-  const yards = estimateYards(clothingType, role, hasBottom);
-  const mid = (yards.low + yards.high) / 2;
 
   // The customer's own fabric (from a fabric page) leads the main slot's list.
   const listed = useMemo(() => {
@@ -200,11 +197,6 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     }
     return out.slice(0, 16);
   }, [rows]);
-
-  const estimate = (f: FabricOption) => {
-    if (!f.pricePerYard && !f.piecePrice) return null;
-    return { low: fabricCostFor(f, yards.low), high: fabricCostFor(f, yards.high) };
-  };
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -378,19 +370,13 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
                   {[active.material, active.pattern, active.vendorName && `from ${active.vendorName}`].filter(Boolean).join(' · ')}
                 </p>
               )}
-              {(() => {
-                const e = estimate(active);
-                return e ? (
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-                    {active.soldBy === 'piece' && active.piecePrice
-                      ? `${fmt(active.piecePrice)} per ${active.pieceYards}-yd piece`
-                      : `${fmt(active.pricePerYard ?? 0)}/yd`}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
-                      {' '}· about {yards.low}–{yards.high} yd ≈ {fmt(e.low)}–{fmt(e.high)}
-                    </span>
-                  </p>
-                ) : null;
-              })()}
+              {(active.pricePerYard || active.piecePrice) && (
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                  {active.soldBy === 'piece' && active.piecePrice
+                    ? `${fmt(active.piecePrice)} per ${active.pieceYards}-yd piece`
+                    : `${fmt(active.pricePerYard ?? 0)}/yd`}
+                </p>
+              )}
             </div>
           </div>
         ) : (
@@ -399,7 +385,7 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
           </p>
         )}
         <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-          Your tailor confirms the exact yards in their quote.
+          Your tailor works out how many yards you need and prices it in their quote.
         </p>
 
         {active && (
@@ -637,17 +623,14 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
         )}
 
         <div className="grid grid-cols-2" style={{ gap: '8px' }}>
-          {listed.map((f) => {
-            const e = estimate(f);
-            return (
-              <FabricCard
-                key={f.id}
-                fabric={{ ...f, extraCost: e ? Math.round((e.low + e.high) / 2) : undefined, yards: e ? mid : undefined }}
-                isSelected={activeId === f.id}
-                onSelect={(id) => pick(role, id)}
-              />
-            );
-          })}
+          {listed.map((f) => (
+            <FabricCard
+              key={f.id}
+              fabric={{ ...f, extraCost: undefined }}
+              isSelected={activeId === f.id}
+              onSelect={(id) => pick(role, id)}
+            />
+          ))}
           {!loading && listed.length === 0 && !error && (
             <p className="col-span-2 text-center" style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '16px 0' }}>
               {debounced ? `No fabrics match “${debounced}”.` : colorFilter ? 'No fabrics in this colour.' : 'No fabrics in stock right now.'} You can
