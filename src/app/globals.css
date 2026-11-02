@@ -463,3 +463,13 @@
 .product-description h4 { font-size: 1em; }
 .product-description blockquote { border-left: 3px solid var(--border-glass); padding-left: 0.75em; font-style: italic; }
 .product-description a { color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Bespoke studio, desktop: the floating toolbar sits about 510px from the
+   canvas's right edge. On a wide screen the centred design clears it; on a
+   smaller one, push the design left just enough to keep a gap (up to 540px,
+   after which the design shrinks). 100% here is the canvas width.
+   Set here, not as a Tailwind class: the "* { padding: 0 }" reset above is
+   unlayered and beats Tailwind's padding utilities. */
+@media (min-width: 1024px) {
+  .studio-canvas-area { padding: 0 clamp(0px, calc(1720px - 100%), 540px) 0 0; }
+}
