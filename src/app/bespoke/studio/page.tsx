@@ -17,9 +17,10 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
 import { makeShareCard } from '@/lib/shareCard';
-import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { rememberFabrics, toFabricOption } from '@/hooks/useFabricLibrary';
 
-import { type ClothingType, type DesignGender, enrichSelections } from '@/data/studio-options';
+import { type ClothingType, type DesignGender, enrichSelections, photoFabricsFrom } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
 //  STUDIO CONTENT
@@ -43,6 +44,9 @@ function fetchTemplateUse(id: string): Promise<any> {
 type ReferenceAnalysis = {
   matched_styles?: Record<string, { style_id?: string; style_name?: string }>;
   suggested_prompt?: string;
+  fabrics?: unknown;
+  fabric_matches?: unknown;
+  fabric_sets?: unknown;
 };
 const analysisCache: Record<string, Promise<ReferenceAnalysis | null>> = {};
 function analyzeOnce(url: string): Promise<ReferenceAnalysis | null> {
@@ -183,6 +187,24 @@ function StudioContent() {
           const views: Record<string, string> = {};
           for (const v of design.back_views) if (v?.front && v?.back) views[v.front] = v.back;
           customization.setBackViews(views);
+        }
+
+        // Its fabrics come populated: remember them so the fabric section
+        // can show them even when they are not on the first catalogue page.
+        {
+          const populated = [design?.fabric, ...((design?.extra_fabrics ?? []) as { fabric?: unknown }[]).map((x) => x?.fabric)]
+            .filter((f): f is { _id: string } => !!f && typeof f === 'object' && '_id' in (f as object));
+          if (populated.length) rememberFabrics(populated.map((f) => toFabricOption(f as never)));
+          if (Array.isArray(design?.extra_fabrics)) {
+            customization.setExtraFabrics(
+              (design.extra_fabrics as { role: 'contrast' | 'lining'; fabric?: string | { _id?: string } | null }[])
+                .filter((x) => x?.role === 'contrast' || x?.role === 'lining')
+                .map((x) => ({
+                  role: x.role,
+                  fabric: typeof x.fabric === 'string' ? x.fabric : (x.fabric?._id ?? null),
+                })),
+            );
+          }
         }
 
         // Load reference images
@@ -329,6 +351,7 @@ function StudioContent() {
           : 'Design',
         gender: customization.designGender === 'male' ? 'men' : 'women',
         fabric_id: fabricId,
+        extra_fabrics: extraFabricsPayload(customization.extraFabricsForSave),
         design_images: [...customization.imagesForSave].reverse(),
         back_views: customization.backViewsForSave,
         reference_images: customization.referenceImages.length
@@ -342,6 +365,7 @@ function StudioContent() {
             silhouette: customization.selectedSilhouette,
             collar: customization.selectedCollar,
             fabric: customization.selectedFabric,
+            extra_fabrics: customization.extraFabricsForSave,
             color: customization.selectedColor,
             fit: customization.selectedFit,
             accessories: customization.selectedAccessories.length
@@ -543,6 +567,13 @@ function StudioContent() {
         detected.push(matched.collar.style_name);
       }
       if (result?.suggested_prompt) customization.setUserPrompt(result.suggested_prompt);
+      // The fabrics in the photo: shown as "From your photo" in Fabric.
+      const fromPhoto = photoFabricsFrom(result);
+      if (fromPhoto) {
+        customization.setPhotoFabrics(fromPhoto);
+        const main = fromPhoto.fabrics.find((f) => f.role === 'main');
+        if (main?.description) detected.push(main.description);
+      }
       setDetectedStyles(detected);
       setAnalyzeStatus(null);
       // Show what was found briefly, then get out of the way.
@@ -680,6 +711,7 @@ function StudioContent() {
           silhouette: customization.selectedSilhouette,
           collar: customization.selectedCollar,
           fabric: customization.selectedFabric,
+          extra_fabrics: customization.extraFabricsForSave,
           color: customization.selectedColor,
           fit: customization.selectedFit,
           accessories: customization.selectedAccessories.length

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { X, Save, Loader2, CheckCircle2 } from 'lucide-react';
-import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { enrichSelections } from '@/data/studio-options';
 
 export interface DesignSelections {
@@ -12,6 +12,8 @@ export interface DesignSelections {
   silhouette?: string | null;
   collar?: string | null;
   fabric?: string | null;
+  /** The garment's other fabrics (contrast, lining). */
+  extra_fabrics?: { role: 'contrast' | 'lining'; fabric: string | null }[];
   color?: string | null;
   fit?: string | null;
   /** Selected embellishment ids — enriched to {id, name} on save. */
@@ -89,6 +91,7 @@ export const SaveDesignModal: React.FC<SaveDesignModalProps> = ({
       category,
       gender,
       fabric_id: fabricId,
+      extra_fabrics: extraFabricsPayload(selections?.extra_fabrics),
       design_images: [...designImages].reverse(),
       back_views: backViews,
       reference_images: referenceImages.length > 0 ? referenceImages : undefined,

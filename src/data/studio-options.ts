@@ -41,6 +41,98 @@ export interface FabricOption {
   extraCost?: number;
   /** Colours this fabric comes in — used to filter/sort the picker. */
   colors?: { name?: string; hex?: string }[];
+  // Catalogue fabrics (useFabricLibrary) carry their listing details.
+  pricePerYard?: number;
+  material?: string;
+  pattern?: string;
+  soldBy?: 'yard' | 'piece' | 'both';
+  pieceYards?: number;
+  piecePrice?: number;
+  yardsInStock?: number;
+  vendorName?: string;
+}
+
+/** Fabrics read from a reference photo, with the closest in-stock fabrics. */
+export interface PhotoFabricMatch {
+  fabric_id: string;
+  name: string;
+  image: string | null;
+  vendor_id: string | null;
+  vendor_name: string | null;
+  price_per_yard: number | null;
+  score: number;
+  reasons: string[];
+}
+export interface PhotoFabrics {
+  fabrics: {
+    role: 'main' | ExtraFabricRole;
+    colors: { name: string; hex: string }[];
+    fabric_type: string;
+    pattern: string;
+    description: string;
+  }[];
+  matches: Partial<Record<'main' | ExtraFabricRole, PhotoFabricMatch[]>>;
+  sets: {
+    vendor_id: string;
+    vendor_name: string | null;
+    score: number;
+    items: { role: 'main' | ExtraFabricRole; match: PhotoFabricMatch }[];
+  }[];
+}
+
+/** A photo's analysis result as PhotoFabrics, or null when it found none. */
+export function photoFabricsFrom(result: {
+  fabrics?: unknown;
+  fabric_matches?: unknown;
+  fabric_sets?: unknown;
+} | null | undefined): PhotoFabrics | null {
+  const fabrics = Array.isArray(result?.fabrics) ? (result!.fabrics as PhotoFabrics['fabrics']) : [];
+  if (!fabrics.length) return null;
+  return {
+    fabrics,
+    matches: (result?.fabric_matches ?? {}) as PhotoFabrics['matches'],
+    sets: Array.isArray(result?.fabric_sets) ? (result!.fabric_sets as PhotoFabrics['sets']) : [],
+  };
+}
+
+/** The garment's other fabrics, beside the main one (backend quote-fabric.ts). */
+export type ExtraFabricRole = 'contrast' | 'lining';
+export interface StudioExtraFabric {
+  role: ExtraFabricRole;
+  /** A fabric product id, or null: the tailor chooses it. */
+  fabric: string | null;
+}
+export const FABRIC_ROLE_LABEL: Record<'main' | ExtraFabricRole, string> = {
+  main: 'Main fabric',
+  contrast: 'Contrast',
+  lining: 'Lining',
+};
+export const FABRIC_ROLE_HINT: Record<'main' | ExtraFabricRole, string> = {
+  main: 'Most of the garment',
+  contrast: 'Panels, yoke, cuffs or trim',
+  lining: 'Inside layer',
+};
+
+/**
+ * Rough yards for a first price, by garment and role. The tailor sets the
+ * real figure in the quote; this only lets the customer compare fabrics.
+ */
+export function estimateYards(
+  clothingType: string | null | undefined,
+  role: 'main' | ExtraFabricRole,
+): { low: number; high: number } {
+  const full = clothingType === 'full_body';
+  if (role === 'contrast') return { low: 1, high: 2 };
+  if (role === 'lining') return full ? { low: 2, high: 3 } : { low: 1, high: 2 };
+  return full ? { low: 4, high: 6 } : { low: 2, high: 3 };
+}
+
+/** What `yards` of this fabric cost, by the listing's own pricing. */
+export function fabricCostFor(f: FabricOption, yards: number): number {
+  if (f.soldBy === 'piece' && f.pieceYards && f.piecePrice) {
+    return Math.ceil(yards / f.pieceYards - 1e-9) * f.piecePrice;
+  }
+  return Math.round((f.pricePerYard ?? f.extraCost ?? 0) * yards);
 }
 
 export interface AccessoryOption {

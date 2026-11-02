@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { X, Loader2, CheckCircle2, Check, Store, Search, Star, BadgeCheck } from 'lucide-react';
-import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { useVendors } from '@/hooks/useVendors';
 import {
   useSuggestedVendors,
@@ -189,6 +189,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
           selections?.fabric && /^[0-9a-f]{24}$/i.test(selections.fabric)
             ? selections.fabric
             : undefined,
+        extra_fabrics: extraFabricsPayload(selections?.extra_fabrics),
         design_images: [...designImages].reverse(),
         back_views: backViews,
         show_other_versions: showOthers,
