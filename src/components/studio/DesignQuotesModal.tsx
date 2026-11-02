@@ -147,7 +147,20 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const fabricBusinessId = fabricDoc?.business
     ? String((fabricDoc.business as any)?._id ?? fabricDoc.business)
     : null;
-  const fabricSurchargeFor = (q: any): number => {
+  // The garment's other fabrics (contrast, lining) are priced the same way,
+  // one entry each in q.extra_fabric_pricing.
+  const ROLE_NAME: Record<string, string> = { contrast: 'Contrast fabric', lining: 'Lining' };
+  const designExtras = (((designObj as { extra_fabrics?: unknown } | undefined)?.extra_fabrics ?? []) as {
+    role: string;
+    fabric?: { name?: string } | null;
+  }[]);
+  const extraOnTop = (q: BespokeQuote) =>
+    (q.extra_fabric_pricing ?? []).filter((p) => p && !p.in_quote && Number(p.amount) > 0);
+  const fabricSurchargeFor = (q: BespokeQuote): number => {
+    if (q.status !== 'submitted' && q.status !== 'accepted') return 0;
+    return mainFabricSurchargeFor(q) + extraOnTop(q).reduce((t, p) => t + Math.round(Number(p.amount) || 0), 0);
+  };
+  const mainFabricSurchargeFor = (q: any): number => {
     if (q.status !== 'submitted' && q.status !== 'accepted') return 0;
     const fp = q.fabric_pricing;
     if (fp) return fp.in_quote ? 0 : Math.round(Number(fp.amount) || 0);
@@ -273,6 +286,13 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
           {(designObj?.fabric as any)?.name && (
             <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '4px' }}>
               Fabric: {(designObj.fabric as any).name}
+            </p>
+          )}
+          {designExtras.length > 0 && (
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '2px' }}>
+              {designExtras
+                .map((x) => `${ROLE_NAME[x.role] ?? x.role}: ${x.fabric?.name ?? 'tailor chooses'}`)
+                .join(' · ')}
             </p>
           )}
         </div>
@@ -425,11 +445,17 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                           <div key={i} className='flex items-center justify-between'>
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                               {li.description || li.label}
-                              {fp?.in_quote && /^fabric$/i.test(li.label ?? '')
-                                ? fp.source === 'tailor_sourced'
-                                  ? ' (the tailor buys it)'
-                                  : fp.yards ? ` · ${fp.yards} yd` : ''
-                                : ''}
+                              {(() => {
+                                // A Fabric line: "Fabric" is the main one,
+                                // "Fabric (Lining)" the lining, and so on.
+                                const m = /^fabric(?: \((\w+)\))?$/i.exec(li.label ?? '');
+                                if (!m) return '';
+                                const p = m[1]
+                                  ? (q.extra_fabric_pricing ?? []).find((x) => x?.role === m[1].toLowerCase())
+                                  : fp;
+                                if (!p?.in_quote) return '';
+                                return p.source === 'tailor_sourced' ? ' (the tailor buys it)' : p.yards ? ` · ${p.yards} yd` : '';
+                              })()}
                             </span>
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                               {isConverted
@@ -438,17 +464,28 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             </span>
                           </div>
                         ))}
-                        {fabricSurcharge > 0 && (
+                        {mainFabricSurchargeFor(q) > 0 && (
                           <div className='flex items-center justify-between'>
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                               Fabric{fp?.supplier_name ? ` from ${fp.supplier_name}` : ''}
                               {fp?.yards ? ` · ${fp.yards} yd` : q.required_fabric_yards ? ` · ${q.required_fabric_yards} yd` : ''}
                             </span>
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                              {isConverted ? fmt(fabricSurcharge) : naira(fabricSurcharge)}
+                              {isConverted ? fmt(mainFabricSurchargeFor(q)) : naira(mainFabricSurchargeFor(q))}
                             </span>
                           </div>
                         )}
+                        {extraOnTop(q).map((p) => (
+                          <div key={p.role ?? p.name ?? ''} className='flex items-center justify-between'>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                              {ROLE_NAME[p.role ?? ''] ?? 'Fabric'}{p.supplier_name ? ` from ${p.supplier_name}` : ''}
+                              {p.yards ? ` · ${p.yards} yd` : ''}
+                            </span>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              {isConverted ? fmt(Math.round(p.amount)) : naira(Math.round(p.amount))}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     )}
 

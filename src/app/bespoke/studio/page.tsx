@@ -17,7 +17,8 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { pollJobStatus } from '@/lib/pollJobStatus';
 import { makeShareCard } from '@/lib/shareCard';
-import { useBespokeDesigns, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
+import { rememberFabrics, toFabricOption } from '@/hooks/useFabricLibrary';
 
 import { type ClothingType, type DesignGender, enrichSelections } from '@/data/studio-options';
 
@@ -185,6 +186,24 @@ function StudioContent() {
           customization.setBackViews(views);
         }
 
+        // Its fabrics come populated: remember them so the fabric section
+        // can show them even when they are not on the first catalogue page.
+        {
+          const populated = [design?.fabric, ...((design?.extra_fabrics ?? []) as { fabric?: unknown }[]).map((x) => x?.fabric)]
+            .filter((f): f is { _id: string } => !!f && typeof f === 'object' && '_id' in (f as object));
+          if (populated.length) rememberFabrics(populated.map((f) => toFabricOption(f as never)));
+          if (Array.isArray(design?.extra_fabrics)) {
+            customization.setExtraFabrics(
+              (design.extra_fabrics as { role: 'contrast' | 'lining'; fabric?: string | { _id?: string } | null }[])
+                .filter((x) => x?.role === 'contrast' || x?.role === 'lining')
+                .map((x) => ({
+                  role: x.role,
+                  fabric: typeof x.fabric === 'string' ? x.fabric : (x.fabric?._id ?? null),
+                })),
+            );
+          }
+        }
+
         // Load reference images
         if (design?.reference_images?.length > 0) {
           customization.setReferenceImages(design.reference_images);
@@ -329,6 +348,7 @@ function StudioContent() {
           : 'Design',
         gender: customization.designGender === 'male' ? 'men' : 'women',
         fabric_id: fabricId,
+        extra_fabrics: extraFabricsPayload(customization.extraFabricsForSave),
         design_images: [...customization.imagesForSave].reverse(),
         back_views: customization.backViewsForSave,
         reference_images: customization.referenceImages.length
@@ -342,6 +362,7 @@ function StudioContent() {
             silhouette: customization.selectedSilhouette,
             collar: customization.selectedCollar,
             fabric: customization.selectedFabric,
+            extra_fabrics: customization.extraFabricsForSave,
             color: customization.selectedColor,
             fit: customization.selectedFit,
             accessories: customization.selectedAccessories.length
@@ -680,6 +701,7 @@ function StudioContent() {
           silhouette: customization.selectedSilhouette,
           collar: customization.selectedCollar,
           fabric: customization.selectedFabric,
+          extra_fabrics: customization.extraFabricsForSave,
           color: customization.selectedColor,
           fit: customization.selectedFit,
           accessories: customization.selectedAccessories.length

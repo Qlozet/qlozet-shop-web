@@ -216,6 +216,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
           silhouette: customization.selectedSilhouette,
           collar: customization.selectedCollar,
           fabric: customization.selectedFabric,
+          extra_fabrics: customization.extraFabricsForSave,
           color: customization.selectedColor,
           fit: customization.selectedFit,
           measurement_set: customization.measurementSetName || undefined,

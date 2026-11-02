@@ -4,6 +4,7 @@ import React from 'react';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { StylesPanel } from './StylesPanel';
 import { FabricPanel } from './FabricPanel';
+import { StudioFabricPanel } from './StudioFabricPanel';
 import { AccessoriesPanel } from './AccessoriesPanel';
 import { FitPanel } from './FitPanel';
 import { ReferencePanel } from './ReferencePanel';
@@ -49,6 +50,8 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
   }
 
   if (expandedSection === 'fabric') {
+    // The bespoke studio (no product) has fabric slots and the whole catalogue.
+    if (!product) return <StudioFabricPanel customization={customization} />;
     return (
       <FabricPanel
         selectedFabric={customization.selectedFabric}

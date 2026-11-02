@@ -23,7 +23,8 @@ export function resetCurrentSection(customization: CustomizationState) {
       customization.setSelectedFabric(null);
       customization.setAppliedFabric(null);
       customization.setSelectedColor(null);
-      toast('Fabric & colour cleared');
+      customization.setExtraFabrics([]);
+      toast('Fabrics & colour cleared');
       break;
     case 'accessories':
       customization.selectedAccessories.forEach((id) =>

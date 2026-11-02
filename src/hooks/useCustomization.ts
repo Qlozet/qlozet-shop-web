@@ -14,6 +14,8 @@ import {
   type SectionId,
   type ClothingType,
   type DesignGender,
+  type ExtraFabricRole,
+  type StudioExtraFabric,
 } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
@@ -86,6 +88,14 @@ export interface CustomizationState {
   // shown pre-selected in the fabric tool sheet, overrides the catalog fabric.
   appliedFabric: AppliedFabric | null;
   setAppliedFabric: (fabric: AppliedFabric | null) => void;
+  // The garment's other fabrics (contrast, lining), one per role.
+  extraFabrics: StudioExtraFabric[];
+  /** Add the role, or change its fabric (null = the tailor chooses). */
+  setExtraFabric: (role: ExtraFabricRole, fabricId: string | null) => void;
+  removeExtraFabric: (role: ExtraFabricRole) => void;
+  setExtraFabrics: (list: StudioExtraFabric[]) => void;
+  /** As the design saves them: only real fabric ids, else "tailor chooses". */
+  extraFabricsForSave: StudioExtraFabric[];
   selectedColor: string | null;
   setSelectedColor: (id: string | null) => void;
   selectedAccessories: string[];
@@ -218,6 +228,25 @@ export function useCustomization({
     // Pre-select it in the fabric tool sheet so the choice is reflected in the UI.
     if (fabric?.id) setSelectedFabric(fabric.id);
   }, []);
+  const [extraFabrics, setExtraFabrics] = useState<StudioExtraFabric[]>([]);
+  const setExtraFabric = useCallback((role: ExtraFabricRole, fabricId: string | null) => {
+    setExtraFabrics((prev) => {
+      const next = prev.filter((x) => x.role !== role);
+      // Contrast before lining, whatever order they were added in.
+      return [...next, { role, fabric: fabricId }].sort((a, b) => a.role.localeCompare(b.role));
+    });
+  }, []);
+  const removeExtraFabric = useCallback((role: ExtraFabricRole) => {
+    setExtraFabrics((prev) => prev.filter((x) => x.role !== role));
+  }, []);
+  const extraFabricsForSave = useMemo(
+    () =>
+      extraFabrics.map((x) => ({
+        role: x.role,
+        fabric: x.fabric && /^[0-9a-f]{24}$/i.test(x.fabric) ? x.fabric : null,
+      })),
+    [extraFabrics],
+  );
   const [selectedColor, setSelectedColor] = useState<string | null>('#1B2A4A');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
@@ -773,10 +802,14 @@ export function useCustomization({
       styleName(selectedSkirt),
       styleName(selectedTrouser),
       fabricName,
+      ...extraFabrics.map((x) => {
+        const name = x.fabric ? fabricLibrary.find((f) => f.id === x.fabric)?.name : undefined;
+        return name ? `${name} (${x.role})` : undefined;
+      }),
       FIT_OPTIONS.find((f) => f.id === selectedFit)?.label,
     ].filter((x): x is string => !!x);
   }, [
-    styleLibrary, fabricLibrary, appliedFabric, selectedFabric, selectedFit,
+    styleLibrary, fabricLibrary, appliedFabric, selectedFabric, selectedFit, extraFabrics,
     selectedFullBody, selectedSilhouette, selectedNeckline, selectedSleeve,
     selectedCollar, selectedSkirt, selectedTrouser,
   ]);
@@ -794,6 +827,7 @@ export function useCustomization({
     selectedFullBody, setSelectedFullBody,
     selectedFabric, setSelectedFabric,
     appliedFabric, setAppliedFabric,
+    extraFabrics, setExtraFabric, removeExtraFabric, setExtraFabrics, extraFabricsForSave,
     selectedColor, setSelectedColor,
     selectedAccessories, toggleAccessory, setSelectedAccessories,
     selectedAddons, selectAddon,

@@ -46,6 +46,8 @@ export interface BespokeQuote {
   required_fabric_yards?: number | null;
   /** Fabric source and price, set when the tailor sends the quote (null on older quotes). */
   fabric_pricing?: QuoteFabricPricing | null;
+  /** The design's other fabrics (contrast, lining), each priced the same way. */
+  extra_fabric_pricing?: (QuoteFabricPricing & { role?: 'contrast' | 'lining' })[];
   notes?: string;
   expires_at?: string;
   created_at: string;
@@ -93,9 +95,20 @@ export interface CreateDesignPayload {
   show_other_versions?: boolean;
   reference_images?: string[];
   fabric_id?: string;
+  /** The garment's other fabrics; fabric_id null = the tailor chooses. [] removes them. */
+  extra_fabrics?: { role: 'contrast' | 'lining'; fabric_id: string | null }[];
   description?: string;
   measurement_id?: string;
 }
+
+/** Studio extra fabrics as the design API takes them. */
+export const extraFabricsPayload = (
+  list?: { role: 'contrast' | 'lining'; fabric: string | null }[] | null,
+): CreateDesignPayload['extra_fabrics'] =>
+  (list ?? []).map((x) => ({
+    role: x.role,
+    fabric_id: x.fabric && /^[0-9a-f]{24}$/i.test(x.fabric) ? x.fabric : null,
+  }));
 
 // The backend service returns { message, data: design } and the global
 // response interceptor wraps that AGAIN, so the design object actually
