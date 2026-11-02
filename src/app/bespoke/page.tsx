@@ -32,6 +32,7 @@ import {
 import { TokenIcon } from '@/components/icons/TokenIcon';
 import { api } from '@/lib/api';
 import { useUpload } from '@/hooks/useUpload';
+import { useStyleLibrary, type StyleCategory } from '@/hooks/useStyleLibrary';
 import { pollJobStatus } from '@/lib/pollJobStatus';
 
 // ═══════════════════════════════════════════════════════════════
@@ -140,6 +141,23 @@ const SINGULAR: Record<string, string> = {
 };
 
 /**
+ * Which studio sketch stands for each garment tile: the first style whose
+ * name starts with one of `names`, in that order.
+ */
+const CATEGORY_SKETCHES: Record<string, { category: StyleCategory; names: string[] }> = {
+  Tops: { category: 'neckline', names: ['Round Neck', 'V-Neck', 'Scoop Neck'] },
+  Dresses: { category: 'full_body', names: ['Wrapper Dress', 'Boubou'] },
+  Skirts: { category: 'skirt', names: ['A-Line', 'Pencil', 'Flared'] },
+  Pants: { category: 'trouser', names: ['Straight', 'Wide-Leg', 'Tapered'] },
+  Jumpsuits: { category: 'full_body', names: ['Jumpsuit'] },
+  Sets: { category: 'full_body', names: ['Aso Oke Set', 'Buba & Iro', 'Senator'] },
+  Kaftan: { category: 'full_body', names: ['Kaftan'] },
+  Agbada: { category: 'full_body', names: ['Agbada'] },
+  Shirts: { category: 'collar', names: ['Spread Collar', 'Mandarin Collar'] },
+  Suits: { category: 'collar', names: ['Notch Collar', 'Shawl Collar'] },
+};
+
+/**
  * Start a design — one screen. The side (men/women) starts from the shop's
  * own toggle, the garment is one tap, and a photo can be picked right here.
  * The name is asked at save time; until then it's "My <garment>".
@@ -155,6 +173,9 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
   const [photo, setPhoto] = useState<{ file: File; preview: string } | null>(null);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  // The studio's own style sketches; until they load (or for a missing one)
+  // a tile shows its sample photo.
+  const styleLibrary = useStyleLibrary(gender === 'men' ? 'male' : 'female');
 
   // Free the preview URL when the photo changes or the sheet closes.
   useEffect(() => () => {
@@ -187,6 +208,20 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
         Shirts: { src: '/image/bespoke-kaftan-milk-1.png', pos: 'top' },
         Sets: { src: '/image/bespoke-outfit-3.webp' },
       };
+
+  const sketchFor = (type: string): string | null => {
+    const pick = CATEGORY_SKETCHES[type];
+    if (!pick) return null;
+    const drawn = styleLibrary.getCategory(pick.category).filter((s) => !!s.image_url);
+    const lower = (s: string) => s.toLowerCase();
+    for (const name of pick.names) {
+      const hit = drawn.find((s) => lower(s.name).startsWith(lower(name)));
+      if (hit) return hit.image_url!;
+    }
+    // Any neckline can stand for "Tops", any skirt for "Skirts"; a whole
+    // garment (Agbada, Kaftan) must be that garment.
+    return pick.category === 'full_body' ? null : drawn[0]?.image_url ?? null;
+  };
 
   const switchGender = (g: 'men' | 'women') => {
     setGender(g);
@@ -286,7 +321,8 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
       <div className="grid grid-cols-3 gap-2.5">
         {GARMENT_TYPES.map((type) => {
           const active = selectedCategory === type;
-          const sample = CATEGORY_SAMPLES[type];
+          const sketch = sketchFor(type);
+          const sample = sketch ? { src: sketch, pos: 'center' } : CATEGORY_SAMPLES[type];
           return (
             <button
               key={type}
