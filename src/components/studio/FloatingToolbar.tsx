@@ -55,7 +55,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedAccessories, selectedColor, referenceImages,
     expandedSection, setExpandedSection, designGender,
-    selectedFabric, appliedFabric, extraFabrics, clothingType,
+    selectedFabric, appliedFabric, extraFabrics, hasBottomPiece,
   } = customization;
 
   // The swatch shows what the main fabric slot holds: the fabric's photo,
@@ -68,7 +68,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ customization 
   const fabricName =
     appliedFabric?.name ||
     (selectedFabric ? fabrics.find((f) => f.id === selectedFabric)?.name : undefined);
-  const bottom = clothingType === 'two_piece' ? extraFabrics.find((x) => x.role === 'bottom') : undefined;
+  const bottom = hasBottomPiece ? extraFabrics.find((x) => x.role === 'bottom') : undefined;
   const bottomImage = bottom?.fabric ? fabrics.find((f) => f.id === bottom.fabric)?.image : undefined;
   const half = (image: string | undefined, colour: string | null | undefined, side: 'left' | 'right') => (
     <span

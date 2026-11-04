@@ -19,7 +19,14 @@ import {
   photoFabricsFrom,
   type StudioExtraFabric,
   FABRIC_COLOR_NAMES,
+  type Garment,
+  garmentOf,
+  designCategoryFor,
+  hasOptionalTrousers,
+  pieceNames,
+  fullBodyStylesFor,
 } from '@/data/studio-options';
+import type { DesignSelections } from '@/components/studio/SaveDesignModal';
 
 // ═══════════════════════════════════════════════════════════════
 //  useCustomization Hook
@@ -69,6 +76,22 @@ export interface CustomizationState {
   setDesignGender: (gender: DesignGender) => void;
   clothingType: ClothingType | null;
   setClothingType: (type: ClothingType) => void;
+  /** The garment picked on the start screen (Agbada, Dresses…), when known. */
+  garment: Garment | null;
+  /** The category the design saves as ("Agbada", not "Dresses"). */
+  designCategory: string;
+  /** Agbada and kaftan: whether the outfit includes trousers (on by default). */
+  withTrousers: boolean;
+  setWithTrousers: (on: boolean) => void;
+  /**
+   * The garment has a separate bottom piece: a set, a suit, or an agbada or
+   * kaftan with its trousers. It can then have its own bottom fabric.
+   */
+  hasBottomPiece: boolean;
+  /** What the two pieces are called ("agbada" + "trousers"), when it has a bottom. */
+  pieces: { top: string; bottom: string } | null;
+  /** Every choice, as a saved design or a quote request records it. */
+  selectionsForSave: DesignSelections;
 
   // Selections
   selectedSilhouette: string | null;
@@ -220,6 +243,8 @@ export function useCustomization({
   const [designName, setDesignName] = useState(initialDesignName);
   const [designGender, setDesignGender] = useState<DesignGender | null>(initialGender ?? null);
   const [clothingType, setClothingType] = useState<ClothingType | null>(initialClothingType ?? null);
+  const garment = useMemo(() => garmentOf(initialGarment), [initialGarment]);
+  const [withTrousers, setWithTrousersState] = useState(true);
 
   // ── Selections ──────────────────────────────────────────────
   const [selectedSilhouette, setSelectedSilhouette] = useState<string | null>(null);
@@ -264,6 +289,18 @@ export function useCustomization({
       })),
     [extraFabrics],
   );
+  // Leaving the trousers off drops their style and their own fabric.
+  const setWithTrousers = useCallback((on: boolean) => {
+    setWithTrousersState(on);
+    if (!on) {
+      setSelectedTrouser(null);
+      setExtraFabrics((prev) => prev.filter((x) => x.role !== 'bottom'));
+    }
+  }, []);
+  const hasBottomPiece =
+    clothingType === 'two_piece' || (hasOptionalTrousers(garment) && withTrousers);
+  const pieces = hasBottomPiece ? pieceNames(garment, !!selectedSkirt) : null;
+  const designCategory = designCategoryFor(garment, clothingType);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
@@ -500,9 +537,19 @@ export function useCustomization({
 
     // ── 6. Build garment type string ────────────────────────────
     const genderPrefix = designGender === 'female' ? 'female' : 'male';
-    const garmentType = clothingType
-      ? `${genderPrefix}_${clothingType === 'two_piece' ? 'two_piece_set' : clothingType}`
-      : genderPrefix;
+    // The garment by name when it is known. (Not plain "male_agbada": the
+    // backend has a schema under that key that adds chest embroidery.)
+    const GARMENT_TYPE: Record<Garment, string> = {
+      tops: 'top', shirts: 'shirt', dresses: 'dress', skirts: 'skirt', pants: 'trousers',
+      jumpsuits: 'jumpsuit', sets: 'two_piece_set', suits: 'suit',
+      kaftan: withTrousers ? 'kaftan_with_trousers' : 'kaftan',
+      agbada: withTrousers ? 'agbada_three_piece' : 'agbada_robe_and_inner_top',
+    };
+    const garmentType = garment
+      ? `${genderPrefix}_${GARMENT_TYPE[garment]}`
+      : clothingType
+        ? `${genderPrefix}_${clothingType === 'two_piece' ? 'two_piece_set' : clothingType}`
+        : genderPrefix;
 
     // ── 7. Assemble full config (must match GarmentConfigDto) ────
     // Backend reads: config.garmentType, config.constructionSelections, etc.
@@ -558,11 +605,11 @@ export function useCustomization({
     const colourName = selectedColor
       ? FABRIC_COLOR_NAMES[selectedColor.toUpperCase()] ?? selectedColor
       : null;
-    // A two-piece set: say so, and say what each piece is made of when the
-    // bottom differs. Only the main fabric goes as an image, so the bottom's
-    // fabric is described in words.
-    const isSet = clothingType === 'two_piece';
-    const bottomWord = selectedSkirt ? 'skirt' : 'trousers';
+    // A garment with a separate bottom (a set, a suit, an agbada or kaftan
+    // with trousers): say so, and say what each piece is made of when the
+    // bottom differs.
+    const isSet = hasBottomPiece;
+    const { top: topWord, bottom: bottomWord } = pieceNames(garment, !!selectedSkirt);
     const bottom = isSet ? extraFabrics.find((x) => x.role === 'bottom') : undefined;
     const bottomFabric = bottom?.fabric ? fabricLibrary.find((f) => f.id === bottom.fabric) : undefined;
     const bottomColour = bottom?.color
@@ -580,18 +627,33 @@ export function useCustomization({
       config.bottomFabricRefId = bottomFabric.image;
     }
 
+    // What the outfit is, in words the generator can't misread.
+    const GARMENT_SENTENCE: Partial<Record<Garment, string>> = {
+      agbada: withTrousers
+        ? 'A three-piece agbada: a wide, flowing outer robe worn over a long inner top, with trousers.'
+        : 'An agbada: a wide, flowing outer robe worn over a long inner top. No trousers showing.',
+      kaftan: withTrousers
+        ? 'A kaftan: a long tunic top worn with trousers.'
+        : 'A kaftan: a long tunic top.',
+      dresses: 'A one-piece dress.',
+      jumpsuits: 'A jumpsuit: one piece, the top joined to trouser legs.',
+      suits: 'A suit: a tailored jacket with trousers.',
+    };
+    const garmentSentence =
+      (garment && GARMENT_SENTENCE[garment]) ||
+      (isSet ? `A two-piece set: a separate top and ${bottomWord}.` : '');
     const promptWithColour = [
       userPrompt.trim(),
-      isSet ? `A two-piece set: a separate top and ${bottomWord}.` : '',
+      garmentSentence,
       !fabricImageUrl && colourName
         ? bottom
-          ? `Make the top ${colourName}.`
+          ? `Make the ${topWord} ${colourName}.`
           : `Make the main fabric ${colourName}.`
         : '',
       bottom
         ? bottomWords
-          ? `The ${bottomWord} use a different fabric from the top: ${bottomWords}.`
-          : `The ${bottomWord} use a different fabric from the top.`
+          ? `The ${bottomWord} use a different fabric from the ${topWord}: ${bottomWords}.`
+          : `The ${bottomWord} use a different fabric from the ${topWord}.`
         : '',
     ].filter(Boolean).join(' ');
 
@@ -646,6 +708,7 @@ export function useCustomization({
     }
   }, [
     isGenerating, mode, designGender, clothingType, userPrompt,
+    garment, withTrousers, hasBottomPiece,
     selectedSilhouette, selectedNeckline, selectedSleeve, selectedCollar,
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedFabric, selectedColor, selectedAccessories, selectedFit, extraFabrics,
@@ -746,11 +809,15 @@ export function useCustomization({
       suits: 'suit', kaftan: 'kaftan', agbada: 'agbada',
     };
     const byType: Record<string, string> = { top: 'top', bottom: 'trousers', full_body: 'outfit' };
-    if (clothingType === 'two_piece') {
+    if (garment === 'agbada') {
+      return `${who} agbada (outer robe over an inner top${withTrousers ? ', with trousers' : ''})`;
+    }
+    if (garment === 'kaftan') return `${who} kaftan${withTrousers ? ' with trousers' : ''}`;
+    if (clothingType === 'two_piece' && garment !== 'suits') {
       return `${who} two-piece set (top and ${selectedSkirt ? 'skirt' : 'trousers'})`;
     }
     return `${who} ${named[raw] ?? (clothingType ? byType[clothingType] : 'outfit')}`;
-  }, [designGender, clothingType, initialGarment, selectedSkirt]);
+  }, [designGender, clothingType, initialGarment, selectedSkirt, garment, withTrousers]);
 
   const [isRefining, setIsRefining] = useState(false);
   const refineCurrent = useCallback(async (instruction: string) => {
@@ -833,8 +900,37 @@ export function useCustomization({
     );
     const of = (cat: string) => pick(forThem.filter((st) => st.category === cat))?._id ?? null;
     const raw = (initialGarment || '').toLowerCase();
+    // The garment's own full-body styles (an agbada's robes, a dress's styles).
+    const fullBodyOf = () =>
+      pick(fullBodyStylesFor(garment, forThem.filter((st) => st.category === 'full_body')))?._id ?? null;
+    const top = () => {
+      setSelectedNeckline(of('neckline'));
+      setSelectedSleeve(of('sleeve'));
+    };
 
-    if (clothingType === 'top') {
+    if (garment === 'agbada' || garment === 'kaftan') {
+      setSelectedFullBody(fullBodyOf());
+      top();
+      setSelectedCollar(garment === 'kaftan' ? of('collar') : null);
+      setSelectedSkirt(null);
+      setSelectedTrouser(withTrousers ? of('trouser') : null);
+    } else if (garment === 'dresses') {
+      setSelectedFullBody(Math.random() < 0.5 ? fullBodyOf() : null);
+      top();
+      setSelectedSkirt(of('skirt'));
+      setSelectedTrouser(null);
+    } else if (garment === 'jumpsuits') {
+      setSelectedFullBody(fullBodyOf());
+      top();
+      setSelectedSkirt(null);
+      setSelectedTrouser(of('trouser'));
+    } else if (garment === 'suits') {
+      setSelectedNeckline(null);
+      setSelectedSleeve(null);
+      setSelectedCollar(of('collar'));
+      setSelectedSkirt(null);
+      setSelectedTrouser(of('trouser'));
+    } else if (clothingType === 'top') {
       setSelectedNeckline(of('neckline'));
       setSelectedSleeve(of('sleeve'));
       setSelectedCollar(of('collar'));
@@ -862,7 +958,7 @@ export function useCustomization({
       if (fabric) setSelectedColor(null);
     }
     setSelectedFit(pick(FIT_OPTIONS)?.id ?? null);
-  }, [styleLibrary, fabricLibrary, designGender, clothingType, initialGarment, appliedFabric]);
+  }, [styleLibrary, fabricLibrary, designGender, clothingType, initialGarment, appliedFabric, garment, withTrousers]);
 
   const selectionSummary = useMemo(() => {
     const styleName = (id: string | null) =>
@@ -894,10 +990,40 @@ export function useCustomization({
     selectedCollar, selectedSkirt, selectedTrouser,
   ]);
 
+  // One record of every choice, so a save, a quote request and Order Now all
+  // tell the tailor the same thing.
+  const selectionsForSave = useMemo<DesignSelections>(() => ({
+    neckline: selectedNeckline,
+    sleeve: selectedSleeve,
+    silhouette: selectedSilhouette,
+    collar: selectedCollar,
+    skirt: selectedSkirt ?? undefined,
+    trouser: selectedTrouser ?? undefined,
+    full_body: selectedFullBody ?? undefined,
+    // Only an agbada or kaftan can leave its trousers off.
+    no_trousers: hasOptionalTrousers(garment) && !withTrousers ? true : undefined,
+    fabric: selectedFabric,
+    extra_fabrics: extraFabricsForSave,
+    color: selectedColor,
+    fit: selectedFit,
+    accessories: selectedAccessories.length ? selectedAccessories : undefined,
+    measurement_set: measurementSetName || undefined,
+    userPrompt,
+  }), [
+    selectedNeckline, selectedSleeve, selectedSilhouette, selectedCollar, selectedSkirt,
+    selectedTrouser, selectedFullBody, garment, withTrousers, selectedFabric,
+    extraFabricsForSave, selectedColor, selectedFit, selectedAccessories,
+    measurementSetName, userPrompt,
+  ]);
+
   return {
     designName, setDesignName,
     designGender, setDesignGender,
     clothingType, setClothingType,
+    garment, designCategory,
+    withTrousers, setWithTrousers,
+    hasBottomPiece, pieces,
+    selectionsForSave,
     selectedSilhouette, setSelectedSilhouette,
     selectedNeckline, setSelectedNeckline,
     selectedSleeve, setSelectedSleeve,

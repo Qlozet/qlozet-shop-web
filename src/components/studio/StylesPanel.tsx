@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SILHOUETTES, NECKLINES, SLEEVES, type StyleOption, type ClothingType } from '@/data/studio-options';
+import { SILHOUETTES, NECKLINES, SLEEVES, type StyleOption, type ClothingType, type Garment, fullBodyStylesFor } from '@/data/studio-options';
 import { useStyleLibrary, type PlatformStyle, type StyleGender } from '@/hooks/useStyleLibrary';
 import { StyleOptionButton } from './StyleOptionButton';
 import { type ApiProduct, type ApiStyle } from '@/lib/api-types';
@@ -134,6 +134,47 @@ interface StylesPanelProps {
   selectedFullBody?: string | null;
   onSelectFullBody?: (id: string) => void;
   product?: ApiProduct;
+  /** The garment picked on the start screen; decides which groups show. */
+  garment?: Garment | null;
+  /** Agbada and kaftan: whether the outfit includes trousers. */
+  withTrousers?: boolean;
+  onToggleTrousers?: (on: boolean) => void;
+}
+
+// ─── "Include trousers" switch (agbada, kaftan) ─────────────
+function TrousersSwitch({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <label
+      htmlFor="include-trousers"
+      className="flex items-center"
+      style={{
+        gap: '10px',
+        padding: '10px 12px',
+        marginBottom: '14px',
+        borderRadius: '14px',
+        border: '1px solid var(--border-glass)',
+        background: 'var(--bg-surface-elevated)',
+        cursor: 'pointer',
+      }}
+    >
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+          Include trousers
+        </span>
+        <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+          {on ? 'Turn off if you only want the top part made.' : 'Off: no trousers are made or shown.'}
+        </span>
+      </span>
+      <input
+        id="include-trousers"
+        type="checkbox"
+        role="switch"
+        checked={on}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ width: '18px', height: '18px', accentColor: 'var(--brand-fill)', cursor: 'pointer' }}
+      />
+    </label>
+  );
 }
 
 export const StylesPanel: React.FC<StylesPanelProps> = ({
@@ -154,6 +195,9 @@ export const StylesPanel: React.FC<StylesPanelProps> = ({
   selectedFullBody,
   onSelectFullBody,
   product,
+  garment,
+  withTrousers = true,
+  onToggleTrousers,
 }) => {
   const { necklines, sleeves, collars, skirts, trousers, fullBody, all: allPlatformStyles, isLoading } = useStyleLibrary(gender);
 
@@ -208,6 +252,89 @@ export const StylesPanel: React.FC<StylesPanelProps> = ({
         <StyleSection title="Silhouette" options={[]} selectedId={selectedSilhouette} onSelect={onSelectSilhouette} isLoading={false} fallback={SILHOUETTES} />
         <StyleSection title="Neckline" options={necklines} selectedId={selectedNeckline} onSelect={onSelectNeckline} isLoading={isLoading} fallback={NECKLINES} />
         <StyleSection title="Sleeves" options={sleeves} selectedId={selectedSleeve} onSelect={onSelectSleeve} isLoading={isLoading} fallback={SLEEVES} />
+      </div>
+    );
+  }
+
+  const necklineSection = <StyleSection title="Neckline" options={necklines} selectedId={selectedNeckline} onSelect={onSelectNeckline} isLoading={isLoading} fallback={NECKLINES} />;
+  const sleeveSection = <StyleSection title="Sleeves" options={sleeves} selectedId={selectedSleeve} onSelect={onSelectSleeve} isLoading={isLoading} fallback={SLEEVES} />;
+  const collar = (title = 'Collar') => <StyleSection title={title} options={collars} selectedId={selectedCollar ?? null} onSelect={onSelectCollar ?? (() => {})} isLoading={isLoading} fallback={[]} />;
+  const skirt = (title = 'Skirt Style') => <StyleSection title={title} options={skirts} selectedId={selectedSkirt ?? null} onSelect={onSelectSkirt ?? (() => {})} isLoading={isLoading} fallback={[]} />;
+  const trouser = (title = 'Trouser Style') => <StyleSection title={title} options={trousers} selectedId={selectedTrouser ?? null} onSelect={onSelectTrouser ?? (() => {})} isLoading={isLoading} fallback={[]} />;
+  // Only the garment's own full-body styles: an agbada's robes, a dress's styles.
+  const ownStyles = (title: string) => (
+    <StyleSection title={title} options={fullBodyStylesFor(garment ?? null, fullBody)} selectedId={selectedFullBody ?? null} onSelect={onSelectFullBody ?? (() => {})} isLoading={isLoading} fallback={[]} />
+  );
+  const trousersPiece = (
+    <>
+      <PieceHeader title="Trousers" />
+      {onToggleTrousers && <TrousersSwitch on={withTrousers} onChange={onToggleTrousers} />}
+      {withTrousers && trouser()}
+    </>
+  );
+
+  // Garments with their own layout.
+  if (garment === 'agbada') {
+    return (
+      <div style={{ padding: '20px' }}>
+        <PieceHeader title="Agbada" note="The wide outer robe" />
+        {ownStyles('Robe Style')}
+        <PieceHeader title="Inner top" note="Worn under the robe" />
+        {necklineSection}
+        {sleeveSection}
+        {trousersPiece}
+      </div>
+    );
+  }
+  if (garment === 'kaftan') {
+    return (
+      <div style={{ padding: '20px' }}>
+        <PieceHeader title="Kaftan" />
+        {ownStyles('Style')}
+        {necklineSection}
+        {sleeveSection}
+        {collar()}
+        {trousersPiece}
+      </div>
+    );
+  }
+  if (garment === 'dresses') {
+    return (
+      <div style={{ padding: '20px' }}>
+        {ownStyles('Dress Style')}
+        <PieceHeader title="Bodice" note="The top half" />
+        {necklineSection}
+        {sleeveSection}
+        <PieceHeader title="Skirt" note="The shape below the waist" />
+        {skirt('Skirt Shape')}
+      </div>
+    );
+  }
+  if (garment === 'jumpsuits') {
+    return (
+      <div style={{ padding: '20px' }}>
+        {ownStyles('Style')}
+        <PieceHeader title="Top" />
+        {necklineSection}
+        {sleeveSection}
+        <PieceHeader title="Legs" />
+        {trouser('Leg Shape')}
+      </div>
+    );
+  }
+  if (garment === 'skirts') {
+    return <div style={{ padding: '20px' }}>{skirt()}</div>;
+  }
+  if (garment === 'pants') {
+    return <div style={{ padding: '20px' }}>{trouser()}</div>;
+  }
+  if (garment === 'suits') {
+    return (
+      <div style={{ padding: '20px' }}>
+        <PieceHeader title="Jacket" />
+        {collar('Lapel / Collar')}
+        <PieceHeader title="Trousers" />
+        {trouser()}
       </div>
     );
   }

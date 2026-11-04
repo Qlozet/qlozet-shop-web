@@ -34,6 +34,77 @@ export const CLOTHING_TYPES: ClothingTypeOption[] = [
   { id: 'two_piece', label: 'Two-piece set', description: 'A top with trousers or a skirt', emoji: '👔' },
 ];
 
+// ── Garments ────────────────────────────────────────────────────
+// The garment picked on the start screen. The clothing type above only says
+// the broad shape; the garment decides which style groups the studio offers,
+// what the picture generator is told, and the category the design saves as.
+export type Garment =
+  | 'tops' | 'shirts' | 'dresses' | 'skirts' | 'pants'
+  | 'jumpsuits' | 'sets' | 'suits' | 'kaftan' | 'agbada';
+
+const GARMENT_ALIASES: Record<string, Garment> = {
+  tops: 'tops', top: 'tops', blouses: 'tops',
+  shirts: 'shirts', dresses: 'dresses', skirts: 'skirts',
+  pants: 'pants', trousers: 'pants',
+  jumpsuits: 'jumpsuits', sets: 'sets', suits: 'suits',
+  kaftan: 'kaftan', kaftans: 'kaftan', agbada: 'agbada',
+};
+
+/** The garment from a start-screen or saved category ("Agbada", "Pants"). */
+export function garmentOf(raw: string | null | undefined): Garment | null {
+  return GARMENT_ALIASES[(raw || '').trim().toLowerCase()] ?? null;
+}
+
+/** The category a design saves as: the garment's own name. */
+export const GARMENT_CATEGORY: Record<Garment, string> = {
+  tops: 'Tops', shirts: 'Shirts', dresses: 'Dresses', skirts: 'Skirts', pants: 'Pants',
+  jumpsuits: 'Jumpsuits', sets: 'Sets', suits: 'Suits', kaftan: 'Kaftan', agbada: 'Agbada',
+};
+const TYPE_CATEGORY: Record<ClothingType, string> = {
+  top: 'Tops', full_body: 'Dresses', bottom: 'Pants', two_piece: 'Sets',
+};
+export function designCategoryFor(garment: Garment | null, clothingType: ClothingType | null): string {
+  if (garment) return GARMENT_CATEGORY[garment];
+  return clothingType ? TYPE_CATEGORY[clothingType] : 'Design';
+}
+
+/** Garments worn with trousers that the customer can leave off. */
+export function hasOptionalTrousers(garment: Garment | null): boolean {
+  return garment === 'agbada' || garment === 'kaftan';
+}
+
+/**
+ * What the two pieces are called, when the garment has a separate bottom:
+ * a set's "top", an agbada's "agbada", a kaftan's "kaftan".
+ */
+export function pieceNames(garment: Garment | null, skirt: boolean): { top: string; bottom: string } {
+  if (garment === 'agbada') return { top: 'agbada', bottom: 'trousers' };
+  if (garment === 'kaftan') return { top: 'kaftan', bottom: 'trousers' };
+  if (garment === 'suits') return { top: 'jacket', bottom: 'trousers' };
+  return { top: 'top', bottom: skirt ? 'skirt' : 'trousers' };
+}
+
+/**
+ * Which full-body styles belong to a garment, by name, so an agbada never
+ * offers "Jumpsuit" and a dress never offers "Aso Oke Set". New styles the
+ * admin adds follow the same words.
+ */
+const NOT_A_DRESS = /jumpsuit|playsuit|romper|\bsets?\b|buba|\biro\b|dashiki|agbada|senator|safari/i;
+export function fullBodyStylesFor<T extends { name: string }>(garment: Garment | null, styles: T[]): T[] {
+  switch (garment) {
+    case 'agbada':
+      return styles.filter((s) => /agbada/i.test(s.name));
+    case 'kaftan':
+      return styles.filter((s) => /kaftan|caftan|senator|safari|dashiki/i.test(s.name));
+    case 'jumpsuits':
+      return styles.filter((s) => /jumpsuit|playsuit|romper/i.test(s.name));
+    case 'dresses':
+      return styles.filter((s) => !NOT_A_DRESS.test(s.name));
+    default:
+      return styles;
+  }
+}
+
 
 export interface FabricOption {
   id: string;
@@ -119,13 +190,22 @@ export const FABRIC_ROLE_HINT: Record<'main' | ExtraFabricRole, string> = {
   bottom: 'Trousers or skirt',
 };
 
-/** What a slot is called: a set's main fabric is the top's (or both pieces'). */
+/**
+ * What a slot is called. With a separate bottom piece the main fabric is the
+ * top's (or both pieces'): "Top & bottom", "Agbada & trousers", "Kaftan".
+ */
 export function slotLabel(
   role: 'main' | ExtraFabricRole,
-  clothingType: string | null | undefined,
+  pieces: { top: string; bottom: string } | null,
   hasBottom: boolean,
 ): string {
-  if (role === 'main' && clothingType === 'two_piece') return hasBottom ? 'Top' : 'Top & bottom';
+  const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+  if (pieces && role === 'main') {
+    const top = pieces.top === 'top' ? 'Top' : cap(pieces.top);
+    const bottom = pieces.top === 'top' ? 'bottom' : pieces.bottom;
+    return hasBottom ? top : `${top} & ${bottom}`;
+  }
+  if (pieces && role === 'bottom' && pieces.top !== 'top') return cap(pieces.bottom);
   return FABRIC_ROLE_LABEL[role];
 }
 

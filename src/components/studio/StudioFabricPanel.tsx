@@ -56,7 +56,8 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     setExtraFabric,
     setExtraFabricColor,
     removeExtraFabric,
-    clothingType,
+    hasBottomPiece,
+    pieces,
     photoFabrics,
   } = customization;
 
@@ -146,8 +147,8 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
   // The main slot is either a fabric or just a colour, never both: picking
   // one clears the other.
   const pick = (r: Role, id: string | null) => {
-    // Only a two-piece set has a bottom slot (a photo match can name one).
-    if (r === 'bottom' && clothingType !== 'two_piece') return;
+    // Only a garment with a separate bottom has a bottom slot (a photo match can name one).
+    if (r === 'bottom' && !hasBottomPiece) return;
     if (r !== 'main') return setExtraFabric(r, id);
     setSelectedFabric(id);
     if (id) setSelectedColor(null);
@@ -164,9 +165,11 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
     r === 'main' ? selectedColor : (extraFabrics.find((x) => x.role === r)?.color ?? null);
   const colourName = (hex: string) => FABRIC_COLOR_NAMES[hex.toUpperCase()] ?? hex;
 
-  const isSet = clothingType === 'two_piece';
+  const isSet = hasBottomPiece;
   const hasBottom = extraFabrics.some((x) => x.role === 'bottom');
-  const nameOf = (r: Role) => slotLabel(r, clothingType, hasBottom);
+  const nameOf = (r: Role) => slotLabel(r, pieces, hasBottom);
+  const topWord = pieces?.top ?? 'top';
+  const bottomWord = pieces && pieces.top !== 'top' ? pieces.bottom : 'bottom';
 
   const slots: Role[] = ['main', ...extraFabrics.map((x) => x.role)];
   const canAdd = EXTRA_ROLES.filter((r) => !extraFabrics.some((x) => x.role === r));
@@ -216,14 +219,14 @@ export const StudioFabricPanel: React.FC<{ customization: CustomizationState }> 
         >
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Same fabric for top and bottom
+              Same fabric for the {topWord} and {bottomWord}
             </span>
             <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
               {hasBottom
-                ? 'Off: pick the top and the bottom separately.'
+                ? `Off: pick the ${topWord} and the ${bottomWord} separately.`
                 : inPhoto('bottom')
-                  ? 'Your photo’s bottom looks like a different fabric. Turn this off to pick it.'
-                  : 'Turn off to give the bottom its own fabric or colour.'}
+                  ? `Your photo’s ${bottomWord} looks like a different fabric. Turn this off to pick it.`
+                  : `Turn off to give the ${bottomWord} its own fabric or colour.`}
             </span>
           </span>
           <input
