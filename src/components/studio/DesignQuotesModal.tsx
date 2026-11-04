@@ -13,6 +13,7 @@ import { useWallet } from '@/hooks/useWallet';
 import { useCurrency } from '@/context/CurrencyContext';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
+import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import {
   ADD_MEASUREMENTS_HREF,
@@ -75,6 +76,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [revisionBusy, setRevisionBusy] = useState(false);
   const [showAddTailors, setShowAddTailors] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  // The quote and method waiting on the confirm-payment dialog.
+  const [confirming, setConfirming] = useState<{ quote: BespokeQuote; method: 'wallet' | 'paystack' } | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -196,7 +199,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const needsMeasurements =
     !measuresLoading && !measuresError && !profileIsUsable(resolveProfile(profiles, designSetName));
 
-  const accept = async (quoteId: string, method: 'wallet' | 'paystack') => {
+  // Runs from the confirm dialog. Throws a readable message on failure so the
+  // dialog can show it; resolves 'done' for wallet, 'redirected' for card.
+  const accept = async (quoteId: string, method: 'wallet' | 'paystack'): Promise<'done' | 'redirected'> => {
     setAcceptingId(quoteId);
     setErr(null);
     try {
@@ -207,16 +212,15 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         designSetName,
       );
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
-      if (method === 'paystack' && url) {
+      if (method === 'paystack') {
+        if (!url) throw new Error('Could not open the card payment page. Please try again.');
         // Not a cart checkout: the verify page must leave the cart alone.
         try { sessionStorage.setItem('pending_bespoke_payment', 'deposit'); } catch {}
         window.location.href = url; // redirect to the payment page
-        return;
+        return 'redirected';
       }
       // Wallet payment is instant — the order is already confirmed.
-      onClose();
-    } catch (e: any) {
-      setErr(e?.message || 'Could not accept the quote. Please try again.');
+      return 'done';
     } finally {
       setAcceptingId(null);
     }
@@ -552,7 +556,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                     ) : submitted ? (
                       <div className='flex flex-col' style={{ gap: '8px' }}>
                         <button
-                          onClick={() => accept(q._id, 'wallet')}
+                          onClick={() => setConfirming({ quote: q, method: 'wallet' })}
                           disabled={acceptingId === q._id || walletBalance < payable}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
@@ -579,7 +583,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             : `Wallet balance: ₦${walletBalance.toLocaleString()}`}
                         </p>
                         <button
-                          onClick={() => accept(q._id, 'paystack')}
+                          onClick={() => setConfirming({ quote: q, method: 'paystack' })}
                           disabled={acceptingId === q._id}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
@@ -705,6 +709,46 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         designId={designId}
         excludeVendorIds={activeVendorIds}
       />
+      {confirming && (() => {
+        const q = confirming.quote;
+        const preview = (q as BespokeQuote & {
+          payment_preview?: { deposit_amount: number; balance_amount: number } | null;
+        }).payment_preview;
+        const tailor = q.vendor?.business_name || 'your tailor';
+        const surcharge = fabricSurchargeFor(q);
+        const lines = [
+          { label: 'Tailor', value: tailor },
+          { label: 'Design', value: designObj?.name || 'Your design' },
+          { label: 'Quote', value: naira(quoteTotal(q) + surcharge) },
+        ];
+        if (preview && preview.balance_amount > 0) {
+          lines.push({ label: 'Balance later', value: naira(preview.balance_amount) });
+        }
+        return (
+          <PaymentConfirmDialog
+            open
+            onClose={() => setConfirming(null)}
+            title={preview && preview.balance_amount > 0 ? 'Confirm your deposit' : 'Confirm your order'}
+            amount={payableFor(q)}
+            method={confirming.method === 'wallet' ? 'wallet' : 'card'}
+            walletBalance={confirming.method === 'wallet' ? walletBalance : undefined}
+            lines={lines}
+            note={
+              preview && preview.balance_amount > 0
+                ? <>Paying accepts this quote and {tailor} starts on your outfit. You pay the {naira(preview.balance_amount)} balance once you&apos;ve seen photos of the finished piece.</>
+                : <>Paying accepts this quote and {tailor} starts on your outfit.</>
+            }
+            onConfirm={() => accept(q._id, confirming.method)}
+            success={{
+              title: 'Order confirmed',
+              body: preview && preview.balance_amount > 0
+                ? <>{tailor} is starting on your outfit. We&apos;ll ask for the {naira(preview.balance_amount)} balance when it&apos;s finished and you&apos;ve seen the photos. Follow it under Profile → Orders.</>
+                : <>{tailor} is starting on your outfit. Follow it under Profile → Orders.</>,
+            }}
+            onDone={onClose}
+          />
+        );
+      })()}
     </div>,
     document.body,
   );
