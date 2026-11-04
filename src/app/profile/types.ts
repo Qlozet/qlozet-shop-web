@@ -26,7 +26,8 @@ export type ActiveSection =
   | 'change-password'
   | 'notifications'
   | 'following'
-  | 'reserved-fabric';
+  | 'reserved-fabric'
+  | 'open-store';
 
 export type OrderStatus =
   | 'Pending'

@@ -10,7 +10,7 @@ import {
   User, Wallet, Package, Ruler, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
   HelpCircle, BookOpen, FileText, Lock, LogOut,
-  Heart, Scissors, MapPin,
+  Heart, Scissors, MapPin, Store,
 } from 'lucide-react';
 import { TokenIcon } from '@/components/icons/TokenIcon';
 
@@ -32,6 +32,7 @@ import AccountSecurity from './sections/AccountSecurity';
 import Notifications from './sections/Notifications';
 import Following from './sections/Following';
 import ReservedFabric from './sections/ReservedFabric';
+import OpenStore from './sections/OpenStore';
 
 // ─── Section Title Map ──────────────────────────────────────
 const sectionTitles: Record<ActiveSection, string> = {
@@ -62,6 +63,7 @@ const sectionTitles: Record<ActiveSection, string> = {
   'notifications': 'Notifications',
   'following': 'Following',
   'reserved-fabric': 'Reserved Fabric',
+  'open-store': 'Sell on Qlozet',
 };
 
 function ProfilePageContent() {
@@ -291,6 +293,8 @@ function ProfilePageContent() {
         return <Following />;
       case 'reserved-fabric':
         return <ReservedFabric />;
+      case 'open-store':
+        return <OpenStore />;
       default:
         return <WelcomeBanner />;
     }
@@ -413,6 +417,11 @@ function ProfilePageContent() {
                 onClick={() => setActiveSection('following')} isActive={activeSection === 'following'} />
               <MenuRow icon={Scissors} label="Reserved Fabric" iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED"
                 onClick={() => setActiveSection('reserved-fabric')} isActive={activeSection === 'reserved-fabric'} />
+              {/* Same email and password open a store (backend linked accounts). */}
+              {user && (
+                <MenuRow icon={Store} label="Sell on Qlozet" iconBg="rgba(6,78,59,0.08)" iconColor="#064E3B"
+                  onClick={() => setActiveSection('open-store')} isActive={activeSection === 'open-store'} />
+              )}
               <MenuRow icon={Moon} label="Dark Mode" iconBg="rgba(107,114,128,0.08)" iconColor="#6B7280"
                 trailing={<Toggle value={isDark} onChange={toggleTheme} />} />
             </div>
