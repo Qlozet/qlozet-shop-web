@@ -33,9 +33,17 @@ const labelFor = (key: string) =>
   (MEASUREMENT_LABELS as Record<string, string>)[key] ??
   key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-const unwrap = (res: { data?: unknown }) => {
-  const d = res?.data as { data?: unknown } | undefined;
-  return (d?.data ?? d) as Question[] | undefined;
+// The list endpoint returns `{ data }` with no message, so the response
+// interceptor wraps it whole and the array sits at res.data.data.data. Dig
+// down through `.data` until the array, whatever the depth (a shallow peel
+// found an object, read it as "no questions" and hid the card).
+const unwrap = (v: unknown): Question[] => {
+  for (let i = 0; i < 5; i += 1) {
+    if (Array.isArray(v)) return v as Question[];
+    if (v && typeof v === 'object' && 'data' in v) v = (v as { data: unknown }).data;
+    else break;
+  }
+  return [];
 };
 
 function QuestionReply({ reference, q, onDone }: { reference: string; q: Question; onDone: () => void }) {
@@ -163,12 +171,21 @@ export function MeasurementQuestionsCard({ orderReference }: { orderReference: s
   const [version, setVersion] = useState(0);
   const load = useCallback(() => setVersion((v) => v + 1), []);
 
+  // A question asked while this page is open shows up when they come back to it.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [load]);
+
   useEffect(() => {
     let alive = true;
     api
       .get(`/orders/${encodeURIComponent(orderReference)}/measurements/questions`)
       .then((res) => {
-        if (alive) setQuestions(unwrap(res) ?? []);
+        if (alive) setQuestions(unwrap(res));
       })
       .catch(() => {
         if (alive) setQuestions([]);
