@@ -431,17 +431,22 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
           className="fixed left-3 right-3 bottom-3 z-[101] bg-[var(--bg-base)] rounded-[24px] flex flex-col"
           style={{ maxHeight: '85vh', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)' }}
         >
-          <div className="flex justify-center pt-3 pb-1">
+          {/* Inline padding: the global reset cancels Tailwind's pt-/pb- classes. */}
+          <div className="flex justify-center" style={{ padding: '12px 0 4px' }}>
             <div style={{ width: '40px', height: '4px', borderRadius: '4px', background: 'var(--drag-handle)' }} />
           </div>
-          <div className="flex-1 overflow-y-auto hide-scrollbar relative" style={{ padding: '20px 24px 24px' }}>
-            <button
-              onClick={() => setStep(null)}
-              className="absolute top-0 right-0 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
-              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
-            >
-              <X size={14} color="var(--text-secondary)" />
-            </button>
+          {/* Pinned to the sheet (not the scrolling content), level with the
+              title and in line with the content's right edge. */}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setStep(null)}
+            className="absolute z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
+            style={{ top: '36px', right: '20px', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}
+          >
+            <X size={14} color="var(--text-secondary)" />
+          </button>
+          <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '20px 24px 24px' }}>
             {stepContent}
           </div>
         </div>
@@ -454,6 +459,8 @@ function NewDesignModal({ step, setStep }: { step: ModalStep; setStep: (s: Modal
           style={{ maxWidth: '440px', margin: '20px', borderRadius: '24px', background: 'var(--bg-base)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)', overflow: 'hidden' }}
         >
           <button
+            type="button"
+            aria-label="Close"
             onClick={() => setStep(null)}
             className="absolute top-4 right-4 z-10 flex items-center justify-center transition-all hover:bg-[var(--bg-surface-elevated)] active:scale-90"
             style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)', background: 'var(--bg-base)', cursor: 'pointer' }}

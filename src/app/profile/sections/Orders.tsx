@@ -18,6 +18,8 @@ import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
 import { MeasurementQuestionsCard } from '@/components/MeasurementQuestionsCard';
 import { OrderChatModal } from '@/components/chat/OrderChatModal';
+import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
+import { useWallet } from '@/hooks/useWallet';
 import { useUnreadOrderMessages } from '@/hooks/useUnreadOrderMessages';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS } from '@/hooks/useCustomerReturns';
 
@@ -165,6 +167,8 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<'approve' | 'changes' | 'wallet' | 'card' | null>(null);
   const [choosingPay, setChoosingPay] = useState(false);
+  const [confirmPay, setConfirmPay] = useState<'wallet' | 'card' | null>(null);
+  const { walletBalance, refresh: refreshWallet } = useWallet();
   const plan = order.paymentPlan;
   const balanceDue = owesBalance(plan);
 
@@ -195,22 +199,24 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
     }
   };
 
-  // Deposit orders: paying the balance is the approval.
-  const payBalance = async (method: 'wallet' | 'card') => {
+  // Deposit orders: paying the balance is the approval. Runs from the confirm
+  // dialog; throws a readable message so the dialog can show it.
+  const payBalance = async (method: 'wallet' | 'card'): Promise<'done' | 'redirected'> => {
     setBusy(method);
     try {
       const res = await api.post(`/orders/${order.orderNumber}/pay-balance`, { payment_method: method });
       const payment = res.data?.data?.payment;
       const url = payment?.authorization_url || payment?.paymentUrl;
-      if (method === 'card' && url) {
+      if (method === 'card') {
+        if (!url) throw new Error('Could not open the card payment page. Please try again.');
         try { sessionStorage.setItem('pending_bespoke_payment', 'balance'); } catch {}
         window.location.href = url;
-        return;
+        return 'redirected';
       }
-      toast.success('Balance paid. The tailor will ship your outfit.');
-      refetch();
+      return 'done';
     } catch (err) {
-      toast.error(apiErrMsg(err, 'Could not take the payment. Please try again.'));
+      if (err instanceof Error && !(err as { response?: unknown }).response) throw err;
+      throw new Error(apiErrMsg(err, 'Could not take the payment. You were not charged.'));
     } finally {
       setBusy(null);
     }
@@ -274,13 +280,13 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
             {!requesting && balanceDue && plan ? (
               choosingPay ? (
                 <>
-                  <button onClick={() => payBalance('wallet')} disabled={busy !== null}
+                  <button onClick={() => setConfirmPay('wallet')} disabled={busy !== null}
                     className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
                     style={{ gap: '6px', padding: '11px', borderRadius: '10px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {busy === 'wallet' && <Loader2 size={13} className="animate-spin" />}
                     From wallet
                   </button>
-                  <button onClick={() => payBalance('card')} disabled={busy !== null}
+                  <button onClick={() => setConfirmPay('card')} disabled={busy !== null}
                     className="flex-1 flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
                     style={{ gap: '6px', padding: '11px', borderRadius: '10px', border: '1.5px solid var(--brand-fill)', background: 'none', color: INK, cursor: 'pointer', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {busy === 'card' && <Loader2 size={13} className="animate-spin" />}
@@ -337,6 +343,32 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
             )}
           </div>
         </div>
+      )}
+      {confirmPay && plan && (
+        <PaymentConfirmDialog
+          open
+          onClose={() => setConfirmPay(null)}
+          title="Approve and pay the balance"
+          amount={plan.balance_amount}
+          method={confirmPay}
+          walletBalance={confirmPay === 'wallet' ? walletBalance : undefined}
+          lines={[
+            { label: 'Order', value: `#${order.orderNumber}` },
+            { label: 'Quote', value: `₦${Math.round(plan.quote_total).toLocaleString()}` },
+            { label: 'Deposit paid', value: `₦${Math.round(plan.deposit_amount).toLocaleString()}` },
+          ]}
+          note="Paying approves the finished piece from the photos, and the tailor ships it."
+          onConfirm={() => payBalance(confirmPay)}
+          success={{
+            title: 'Balance paid',
+            body: 'Your outfit is fully paid and approved. The tailor will ship it now; you can follow it under Track Order.',
+          }}
+          onDone={() => {
+            setChoosingPay(false);
+            refetch();
+            refreshWallet?.();
+          }}
+        />
       )}
     </Section>
   );
