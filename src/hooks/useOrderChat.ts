@@ -41,6 +41,11 @@ function digMessage(v: unknown): ChatMessage | null {
   return null;
 }
 
+function msgTime(m: ChatMessage): number {
+  const t = Date.parse(m.createdAt || m.created_at || '');
+  return Number.isNaN(t) ? 0 : t;
+}
+
 interface UseOrderChatOptions {
   /** Only load/connect when the thread is actually open. */
   enabled: boolean;
@@ -86,28 +91,90 @@ export function useOrderChat(
     load();
   }, [enabled, reference, load]);
 
+  // Fetch the thread again and merge it in, without a spinner or wiping what's
+  // on screen if it fails. Fills in anything missed while the connection was
+  // down. The request also renews an expired login (the api client refreshes
+  // on 401), so a reconnect after it picks up the fresh token.
+  const sync = useCallback(async () => {
+    if (!reference) return;
+    try {
+      const res = await api.get(`/orders/${reference}/messages`);
+      const fresh = digArray(res.data);
+      setMessages((prev) => {
+        const byId = new Map<string, ChatMessage>();
+        for (const m of prev) byId.set(m._id, m);
+        for (const m of fresh) byId.set(m._id, m);
+        return [...byId.values()].sort(
+          (a, b) => msgTime(a) - msgTime(b)
+        );
+      });
+    } catch {
+      // Keep what's shown; the next reconnect or tab focus tries again.
+    }
+  }, [reference]);
+
   // Live delivery.
   useEffect(() => {
     if (!enabled || !reference || typeof window === 'undefined') return;
-    const token = localStorage.getItem('qlozet_access_token');
-    if (!token) return;
+    if (!localStorage.getItem('qlozet_access_token')) return;
+
+    let stopped = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let retryDelay = 2000;
 
     const socket = io(socketOrigin(), {
-      auth: { token },
+      // A function, so every reconnect sends the newest token.
+      auth: (cb) => cb({ token: localStorage.getItem('qlozet_access_token') }),
       transports: ['websocket'],
     });
     socketRef.current = socket;
+
     const onMessage = (m: ChatMessage) => {
       if (m.order_reference === reference) append(m);
     };
+    // Every (re)connect: catch up on anything sent while we weren't listening.
+    const onConnect = () => {
+      retryDelay = 2000;
+      sync();
+    };
+    // The server only hangs up on its own when the login is no longer valid.
+    // Renew it with a normal request, then reconnect, backing off up to 30s.
+    const onDisconnect = (reason: string) => {
+      if (stopped || reason !== 'io server disconnect') return;
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(async () => {
+        await sync();
+        if (stopped || !localStorage.getItem('qlozet_access_token')) return;
+        retryDelay = Math.min(retryDelay * 2, 30000);
+        socket.connect();
+      }, retryDelay);
+    };
+    // A phone waking up or a tab coming back: catch up straight away rather
+    // than waiting for the connection to notice it went stale.
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      sync();
+      if (!socket.connected) socket.connect();
+    };
+
     socket.on('order-message', onMessage);
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onVisible);
 
     return () => {
+      stopped = true;
+      clearTimeout(retryTimer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onVisible);
       socket.off('order-message', onMessage);
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [enabled, reference, append]);
+  }, [enabled, reference, append, sync]);
 
   const send = useCallback(
     async (content: string) => {
