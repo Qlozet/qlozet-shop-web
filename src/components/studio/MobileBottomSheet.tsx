@@ -28,12 +28,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
   const hasGeneratedImages = customization.generatedImages.length > 0;
 
   // Map clothingType back to category name for the order payload (mirrors desktop)
-  const categoryMap: Record<string, string> = {
-    top: 'Tops', full_body: 'Dresses', bottom: 'Pants',
-  };
-  const designCategory = customization.clothingType
-    ? (categoryMap[customization.clothingType] || customization.clothingType)
-    : 'Design';
+  const designCategory = customization.designCategory;
   const designGender = customization.designGender === 'male' ? 'men' as const : 'women' as const;
 
   // Disable generate if nothing meaningful is selected or entered
@@ -347,18 +342,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
         designImages={customization.imagesForSave}
         backViews={customization.backViewsForSave}
         referenceImages={customization.referenceImages}
-        selections={{
-          neckline: customization.selectedNeckline,
-          sleeve: customization.selectedSleeve,
-          silhouette: customization.selectedSilhouette,
-          collar: customization.selectedCollar,
-          fabric: customization.selectedFabric,
-          extra_fabrics: customization.extraFabricsForSave,
-          color: customization.selectedColor,
-          fit: customization.selectedFit,
-          measurement_set: customization.measurementSetName || undefined,
-          userPrompt: customization.userPrompt,
-        }}
+        selections={customization.selectionsForSave}
         designId={designId}
         onSaved={onDesignSaved}
         syncSaved

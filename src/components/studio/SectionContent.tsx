@@ -51,6 +51,13 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         selectedFullBody={customization.selectedFullBody}
         onSelectFullBody={(id) => customization.setSelectedFullBody(id)}
         product={product}
+        garment={customization.garment}
+        withTrousers={customization.withTrousers}
+        onToggleTrousers={
+          customization.garment === 'agbada' || customization.garment === 'kaftan'
+            ? customization.setWithTrousers
+            : undefined
+        }
       />
     );
   }

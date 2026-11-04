@@ -228,6 +228,7 @@ function StudioContent() {
               if (typeof sel.skirt === 'string') customization.setSelectedSkirt(sel.skirt);
               if (typeof sel.trouser === 'string') customization.setSelectedTrouser(sel.trouser);
               if (typeof sel.full_body === 'string') customization.setSelectedFullBody(sel.full_body);
+              if (sel.no_trousers === true) customization.setWithTrousers(false);
               if (sel.fabric) customization.setSelectedFabric(sel.fabric);
               // Older designs saved a default colour beside the fabric; the fabric wins.
               if (sel.color && !sel.fabric) customization.setSelectedColor(sel.color);
@@ -338,9 +339,6 @@ function StudioContent() {
 
   const buildPayload = useCallback(
     (name: string): CreateDesignPayload => {
-      const categoryMap: Record<string, string> = {
-        top: 'Tops', full_body: 'Dresses', bottom: 'Pants', two_piece: 'Sets',
-      };
       // Studio fabrics are REAL fabric products (fabric library / applied
       // "use my fabric") — persist the id so the design, and later the order,
       // carry the actual fabric for the tailor. Static placeholder ids are
@@ -352,9 +350,7 @@ function StudioContent() {
           : undefined;
       return {
         name,
-        category: customization.clothingType
-          ? categoryMap[customization.clothingType] || customization.clothingType
-          : 'Design',
+        category: customization.designCategory,
         gender: customization.designGender === 'male' ? 'men' : 'women',
         fabric_id: fabricId,
         extra_fabrics: extraFabricsPayload(customization.extraFabricsForSave),
@@ -365,24 +361,7 @@ function StudioContent() {
           : undefined,
         description: JSON.stringify({
           notes: '',
-          selections: enrichSelections({
-            neckline: customization.selectedNeckline,
-            sleeve: customization.selectedSleeve,
-            silhouette: customization.selectedSilhouette,
-            collar: customization.selectedCollar,
-            skirt: customization.selectedSkirt ?? undefined,
-            trouser: customization.selectedTrouser ?? undefined,
-            full_body: customization.selectedFullBody ?? undefined,
-            fabric: customization.selectedFabric,
-            extra_fabrics: customization.extraFabricsForSave,
-            color: customization.selectedColor,
-            fit: customization.selectedFit,
-            accessories: customization.selectedAccessories.length
-              ? customization.selectedAccessories
-              : undefined,
-            measurement_set: customization.measurementSetName || undefined,
-            userPrompt: customization.userPrompt,
-          }),
+          selections: enrichSelections(customization.selectionsForSave),
         }),
       };
     },
@@ -703,35 +682,12 @@ function StudioContent() {
         isOpen={customization.showSaveModal}
         onClose={() => customization.setShowSaveModal(false)}
         designName={customization.designName}
-        category={
-          customization.clothingType
-            ? ({ top: 'Tops', full_body: 'Dresses', bottom: 'Pants', two_piece: 'Sets' } as Record<string, string>)[
-                customization.clothingType
-              ] || customization.clothingType
-            : 'Design'
-        }
+        category={customization.designCategory}
         gender={customization.designGender === 'male' ? 'men' : 'women'}
         designImages={customization.imagesForSave}
         backViews={customization.backViewsForSave}
         referenceImages={customization.referenceImages}
-        selections={{
-          neckline: customization.selectedNeckline,
-          sleeve: customization.selectedSleeve,
-          silhouette: customization.selectedSilhouette,
-          collar: customization.selectedCollar,
-          skirt: customization.selectedSkirt ?? undefined,
-          trouser: customization.selectedTrouser ?? undefined,
-          full_body: customization.selectedFullBody ?? undefined,
-          fabric: customization.selectedFabric,
-          extra_fabrics: customization.extraFabricsForSave,
-          color: customization.selectedColor,
-          fit: customization.selectedFit,
-          accessories: customization.selectedAccessories.length
-            ? customization.selectedAccessories
-            : undefined,
-          measurement_set: customization.measurementSetName || undefined,
-          userPrompt: customization.userPrompt,
-        }}
+        selections={customization.selectionsForSave}
         designId={savedId}
         onSaved={handleDesignSaved}
       />

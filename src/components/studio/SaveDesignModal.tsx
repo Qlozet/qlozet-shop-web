@@ -15,6 +15,8 @@ export interface DesignSelections {
   skirt?: string | null;
   trouser?: string | null;
   full_body?: string | null;
+  /** An agbada or kaftan made without its trousers. */
+  no_trousers?: boolean;
   fabric?: string | null;
   /** The garment's other fabrics (contrast, lining, a set's bottom). */
   extra_fabrics?: { role: ExtraFabricRole; fabric: string | null; color?: string | null }[];
