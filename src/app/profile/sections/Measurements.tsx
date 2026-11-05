@@ -262,7 +262,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
         {/* Method Options */}
         <div className="flex flex-col" style={{ gap: '12px' }}>
           {[
-            { key: 'scan' as MeasurementMethod, label: 'Get Scanned' },
+            // Body scanning hidden for now (the scan screen below stays).
+            // { key: 'scan' as MeasurementMethod, label: 'Get Scanned' },
             { key: 'no-scan' as MeasurementMethod, label: 'Estimate from height & weight' },
             { key: 'manual' as MeasurementMethod, label: 'Manually input your sizes' },
           ].map((opt) => (
