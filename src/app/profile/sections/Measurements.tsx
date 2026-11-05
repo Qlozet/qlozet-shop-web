@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Ruler, ChevronRight, ChevronDown, Plus, Minus, Trash2, Sparkles, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Ruler, ChevronRight, ChevronDown, Plus, Minus, Trash2, Sparkles, ArrowRight, Loader2, AlertCircle, Camera } from 'lucide-react';
+import { api } from '@/lib/api';
 import { cardStyle } from '../styles';
 import type { ActiveSection, MeasurementProfile, MeasurementValues, TailoringMeta, TailoringTier } from '../types';
 import { MEASUREMENT_LABELS, MEASUREMENT_HINTS, EMPTY_MEASUREMENTS, TIER_META, tailoringLabel } from '../types';
@@ -70,6 +71,82 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   const [isSaving, setIsSaving] = useState(false);
   const [saveProfileName, setSaveProfileName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // ─── Fill from a photo (a tailor's measurement book or a document) ───
+  // The server reads it; nothing is saved until the customer saves the form.
+  const [photoPeople, setPhotoPeople] = useState<PhotoPerson[] | null>(null);
+  const [photoApplied, setPhotoApplied] = useState<PhotoPerson | null>(null);
+  const [photoFactor, setPhotoFactor] = useState(1);
+  const [photoNote, setPhotoNote] = useState('');
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isReadingPhoto, setIsReadingPhoto] = useState(false);
+  const photoInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  /** Put one person's numbers into the form (factor re-reads the unit). */
+  const applyPhotoPerson = (person: PhotoPerson, factor = 1) => {
+    const core: Partial<MeasurementValues> = {};
+    const tailoring: Record<string, number> = {};
+    for (const [key, v] of Object.entries(person.values)) {
+      const cm = Math.round(v.value_cm * factor * 10) / 10;
+      if ((MEASUREMENT_KEYS as string[]).includes(key)) core[key as keyof MeasurementValues] = cm;
+      else tailoring[key] = cm;
+    }
+    setEditValues((prev) => ({ ...prev, ...core }));
+    setTailoringValues((prev) => ({ ...prev, ...tailoring }));
+    setPhotoApplied(person);
+    setPhotoFactor(factor);
+    setPhotoPeople(null);
+    // Show it the way the book was written.
+    setUnit(factor === 1 ? person.unit : person.unit === 'cm' ? 'inch' : 'cm');
+  };
+
+  const readPhoto = async (file: File) => {
+    setPhotoError(null);
+    setIsReadingPhoto(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await api.post('/measurements/read-photo', form, {
+        headers: { 'Content-Type': undefined as unknown as string },
+      });
+      const reading: PhotoReading | undefined = res.data?.data ?? res.data;
+      if (!reading?.is_measurements || !reading.people?.length) {
+        setPhotoError("We couldn't find measurements in that photo. Try a clearer, closer shot of the page.");
+        return;
+      }
+      setPhotoNote(reading.note || '');
+      if (reading.people.length > 1) setPhotoPeople(reading.people);
+      else applyPhotoPerson(reading.people[0]);
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setPhotoError(
+        message ||
+          "We couldn't read that photo just now. Try again, or type your measurements in.",
+      );
+    } finally {
+      setIsReadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
+  /** "The book was in cm, not inches" (or the other way), when it was guessed. */
+  const flipPhotoUnit = () => {
+    if (!photoApplied) return;
+    // Back to the server's reading, or the other unit: values read as inches
+    // were ×2.54, so as cm they are ÷2.54 (and the other way round).
+    const other = photoApplied.unit === 'inch' ? 1 / 2.54 : 2.54;
+    applyPhotoPerson(photoApplied, photoFactor === 1 ? other : 1);
+  };
+
+  const clearPhoto = () => {
+    setPhotoApplied(null);
+    setPhotoPeople(null);
+    setPhotoNote('');
+    setPhotoError(null);
+    setPhotoFactor(1);
+  };
+
+  const photoFlag = (key: string): PhotoValue | undefined => photoApplied?.values[key];
 
   // No-scan form fields
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
@@ -147,17 +224,22 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     );
   };
 
-  const StepperRow = ({ fieldKey, value, displayUnit, onChange }: {
+  const StepperRow = ({ fieldKey, value, displayUnit, onChange, flag }: {
     fieldKey: keyof MeasurementValues;
     value: number; // always stored in cm
     displayUnit: 'cm' | 'inch';
     onChange: (key: keyof MeasurementValues, cmVal: number) => void;
+    /** Filled from a photo: what was written, and whether it read clearly. */
+    flag?: PhotoValue;
   }) => {
     const displayed = toDisplay(value, displayUnit);
     const step = displayUnit === 'inch' ? 0.25 : 0.5;
     return (
-      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '12px' }}>
-        <MeasurementLabel fieldKey={fieldKey} />
+      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '12px', ...(flag && !flag.clear ? { background: 'rgba(245,158,11,0.08)' } : {}) }}>
+        <div className="flex flex-col" style={{ gap: '4px', minWidth: 0 }}>
+          <MeasurementLabel fieldKey={fieldKey} />
+          {flag && <PhotoChip flag={flag} />}
+        </div>
         <div className="flex items-center shrink-0" style={{ gap: '0' }}>
           <button
             onClick={() => onChange(fieldKey, toCm(Math.max(0, Math.round((displayed - step) * 100) / 100), displayUnit))}
@@ -182,7 +264,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
   };
 
   // ─── Shared: Tailoring Row (generic key + optional tier chip) ──
-  const TailoringRow = ({ name, cmValue, tier, mae, displayUnit, editable, onChange }: {
+  const TailoringRow = ({ name, cmValue, tier, mae, displayUnit, editable, onChange, flag }: {
+    flag?: PhotoValue;
     name: string;
     cmValue: number;
     tier?: TailoringTier;
@@ -197,9 +280,10 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
     const meta = tier ? TIER_META[tier] : null;
     const maeNote = typeof mae === 'number' ? ` Typical error: ±${mae} cm.` : '';
     return (
-      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '10px' }}>
-        <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
+      <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-glass)', gap: '10px', ...(flag && !flag.clear ? { background: 'rgba(245,158,11,0.08)' } : {}) }}>
+        <div className="flex items-center flex-wrap" style={{ gap: '8px', minWidth: 0 }}>
           <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{tailoringLabel(name)}</span>
+          {flag && <PhotoChip flag={flag} />}
           {meta && (
             <span
               title={(tier === 'rough' ? 'A rough estimate — please double-check this one.' : tier === 'measured' ? 'Measured from your silhouette.' : 'Calculated from your other measurements.') + maeNote}
@@ -640,6 +724,86 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
 
+        {/* Fill from a photo of a measurement book or a document */}
+        <div style={{ ...cardStyle, padding: '16px 20px' }}>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void readPhoto(f);
+            }}
+          />
+          <div className="flex items-start" style={{ gap: '12px' }}>
+            <Camera size={20} color="var(--text-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div className="flex flex-col" style={{ gap: '4px', flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Have a tailor&apos;s measurement book?</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Take a photo of the page (or upload a PDF) and we&apos;ll fill the numbers in for you to check. The photo isn&apos;t kept.
+              </span>
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={isReadingPhoto}
+                className="flex items-center justify-center self-start transition-all active:scale-[0.98]"
+                style={{ marginTop: '8px', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', cursor: isReadingPhoto ? 'wait' : 'pointer', gap: '8px' }}
+              >
+                {isReadingPhoto ? <><Loader2 size={14} className="animate-spin" /> Reading your photo...</> : photoApplied ? 'Use another photo' : 'Fill from a photo'}
+              </button>
+            </div>
+          </div>
+
+          {photoError && (
+            <div className="flex items-start" style={{ marginTop: '12px', gap: '8px', fontSize: '12px', color: '#B91C1C', lineHeight: 1.5 }}>
+              <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> {photoError}
+            </div>
+          )}
+
+          {photoPeople && (
+            <div className="flex flex-col" style={{ marginTop: '14px', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>This page has more than one person. Which one is you?</span>
+              {photoPeople.map((p, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => applyPhotoPerson(p)}
+                  className="flex items-center justify-between w-full"
+                  style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'var(--bg-base)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}
+                >
+                  <span>{p.label}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>{Object.keys(p.values).length} measurements</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {photoApplied && (
+            <div className="flex flex-col" style={{ marginTop: '14px', gap: '8px', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                We filled in {Object.keys(photoApplied.values).length} measurements. Check each one against the page{Object.values(photoApplied.values).some((v) => !v.clear) ? ', especially the ones marked Check' : ''}.
+              </span>
+              {photoApplied.unit_guessed && (
+                <span>
+                  The page didn&apos;t say inches or cm, so we read it as {unit === 'inch' ? 'inches' : 'cm'}.{' '}
+                  <button type="button" onClick={flipPhotoUnit} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-primary)', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: '12px' }}>
+                    It was in {unit === 'inch' ? 'cm' : 'inches'}
+                  </button>
+                </span>
+              )}
+              {photoApplied.unmatched.length > 0 && (
+                <span>Not filled in (no matching field): {photoApplied.unmatched.join(', ')}. Your tailor can ask you about these.</span>
+              )}
+              <span>Some tailors write the size of the clothes, with room added, not of the body. If a number looks generous, check it with a tape.</span>
+              {photoNote && <span>{photoNote}</span>}
+              <button type="button" onClick={() => { clearPhoto(); setEditValues({ ...EMPTY_MEASUREMENTS }); setTailoringValues({}); }} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px' }}>
+                Clear and start again
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Stepper rows */}
         <div style={cardStyle}>
           <div className="flex flex-col">
@@ -650,10 +814,30 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                 value={editValues[key]}
                 displayUnit={unit}
                 onChange={(k, v) => setEditValues(prev => ({ ...prev, [k]: v }))}
+                flag={photoFlag(key)}
               />
             ))}
           </div>
         </div>
+
+        {/* Tailoring points read from the photo (sleeve, neck…) */}
+        {Object.keys(tailoringValues).length > 0 && (
+          <div style={cardStyle}>
+            <div className="flex flex-col">
+              {Object.entries(tailoringValues).map(([name, cmVal]) => (
+                <TailoringRow
+                  key={name}
+                  name={name}
+                  cmValue={cmVal}
+                  displayUnit={unit}
+                  editable
+                  onChange={(n, v) => setTailoringValues(prev => ({ ...prev, [n]: v }))}
+                  flag={photoFlag(name)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Profile name */}
         <div className="flex flex-col" style={{ gap: '6px' }}>
@@ -673,10 +857,21 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           onClick={async () => {
             if (!saveProfileName.trim()) return;
             setIsSaving(true);
-            const ok = await saveMeasurement(saveProfileName.trim(), unit, editValues);
+            const fromPhoto = !!photoApplied;
+            const ok = await saveMeasurement(
+              saveProfileName.trim(),
+              unit,
+              editValues,
+              Object.keys(tailoringValues).length ? tailoringValues : undefined,
+              undefined,
+              undefined,
+              fromPhoto ? 'photo' : undefined,
+            );
             setIsSaving(false);
             if (ok) {
               setEditValues({ ...EMPTY_MEASUREMENTS });
+              setTailoringValues({});
+              clearPhoto();
               setSaveProfileName('');
               setActiveSection('measurements');
             }
@@ -1088,5 +1283,50 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Fill from a photo: the server's reading (values in cm) ─────
+interface PhotoValue {
+  value_cm: number;
+  /** As written on the page, e.g. "Ch 38". */
+  written_as: string;
+  clear: boolean;
+}
+interface PhotoPerson {
+  label: string;
+  /** The unit the server read the page in (written, or worked out). */
+  unit: 'cm' | 'inch';
+  unit_guessed: boolean;
+  values: Record<string, PhotoValue>;
+  unmatched: string[];
+}
+interface PhotoReading {
+  is_measurements: boolean;
+  people: PhotoPerson[];
+  note: string;
+}
+
+/** "From photo" (read clearly) or "Check" (unclear), with what was written. */
+function PhotoChip({ flag }: { flag: PhotoValue }) {
+  return (
+    <span
+      title={flag.written_as ? `On the page: ${flag.written_as}` : undefined}
+      style={{
+        alignSelf: 'flex-start',
+        fontSize: '9px',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        padding: '3px 8px',
+        borderRadius: '100px',
+        whiteSpace: 'nowrap',
+        color: flag.clear ? 'var(--text-muted)' : '#92400E',
+        background: flag.clear ? 'var(--bg-surface-elevated)' : 'rgba(245,158,11,0.15)',
+      }}
+    >
+      {flag.clear ? 'From photo' : 'Check'}
+      {flag.written_as ? ` · ${flag.written_as}` : ''}
+    </span>
   );
 }

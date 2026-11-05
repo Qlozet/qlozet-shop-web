@@ -343,6 +343,8 @@ export function useMeasurements() {
     tailoring?: Record<string, number>,
     meta?: TailoringMeta,
     inputs?: Record<string, unknown>,
+    /** How the set was taken, when the server can't tell (e.g. 'photo'). */
+    method?: 'manual' | 'photo',
   ): Promise<boolean> => {
     try {
       // Values are ALWAYS held in cm internally (steppers convert only for
@@ -356,6 +358,7 @@ export function useMeasurements() {
         measurements: tailoring ? { ...values, ...tailoring } : values,
         ...(meta ? { tailoring_meta: meta } : {}),
         ...(inputs ? { inputs } : {}),
+        ...(method ? { method } : {}),
       };
       console.log('[Measurements] saveMeasurement request:', JSON.stringify(body));
       const res = await api.post('/measurements/users', body);
@@ -364,7 +367,7 @@ export function useMeasurements() {
       if (user?.id) {
         trackEventDirect(user.id, {
           eventType: 'measurement_created',
-          properties: { method: 'manual', name },
+          properties: { method: method ?? 'manual', name },
         });
       }
 
