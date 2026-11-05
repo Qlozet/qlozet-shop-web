@@ -15,6 +15,7 @@ import { useVendorProducts } from '@/hooks/useVendors';
 import {
   getProductName,
   getProductPrice,
+  getCraftPrice,
   getPriceUnit,
   getProductOriginalPrice,
   getProductImage,
@@ -42,6 +43,7 @@ import { useCustomization } from '@/hooks/useCustomization';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useBoughtTogether, useCompleteTheLook } from '@/hooks/useRecommendations';
 import { SILHOUETTES, NECKLINES, SLEEVES, FABRICS, ACCESSORIES } from '@/data/studio-options';
+import { defaultStylesByPart } from '@/lib/style-defaults';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
@@ -172,7 +174,9 @@ export default function ProductDetailsPage() {
 
   // ── Derived display values ─────────────────────────────────────
   const productName = product ? getProductName(product) : '';
-  const productPrice = product ? getProductPrice(product) : 0;
+  // Craftsmanship price alone: the chosen styles (defaults pre-picked) are
+  // added on top in customizationExtra. Listing cards use getProductPrice.
+  const productPrice = product ? getCraftPrice(product) : 0;
   const productImage = product ? getProductImage(product) : '';
   // Cleaned before it is put on the page as HTML (see lib/description-html).
   const productDesc = product ? safeDescriptionHtml(getProductDescription(product)) : '';
@@ -244,7 +248,7 @@ export default function ProductDetailsPage() {
         eventType: 'view_item',
         properties: {
           itemId: product._id,
-          price: productPrice,
+          price: getProductPrice(product),
           brand: vendorName,
           kind: product.kind,
         },
@@ -508,6 +512,30 @@ export default function ProductDetailsPage() {
     }
   }, [customization.selectedColor]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Open a made-to-order outfit with each part's default style chosen (the
+  // look in the photos), so the price shown is the outfit as pictured. Only
+  // fills empty slots, once per product; the customer can change any of them.
+  const defaultsAppliedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!product || product.kind !== 'clothing' || product.clothing?.type !== 'customize') return;
+    if (defaultsAppliedFor.current === product._id) return;
+    defaultsAppliedFor.current = product._id;
+    const defaults = defaultStylesByPart(product.clothing?.styles);
+    const slots: Record<string, [string | null, (id: string | null) => void]> = {
+      neckline: [customization.selectedNeckline, customization.setSelectedNeckline],
+      sleeve: [customization.selectedSleeve, customization.setSelectedSleeve],
+      collar: [customization.selectedCollar, customization.setSelectedCollar],
+      skirt: [customization.selectedSkirt, customization.setSelectedSkirt],
+      trouser: [customization.selectedTrouser, customization.setSelectedTrouser],
+      full_body: [customization.selectedFullBody, customization.setSelectedFullBody],
+    };
+    for (const [part, style] of defaults) {
+      const slot = slots[part];
+      if (slot && !slot[0] && style._id) slot[1](style._id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?._id]);
+
   // Look up selected styles from API cache or hardcoded fallback
   const { all: apiStyles } = useStyleLibrary();
 
@@ -637,7 +665,7 @@ export default function ProductDetailsPage() {
   const originalPrice = serverBreakdown
     ? serverBreakdown.before_discount
     : (product && hasDiscount(product)
-        ? getProductOriginalPrice(product)
+        ? product.base_price
         : productPrice) + customizationExtra;
   const showOriginalPrice = serverBreakdown
     ? serverBreakdown.discount > 0
@@ -807,7 +835,10 @@ export default function ProductDetailsPage() {
     const hasSelections = Object.values(selections).some(
       (arr) => Array.isArray(arr) && arr.length > 0,
     );
-    if (!hasSelections && !appliedFabricId) {
+    // A made-to-order outfit is always priced by the server: parts left
+    // empty are charged at their default style there.
+    const madeToOrder = product.kind === 'clothing' && product.clothing?.type === 'customize';
+    if (!hasSelections && !appliedFabricId && !madeToOrder) {
       setServerPrice(null);
       setServerBreakdown(null);
       return;

@@ -81,6 +81,8 @@ export interface ApiStyle {
   style_code?: string;
   price?: number;
   min_width_cm?: number;
+  /** The style in the listing photos for its part (see lib/style-defaults). */
+  is_default?: boolean;
 }
 
 export interface ApiClothing {
@@ -207,6 +209,8 @@ export interface ApiProduct {
   applied_discount?: string;
   discounted_price?: number;
   discount_percentage?: number;
+  /** Made-to-order clothing: what the default styles add to base_price. */
+  default_styles_price?: number;
   scheduled_activation_date?: string;
   seo?: Record<string, unknown>;
   metafields?: Record<string, unknown>;
@@ -578,10 +582,24 @@ export function getProductName(p: ApiProduct): string {
   return 'Untitled Product';
 }
 
-/** Get the display price (base_price, or discounted_price if available) */
-export function getProductPrice(p: ApiProduct): number {
+/**
+ * What the default styles add to a made-to-order listing (0 otherwise): the
+ * listing price is the outfit as pictured, not the craftsmanship alone.
+ */
+export function getDefaultStylesPrice(p: ApiProduct): number {
+  if (p.kind !== 'clothing' || p.clothing?.type !== 'customize') return 0;
+  return Math.max(0, Number(p.default_styles_price) || 0);
+}
+
+/** The craftsmanship price alone (discounted when on sale), without styles. */
+export function getCraftPrice(p: ApiProduct): number {
   if (p.discounted_price != null && p.discounted_price > 0) return p.discounted_price;
   return p.base_price;
+}
+
+/** Get the display price: discounted (or base) price + default styles. */
+export function getProductPrice(p: ApiProduct): number {
+  return getCraftPrice(p) + getDefaultStylesPrice(p);
 }
 
 /**
@@ -596,7 +614,7 @@ export function getPriceUnit(p: ApiProduct): string | undefined {
 
 /** Get the original price (before discount). Returns base_price. */
 export function getProductOriginalPrice(p: ApiProduct): number {
-  return p.base_price;
+  return p.base_price + getDefaultStylesPrice(p);
 }
 
 /** Check if product has an active discount */
