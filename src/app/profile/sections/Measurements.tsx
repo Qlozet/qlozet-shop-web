@@ -484,6 +484,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
             <ArrowLeft size={20} color="var(--text-primary)" />
           </button>
 
+          {/* The questions sit in one card, like the other profile sections */}
+          <div className="flex flex-col" style={{ ...cardStyle, padding: '24px 20px', gap: '24px' }}>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
               Answer the questions below<br />to get your measurement.
@@ -653,6 +655,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
               </div>
             </div>
           ))}
+          </div>
 
           {/* Error */}
           {predictionError && (
