@@ -336,12 +336,16 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
-        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
-          What is your clothing size?
-        </h3>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '400px' }}>
-          We use a special customization feature to get the most accurate sizes
-        </p>
+        {/* One card, like the other profile sections */}
+        <div className="flex flex-col" style={{ ...cardStyle, padding: '24px 20px', gap: '20px' }}>
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.4 }}>
+            What is your clothing size?
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '400px' }}>
+            We use a special customization feature to get the most accurate sizes
+          </p>
+        </div>
 
         {/* Method Options */}
         <div className="flex flex-col" style={{ gap: '12px' }}>
@@ -359,7 +363,8 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
                 padding: '18px 20px',
                 borderRadius: '16px',
                 border: selectedMethod === opt.key ? '2px solid var(--brand-fill)' : '1px solid var(--border-glass)',
-                background: 'var(--bg-base)',
+                // Inset on the card: one step up from the card's ground.
+                background: 'var(--bg-surface-elevated)',
                 cursor: 'pointer',
               }}
             >
@@ -391,6 +396,7 @@ export default function MeasurementsSection({ activeSection, setActiveSection }:
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '10px' }}>
             Our AI estimates 14 body measurements from your height, weight and build. It’s a good starting point, not a tape measure: check the ones marked Verify, and correct any you know. Your tailor sees that these are estimates.
           </p>
+        </div>
         </div>
 
         {/* Continue Button */}
