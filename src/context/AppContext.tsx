@@ -10,6 +10,7 @@ import {
   getProductPrice,
 } from '@/lib/api-types';
 import type { ApiProduct, CartSelections } from '@/lib/api-types';
+import { garmentKindOf, type GarmentKind } from '@/lib/garment-measurements';
 
 // Definitions
 export interface User {
@@ -40,6 +41,12 @@ export interface CartItem {
   note?: string;
   /** Saved measurement-set NAME a custom garment is sewn to (Fit section). */
   measurement_set?: string;
+  /**
+   * What a made-to-measure garment is (agbada, trousers…), from its taxonomy,
+   * so checkout can say which measurements it still needs. Unset for
+   * ready-to-wear, other kinds, and garments we can't tell.
+   */
+  garment?: GarmentKind;
   /** The server's id for this line (items[]._id); absent until it is saved. */
   line_id?: string;
   /**
@@ -160,6 +167,10 @@ function mapBackendCartItem(item: any): CartItem {
     size: item.size ?? undefined,
     color: item.color ?? undefined,
     measurement_set: item.measurement_set ?? undefined,
+    garment:
+      p?.kind === 'clothing' && p.clothing?.type === 'customize'
+        ? garmentKindOf(p.clothing.taxonomy) ?? undefined
+        : undefined,
     line_id: item._id ? String(item._id) : undefined,
     // Legacy server lines have no key; their product id was their identity.
     line_key:

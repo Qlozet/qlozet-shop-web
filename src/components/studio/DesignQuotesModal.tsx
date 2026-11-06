@@ -17,9 +17,12 @@ import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import {
   ADD_MEASUREMENTS_HREF,
+  MY_MEASUREMENTS_HREF,
+  garmentGap,
   profileIsUsable,
   resolveProfile,
 } from '@/lib/usable-measurements';
+import { garmentKindOf, missingMeasurementsMessage } from '@/lib/garment-measurements';
 
 interface DesignQuotesModalProps {
   isOpen: boolean;
@@ -196,8 +199,15 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   // default). The backend refuses to accept a quote without usable
   // measurements, so say so here instead of after a tap. A failed load
   // shows nothing and leaves the decision to the backend.
+  const designProfile = resolveProfile(profiles, designSetName);
   const needsMeasurements =
-    !measuresLoading && !measuresError && !profileIsUsable(resolveProfile(profiles, designSetName));
+    !measuresLoading && !measuresError && !profileIsUsable(designProfile);
+  // A usable set can still lack a point this garment needs (the design's
+  // category says what it is: Agbada, Dresses…); the backend refuses that too.
+  const measurementGap =
+    !measuresLoading && !measuresError && !needsMeasurements
+      ? garmentGap(designProfile, garmentKindOf({ category: designObj?.category }))
+      : null;
 
   // Runs from the confirm dialog. Throws a readable message on failure so the
   // dialog can show it; resolves 'done' for wallet, 'redirected' for card.
@@ -539,6 +549,19 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         }}
                       >
                         Add your measurements so the tailor can make this →
+                      </a>
+                    ) : submitted && measurementGap ? (
+                      <a
+                        href={MY_MEASUREMENTS_HREF}
+                        className='w-full flex items-center justify-center transition-all hover:opacity-90'
+                        style={{
+                          padding: '12px', borderRadius: '12px', background: '#FEF3C7',
+                          color: '#92400E', fontSize: '11px', fontWeight: 700,
+                          textAlign: 'center', textDecoration: 'none', lineHeight: 1.4,
+                          border: '1px solid #FDE68A',
+                        }}
+                      >
+                        {missingMeasurementsMessage(measurementGap)} →
                       </a>
                     ) : submitted && addressChecked && !addressId ? (
                       <a

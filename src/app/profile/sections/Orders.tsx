@@ -22,6 +22,16 @@ import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
 import { useWallet } from '@/hooks/useWallet';
 import { useUnreadOrderMessages } from '@/hooks/useUnreadOrderMessages';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS } from '@/hooks/useCustomerReturns';
+import {
+  FIT_AREAS,
+  FIT_AREA_LABELS,
+  FIT_PROBLEM_LABELS,
+  MAX_FIT_ISSUES,
+  describeFitIssue,
+  problemsFor,
+  type FitArea,
+  type FitProblem,
+} from '@/lib/fit-feedback';
 
 // ─── Tokens ──────────────────────────────────────────────────
 const INK = 'var(--text-primary)';
@@ -374,8 +384,10 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
   );
 }
 
-// ─── Fit feedback (bespoke, post-delivery) ───────────────────
-// One rating per order; it aggregates onto the vendor's fit track record.
+// ─── Fit feedback (made to fit, post-delivery) ───────────────
+// Bespoke orders and orders with a custom line. One rating per order; it
+// aggregates onto the vendor's fit track record. When it wasn't perfect the
+// customer can say where (optional), so the tailor's cut can be learned from.
 const FIT_OPTIONS = [
   { value: 'perfect', label: 'Fits perfectly', color: '#2D6A4F' },
   { value: 'minor_issues', label: 'Minor issues', color: '#EA6A0E' },
@@ -386,7 +398,21 @@ function FitFeedbackCard({ order, refetch }: { order: Order; refetch: () => void
   const [given, setGiven] = useState(order.fitFeedback ?? null);
   const [fit, setFit] = useState<'perfect' | 'minor_issues' | 'poor' | null>(null);
   const [comment, setComment] = useState('');
+  const [issues, setIssues] = useState<Partial<Record<FitArea, FitProblem>>>({});
+  const [openArea, setOpenArea] = useState<FitArea | null>(null);
   const [sending, setSending] = useState(false);
+  const picked = Object.entries(issues).map(([area, problem]) => ({ area: area as FitArea, problem: problem as FitProblem }));
+
+  // Tap an area to see its two problems; tap a problem to set it, again to clear.
+  const pickProblem = (area: FitArea, problem: FitProblem) => {
+    setIssues((cur) => {
+      const next = { ...cur };
+      if (next[area] === problem) delete next[area];
+      else if (next[area] || Object.keys(next).length < MAX_FIT_ISSUES) next[area] = problem;
+      return next;
+    });
+    setOpenArea(null);
+  };
 
   if (given) {
     const opt = FIT_OPTIONS.find((o) => o.value === given.fit);
@@ -395,6 +421,15 @@ function FitFeedbackCard({ order, refetch }: { order: Order; refetch: () => void
         <div className="flex items-center" style={{ gap: '8px', fontSize: '12px', fontWeight: 700, color: opt?.color ?? INK }}>
           <BadgeCheck size={15} /> You said: {opt?.label ?? given.fit}. Thanks — this helps us match you better.
         </div>
+        {(given.issues?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap" style={{ gap: '6px' }}>
+            {given.issues!.map((i) => (
+              <span key={i.area} style={{ padding: '5px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: 700, background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', color: MUTE }}>
+                {describeFitIssue(i)}
+              </span>
+            ))}
+          </div>
+        )}
       </Section>
     );
   }
@@ -403,11 +438,13 @@ function FitFeedbackCard({ order, refetch }: { order: Order; refetch: () => void
     if (!fit) return;
     setSending(true);
     try {
+      const sentIssues = fit === 'perfect' ? [] : picked;
       const res = await api.post(`/orders/${order.orderNumber}/fit-feedback`, {
         fit,
         comment: comment.trim() || undefined,
+        ...(sentIssues.length ? { issues: sentIssues } : {}),
       });
-      setGiven(res.data?.data ?? { fit, comment: comment.trim() || null });
+      setGiven(res.data?.data ?? { fit, comment: comment.trim() || null, issues: sentIssues });
       toast.success('Thanks for the fit feedback!');
       refetch();
     } catch (err) {
@@ -437,10 +474,51 @@ function FitFeedbackCard({ order, refetch }: { order: Order; refetch: () => void
         })}
       </div>
       {fit && fit !== 'perfect' && (
+        <div className="flex flex-col" style={{ gap: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: INK }}>
+            Where was it off? <span style={{ fontWeight: 500, color: MUTE }}>(optional)</span>
+          </span>
+          <div className="flex flex-wrap" style={{ gap: '6px' }}>
+            {FIT_AREAS.map((area) => {
+              const problem = issues[area];
+              const open = openArea === area;
+              const full = !problem && picked.length >= MAX_FIT_ISSUES;
+              return (
+                <button key={area} type="button" disabled={full}
+                  onClick={() => setOpenArea(open ? null : area)}
+                  className="transition-all active:scale-95 disabled:opacity-40"
+                  style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '11.5px', fontWeight: 700, cursor: full ? 'not-allowed' : 'pointer',
+                    background: problem ? INK : 'var(--bg-surface-elevated)', color: problem ? 'var(--bg-surface)' : open ? INK : MUTE,
+                    border: problem ? 'none' : open ? `1px solid ${INK}` : '1px solid var(--border-glass)' }}>
+                  {FIT_AREA_LABELS[area]}{problem ? `: ${FIT_PROBLEM_LABELS[problem]}` : ''}
+                </button>
+              );
+            })}
+          </div>
+          {openArea && (
+            <div className="flex items-center flex-wrap" style={{ gap: '6px' }}>
+              <span style={{ fontSize: '11.5px', color: MUTE }}>{FIT_AREA_LABELS[openArea]}:</span>
+              {problemsFor(openArea).map((p) => {
+                const active = issues[openArea] === p;
+                return (
+                  <button key={p} type="button" onClick={() => pickProblem(openArea, p)}
+                    className="transition-all active:scale-95"
+                    style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer',
+                      background: active ? INK : 'var(--bg-surface-elevated)', color: active ? 'var(--bg-surface)' : INK,
+                      border: active ? 'none' : '1px solid var(--border-glass)' }}>
+                    {FIT_PROBLEM_LABELS[p]}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      {fit && fit !== 'perfect' && (
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="What was off? (optional — e.g. tight at the shoulders)"
+          placeholder="Anything else? (optional)"
           rows={2}
           style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-glass)', background: 'var(--bg-surface-elevated)', fontSize: '12.5px', color: INK, resize: 'vertical', outline: 'none' }}
         />
@@ -1011,7 +1089,7 @@ export default function OrdersSection({
         )}
 
         {/* Bespoke: post-delivery fit rating (once per order). */}
-        {isBespokeOrder && order.status === 'Delivered' && (
+        {(order.madeToFit || isBespokeOrder) && order.status === 'Delivered' && (
           <FitFeedbackCard key={`fit-${order.orderNumber}`} order={order} refetch={refetch} />
         )}
 

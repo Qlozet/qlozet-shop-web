@@ -246,8 +246,14 @@ export interface Order {
   paymentPlan?: PaymentPlanView | null;
   /** Bespoke pre-ship checkpoint — photos the tailor sent for approval. */
   preship?: PreshipReview | null;
-  /** Post-delivery fit feedback, once given. */
-  fitFeedback?: { fit: string; comment?: string | null } | null;
+  /** Post-delivery fit feedback, once given; `issues` say where it was off. */
+  fitFeedback?: {
+    fit: string;
+    comment?: string | null;
+    issues?: { area: string; problem: string }[];
+  } | null;
+  /** Bespoke, or has a custom line: made to the customer's measurements. */
+  madeToFit?: boolean;
   id: string;
   orderNumber: string;
   date: string;
