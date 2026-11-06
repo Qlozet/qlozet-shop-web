@@ -14,10 +14,13 @@ import { CancellationNotice } from '@/components/CancellationNotice';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import {
   ADD_MEASUREMENTS_HREF,
+  MY_MEASUREMENTS_HREF,
+  garmentGap,
   isNoMeasurementsError,
   profileIsUsable,
   resolveProfile,
 } from '@/lib/usable-measurements';
+import { missingMeasurementsMessage } from '@/lib/garment-measurements';
 import { openPaystackModal } from '@/lib/paystack';
 import type { CheckoutPreviewResponse } from '@/lib/api-types';
 import {
@@ -178,24 +181,43 @@ export default function CheckoutPage() {
 
   // A custom garment is sewn from a saved measurement set (the one its line
   // names, else the default); the backend refuses the order without usable
-  // measurements. Custom lines are the ones carrying a set or tailoring
-  // choices (styles / embedded fabric) — ready-to-wear carries neither.
+  // measurements. Custom lines are the ones with a known made-to-measure
+  // garment, a set, or tailoring choices (styles / embedded fabric) —
+  // ready-to-wear carries none of these.
   const { profiles: measureProfiles, isLoading: measuresLoading, error: measuresError } = useMeasurements();
-  const unmeasuredLines = cart.filter((i) => {
+  const customLines = cart.filter((i) => {
     const sel = i.selections ?? {};
-    const custom =
+    return (
       i.kind === 'clothing' &&
-      (Boolean(i.measurement_set) ||
+      (Boolean(i.garment) ||
+        Boolean(i.measurement_set) ||
         (sel.style_selections?.length ?? 0) > 0 ||
-        (sel.fabric_selections?.length ?? 0) > 0);
-    return custom && !profileIsUsable(resolveProfile(measureProfiles, i.measurement_set));
+        (sel.fabric_selections?.length ?? 0) > 0)
+    );
+  });
+  const unmeasuredLines = customLines.filter(
+    (i) => !profileIsUsable(resolveProfile(measureProfiles, i.measurement_set)),
+  );
+  // A set can be usable yet lack a point this garment needs (trousers need a
+  // leg length). Only lines whose garment we know are checked, like the backend.
+  const gapLines = customLines.flatMap((i) => {
+    const profile = resolveProfile(measureProfiles, i.measurement_set);
+    if (!profileIsUsable(profile)) return [];
+    const gap = garmentGap(profile, i.garment);
+    return gap ? [{ title: i.title, set: i.measurement_set, message: missingMeasurementsMessage(gap) }] : [];
   });
   const needsMeasurements =
-    !measuresLoading && !measuresError && unmeasuredLines.length > 0;
+    !measuresLoading && !measuresError && (unmeasuredLines.length > 0 || gapLines.length > 0);
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | null>(null);
   const [payError, setPayError] = useState('');
+
+  // The set is there but short a few points (seen here, or refused by the
+  // server): send them to edit it rather than add a new one.
+  const showGapNotice =
+    unmeasuredLines.length === 0 &&
+    (gapLines.length > 0 || /the tailor needs your/i.test(payError || checkout.error || ''));
 
   // Wallet balance, so "Pay with Wallet" says up front whether it covers the
   // order instead of failing after submit. The backend still decides.
@@ -1007,17 +1029,30 @@ export default function CheckoutPage() {
           )}
           {(needsMeasurements || isNoMeasurementsError(payError || checkout.error)) && (
             <a
-              href={ADD_MEASUREMENTS_HREF}
+              href={showGapNotice ? MY_MEASUREMENTS_HREF : ADD_MEASUREMENTS_HREF}
               className="flex items-start gap-2"
               style={{ padding: '12px 14px', borderRadius: '12px', background: '#FEF3C7', border: '1px solid #FDE68A', color: '#92400E', fontSize: '12px', lineHeight: 1.5, textDecoration: 'none', marginBottom: '12px' }}
             >
-              <span>
-                <strong>Add your measurements first.</strong>{' '}
-                {unmeasuredLines.length === 1
-                  ? `${unmeasuredLines[0].title} is made to fit, so your tailor needs them.`
-                  : 'Pieces in your cart are made to fit, so your tailor needs them.'}{' '}
-                Add measurements →
-              </span>
+              {showGapNotice ? (
+                <span>
+                  <strong>A few measurements are missing.</strong>
+                  {gapLines.map((l, idx) => (
+                    <span key={idx} style={{ display: 'block', marginTop: '4px' }}>
+                      {gapLines.length > 1 || l.set ? `${l.title}${l.set ? ` (for ${l.set})` : ''}: ` : ''}
+                      {l.message}
+                    </span>
+                  ))}
+                  <span style={{ display: 'block', marginTop: '4px' }}>Update measurements →</span>
+                </span>
+              ) : (
+                <span>
+                  <strong>Add your measurements first.</strong>{' '}
+                  {unmeasuredLines.length === 1
+                    ? `${unmeasuredLines[0].title} is made to fit, so your tailor needs them.`
+                    : 'Pieces in your cart are made to fit, so your tailor needs them.'}{' '}
+                  Add measurements →
+                </span>
+              )}
             </a>
           )}
           <button

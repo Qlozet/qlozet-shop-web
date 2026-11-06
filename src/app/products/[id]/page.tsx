@@ -48,6 +48,7 @@ import { useStyleLibrary } from '@/hooks/useStyleLibrary';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
 import { ReserveFabricModal } from '@/components/studio/ReserveFabricModal';
+import { garmentKindOf } from '@/lib/garment-measurements';
 import {
   Heart,
   ShoppingCart,
@@ -964,6 +965,10 @@ export default function ProductDetailsPage() {
       // panel's Fit section; checkout sends it for the order snapshot.
       ...(isCustomizeGarment && customization.measurementSetName
         ? { measurement_set: customization.measurementSetName }
+        : {}),
+      // What the garment is, so checkout can name the measurements it needs.
+      ...(isCustomizeGarment && product.kind === 'clothing'
+        ? { garment: garmentKindOf(product.clothing?.taxonomy) ?? undefined }
         : {}),
     });
 

@@ -376,6 +376,11 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
     preship: (o as any).preship ?? null,
     paymentPlan: (o as any).payment_plan ?? null,
     fitFeedback: (o as any).fit_feedback ?? null,
+    // Same rule as the backend's isMadeToFit: fit feedback applies to these.
+    madeToFit:
+      o.type === 'bespoke' ||
+      items.some((i) => i.productType === 'custom') ||
+      (o.items ?? []).some((it) => (it as { clothing_type?: string }).clothing_type === 'customize'),
     orderNumber: o.reference || `#${o._id.slice(-8).toUpperCase()}`,
     date: formatDate(o.createdAt),
     total: o.total ?? 0,
