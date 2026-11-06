@@ -1171,7 +1171,7 @@ function BespokeContent() {
                                 <div className="overflow-hidden" style={{ width: '44px', height: '52px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', flexShrink: 0 }}>
                                   {d.design_images?.[0] && (
                                     // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={d.design_images[0]} alt={d.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img loading="lazy" decoding="async" src={d.design_images[0]} alt={d.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                   )}
                                 </div>
                                 <div>

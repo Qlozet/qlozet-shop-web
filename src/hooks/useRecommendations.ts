@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useRemembered } from '@/lib/remembered';
 import { useApp } from '@/context/AppContext';
 import type {
   ApiFeedItem,
@@ -41,14 +42,14 @@ export interface UseTrendingReturn {
 }
 
 export function useTrendingProducts(limit: number = 10): UseTrendingReturn {
-  const [state, setState] = useState<UseAsyncState<ApiFeedResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiFeedResponse>>(`trending:${limit}`, {
     data: null,
     loading: true,
     error: null,
   });
 
   const fetchTrending = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get('/recommends/trending', {
         params: { limit },
@@ -85,14 +86,14 @@ export function useNewArrivals(
   limit: number = 10,
   days: number = 30
 ): UseTrendingReturn {
-  const [state, setState] = useState<UseAsyncState<ApiFeedResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiFeedResponse>>(`new-arrivals:${limit}:${days}`, {
     data: null,
     loading: true,
     error: null,
   });
 
   const fetchNew = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get('/recommends/new', {
         params: { limit, days },
@@ -142,7 +143,7 @@ export function usePersonalizedFeed(
   params: FeedQueryParams = {}
 ): UsePersonalizedFeedReturn {
   const { user } = useApp();
-  const [state, setState] = useState<UseAsyncState<ApiFeedResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiFeedResponse>>(`feed:${JSON.stringify(params)}`, {
     data: null,
     loading: false,
     error: null,
@@ -155,7 +156,7 @@ export function usePersonalizedFeed(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const cleanParams: Record<string, string | number> = {};
       for (const [key, value] of Object.entries(params)) {
@@ -209,7 +210,7 @@ export function useRecommendedVendors(
   limit: number = 10
 ): UseRecommendedVendorsReturn {
   const { user } = useApp();
-  const [state, setState] = useState<UseAsyncState<ApiVendorFeedResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiVendorFeedResponse>>(`rec-vendors:${limit}`, {
     data: null,
     loading: false,
     error: null,
@@ -220,7 +221,7 @@ export function useRecommendedVendors(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get('/recommends/vendors', {
         params: { limit, ...(user?.id ? { userId: user.id } : {}) },
@@ -258,7 +259,7 @@ export function useBoughtTogether(
   limit: number = 6
 ): UseTrendingReturn {
   const { user } = useApp();
-  const [state, setState] = useState<UseAsyncState<ApiFeedResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiFeedResponse>>(`bought-together:${itemId ?? ''}:${limit}`, {
     data: null,
     loading: false,
     error: null,
@@ -269,7 +270,7 @@ export function useBoughtTogether(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get('/recommends/bought-together', {
         params: { itemId, limit },
@@ -307,7 +308,7 @@ export function useCompleteTheLook(
   limit: number = 6
 ): UseTrendingReturn {
   const { user } = useApp();
-  const [state, setState] = useState<UseAsyncState<ApiFeedResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiFeedResponse>>(`complete-look:${JSON.stringify(itemIds)}:${limit}`, {
     data: null,
     loading: false,
     error: null,
@@ -320,7 +321,7 @@ export function useCompleteTheLook(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get('/recommends/complete-look', {
         params: { itemIds: itemIds.join(','), limit },

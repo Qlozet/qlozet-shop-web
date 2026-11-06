@@ -456,7 +456,7 @@ export default function ForYouPage() {
                     >
                       {logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={logo} alt={vendorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img loading="lazy" decoding="async" src={logo} alt={vendorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <Store size={15} color="var(--brand-brown)" />
                       )}

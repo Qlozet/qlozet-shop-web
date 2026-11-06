@@ -430,7 +430,7 @@ export const RequestQuotesModal: React.FC<RequestQuotesModalProps> = ({
                         >
                           {v.business_logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={v.business_logo_url} alt={v.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img loading="lazy" decoding="async" src={v.business_logo_url} alt={v.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
                             <Store size={16} color='var(--text-muted)' />
                           )}
