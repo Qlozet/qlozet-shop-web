@@ -1455,7 +1455,7 @@ export default function ProductDetailsPage() {
                       <div className="flex items-center justify-center overflow-hidden" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', flexShrink: 0 }}>
                         {style?.imageUrl ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img loading="lazy" decoding="async" src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <span style={{ fontSize: '14px' }}>{fallbackEmoji}</span>
                         )}
@@ -1757,7 +1757,7 @@ export default function ProductDetailsPage() {
                         >
                           {style.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img loading="lazy" decoding="async" src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
                             <span style={{ fontSize: '22px' }}>{style.emoji}</span>
                           )}

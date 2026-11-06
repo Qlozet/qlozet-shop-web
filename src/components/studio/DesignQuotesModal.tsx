@@ -432,7 +432,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         >
                           {(q.vendor as any)?.business_logo_url || q.vendor?.logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={(q.vendor as any)?.business_logo_url || q.vendor?.logo_url} alt={q.vendor?.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img loading="lazy" decoding="async" src={(q.vendor as any)?.business_logo_url || q.vendor?.logo_url} alt={q.vendor?.business_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
                             <Store size={15} color='var(--text-muted)' />
                           )}

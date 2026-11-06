@@ -825,7 +825,7 @@ export default function OrdersSection({
                       <div key={`${c.kind}-${i}`} className="flex items-center" style={{ gap: '11px', padding: '7px 0', borderTop: i > 0 ? '1px solid var(--border-glass)' : 'none' }}>
                         {c.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.image} alt={c.name} style={{ width: 42, height: 42, borderRadius: 9, objectFit: 'cover', background: 'var(--bg-surface-elevated)', flexShrink: 0 }} />
+                          <img loading="lazy" decoding="async" src={c.image} alt={c.name} style={{ width: 42, height: 42, borderRadius: 9, objectFit: 'cover', background: 'var(--bg-surface-elevated)', flexShrink: 0 }} />
                         ) : c.swatch ? (
                           <div style={{ width: 42, height: 42, borderRadius: 9, background: c.swatch, border: '1px solid var(--border-glass)', flexShrink: 0 }} />
                         ) : (

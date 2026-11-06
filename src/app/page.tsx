@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -122,19 +122,40 @@ function CategorySection({
   followedVendors: string[];
   onToggleFollow: (id: string) => void;
 }) {
+  // Rows below the screen wait until the shopper scrolls near them, so the
+  // first screen is not competing with four row fetches. A row remembered
+  // from an earlier visit shows straight away (see useRemembered).
+  const holderRef = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
   const { vendors, loading } = useCategoryVendors({
     kind: section.kind,
     clothingType: 'clothingType' in section ? section.clothingType : undefined,
     audience,
     limit: 8,
+    enabled: near,
   });
+  useEffect(() => {
+    const el = holderRef.current;
+    if (near || !el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true);
+      },
+      { rootMargin: '600px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near, loading]);
 
-  // Nothing to say yet, and nothing worth a spinner — the rest of the page is
-  // already up. An empty category hides itself.
-  if (loading || vendors.length === 0) return null;
+  // Not reached yet: hold roughly a row's height so the rows below do not all
+  // count as "near" at once. Once loaded, an empty category hides itself.
+  if (loading) {
+    return near ? null : <div ref={holderRef} aria-hidden style={{ minHeight: '420px' }} />;
+  }
+  if (vendors.length === 0) return null;
 
   return (
-    <div className="flex flex-col" style={{ gap: '16px' }}>
+    <div ref={holderRef} className="flex flex-col" style={{ gap: '16px' }}>
       <Link
         href={section.href}
         className="flex items-center group/sec"
@@ -220,7 +241,7 @@ export default function HomePage() {
   // ── Fetch live data ─────────────────────────────────────────────
   const audience = gender === 'male' ? 'men' : 'women';
   const { products: allProducts, loading: productsLoading } = useProducts({ size: 50, audience });
-  const { vendors: allVendors, loading: vendorsLoading } = useVendors({ limit: 50 });
+  const { vendors: allVendors } = useVendors({ limit: 50 });
 
   // ── Recommendation engine feeds ─────────────────────────────────
   const { items: trendingItems } = useTrendingProducts(10);
@@ -396,7 +417,8 @@ export default function HomePage() {
   }
 
   // ─── STATE B: Main Home Feed ────────────────────────────────────
-  const isLoading = productsLoading || vendorsLoading;
+  // Vendors only feed the Following bar, so they never hold up the page.
+  const isLoading = productsLoading;
 
   if (isLoading) {
     return <FeedSkeleton />;

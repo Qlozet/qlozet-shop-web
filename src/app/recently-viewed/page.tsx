@@ -246,7 +246,7 @@ export default function RecentlyViewedPage() {
                     >
                       {logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={logo} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img loading="lazy" decoding="async" src={logo} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <Store size={14} color="var(--brand-brown)" />
                       )}

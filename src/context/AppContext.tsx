@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
+import { forgetRemembered } from '@/lib/remembered';
 import { trackEventDirect } from '@/hooks/useTrackEvent';
 import {
   getProductName,
@@ -538,6 +539,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
    * from a password one.
    */
   const completeSignIn = async (loginData: any): Promise<User> => {
+    // A new account must never see the last one's remembered pages.
+    forgetRemembered();
     localStorage.setItem('qlozet_access_token', loginData.token.access_token);
     localStorage.setItem('qlozet_refresh_token', loginData.token.refresh_token);
     localStorage.setItem('qlozet_user_id', loginData.user._id || loginData.user.id);
@@ -589,6 +592,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    forgetRemembered();
     setUser(null);
     isAuthenticated.current = false;
     localStorage.removeItem('qlozet_user');

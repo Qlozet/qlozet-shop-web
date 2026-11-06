@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { config } from '@/lib/config';
+import { forgetRemembered } from '@/lib/remembered';
 
 // Get base URL from environment or fallback
 const API_URL = config.apiUrl;
@@ -201,6 +202,7 @@ api.interceptors.response.use(
 // Clear local details on final authentication failure
 function handleAuthFailure() {
   if (isClient) {
+    forgetRemembered();
     localStorage.removeItem('qlozet_access_token');
     localStorage.removeItem('qlozet_refresh_token');
     localStorage.removeItem('qlozet_user_id');

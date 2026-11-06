@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useRemembered } from '@/lib/remembered';
 import type { ApiCollection, ApiProduct, ApiProductPaginated } from '@/lib/api-types';
 
 // ─── Shared hook state shape ──────────────────────────────────
@@ -28,7 +29,7 @@ export interface UsePlatformCollectionsReturn {
 export function usePlatformCollections(
   scope: { kind?: string; product_type?: string } = {}
 ): UsePlatformCollectionsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiCollection[]>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiCollection[]>>(`platform-collections:${JSON.stringify(scope)}`, {
     data: null,
     loading: true,
     error: null,
@@ -37,7 +38,7 @@ export function usePlatformCollections(
   const { kind, product_type } = scope;
 
   const fetchCollections = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       // Optional kind / product_type scope the list to the current explore
       // page; collections with no scope come back on every page.
@@ -86,7 +87,7 @@ export interface UseCollectionReturn {
 export function useCollection(
   idOrSlug: string | undefined
 ): UseCollectionReturn {
-  const [state, setState] = useState<UseAsyncState<ApiCollection>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiCollection>>(`collection:${idOrSlug ?? ''}`, {
     data: null,
     loading: !!idOrSlug,
     error: null,
@@ -97,7 +98,7 @@ export function useCollection(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get(`/collections/platform/${idOrSlug}`);
       const collection: ApiCollection = res.data?.data ?? res.data;
@@ -145,7 +146,7 @@ export function useVendorCollections(
   businessId: string | undefined,
   params: { page?: number; size?: number } = {}
 ): UseVendorCollectionsReturn {
-  const [state, setState] = useState<UseAsyncState<{
+  const [state, setState] = useRemembered<UseAsyncState<{
     data: ApiCollection[];
     total_items: number;
     total_pages: number;
@@ -153,7 +154,7 @@ export function useVendorCollections(
     has_next_page: boolean;
     has_previous_page: boolean;
     page_size: number;
-  }>>({
+  }>>(`vendor-collections:${JSON.stringify({ businessId, ...params })}`, {
     data: null,
     loading: !!businessId,
     error: null,
@@ -166,7 +167,7 @@ export function useVendorCollections(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const cleanParams: Record<string, string | number> = {};
       if (params.page) cleanParams.page = params.page;
@@ -228,7 +229,7 @@ export function useCollectionProducts(
   collectionId: string | undefined,
   params: { page?: number; size?: number } = {}
 ): UseCollectionProductsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiProductPaginated>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiProductPaginated>>(`collection-products:${JSON.stringify({ collectionId, ...params })}`, {
     data: null,
     loading: !!collectionId,
     error: null,
@@ -241,7 +242,7 @@ export function useCollectionProducts(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const cleanParams: Record<string, string | number> = {};
       if (params.page) cleanParams.page = params.page;

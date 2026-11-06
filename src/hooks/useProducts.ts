@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
+import { useRemembered } from '@/lib/remembered';
 import type {
   ApiProduct,
   ApiProductPaginated,
@@ -44,7 +45,7 @@ export interface UseProductsReturn {
 }
 
 export function useProducts(params: ProductQueryParams = {}): UseProductsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiProductPaginated>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiProductPaginated>>(`products:${JSON.stringify(params)}`, {
     data: null,
     loading: true,
     error: null,
@@ -58,7 +59,7 @@ export function useProducts(params: ProductQueryParams = {}): UseProductsReturn 
   // whichever request happened to finish last on screen — which is how the
   // results stayed on the previous query.
   const fetchProducts = useCallback(async (stillWanted: () => boolean = () => true) => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       // Strip undefined values from params so axios doesn't send `?kind=undefined`
       const cleanParams: Record<string, string | number> = {};
@@ -123,7 +124,7 @@ export interface UseProductReturn {
 }
 
 export function useProduct(id: string | undefined): UseProductReturn {
-  const [state, setState] = useState<UseAsyncState<ApiProduct>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiProduct>>(`product:${id ?? ''}`, {
     data: null,
     loading: !!id,
     error: null,
@@ -134,7 +135,7 @@ export function useProduct(id: string | undefined): UseProductReturn {
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get(`/products/${id}`);
       const product: ApiProduct = res.data?.data ?? res.data;
@@ -205,7 +206,7 @@ export interface UseProductRatingsReturn {
 export function useProductRatings(
   productId: string | undefined
 ): UseProductRatingsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiProductRatingsResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiProductRatingsResponse>>(`product-ratings:${productId ?? ''}`, {
     data: null,
     loading: !!productId,
     error: null,
@@ -216,7 +217,7 @@ export function useProductRatings(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get(`/products/${productId}/ratings`);
       const payload: ApiProductRatingsResponse = res.data?.data ?? res.data;

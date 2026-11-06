@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useRemembered } from '@/lib/remembered';
 import type {
   ApiBusinessPublic,
   ApiBusinessPublicDetail,
@@ -40,7 +41,7 @@ export interface UseVendorsReturn {
 }
 
 export function useVendors(params: VendorQueryParams = {}): UseVendorsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiBusinessPaginated>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiBusinessPaginated>>(`vendors:${JSON.stringify(params)}`, {
     data: null,
     loading: true,
     error: null,
@@ -53,7 +54,7 @@ export function useVendors(params: VendorQueryParams = {}): UseVendorsReturn {
   // whichever request happened to finish last on screen — which is how the
   // results stayed on the previous query.
   const fetchVendors = useCallback(async (stillWanted: () => boolean = () => true) => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const cleanParams: Record<string, string | number> = {};
       for (const [key, value] of Object.entries(params)) {
@@ -113,7 +114,7 @@ export interface UseVendorReturn {
 }
 
 export function useVendor(id: string | undefined): UseVendorReturn {
-  const [state, setState] = useState<UseAsyncState<ApiBusinessPublicDetail>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiBusinessPublicDetail>>(`vendor:${id ?? ''}`, {
     data: null,
     loading: !!id,
     error: null,
@@ -124,7 +125,7 @@ export function useVendor(id: string | undefined): UseVendorReturn {
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get(`/business/public/${id}`);
       const vendor: ApiBusinessPublicDetail = res.data?.data ?? res.data;
@@ -172,7 +173,7 @@ export function useVendorProducts(
   vendorId: string | undefined,
   params: { page?: number; size?: number; kind?: string; sortBy?: string; order?: string } = {}
 ): UseVendorProductsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiProductPaginated>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiProductPaginated>>(`vendor-products:${JSON.stringify({ vendorId, ...params })}`, {
     data: null,
     loading: !!vendorId,
     error: null,
@@ -185,7 +186,7 @@ export function useVendorProducts(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const cleanParams: Record<string, string | number> = {
         business_id: vendorId,
@@ -245,7 +246,7 @@ export function useVendorReviews(
   businessId: string | undefined,
   params: { page?: number; size?: number; sort?: string } = {}
 ): UseVendorReviewsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiVendorReviewsResponse>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiVendorReviewsResponse>>(`vendor-reviews:${JSON.stringify({ businessId, ...params })}`, {
     data: null,
     loading: !!businessId,
     error: null,
@@ -258,7 +259,7 @@ export function useVendorReviews(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const queryParams: Record<string, string | number> = {
         business_id: businessId,
@@ -306,7 +307,7 @@ export interface UseVendorDiscountedProductsReturn {
 export function useVendorDiscountedProducts(
   businessId: string | undefined
 ): UseVendorDiscountedProductsReturn {
-  const [state, setState] = useState<UseAsyncState<ApiProduct[]>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiProduct[]>>(`vendor-discounts:${businessId ?? ''}`, {
     data: null,
     loading: !!businessId,
     error: null,
@@ -317,7 +318,7 @@ export function useVendorDiscountedProducts(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const res = await api.get(`/discounts/public/${businessId}/products`);
       // The endpoint returns a paginated { data: rows, ... } which the global

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useRemembered } from '@/lib/remembered';
 import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
 
 // Vendors stocking one kind of product, ranked, each with a few items —
@@ -64,8 +65,9 @@ export function useCategoryVendors(opts: UseCategoryVendorsOptions) {
     enabled = true,
   } = opts;
 
-  const [payload, setPayload] = useState<Payload>(EMPTY);
-  const [loading, setLoading] = useState(true);
+  const memoryKey = `category-vendors:${JSON.stringify({ kind, clothingType, audience, limit, perVendor })}`;
+  const [payload, setPayload] = useRemembered<Payload>(memoryKey, EMPTY);
+  const [loading, setLoading] = useRemembered(`${memoryKey}:loading`, true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchVendors = useCallback(async (): Promise<Payload> => {

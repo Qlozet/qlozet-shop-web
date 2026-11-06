@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useRemembered } from '@/lib/remembered';
 import type { ApiTaxonomyNode } from '@/lib/api-types';
 
 // ─── Shared hook state shape ──────────────────────────────────
@@ -27,14 +28,14 @@ export interface UseTaxonomyTreeReturn {
 }
 
 export function useTaxonomyTree(kind?: string): UseTaxonomyTreeReturn {
-  const [state, setState] = useState<UseAsyncState<ApiTaxonomyNode[]>>({
+  const [state, setState] = useRemembered<UseAsyncState<ApiTaxonomyNode[]>>(`taxonomy-tree:${kind ?? ''}`, {
     data: null,
     loading: true,
     error: null,
   });
 
   const fetchTree = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const params: Record<string, string> = {};
       if (kind) params.kind = kind;
@@ -78,14 +79,14 @@ export interface UseProductTypesReturn {
 }
 
 export function useProductTypes(kind?: string): UseProductTypesReturn {
-  const [state, setState] = useState<UseAsyncState<string[]>>({
+  const [state, setState] = useRemembered<UseAsyncState<string[]>>(`product-types:${kind ?? ''}`, {
     data: null,
     loading: true,
     error: null,
   });
 
   const fetchTypes = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
       const params: Record<string, string> = {};
       if (kind) params.kind = kind;

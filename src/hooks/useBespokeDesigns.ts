@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRemembered } from '@/lib/remembered';
 import { api } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
 import type { ExtraFabricRole } from '@/data/studio-options';
@@ -146,12 +147,17 @@ const DESIGNS_PAGE_SIZE = 60;
 
 export function useBespokeDesigns() {
   const { isInitialized, user } = useApp();
-  const [designs, setDesigns] = useState<BespokeDesign[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Remembered, so coming back to the Studio shows the designs at once while
+  // a fresh copy loads. Cleared at sign-in/out (see forgetRemembered).
+  const [designs, setDesigns] = useRemembered<BespokeDesign[]>('bespoke-designs:list', []);
+  const [isLoading, setIsLoading] = useRemembered('bespoke-designs:loading', true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [page, setPage] = useRemembered('bespoke-designs:page', 1);
+  const [totalPages, setTotalPages] = useRemembered('bespoke-designs:pages', 1);
+  const [totalItems, setTotalItems] = useRemembered('bespoke-designs:total', 0);
+  // The first load after opening the page refreshes quietly when designs are
+  // already on screen; a filter change later still shows the spinner.
+  const quietFirstLoad = useRef(designs.length > 0);
   // Separate from isLoading so paging in never blanks the grid already on
   // screen — only the button under it shows a spinner.
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -160,6 +166,7 @@ export function useBespokeDesigns() {
   const fetchDesigns = useCallback(
     async (pageNum = 1, status?: string, append = false) => {
       if (append) setIsLoadingMore(true);
+      else if (quietFirstLoad.current) quietFirstLoad.current = false;
       else setIsLoading(true);
       setError(null);
       try {
