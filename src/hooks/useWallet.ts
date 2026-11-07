@@ -223,14 +223,15 @@ export function useWallet() {
     return 'pending';
   }, []);
 
-  // ─── Purchase tokens from wallet balance ────────────────────
+  // ─── Buy a token pack from wallet balance ───────────────────
+  // The server prices the pack and adds its bonus; we only name it.
   const purchaseTokens = useCallback(async (
-    amount: number,
+    packId: string,
   ): Promise<boolean> => {
     setIsPurchasing(true);
     setError(null);
     try {
-      const res = await api.post('/token/customer/purchase', { amount });
+      const res = await api.post('/token/customer/purchase', { pack_id: packId });
       console.log('[Wallet] purchaseTokens response:', res?.status, JSON.stringify(res?.data));
       await fetchAll(true);
       return true;
