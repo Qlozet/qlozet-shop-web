@@ -12,6 +12,8 @@ import { FloatingToolbar } from '@/components/studio/FloatingToolbar';
 import { MobileBottomSheet } from '@/components/studio/MobileBottomSheet';
 import { DesktopConfigPanel } from '@/components/studio/DesktopConfigPanel';
 import { SaveDesignModal } from '@/components/studio/SaveDesignModal';
+import { UnsavedDesignDialog } from '@/components/studio/UnsavedDesignDialog';
+import { useLeaveGuard } from '@/lib/leave-guard';
 import { Upload, Loader2, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -337,6 +339,28 @@ function StudioContent() {
 
   const [savedId, setSavedId] = useState<string | null>(designId ?? resumeId);
 
+  // ─── Unsaved-design guard ───────────────────────────────────
+  // What leaving would lose: the versions, which one is the cover, and the
+  // back views. The baseline is what was on the canvas once the studio
+  // finished opening (blank, a saved design, or a template), then each save.
+  const designSig = JSON.stringify([customization.imagesForSave, customization.backViewsForSave]);
+  const designSigRef = useRef(designSig);
+  useEffect(() => {
+    designSigRef.current = designSig;
+  });
+  const studioReady = loadId ? designLoaded : templateId ? templateLoaded : true;
+  const [savedSig, setSavedSig] = useState<string | null>(null);
+  if (studioReady && savedSig === null) setSavedSig(designSig);
+  const isDirty =
+    studioReady &&
+    savedSig !== null &&
+    designSig !== savedSig &&
+    customization.generatedImages.length > 0;
+  // Where the shopper was heading when we asked; run after Save or Discard.
+  const pendingLeaveRef = useRef<(() => void) | null>(null);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const allowLeaveRef = useRef<() => void>(() => {});
+
   const buildPayload = useCallback(
     (name: string): CreateDesignPayload => {
       // Studio fabrics are REAL fabric products (fabric library / applied
@@ -376,6 +400,12 @@ function StudioContent() {
   const handleDesignSaved = useCallback(
     (id: string) => {
       setSavedId((prev) => prev ?? id);
+      setSavedSig(designSigRef.current);
+      // Saved from the leave prompt: go where they were heading once the
+      // "saved" note has shown.
+      const go = pendingLeaveRef.current;
+      pendingLeaveRef.current = null;
+      if (go) setTimeout(go, 900);
       // Survive a hard refresh: this tab's studio URL now resumes the design.
       try {
         sessionStorage.setItem(resumeKey, id);
@@ -456,6 +486,7 @@ function StudioContent() {
         /* ignore */
       }
       toast.success('Design deleted');
+      allowLeaveRef.current();
       setTimeout(() => {
         window.location.href = '/bespoke';
       }, 600);
@@ -476,7 +507,9 @@ function StudioContent() {
           description: `“${baseName} (Copy)” is in My Designs — opening it…`,
         });
         // Brief pause so the toast lands before the hard navigation (which the
-        // studio needs to re-initialise cleanly on the copy).
+        // studio needs to re-initialise cleanly on the copy). The copy holds
+        // everything on the canvas, so leaving is not asked about.
+        allowLeaveRef.current();
         setTimeout(() => {
           window.location.href = `/bespoke/studio?designId=${created._id}&name=${encodeURIComponent(`${baseName} (Copy)`)}`;
         }, 900);
@@ -508,6 +541,15 @@ function StudioContent() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Only the visible studio guards leaving (the hidden twin never changes).
+  const { allowLeave } = useLeaveGuard(inVisibleLayout && !!user, isDirty, (go) => {
+    pendingLeaveRef.current = go;
+    setShowLeaveDialog(true);
+  });
+  useEffect(() => {
+    allowLeaveRef.current = allowLeave;
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeStatus, setAnalyzeStatus] = useState<string | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -680,7 +722,10 @@ function StudioContent() {
           mobile Save entry point a dead end. */}
       <SaveDesignModal
         isOpen={customization.showSaveModal}
-        onClose={() => customization.setShowSaveModal(false)}
+        onClose={() => {
+          customization.setShowSaveModal(false);
+          pendingLeaveRef.current = null; // closed without saving: stay
+        }}
         designName={customization.designName}
         category={customization.designCategory}
         gender={customization.designGender === 'male' ? 'men' : 'women'}
@@ -690,6 +735,26 @@ function StudioContent() {
         selections={customization.selectionsForSave}
         designId={savedId}
         onSaved={handleDesignSaved}
+      />
+
+      <UnsavedDesignDialog
+        isOpen={showLeaveDialog && inVisibleLayout}
+        image={customization.currentImage}
+        isSavedBefore={!!savedId}
+        onSave={() => {
+          setShowLeaveDialog(false);
+          customization.setShowSaveModal(true);
+        }}
+        onDiscard={() => {
+          setShowLeaveDialog(false);
+          const go = pendingLeaveRef.current;
+          pendingLeaveRef.current = null;
+          go?.();
+        }}
+        onKeepEditing={() => {
+          setShowLeaveDialog(false);
+          pendingLeaveRef.current = null;
+        }}
       />
 
       {/* ─── Sign In CTA for Guest Users ─── */}
