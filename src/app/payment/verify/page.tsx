@@ -16,7 +16,7 @@ import { useApp } from '@/context/AppContext';
 //  already successful), then shows a clean result. No order timeline.
 // ═══════════════════════════════════════════════════════════════
 
-type Status = 'verifying' | 'success' | 'failed';
+type Status = 'verifying' | 'success' | 'failed' | 'cancelled';
 
 // Brand tokens (shared with the profile / orders redesign).
 const INK = 'var(--text-primary)';
@@ -28,7 +28,16 @@ function PaymentVerifyInner() {
   const params = useSearchParams();
   const { clearCart } = useApp();
   const reference = params.get('reference') || params.get('trxref') || '';
-  const [status, setStatus] = useState<Status>('verifying');
+  // Flutterwave sends ?status=cancelled when the customer closes its page
+  // without paying. No charge exists then, so polling for one only spun the
+  // page for a minute.
+  const providerStatus = (params.get('status') || '').toLowerCase();
+  const closedWithoutPaying = providerStatus === 'cancelled';
+  const [status, setStatus] = useState<Status>(
+    closedWithoutPaying ? 'cancelled' : 'verifying',
+  );
+  // After a few seconds of checking, offer a way out instead of a bare spinner.
+  const [slow, setSlow] = useState(false);
   // Runs the success cleanup (clear cart, confetti) EXACTLY once. clearCart is
   // not a stable reference and mutates cart state, so without this guard the
   // effect re-fires on every render and spams DELETE /cart/clear (→ 429s).
@@ -51,10 +60,12 @@ function PaymentVerifyInner() {
   }, []);
 
   useEffect(() => {
+    if (closedWithoutPaying) return;
     if (!reference) {
       setStatus('failed');
       return;
     }
+    const slowTimer = setTimeout(() => setSlow(true), 9000);
     let cancelled = false;
     let attempts = 0;
     const maxAttempts = 10;
@@ -91,8 +102,9 @@ function PaymentVerifyInner() {
     poll();
     return () => {
       cancelled = true;
+      clearTimeout(slowTimer);
     };
-  }, [reference]);
+  }, [reference, closedWithoutPaying]);
 
   // On confirmed payment: clear the stashed reservation id, celebrate once, and
   // — for a checkout payment (not a reservation) — clear the cart that survived
@@ -138,7 +150,42 @@ function PaymentVerifyInner() {
           <>
             <Spinner />
             <Heading>Confirming payment…</Heading>
-            <Body>Hang tight — this usually takes a few seconds.</Body>
+            <Body>
+              {slow
+                ? "This is taking longer than usual. If you closed the payment page without paying, nothing was charged."
+                : 'Hang tight — this usually takes a few seconds.'}
+            </Body>
+            {slow && (
+              <Actions>
+                {claimReservationId ? (
+                  <PrimaryLink href={`/reserve/${claimReservationId}`}>Back to reservation</PrimaryLink>
+                ) : (
+                  <PrimaryLink href="/cart">Back to cart</PrimaryLink>
+                )}
+                <GhostLink href="/profile?tab=orders">View orders</GhostLink>
+              </Actions>
+            )}
+          </>
+        )}
+
+        {status === 'cancelled' && (
+          <>
+            <Badge tone="bad">
+              <X size={34} color="#FFFFFF" strokeWidth={3} />
+            </Badge>
+            <Heading>Payment cancelled</Heading>
+            <Body>
+              You closed the payment page, so nothing was charged. You can try again whenever
+              you&apos;re ready.
+            </Body>
+            <Actions>
+              {claimReservationId ? (
+                <PrimaryLink href={`/reserve/${claimReservationId}`}>Back to reservation</PrimaryLink>
+              ) : (
+                <PrimaryLink href="/cart">Back to cart</PrimaryLink>
+              )}
+              <GhostLink href="/">Home</GhostLink>
+            </Actions>
           </>
         )}
 
