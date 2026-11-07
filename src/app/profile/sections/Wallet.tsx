@@ -138,6 +138,8 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
 
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
+        {/* The pack picker, in one card like the rest of the profile. */}
+        <div className="flex flex-col" style={{ ...cardStyle, padding: '24px', gap: '20px' }}>
         <div className="flex flex-col" style={{ gap: '8px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Choose a Token Pack</h2>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
@@ -205,6 +207,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
               </button>
             );
           })}
+        </div>
         </div>
 
         {/* Summary */}
