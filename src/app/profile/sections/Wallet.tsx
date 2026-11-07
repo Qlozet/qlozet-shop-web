@@ -8,17 +8,40 @@ import {
 import { TokenIcon } from '@/components/icons/TokenIcon';
 import { cardStyle } from '../styles';
 import type { ActiveSection } from '../types';
-import { useWallet, type TokenPrice } from '@/hooks/useWallet';
+import { useWallet } from '@/hooks/useWallet';
+import { api } from '@/lib/api';
 import { useCurrency } from '@/context/CurrencyContext';
 import { WalletSkeleton } from '../components/Skeleton';
 
-// ─── Token Package Definitions ────────────────────────────────
-const TOKEN_PACKAGES = [
-  { id: 'starter', tokens: 5, icon: Sparkles, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.08)', tag: null },
-  { id: 'popular', tokens: 15, icon: Zap, color: '#D4AF37', bgColor: 'rgba(212,175,55,0.08)', tag: 'BEST VALUE' },
-  { id: 'pro', tokens: 30, icon: Gem, color: '#3B82F6', bgColor: 'rgba(59,130,246,0.08)', tag: 'SAVE MORE' },
-  { id: 'ultimate', tokens: 60, icon: Crown, color: 'var(--brand-brown)', bgColor: 'rgba(70,40,20,0.06)', tag: 'BEST DEAL' },
+// ─── Token packs ──────────────────────────────────────────────
+// The packs are set by the admin (GET /token/packs) and priced by the
+// server; the shop only names the pack it buys. Looks go by position.
+interface TokenPack {
+  id: string;
+  name: string;
+  tokens: number;
+  bonus_tokens: number;
+  total_tokens: number;
+  price_ngn: number;
+  tag: string | null;
+  /** About how many AI designs the pack covers. */
+  designs: number | null;
+}
+const PACK_LOOKS = [
+  { icon: Sparkles, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.08)' },
+  { icon: Zap, color: '#D4AF37', bgColor: 'rgba(212,175,55,0.08)' },
+  { icon: Gem, color: '#3B82F6', bgColor: 'rgba(59,130,246,0.08)' },
+  { icon: Crown, color: 'var(--brand-brown)', bgColor: 'rgba(70,40,20,0.06)' },
 ];
+const lookFor = (i: number) => PACK_LOOKS[Math.min(Math.max(i, 0), PACK_LOOKS.length - 1)];
+/** The pack to start on: the first one the admin labelled, else the second. */
+function defaultPackIndex(packs: TokenPack[]): number {
+  const tagged = packs.findIndex((p) => p.tag);
+  if (tagged >= 0) return tagged;
+  return Math.min(1, Math.max(0, packs.length - 1));
+}
+const designsLine = (p: TokenPack) =>
+  p.designs != null ? `Enough for about ${p.designs} AI design${p.designs === 1 ? '' : 's'}` : null;
 
 // ─── Props ────────────────────────────────────────────────────
 interface WalletSectionProps {
@@ -36,7 +59,6 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
     isFunding,
     isPurchasing,
     refresh,
-    getTokenPrice,
     fundWallet,
     pollTransaction,
     purchaseTokens,
@@ -48,9 +70,10 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
   // marked "≈" estimate under the balance, nothing more.
   const { fmt, isConverted } = useCurrency();
 
-  const [selectedPackage, setSelectedPackage] = useState('popular');
-  const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
+  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [packs, setPacks] = useState<TokenPack[]>([]);
   const [isPriceLoading, setIsPriceLoading] = useState(false);
+  const [packsFailed, setPacksFailed] = useState(false);
 
   // Fund wallet form
   const [fundAmount, setFundAmount] = useState('5000');
@@ -73,54 +96,73 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // ─── Fetch token prices only when entering buy-tokens ────────
-  const FALLBACK_PRICE_PER_TOKEN_NGN = 16.5; // $0.01 × ~₦1,650/USD — used when API is down
+  // ─── Fetch the packs only when entering buy-tokens ──────────
   const pricesFetched = useRef(false);
   useEffect(() => {
     if (activeSection !== 'buy-tokens' && activeSection !== 'confirm-token-purchase') return;
-    if (pricesFetched.current && Object.keys(tokenPrices).length > 0) return;
+    if (pricesFetched.current) return;
 
     let cancelled = false;
-    const fetchPrices = async () => {
+    const fetchPacks = async () => {
       setIsPriceLoading(true);
-      const basePrice = await getTokenPrice(1, 'NGN');
-      const pricePerToken = basePrice?.amount ?? FALLBACK_PRICE_PER_TOKEN_NGN;
-      if (!cancelled) {
-        const results: Record<string, number> = {};
-        TOKEN_PACKAGES.forEach((pkg) => {
-          results[pkg.id] = Math.round(pricePerToken * pkg.tokens * 10) / 10;
-        });
-        setTokenPrices(results);
-        pricesFetched.current = true;
-        setIsPriceLoading(false);
+      setPacksFailed(false);
+      try {
+        const res = await api.get('/token/packs');
+        const body = res.data?.data ?? res.data;
+        if (!cancelled) {
+          setPacks(Array.isArray(body?.packs) ? body.packs : []);
+          pricesFetched.current = true;
+        }
+      } catch {
+        if (!cancelled) setPacksFailed(true);
+      } finally {
+        if (!cancelled) setIsPriceLoading(false);
       }
     };
-    fetchPrices();
+    fetchPacks();
     return () => { cancelled = true; };
   }, [activeSection]);
+
+  const chosenIndex = packs.findIndex((p) => p.id === selectedPackage);
+  const selectedIndex = chosenIndex >= 0 ? chosenIndex : defaultPackIndex(packs);
+  const selectedPack: TokenPack | undefined = packs[selectedIndex];
 
   // ═══════════════════════════════════════════════════════════════
   //  BUY TOKENS
   // ═══════════════════════════════════════════════════════════════
   if (activeSection === 'buy-tokens') {
-    const selected = TOKEN_PACKAGES.find(p => p.id === selectedPackage) || TOKEN_PACKAGES[1];
-    const price = tokenPrices[selected.id] || 0;
-    const SelectedIcon = selected.icon;
+    const selected = selectedPack;
+    const look = lookFor(selectedIndex);
+    const price = selected?.price_ngn ?? 0;
+    const SelectedIcon = look.icon;
 
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
         <div className="flex flex-col" style={{ gap: '8px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Choose a Token Package</h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Choose a Token Pack</h2>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            Tokens power AI design generation in Bespoke Studio. More tokens, better value.
+            Tokens power AI design generation in Bespoke Studio. Bigger packs come with free tokens, and tokens don&apos;t expire.
           </p>
         </div>
 
+        {packsFailed && !packs.length && (
+          <div className="flex items-center" style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', gap: '10px' }}>
+            <AlertCircle size={16} color="#EF4444" />
+            <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>Couldn&apos;t load the token packs. Go back and try again.</span>
+          </div>
+        )}
+
         {/* Token Packages */}
         <div className="flex flex-col" style={{ gap: '8px' }}>
-          {TOKEN_PACKAGES.map((pkg) => {
-            const isSelected = selectedPackage === pkg.id;
-            const pkgPrice = tokenPrices[pkg.id];
+          {isPriceLoading && !packs.length && (
+            <div className="flex justify-center" style={{ padding: '24px' }}>
+              <Loader2 size={18} className="animate-spin" color="var(--text-muted)" />
+            </div>
+          )}
+          {packs.map((pkg, i) => {
+            const isSelected = selected?.id === pkg.id;
+            const pkgPrice = pkg.price_ngn;
+            const pkgLook = lookFor(i);
             return (
               <button
                 key={pkg.id}
@@ -128,27 +170,37 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
                 className="flex items-center justify-between transition-all active:scale-[0.99]"
                 style={{
                   padding: '18px 20px', borderRadius: '14px',
-                  border: isSelected ? `2px solid ${pkg.color}` : '2px solid var(--border-glass)',
-                  background: isSelected ? pkg.bgColor : 'var(--bg-surface-elevated)',
+                  border: isSelected ? `2px solid ${pkgLook.color}` : '2px solid var(--border-glass)',
+                  background: isSelected ? pkgLook.bgColor : 'var(--bg-surface-elevated)',
                   cursor: 'pointer', textAlign: 'left',
                 }}
               >
-                <span style={{ fontSize: '15px', color: 'var(--text-primary)' }}>
-                  <strong style={{ fontWeight: 800 }}>{pkg.tokens.toLocaleString()}</strong>{' '}
-                  <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>tokens</span>
-                  {pkg.tag && (
-                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '4px', background: pkg.bgColor, fontSize: '9px', fontWeight: 800, color: pkg.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {pkg.tag}
-                    </span>
+                <span className="flex flex-col" style={{ gap: '3px', minWidth: 0 }}>
+                  <span style={{ fontSize: '15px', color: 'var(--text-primary)' }}>
+                    <strong style={{ fontWeight: 800 }}>{pkg.name}</strong>
+                    {pkg.tag && (
+                      <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '4px', background: pkgLook.bgColor, fontSize: '9px', fontWeight: 800, color: pkgLook.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {pkg.tag}
+                      </span>
+                    )}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    {pkg.total_tokens.toLocaleString()} tokens
+                    {pkg.bonus_tokens > 0 && (
+                      <span style={{ color: '#16A34A', fontWeight: 700 }}> · {pkg.bonus_tokens.toLocaleString()} free</span>
+                    )}
+                  </span>
+                  {designsLine(pkg) && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{designsLine(pkg)}</span>
                   )}
                 </span>
                 <span style={{
                   padding: '6px 16px', borderRadius: '100px',
-                  background: isSelected ? pkg.color : 'var(--brand-fill)',
+                  background: isSelected ? pkgLook.color : 'var(--brand-fill)',
                   color: 'var(--brand-fill-text)', fontSize: '12px', fontWeight: 700,
                   minWidth: '80px', textAlign: 'center',
                 }}>
-                  {isPriceLoading ? '...' : pkgPrice != null ? `₦${pkgPrice.toLocaleString()}` : '—'}
+                  ₦{pkgPrice.toLocaleString()}
                 </span>
               </button>
             );
@@ -156,15 +208,18 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
         </div>
 
         {/* Summary */}
+        {selected && (
         <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
           <div className="flex items-center justify-between" style={{ padding: '18px 20px', borderBottom: '1px solid var(--border-glass)' }}>
             <div className="flex items-center" style={{ gap: '12px' }}>
-              <div className="flex items-center justify-center" style={{ width: '36px', height: '36px', borderRadius: '10px', background: selected.bgColor }}>
-                <SelectedIcon size={18} color={selected.color} strokeWidth={1.8} />
+              <div className="flex items-center justify-center" style={{ width: '36px', height: '36px', borderRadius: '10px', background: look.bgColor }}>
+                <SelectedIcon size={18} color={look.color} strokeWidth={1.8} />
               </div>
               <div className="flex flex-col">
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{selected.id.charAt(0).toUpperCase() + selected.id.slice(1)} Package</span>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{selected.tokens} tokens</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{selected.name} pack</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {selected.total_tokens.toLocaleString()} tokens{selected.bonus_tokens > 0 ? ` (${selected.bonus_tokens.toLocaleString()} free)` : ''}
+                </span>
               </div>
             </div>
             <div className="flex flex-col items-end">
@@ -175,9 +230,9 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
           </div>
           <div className="flex flex-col" style={{ padding: '14px 20px', gap: '8px' }}>
             {[
-              { icon: <Sparkles size={13} color="#8B5CF6" strokeWidth={1.8} />, text: 'Generate AI design concepts' },
+              { icon: <Sparkles size={13} color="#8B5CF6" strokeWidth={1.8} />, text: designsLine(selected) ?? 'Generate AI design concepts' },
               { icon: <Zap size={13} color="#D4AF37" strokeWidth={1.8} />, text: 'Iterate and refine designs' },
-              { icon: <Crown size={13} color="var(--brand-brown)" strokeWidth={1.8} />, text: 'Access premium templates' },
+              { icon: <Crown size={13} color="var(--brand-brown)" strokeWidth={1.8} />, text: "Tokens don't expire" },
             ].map((item, i) => (
               <div key={i} className="flex items-center" style={{ gap: '10px' }}>
                 {item.icon}
@@ -186,6 +241,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             ))}
           </div>
         </div>
+        )}
 
         {/* Purchase Button */}
         <button
@@ -200,7 +256,7 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
             border: 'none', cursor: price ? 'pointer' : 'not-allowed',
           }}
         >
-          {price ? `Buy ${selected.tokens} Tokens — ₦${price.toLocaleString()}` : 'Loading prices...'}
+          {selected ? `Buy ${selected.name} — ₦${price.toLocaleString()}` : isPriceLoading ? 'Loading packs...' : 'Choose a pack'}
         </button>
 
         <div className="flex items-center justify-center" style={{ gap: '6px' }}>
@@ -215,10 +271,11 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
   //  CONFIRM TOKEN PURCHASE
   // ═══════════════════════════════════════════════════════════════
   if (activeSection === 'confirm-token-purchase') {
-    const selected = TOKEN_PACKAGES.find(p => p.id === selectedPackage) || TOKEN_PACKAGES[1];
-    const price = tokenPrices[selected.id] || 0;
-    const SelectedIcon = selected.icon;
-    const hasEnough = walletBalance >= price;
+    const selected = selectedPack;
+    const look = lookFor(selectedIndex);
+    const price = selected?.price_ngn ?? 0;
+    const SelectedIcon = look.icon;
+    const hasEnough = Boolean(selected) && walletBalance >= price;
 
     return (
       <div className="animate-fade-in flex flex-col" style={{ gap: '24px' }}>
@@ -234,11 +291,13 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
           <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Order Summary</span>
           <div className="flex items-center justify-between" style={{ marginTop: '16px' }}>
             <div className="flex items-center" style={{ gap: '12px' }}>
-              <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '12px', background: selected.bgColor }}>
-                <SelectedIcon size={20} color={selected.color} strokeWidth={1.8} />
+              <div className="flex items-center justify-center" style={{ width: '40px', height: '40px', borderRadius: '12px', background: look.bgColor }}>
+                <SelectedIcon size={20} color={look.color} strokeWidth={1.8} />
               </div>
               <div className="flex flex-col">
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{selected.tokens} Tokens</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {selected ? `${selected.name} · ${selected.total_tokens.toLocaleString()} tokens` : '—'}
+                </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Deducted from wallet</span>
               </div>
             </div>
@@ -285,8 +344,9 @@ export default function WalletSection({ activeSection, setActiveSection }: Walle
           onClick={async () => {
             setPreBalanceTokens(tokenBalance);
             setPreBalanceWallet(walletBalance);
-            setPurchasedTokens(selected.tokens);
-            const ok = await purchaseTokens(selected.tokens);
+            if (!selected) return;
+            setPurchasedTokens(selected.total_tokens);
+            const ok = await purchaseTokens(selected.id);
             if (ok) setActiveSection('token-purchase-success');
           }}
           disabled={isPurchasing || !hasEnough}

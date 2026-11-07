@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Wallet, ArrowRight, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
 import { TokenIcon } from '../icons/TokenIcon';
-import { useWallet, type TokenPrice } from '@/hooks/useWallet';
+import { useWallet } from '@/hooks/useWallet';
+import { useTokenPacks } from '@/hooks/useTokenPacks';
 
 interface InsufficientTokensModalProps {
   isOpen: boolean;
@@ -27,55 +28,41 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
   purpose = 'generate a design',
   actionLabel = 'Generate Now',
 }) => {
-  const { walletBalance, getTokenPrice, purchaseTokens, fundWallet, pollTransaction, silentRefresh } = useWallet();
+  const { walletBalance, purchaseTokens, fundWallet, pollTransaction, silentRefresh } = useWallet();
+  const { packs: allPacks, loading: loadingPrice } = useTokenPacks(isOpen);
 
   const deficit = Math.max(0, cost - balance);
 
-  // Quick-buy token amounts
-  const QUICK_AMOUNTS = [
-    { tokens: deficit, label: `${deficit} (minimum)` },
-    { tokens: Math.max(deficit, 50), label: `${Math.max(deficit, 50)} tokens` },
-    { tokens: Math.max(deficit, 100), label: '100 tokens' },
-    { tokens: Math.max(deficit, 250), label: '250 tokens' },
-  ].filter((v, i, a) => a.findIndex(x => x.tokens === v.tokens) === i); // dedupe
+  // The packs that cover what is missing (all of them if none does), and
+  // the smallest of those to start on.
+  const covering = allPacks.filter((p) => p.total_tokens >= deficit);
+  const packs = covering.length ? covering : allPacks;
 
-  const [selectedAmount, setSelectedAmount] = useState(QUICK_AMOUNTS[0].tokens);
-  const [priceData, setPriceData] = useState<TokenPrice | null>(null);
-  const [loadingPrice, setLoadingPrice] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [step, setStep] = useState<'select' | 'confirm' | 'purchasing' | 'funding' | 'success'>('select');
   const [error, setError] = useState<string | null>(null);
-
-  // Fetch token price when amount changes
-  useEffect(() => {
-    if (!isOpen) return;
-    setLoadingPrice(true);
-    setError(null);
-    getTokenPrice(selectedAmount).then((data) => {
-      setPriceData(data);
-      setLoadingPrice(false);
-    });
-  }, [selectedAmount, isOpen, getTokenPrice]);
 
   // Reset when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep('select');
       setError(null);
-      setSelectedAmount(QUICK_AMOUNTS[0].tokens);
+      setSelectedId(null);
     }
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
-  const priceNGN = priceData?.amount ?? 0;
+  const selected = packs.find((p) => p.id === selectedId) ?? packs[0];
+  const priceNGN = selected?.price_ngn ?? 0;
   const hasEnoughWallet = walletBalance >= priceNGN;
 
   const handlePurchase = async () => {
-    if (!priceData) return;
+    if (!selected) return;
     setError(null);
 
     if (hasEnoughWallet) {
       // Direct purchase from wallet
       setStep('purchasing');
-      const ok = await purchaseTokens(selectedAmount);
+      const ok = await purchaseTokens(selected.id);
       if (ok) {
         await silentRefresh();
         setStep('success');
@@ -93,7 +80,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
         if (status === 'success') {
           // Now purchase tokens
           setStep('purchasing');
-          const ok = await purchaseTokens(selectedAmount);
+          const ok = await purchaseTokens(selected.id);
           if (ok) {
             await silentRefresh();
             setStep('success');
@@ -182,38 +169,55 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               Top up tokens
             </span>
             <div className="flex flex-col" style={{ gap: '8px', marginBottom: '20px' }}>
-              {QUICK_AMOUNTS.map(({ tokens, label }) => (
+              {loadingPrice && !packs.length && (
+                <div className="flex justify-center" style={{ padding: '16px' }}>
+                  <Loader2 size={18} className="animate-spin" color="var(--text-muted)" />
+                </div>
+              )}
+              {packs.map((pack) => {
+                const on = selected?.id === pack.id;
+                return (
                 <button
-                  key={tokens}
-                  onClick={() => setSelectedAmount(tokens)}
+                  key={pack.id}
+                  onClick={() => setSelectedId(pack.id)}
                   className="flex items-center justify-between transition-all"
                   style={{
                     padding: '14px 16px',
                     borderRadius: '14px',
-                    border: selectedAmount === tokens ? '2px solid var(--brand-fill)' : '1.5px solid var(--border-glass)',
-                    background: selectedAmount === tokens ? 'rgba(70,40,20,0.03)' : 'var(--bg-surface-elevated)',
+                    border: on ? '2px solid var(--brand-fill)' : '1.5px solid var(--border-glass)',
+                    background: on ? 'rgba(70,40,20,0.03)' : 'var(--bg-surface-elevated)',
                     cursor: 'pointer',
+                    gap: '10px',
                   }}
                 >
-                  <div className="flex items-center" style={{ gap: '10px' }}>
-                    <TokenIcon size={16} color={selectedAmount === tokens ? 'var(--brand-fill)' : 'var(--text-muted)'} />
-                    <span style={{ fontSize: '13px', fontWeight: selectedAmount === tokens ? 800 : 600, color: 'var(--text-primary)' }}>
-                      {label}
+                  <div className="flex items-center" style={{ gap: '10px', minWidth: 0 }}>
+                    <TokenIcon size={16} color={on ? 'var(--brand-fill)' : 'var(--text-muted)'} />
+                    <span className="flex flex-col" style={{ textAlign: 'left' }}>
+                      <span style={{ fontSize: '13px', fontWeight: on ? 800 : 600, color: 'var(--text-primary)' }}>
+                        {pack.name} · {pack.total_tokens.toLocaleString()} tokens
+                      </span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        ₦{pack.price_ngn.toLocaleString()}
+                        {pack.bonus_tokens > 0 ? ` · ${pack.bonus_tokens.toLocaleString()} free` : ''}
+                        {pack.designs != null ? ` · about ${pack.designs} design${pack.designs === 1 ? '' : 's'}` : ''}
+                      </span>
                     </span>
                   </div>
                   <div
                     style={{
-                      width: '18px', height: '18px', borderRadius: '50%',
-                      border: selectedAmount === tokens ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)',
+                      width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                      border: on ? '5px solid var(--brand-fill)' : '2px solid var(--border-glass)',
                     }}
                   />
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             {/* Continue button */}
             <button
               onClick={() => setStep('confirm')}
+              disabled={!selected}
               className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
                 padding: '15px',
@@ -254,7 +258,9 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
             <div className="flex flex-col" style={{ borderRadius: '16px', background: 'var(--bg-surface-elevated)', padding: '16px', gap: '12px', marginBottom: '20px' }}>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Tokens</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedAmount} tokens</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {selected ? `${selected.name} · ${selected.total_tokens.toLocaleString()} tokens` : '—'}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Price</span>
@@ -296,7 +302,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
               </button>
               <button
                 onClick={handlePurchase}
-                disabled={loadingPrice}
+                disabled={loadingPrice || !selected}
                 className="flex-[2] flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{
                   padding: '14px',
@@ -314,7 +320,7 @@ export const InsufficientTokensModal: React.FC<InsufficientTokensModalProps> = (
                 }}
               >
                 {hasEnoughWallet ? (
-                  <>Buy {selectedAmount} Tokens</>
+                  <>Buy {selected?.name ?? 'pack'}</>
                 ) : (
                   <>Fund & Buy</>
                 )}
