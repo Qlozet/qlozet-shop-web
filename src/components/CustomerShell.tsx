@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { guardedLeave } from '@/lib/leave-guard';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { Footer } from '@/components/Footer';
@@ -125,7 +126,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         window.dispatchEvent(new CustomEvent('shell-search', { detail: searchQuery.trim() }));
         setSearchQuery('');
       } else {
-        router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+        guardedLeave(() => router.push(`/search?q=${encodeURIComponent(searchQuery)}`));
       }
       setIsSearchFocused(false);
     }
@@ -141,7 +142,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
       return;
     }
     setSearchQuery(suggestion);
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+    guardedLeave(() => router.push(`/search?q=${encodeURIComponent(suggestion)}`));
   };
 
   // Bottom tab items for mobile
@@ -209,7 +210,7 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
         {/* ── Floating Search Button — navigates to /search on non-search pages ── */}
         {!isStudio && !isSearchPage && (
         <button
-          onClick={() => router.push('/search')}
+          onClick={() => guardedLeave(() => router.push('/search'))}
           className="fixed z-50 flex items-center justify-center transition-all active:scale-90"
           style={{
             bottom: '90px',
