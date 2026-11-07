@@ -802,6 +802,10 @@ export interface CourierRate {
   delivery_eta_time: string;
   insurance_fee: number;
   insurance_code: string;
+  /** YYYY-MM-DD: vendor's making time + this courier's days on the road. */
+  arrives_from?: string;
+  arrives_to?: string;
+  transit_days?: { min: number; max: number } | null;
 }
 
 export interface VendorShippingRate {
@@ -809,6 +813,8 @@ export interface VendorShippingRate {
   business_name: string;
   items: { product_id: string; product_name: string }[];
   request_token: string;
+  /** Days before this vendor's parcel is ready to ship. */
+  making_days?: { min: number; max: number };
   rates: CourierRate[];
   cheapest_rate: number;
   fastest_rate: number;

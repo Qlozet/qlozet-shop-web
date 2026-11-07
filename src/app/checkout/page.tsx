@@ -11,6 +11,7 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { useWallet } from '@/hooks/useWallet';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
+import { CourierPicker } from '@/components/checkout/CourierPicker';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import {
   ADD_MEASUREMENTS_HREF,
@@ -688,94 +689,33 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {checkout.preview?.vendor_shipping.map((vendor) => {
-              const selected = checkout.selectedCouriers.find((s) => s.business_id === vendor.business_id);
-              return (
-                <div key={vendor.business_id} style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                    {vendor.business_name}
-                    <span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '8px' }}>
-                      {vendor.items.length} item{vendor.items.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {vendor.rates.map((rate) => (
-                      <button
-                        key={String(rate.courier_id)}
-                        onClick={() => checkout.selectCourier(vendor.business_id, rate)}
-                        className="flex items-center justify-between w-full transition-all"
-                        style={{
-                          padding: '10px 12px',
-                          borderRadius: '10px',
-                          border: selected?.courier.courier_id === rate.courier_id
-                            ? '2px solid #064E3B'
-                            : '1px solid var(--border-glass)',
-                          background: selected?.courier.courier_id === rate.courier_id
-                            ? 'rgba(6,78,59,0.03)'
-                            : 'var(--bg-surface-elevated)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          {rate.courier_image && (
-                            <Image src={rate.courier_image} alt="" width={20} height={20} style={{ borderRadius: '4px' }} />
-                          )}
-                          <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>{rate.courier_name}</div>
-                            <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{rate.delivery_eta_time}</div>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {fmtMoney(rate.rate_amount)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {checkout.preview?.vendor_shipping.map((vendor) => (
+              <CourierPicker
+                key={vendor.business_id}
+                title={vendor.business_name}
+                subtitle={`${vendor.items.length} item${vendor.items.length > 1 ? 's' : ''}`}
+                rates={vendor.rates}
+                selectedId={checkout.selectedCouriers.find((s) => s.business_id === vendor.business_id)?.courier.courier_id}
+                onSelect={(rate) => checkout.selectCourier(vendor.business_id, rate)}
+                formatMoney={fmtMoney}
+              />
+            ))}
 
-            {/* Fabric transfers */}
+            {/* Fabric transfers: the fabric goes to the tailor first */}
             {checkout.preview?.fabric_transfers.map((ft) => {
               const key = `${ft.fabric_vendor_id}_${ft.tailor_vendor_id}`;
-              const selected = checkout.selectedFabricCouriers.find((s) => s.key === key);
               return (
-                <div key={key} style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-brown)', marginBottom: '6px' }}>
-                    Fabric Transfer
-                    <span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '8px' }}>
-                      {ft.fabric_name} ({ft.fabric_yards}yd) → {ft.tailor_vendor_name}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {ft.rates.map((rate) => (
-                      <button
-                        key={String(rate.courier_id)}
-                        onClick={() => checkout.selectFabricCourier(key, rate)}
-                        className="flex items-center justify-between w-full transition-all"
-                        style={{
-                          padding: '10px 12px',
-                          borderRadius: '10px',
-                          border: selected?.courier.courier_id === rate.courier_id
-                            ? '2px solid var(--brand-fill)'
-                            : '1px solid var(--border-glass)',
-                          background: selected?.courier.courier_id === rate.courier_id
-                            ? 'rgba(139,90,43,0.03)'
-                            : 'var(--bg-surface-elevated)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>{rate.courier_name}</div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{rate.delivery_eta_time}</div>
-                        </div>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {fmtMoney(rate.rate_amount)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <CourierPicker
+                  key={key}
+                  title={<span style={{ color: 'var(--brand-brown)' }}>Fabric to your tailor</span>}
+                  subtitle={`${ft.fabric_name} (${ft.fabric_yards}yd) → ${ft.tailor_vendor_name}`}
+                  rates={ft.rates}
+                  selectedId={checkout.selectedFabricCouriers.find((s) => s.key === key)?.courier.courier_id}
+                  onSelect={(rate) => checkout.selectFabricCourier(key, rate)}
+                  formatMoney={fmtMoney}
+                  arrivalVerb="Reaches the tailor"
+                  accent="var(--brand-fill)"
+                />
               );
             })}
 
