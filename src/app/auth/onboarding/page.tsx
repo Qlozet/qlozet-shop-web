@@ -1,26 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { QlozetLogo } from '@/components/QlozetLogo';
+import { PickLooksStep } from '@/components/onboarding/PickLooksStep';
+import { FollowDesignersStep } from '@/components/onboarding/FollowDesignersStep';
 import { Sparkles, ArrowRight, Check, Crown, Palette, Shirt, Star, Briefcase, Zap, Scissors, ShoppingBag, type LucideIcon } from 'lucide-react';
 
-type OnboardStep = 1 | 2 | 3;
+type OnboardStep = 1 | 2 | 3 | 4;
+const STEPS: OnboardStep[] = [1, 2, 3, 4];
 
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={null}>
+      <Onboarding />
+    </Suspense>
+  );
+}
+
+// Welcome → who you shop for → pick looks → follow designers. With
+// ?redo=style (Profile → Update my style) it opens on the looks step and goes
+// back to the profile at the end.
+function Onboarding() {
   const router = useRouter();
-  const { user, setGender, setGenderSelected } = useApp();
+  const redo = useSearchParams().get('redo') === 'style';
+  const { user, gender, setGender, setGenderSelected } = useApp();
   const trackEvent = useTrackEvent();
-  const [currentStep, setCurrentStep] = useState<OnboardStep>(1);
+  const [currentStep, setCurrentStep] = useState<OnboardStep>(redo ? 3 : 1);
+  const [pickedProducts, setPickedProducts] = useState<string[]>([]);
+  const finish = () => router.push(redo ? '/profile' : '/');
 
   // STEP 2: Gender
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
 
-  // STEP 3: Aesthetics
+  // STEP 3 fallback: word tiles, only when there are no looks to pick from.
   const [selectedAesthetics, setSelectedAesthetics] = useState<string[]>([]);
   const [savingAesthetics, setSavingAesthetics] = useState(false);
 
@@ -101,15 +118,39 @@ export default function OnboardingPage() {
       });
       setSavingAesthetics(false);
     }
-    router.push('/');
+    finish();
   };
 
   const handleSkipAesthetics = () => {
     // Gender was already saved in handleGenderContinue
-    router.push('/');
+    finish();
   };
 
   const firstName = user?.name?.split(' ')[0] || 'there';
+  const shopperGender: 'male' | 'female' = selectedGender ?? gender;
+
+  const looksStep = (wide: boolean, fallback: React.ReactNode) => (
+    <PickLooksStep
+      gender={shopperGender}
+      wide={wide}
+      onDone={(picks) => {
+        setPickedProducts(picks.productIds);
+        setCurrentStep(4);
+      }}
+      onSkip={finish}
+      fallback={fallback}
+    />
+  );
+
+  const designersStep = (wide: boolean) => (
+    <FollowDesignersStep
+      gender={shopperGender}
+      wide={wide}
+      pickedProductIds={pickedProducts}
+      onDone={finish}
+      finishLabel={redo ? 'Done' : 'Finish'}
+    />
+  );
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--bg-base)' }}>
@@ -123,6 +164,7 @@ export default function OnboardingPage() {
           '/image/seun.png',
           '/image/slim-girl-1.jpg',
           '/image/bespoke-dress-1.png',
+          '/image/agbada-outfit.png',
         ].map((img, idx) => (
           <div
             key={idx}
@@ -153,10 +195,11 @@ export default function OnboardingPage() {
             {currentStep === 1 && 'YOUR STYLE, YOUR WAY'}
             {currentStep === 2 && 'TAILORED TO YOUR TASTE'}
             {currentStep === 3 && 'CURATE YOUR FEED'}
+            {currentStep === 4 && 'FOLLOW THE MAKERS'}
           </h2>
           {/* Dots */}
           <div className="flex gap-2">
-            {[1, 2, 3].map((s) => (
+            {STEPS.map((s) => (
               <span
                 key={s}
                 className="rounded-full transition-all duration-500"
@@ -182,7 +225,7 @@ export default function OnboardingPage() {
 
             {/* Progress Bars */}
             <div className="flex" style={{ gap: '8px', marginBottom: '28px' }}>
-              {[1, 2, 3].map((s) => (
+              {STEPS.map((s) => (
                 <span
                   key={s}
                   style={{
@@ -314,8 +357,8 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ── MOBILE STEP 3: AESTHETICS ── */}
-            {currentStep === 3 && (
+            {/* ── MOBILE STEP 3: LOOKS (word tiles if there are none) ── */}
+            {currentStep === 3 && looksStep(false, (
               <div className="animate-fade-in flex flex-col flex-1">
                 <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '8px' }}>
                   What&apos;s your aesthetic?
@@ -347,7 +390,10 @@ export default function OnboardingPage() {
                   </button>
                 </div>
               </div>
-            )}
+            ))}
+
+            {/* ── MOBILE STEP 4: DESIGNERS ── */}
+            {currentStep === 4 && designersStep(false)}
 
           </div>
         </div>
@@ -358,14 +404,14 @@ export default function OnboardingPage() {
           {/* Step counter */}
           <div className="absolute top-8 left-8 flex justify-between w-full pr-16 items-center">
             <QlozetLogo width={48} color="var(--text-primary)" />
-            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{currentStep}/3</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{currentStep}/4</span>
           </div>
 
           <div className="w-full max-w-[500px] flex flex-col relative z-10 animate-fade-in">
 
             {/* Back + Progress */}
             <div className="flex items-center justify-between" style={{ marginBottom: '48px' }}>
-              {currentStep > 1 ? (
+              {currentStep > 1 && !(redo && currentStep === 3) ? (
                 <button
                   onClick={() => setCurrentStep((prev) => (prev - 1) as OnboardStep)}
                   className="hover:underline flex items-center"
@@ -377,7 +423,7 @@ export default function OnboardingPage() {
                 <div />
               )}
               <div className="flex" style={{ gap: '8px' }}>
-                {[1, 2, 3].map((s) => (
+                {STEPS.map((s) => (
                   <span
                     key={s}
                     className="transition-all duration-500"
@@ -537,8 +583,8 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ════════ DESKTOP STEP 3: AESTHETICS ════════ */}
-            {currentStep === 3 && (
+            {/* ════════ DESKTOP STEP 3: LOOKS (word tiles if there are none) ════════ */}
+            {currentStep === 3 && looksStep(true, (
               <div className="flex flex-col animate-fade-in" style={{ gap: '20px' }}>
                 <div>
                   <h1
@@ -582,7 +628,10 @@ export default function OnboardingPage() {
                   </button>
                 </div>
               </div>
-            )}
+            ))}
+
+            {/* ════════ DESKTOP STEP 4: DESIGNERS ════════ */}
+            {currentStep === 4 && designersStep(true)}
 
           </div>
         </div>

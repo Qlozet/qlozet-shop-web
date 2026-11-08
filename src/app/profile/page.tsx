@@ -10,7 +10,7 @@ import {
   User, Wallet, Package, Ruler, ShieldCheck,
   Bell, Moon, ChevronRight, ChevronLeft,
   HelpCircle, BookOpen, FileText, Lock, LogOut,
-  Heart, Scissors, MapPin, Store,
+  Heart, Scissors, MapPin, Store, Sparkles,
 } from 'lucide-react';
 import { TokenIcon } from '@/components/icons/TokenIcon';
 
@@ -415,6 +415,9 @@ function ProfilePageContent() {
                 } />
               <MenuRow icon={Heart} label="Following" iconBg="rgba(239,68,68,0.06)" iconColor="#E11D48"
                 onClick={() => setActiveSection('following')} isActive={activeSection === 'following'} />
+              {/* Re-runs the looks + designers steps from sign-up. */}
+              <MenuRow icon={Sparkles} label="Update my style" iconBg="rgba(212,128,13,0.08)" iconColor="#D4800D"
+                onClick={() => router.push('/auth/onboarding?redo=style')} />
               <MenuRow icon={Scissors} label="Reserved Fabric" iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED"
                 onClick={() => setActiveSection('reserved-fabric')} isActive={activeSection === 'reserved-fabric'} />
               {/* Same email and password open a store (backend linked accounts). */}
