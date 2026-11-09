@@ -129,6 +129,19 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // ── 401 for a visitor who isn't signed in ──
+    // Nothing to refresh and nobody to log out: just fail this request.
+    // (Treating it as an expired session wiped every remembered page,
+    // including the product just loaded, which then sat on its skeleton.)
+    if (
+      error.response?.status === 401 &&
+      isClient &&
+      !originalRequest?.headers?.Authorization &&
+      !localStorage.getItem('qlozet_refresh_token')
+    ) {
+      return Promise.reject(error);
+    }
+
     // ── 401 Unauthorized — token refresh ──
     if (
       error.response?.status === 401 &&
