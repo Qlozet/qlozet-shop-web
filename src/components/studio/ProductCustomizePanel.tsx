@@ -371,7 +371,15 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
               ) : (
                 <>
                   <Sparkles size={14} color="#7C3AED" />
-                  <span>{customization.generatedImages.length ? 'New preview' : 'See it on me'}</span>
+                  {/* Redraws the product photo with the choices (not a try-on). */}
+                  {customization.generatedImages.length ? (
+                    <span>New preview</span>
+                  ) : (
+                    <>
+                      <span className="lg:hidden">Preview</span>
+                      <span className="hidden lg:inline">Preview outfit</span>
+                    </>
+                  )}
                   <span className="flex items-center" style={{ gap: '3px', opacity: 0.85 }}>
                     <TokenIcon size={13} color="#D4AF37" />
                     <span style={{ fontSize: '12px', fontWeight: 800 }}>{customization.editTokenCost}</span>
