@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -67,8 +67,11 @@ function RegisterContent() {
     return () => clearInterval(timer);
   }, [slides.length]);
 
+  // A Google sign-up in progress decides where to go itself.
+  const googleSignIn = useRef(false);
+
   useEffect(() => {
-    if (user && step !== 'otp') {
+    if (user && step !== 'otp' && !googleSignIn.current) {
       router.push('/');
     }
   }, [user, router, step]);
@@ -103,10 +106,14 @@ function RegisterContent() {
   const handleGoogle = async (idToken: string) => {
     setError('');
     setIsLoading(true);
+    // Hold the "signed in, go home" redirect: a brand-new account goes to
+    // the welcome steps instead.
+    googleSignIn.current = true;
     try {
-      await authenticateWithGoogle(idToken);
-      router.push('/');
+      const { isNewUser } = await authenticateWithGoogle(idToken);
+      router.push(isNewUser ? '/auth/onboarding' : '/');
     } catch (err: any) {
+      googleSignIn.current = false;
       setError(
         err.response?.data?.message ||
           'Could not sign you up with Google. Please try again.'

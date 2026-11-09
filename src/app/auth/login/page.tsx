@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -52,9 +52,12 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, [slides.length]);
 
+  // A Google sign-in in progress decides where to go itself.
+  const googleSignIn = useRef(false);
+
   // If user is already logged in, redirect to home
   useEffect(() => {
-    if (user) {
+    if (user && !googleSignIn.current) {
       router.push('/');
     }
   }, [user, router]);
@@ -62,10 +65,14 @@ export default function LoginPage() {
   const handleGoogle = async (idToken: string) => {
     setError('');
     setIsLoading(true);
+    // Hold the "signed in, go home" redirect: a brand-new account goes to
+    // the welcome steps instead.
+    googleSignIn.current = true;
     try {
-      await authenticateWithGoogle(idToken);
-      router.push('/');
+      const { isNewUser } = await authenticateWithGoogle(idToken);
+      router.push(isNewUser ? '/auth/onboarding' : '/');
     } catch (err: any) {
+      googleSignIn.current = false;
       setError(
         err.response?.data?.message ||
           'Could not sign you in with Google. Please try again.'
