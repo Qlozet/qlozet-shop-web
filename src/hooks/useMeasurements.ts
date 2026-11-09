@@ -224,6 +224,12 @@ export function useMeasurements() {
 
   // ─── Fetch all profiles ─────────────────────────────────────
   const fetchProfiles = useCallback(async () => {
+    // Signed out: there are no saved sets to load.
+    if (!user?.id) {
+      setProfiles([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -242,7 +248,7 @@ export function useMeasurements() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   // Load on mount
   useEffect(() => {
