@@ -14,6 +14,7 @@ import { AccessoriesPanel } from './AccessoriesPanel';
 import { AddonsPanel } from './AddonsPanel';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 import { applySnapshot, choicesKey, takeSnapshot, type CustomizeSnapshot } from '@/lib/customize-snapshot';
+import { OutfitSummary, type OutfitSummaryData } from './OutfitSummary';
 
 // ═══════════════════════════════════════════════════════════════
 //  ProductCustomizePanel
@@ -31,6 +32,8 @@ interface ProductCustomizePanelProps {
   onClose: () => void;
   product?: ApiProduct;
   selectedSize?: string | null;
+  /** The outfit and its price right now, shown above the buttons. */
+  summary?: OutfitSummaryData;
 }
 
 export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
@@ -39,6 +42,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
   onClose,
   product,
   selectedSize,
+  summary,
 }) => {
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
@@ -346,6 +350,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           )}
         </div>
       )}
+      {user && summary && <OutfitSummary data={summary} onJump={setExpandedSection} />}
       {user && (
         <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
           <div className="flex items-center" style={{ gap: '10px' }}>

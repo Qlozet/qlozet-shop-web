@@ -46,6 +46,8 @@ import { SILHOUETTES, NECKLINES, SLEEVES, ACCESSORIES } from '@/data/studio-opti
 import { defaultStylesByPart, stylePart } from '@/lib/style-defaults';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
+import { ReviewOutfitSheet } from '@/components/studio/ReviewOutfitSheet';
+import { outfitLines, outfitTotals } from '@/lib/outfit-summary';
 import { applySnapshot, loadSnapshot, saveSnapshot, takeSnapshot } from '@/lib/customize-snapshot';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
 import { ReserveFabricModal } from '@/components/studio/ReserveFabricModal';
@@ -660,6 +662,10 @@ export default function ProductDetailsPage() {
   // productPrice + customizationExtra is only a fallback while it loads / for guests.
   const [serverPrice, setServerPrice] = useState<number | null>(null);
   const [serverBreakdown, setServerBreakdown] = useState<{ base: number; before_discount: number; discount: number; final: number } | null>(null);
+  // A server price is on its way for the latest change (the summary fades).
+  const [pricing, setPricing] = useState(false);
+  // The review card shown before a made-to-order outfit goes in the cart.
+  const [showReview, setShowReview] = useState(false);
   // Local estimate. For fabric it's price_per_yard × chosen yards so the price
   // tracks the yardage slider immediately; the server value overrides once it
   // returns. Other kinds use base price + customization extras.
@@ -881,6 +887,7 @@ export default function ProductDetailsPage() {
     }
     const controller = new AbortController();
     const t = setTimeout(() => {
+      setPricing(true);
       api
         .post(
           '/orders/price-item',
@@ -909,6 +916,9 @@ export default function ProductDetailsPage() {
         })
         .catch(() => {
           /* keep the local estimate on failure / for guests */
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setPricing(false);
         });
     }, 400);
     return () => {
@@ -942,6 +952,7 @@ export default function ProductDetailsPage() {
   const lowStock = availability?.state === 'low_stock';
   const canAddToCart = !productOutOfStock && !selectedVariantOut;
 
+
   // Whether this garment accepts a customer-supplied external fabric. The
   // backend gates this (product-level flag, falling back to the vendor's
   // setting); mirror it here so we don't offer "apply fabric" on a garment that
@@ -962,6 +973,25 @@ export default function ProductDetailsPage() {
       true);
   const canApplyFabric =
     !!appliedFabricId && product?.kind === 'clothing' && garmentAcceptsFabric;
+
+  // The outfit line by line, for the panel's live summary and the review card.
+  const outfitSummary = useMemo(() => {
+    if (!product || !isCustomizeGarment) return undefined;
+    const lines = outfitLines({
+      product,
+      customization,
+      fabricYards: resolveGarmentYards(selectedSize),
+      appliedFabricName: canApplyFabric && appliedFabricId ? appliedFabricInfo?.name ?? 'Your fabric' : null,
+      appliedFabricYards:
+        canApplyFabric && appliedFabricId
+          ? appliedFabricYards ?? resolveGarmentYards(selectedSize) ?? appliedFabricMinCut
+          : null,
+    });
+    const totals = outfitTotals({ lines, breakdown: serverBreakdown, total: displayPrice, pictured: getProductPrice(product) });
+    return { lines, totals, pricing };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product, isCustomizeGarment, customization, selectedSize, serverBreakdown, displayPrice, pricing,
+    appliedFabricId, appliedFabricInfo?.name, appliedFabricYards, appliedFabricMinCut]);
 
   const handleAddToCart = () => {
     if (!product || !canAddToCart) return;
@@ -2272,7 +2302,7 @@ export default function ProductDetailsPage() {
               )}
 
               <button
-                onClick={handleAddToCart}
+                onClick={isCustomizeGarment ? () => setShowReview(true) : handleAddToCart}
                 disabled={!canAddToCart}
                 className="w-full flex items-center justify-center transition-all hover:opacity-90 disabled:cursor-not-allowed"
                 style={{
@@ -2328,6 +2358,33 @@ export default function ProductDetailsPage() {
                 onClose={() => setShowCustomize(false)}
                 product={product}
                 selectedSize={selectedSize}
+                summary={outfitSummary}
+              />
+            )}
+
+            {/* Review before a made-to-order outfit goes in the cart */}
+            {isCustomizeGarment && outfitSummary && (
+              <ReviewOutfitSheet
+                isOpen={showReview}
+                onClose={() => setShowReview(false)}
+                onConfirm={() => {
+                  setShowReview(false);
+                  handleAddToCart();
+                }}
+                onEdit={(section) => {
+                  setShowReview(false);
+                  customization.setExpandedSection(section);
+                  setShowCustomize(true);
+                }}
+                title={productName}
+                vendorName={product.business?.business_name}
+                image={customization.currentImage || productImage}
+                isPreview={!!customization.currentImage}
+                size={selectedSize}
+                summary={outfitSummary}
+                measurementSetName={customization.measurementSetName}
+                garmentKind={garmentKindOf(product.clothing?.taxonomy)}
+                deliveryLabel={deliveryEstimate?.label}
               />
             )}
 
