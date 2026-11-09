@@ -11,6 +11,8 @@ import { GenerateButton } from './GenerateButton';
 import { RequestQuotesModal } from './RequestQuotesModal';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 import { RefineBar } from './RefineBar';
+import { StepNav, stepCount } from './StepNav';
+import { STUDIO_TABS } from '@/data/studio-options';
 
 interface DesktopConfigPanelProps {
   customization: CustomizationState;
@@ -63,8 +65,13 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
       <div className="flex-1 flex flex-col bg-[var(--bg-base)] shadow-lg overflow-hidden border border-[var(--border-glass)] rounded-[24px]">
         {/* Context Header */}
         <div className="flex items-center justify-between shrink-0" style={{ padding: '20px 20px 8px', borderBottom: '1px solid var(--border-glass)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {sectionLabel[expandedSection] || ''}
+          <span className="flex flex-col">
+            <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {sectionLabel[expandedSection] || ''}
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {stepCount(STUDIO_TABS, expandedSection)}
+            </span>
           </span>
           <div className="flex items-center" style={{ gap: '8px' }}>
             <button
@@ -123,6 +130,7 @@ export const DesktopConfigPanel: React.FC<DesktopConfigPanelProps> = ({ customiz
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto" style={{ padding: '0' }}>
           <SectionContent customization={customization} />
+          <StepNav steps={STUDIO_TABS} current={expandedSection} onGo={customization.setExpandedSection} lastHint="That’s everything. Tap Generate to see your design." />
         </div>
       </div>
 

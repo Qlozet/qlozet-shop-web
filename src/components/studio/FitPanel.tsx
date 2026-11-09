@@ -7,6 +7,7 @@ import { FIT_OPTIONS } from '@/data/studio-options';
 import { FitOptionCard } from './FitOptionCard';
 import { api } from '@/lib/api';
 import { useMeasurements } from '@/hooks/useMeasurements';
+import { useApp } from '@/context/AppContext';
 import {
   GARMENT_LABELS,
   NEED_KEYS,
@@ -53,6 +54,7 @@ export const FitPanel: React.FC<FitPanelProps> = ({
   garmentKind,
 }) => {
   const router = useRouter();
+  const { user } = useApp();
   const { profiles, isLoading, fetchProfiles } = useMeasurements();
 
   // The set the garment is sewn to: the chosen one, else the active one.
@@ -243,7 +245,13 @@ export const FitPanel: React.FC<FitPanelProps> = ({
           </div>
         )}
 
-        {!isLoading && !usable && (
+        {!user && (
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+            Sign in to choose whose measurements the tailor sews to. Your choices here are kept.
+          </p>
+        )}
+
+        {user && !isLoading && !usable && (
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
             {profiles.length
               ? `${profile?.name ?? 'This set'} doesn’t have enough measurements yet. Add yours so the tailor can sew to your size. Your choices here are kept.`
@@ -257,14 +265,18 @@ export const FitPanel: React.FC<FitPanelProps> = ({
         type="button"
         className="w-full flex items-center justify-between transition-all hover:bg-[var(--bg-surface-elevated)]"
         style={{ padding: '14px', borderRadius: '14px', border: '1.5px solid var(--border-glass)', background: 'transparent', cursor: 'pointer', textAlign: 'left' }}
-        onClick={() => router.push(profiles.length ? MY_MEASUREMENTS_HREF : ADD_MEASUREMENTS_HREF)}
+        onClick={() => router.push(!user ? '/auth/login' : profiles.length ? MY_MEASUREMENTS_HREF : ADD_MEASUREMENTS_HREF)}
       >
         <span>
           <span style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            {profiles.length ? 'Your measurements' : 'Add your measurements'}
+            {!user ? 'Sign in' : profiles.length ? 'Your measurements' : 'Add your measurements'}
           </span>
           <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {profiles.length ? 'Add or edit sets, type them or read them from a photo' : 'Type them, read them from a photo, or estimate from height and weight'}
+            {!user
+              ? 'To use your saved measurements'
+              : profiles.length
+                ? 'Add or edit sets, type them or read them from a photo'
+                : 'Type them, read them from a photo, or estimate from height and weight'}
           </span>
         </span>
         <ChevronRight size={16} color="var(--text-muted)" />

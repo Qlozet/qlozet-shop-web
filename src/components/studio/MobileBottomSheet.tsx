@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDownUp, Bookmark, RotateCcw, Dices } from 'lucide-react';
 import { STUDIO_TABS } from '@/data/studio-options';
+import { StepNav, stepCount } from './StepNav';
 import { type CustomizationState } from '@/hooks/useCustomization';
 import { SectionContent } from './SectionContent';
 import { GenerateButton } from './GenerateButton';
@@ -155,9 +156,14 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
 
           {/* Header */}
           <div className="flex items-center justify-between shrink-0" style={{ padding: '16px 24px 12px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {sectionLabel[expandedSection] || ''}
-            </h2>
+            <div className="flex flex-col">
+              <h2 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {sectionLabel[expandedSection] || ''}
+              </h2>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                {stepCount(STUDIO_TABS, expandedSection)}
+              </span>
+            </div>
             <div className="flex items-center gap-4">
               <button
                 type="button"
@@ -260,6 +266,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({ customizat
           <div className="relative flex-1 min-h-0 flex flex-col">
           <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: hasGeneratedImages ? '170px' : '110px' }}>
             <SectionContent customization={customization} />
+            <StepNav steps={STUDIO_TABS} current={expandedSection} onGo={setExpandedSection} lastHint="That’s everything. Tap Generate to see your design." />
           </div>
 
           {/* Change something sits just above the buttons. Its frame starts

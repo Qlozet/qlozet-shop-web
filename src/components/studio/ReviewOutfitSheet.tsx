@@ -4,6 +4,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, Check, ShoppingCart, Truck, X } from 'lucide-react';
 import { useMeasurements } from '@/hooks/useMeasurements';
+import { useApp } from '@/context/AppContext';
 import { GARMENT_LABELS, NEED_LABELS, type GarmentKind } from '@/lib/garment-measurements';
 import { garmentGap, profileIsUsable, resolveProfile } from '@/lib/usable-measurements';
 import type { OutfitSection } from '@/lib/outfit-summary';
@@ -47,6 +48,7 @@ export function ReviewOutfitSheet({
   garmentKind,
   deliveryLabel,
 }: Props) {
+  const { user } = useApp();
   const { profiles, isLoading } = useMeasurements();
   const vs = useVsPictured(summary.totals);
   if (!isOpen || typeof document === 'undefined') return null;
@@ -54,7 +56,7 @@ export function ReviewOutfitSheet({
   const profile = resolveProfile(profiles, measurementSetName);
   const usable = profileIsUsable(profile);
   const gap = usable ? garmentGap(profile, garmentKind) : null;
-  const measurementsOk = !isLoading && usable && !gap;
+  const measurementsOk = !!user && !isLoading && usable && !gap;
 
   return createPortal(
     <div
@@ -138,7 +140,9 @@ export function ReviewOutfitSheet({
               <AlertCircle size={16} color="#B45309" style={{ flexShrink: 0, marginTop: '1px' }} />
             )}
             <span style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--text-primary)' }}>
-              {isLoading
+              {!user
+                ? 'You’ll choose whose measurements the tailor uses once you sign in at checkout.'
+                : isLoading
                 ? 'Checking your measurements…'
                 : !profile
                   ? 'No measurements saved yet. Add them so the tailor can sew to your size.'
@@ -148,7 +152,7 @@ export function ReviewOutfitSheet({
                       ? `${profile.name} is missing your ${gap.missing.map((n) => NEED_LABELS[n]).join(', ')}. Add ${gap.missing.length > 1 ? 'them' : 'it'} in Fit.`
                       : `Sewn to ${profile.name}${garmentKind ? `, which has everything this ${GARMENT_LABELS[garmentKind]} needs` : ''}.`}
               <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {measurementsOk ? 'Change' : 'Fix in Fit'}
+                {!user ? 'See Fit' : measurementsOk ? 'Change' : 'Fix in Fit'}
               </span>
             </span>
           </button>
