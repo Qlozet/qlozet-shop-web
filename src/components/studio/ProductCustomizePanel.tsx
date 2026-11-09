@@ -438,7 +438,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           {/* Bottom Sheet */}
           <div
             className={`fixed left-3 right-3 bottom-3 z-[100] rounded-[24px] flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]'}`}
-            style={{ maxHeight: '60vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
+            style={{ maxHeight: '75vh', background: 'var(--bg-base)', boxShadow: '0 -4px 40px rgba(0,0,0,0.12), 0 8px 30px rgba(0,0,0,0.1)' }}
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-1">
