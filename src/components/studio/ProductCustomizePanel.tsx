@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { RotateCcw, X } from 'lucide-react';
+import { RotateCcw, Sparkles, X } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { TokenIcon } from '../icons/TokenIcon';
 import { type SectionTab, FIT_OPTIONS } from '@/data/studio-options';
@@ -13,6 +13,7 @@ import { resetCurrentSection } from './resetSection';
 import { AccessoriesPanel } from './AccessoriesPanel';
 import { AddonsPanel } from './AddonsPanel';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
+import { applySnapshot, choicesKey, takeSnapshot, type CustomizeSnapshot } from '@/lib/customize-snapshot';
 
 // ═══════════════════════════════════════════════════════════════
 //  ProductCustomizePanel
@@ -41,6 +42,22 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
 }) => {
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
+
+  // What was chosen when the panel opened, so Cancel can put it back.
+  // (Recorded during render when the panel opens; React's pattern for
+  // reacting to a prop change without an effect.)
+  const [wasOpen, setWasOpen] = useState(false);
+  const [atOpen, setAtOpen] = useState<CustomizeSnapshot | null>(null);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setAtOpen(takeSnapshot(customization));
+  }
+  const changed = !!atOpen && choicesKey(atOpen) !== choicesKey(takeSnapshot(customization));
+
+  const cancel = () => {
+    if (atOpen && changed) applySnapshot(customization, atOpen);
+    onClose();
+  };
 
   // Build the edit-garment payload from the product + ALL current selections
   // (styles + descriptions, fabric, colour, accessories, add-ons, fit) and
@@ -172,11 +189,6 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       ...(noteParts.length ? { style_notes: noteParts.join(' | ') } : {}),
       metadata_json: metadata,
     };
-
-    // Log exactly what we send so you can verify the chosen styles are present
-    // and meaningfully named (empty/generic names => nothing for the model to do).
-    console.log('[EditPreview] style_notes:', editPayload.style_notes);
-    console.log('[EditPreview] metadata_json:', JSON.stringify(metadata, null, 2));
 
     await customization.generateProductPreview(editPayload);
   };
@@ -335,51 +347,65 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         </div>
       )}
       {user && (
-        <div className="shrink-0 flex items-center gap-3" style={{ padding: '4px 24px 24px' }}>
-          <button
-            onClick={onClose}
-            className="flex-1 transition-colors hover:bg-[var(--bg-surface-elevated)]"
-            style={{
-              padding: '14px',
-              borderRadius: '14px',
-              background: 'var(--bg-surface-elevated)',
-              color: 'var(--text-primary)',
-              fontSize: '13px',
-              fontWeight: 700,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleApply}
-            disabled={customization.isGenerating}
-            className="flex-1 flex items-center justify-center transition-colors hover:opacity-90 disabled:opacity-60"
-            style={{
-              padding: '14px',
-              borderRadius: '14px',
-              background: '#4C1D95',
-              color: '#FFFFFF',
-              fontSize: '13px',
-              fontWeight: 700,
-              border: 'none',
-              cursor: customization.isGenerating ? 'wait' : 'pointer',
-              gap: '8px',
-            }}
-          >
-            {customization.isGenerating ? (
-              <span>Generating preview…</span>
-            ) : (
-              <>
-                <span>Apply</span>
-                <div className="flex items-center" style={{ gap: '4px', opacity: 0.85 }}>
-                  <TokenIcon size={14} color="#D4AF37" />
-                  <span style={{ fontSize: '12px', fontWeight: 800 }}>{customization.editTokenCost}</span>
-                </div>
-              </>
-            )}
-          </button>
+        <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
+          <div className="flex items-center" style={{ gap: '10px' }}>
+            {/* Paid: an AI picture of the outfit as chosen. Optional. */}
+            <button
+              onClick={handleApply}
+              disabled={customization.isGenerating}
+              className="flex-1 flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)] disabled:opacity-60"
+              style={{
+                padding: '13px 10px',
+                borderRadius: '14px',
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: 700,
+                border: '1.5px solid #7C3AED',
+                cursor: customization.isGenerating ? 'wait' : 'pointer',
+                gap: '6px',
+              }}
+            >
+              {customization.isGenerating ? (
+                <span>Making your preview…</span>
+              ) : (
+                <>
+                  <Sparkles size={14} color="#7C3AED" />
+                  <span>{customization.generatedImages.length ? 'New preview' : 'See it on me'}</span>
+                  <span className="flex items-center" style={{ gap: '3px', opacity: 0.85 }}>
+                    <TokenIcon size={13} color="#D4AF37" />
+                    <span style={{ fontSize: '12px', fontWeight: 800 }}>{customization.editTokenCost}</span>
+                  </span>
+                </>
+              )}
+            </button>
+            {/* Free: keeps the choices and closes. */}
+            <button
+              onClick={onClose}
+              className="flex-1 flex items-center justify-center transition-colors hover:opacity-90"
+              style={{
+                padding: '14px',
+                borderRadius: '14px',
+                background: 'var(--brand-fill)',
+                color: 'var(--brand-fill-text)',
+                fontSize: '13px',
+                fontWeight: 800,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Done
+            </button>
+          </div>
+          {changed && (
+            <button
+              onClick={cancel}
+              className="w-full transition-opacity hover:opacity-70"
+              style={{ padding: '4px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Cancel changes
+            </button>
+          )}
         </div>
       )}
     </>

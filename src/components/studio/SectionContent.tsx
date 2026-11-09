@@ -8,6 +8,7 @@ import { StudioFabricPanel } from './StudioFabricPanel';
 import { AccessoriesPanel } from './AccessoriesPanel';
 import { FitPanel } from './FitPanel';
 import { ReferencePanel } from './ReferencePanel';
+import { garmentKindOf } from '@/lib/garment-measurements';
 
 // ═══════════════════════════════════════════════════════════════
 //  SectionContent — renders the active panel based on expandedSection
@@ -97,6 +98,7 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         onSelectFit={(id) => customization.setSelectedFit(id)}
         measurementSetName={customization.measurementSetName}
         onSelectMeasurementSet={customization.setMeasurementSetName}
+        garmentKind={product?.kind === 'clothing' ? garmentKindOf(product.clothing?.taxonomy) : null}
       />
     );
   }

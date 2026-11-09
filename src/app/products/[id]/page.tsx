@@ -30,7 +30,7 @@ import {
   type ApiSizeRecommendation,
 } from '@/lib/api-types';
 import { safeDescriptionHtml } from '@/lib/description-html';
-import type { ApiProduct, ApiFeedItem, CartSelections } from '@/lib/api-types';
+import type { ApiProduct, ApiFeedItem, ApiStyle, CartSelections } from '@/lib/api-types';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
 import {
@@ -42,10 +42,11 @@ import {
 import { useCustomization } from '@/hooks/useCustomization';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { useBoughtTogether, useCompleteTheLook } from '@/hooks/useRecommendations';
-import { SILHOUETTES, NECKLINES, SLEEVES, FABRICS, ACCESSORIES } from '@/data/studio-options';
-import { defaultStylesByPart } from '@/lib/style-defaults';
+import { SILHOUETTES, NECKLINES, SLEEVES, ACCESSORIES } from '@/data/studio-options';
+import { defaultStylesByPart, stylePart } from '@/lib/style-defaults';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
 import { ProductCustomizePanel } from '@/components/studio/ProductCustomizePanel';
+import { applySnapshot, loadSnapshot, saveSnapshot, takeSnapshot } from '@/lib/customize-snapshot';
 import { UseFabricModal } from '@/components/studio/UseFabricModal';
 import { ReserveFabricModal } from '@/components/studio/ReserveFabricModal';
 import { garmentKindOf } from '@/lib/garment-measurements';
@@ -65,6 +66,8 @@ import {
   CalendarDays,
   Loader2,
   X,
+  Layers,
+  Gem,
 } from 'lucide-react';
 
 // ─── Loading Skeleton ─────────────────────────────────────────
@@ -516,11 +519,20 @@ export default function ProductDetailsPage() {
   // Open a made-to-order outfit with each part's default style chosen (the
   // look in the photos), so the price shown is the outfit as pictured. Only
   // fills empty slots, once per product; the customer can change any of them.
+  // Choices made here before (this browser, last two weeks) come back instead.
   const defaultsAppliedFor = useRef<string | null>(null);
+  const [restoredFor, setRestoredFor] = useState<string | null>(null);
   useEffect(() => {
     if (!product || product.kind !== 'clothing' || product.clothing?.type !== 'customize') return;
     if (defaultsAppliedFor.current === product._id) return;
     defaultsAppliedFor.current = product._id;
+    const saved = loadSnapshot(product._id);
+    // Saving starts once this has run, so the empty first render is never saved.
+    setRestoredFor(product._id);
+    if (saved) {
+      applySnapshot(customization, saved, true);
+      return;
+    }
     const defaults = defaultStylesByPart(product.clothing?.styles);
     const slots: Record<string, [string | null, (id: string | null) => void]> = {
       neckline: [customization.selectedNeckline, customization.setSelectedNeckline],
@@ -536,6 +548,14 @@ export default function ProductDetailsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?._id]);
+
+  // Keep the choices (and any paid previews) as they change.
+  const snapshot = product && restoredFor === product._id ? takeSnapshot(customization) : null;
+  const snapshotJson = snapshot ? JSON.stringify(snapshot) : null;
+  useEffect(() => {
+    if (product && snapshotJson) saveSnapshot(product._id, JSON.parse(snapshotJson));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotJson]);
 
   // Look up selected styles from API cache or hardcoded fallback
   const { all: apiStyles } = useStyleLibrary();
@@ -675,6 +695,21 @@ export default function ProductDetailsPage() {
       : false;
 
   // Look up selected styles from hardcoded fallback
+  // The outfit's own styles (vendor-set names, photos and prices) come first;
+  // the platform library is only a fallback for older listings.
+  const findProductStyle = (id: string | null) => {
+    if (!id) return null;
+    const s = (product?.clothing?.styles ?? []).find((st: { _id?: string }) => st._id === id) as
+      | { name?: string; images?: Array<string | { url?: string }>; price?: number }
+      | undefined;
+    if (!s?.name) return null;
+    const raw = s.images?.[0];
+    return { label: s.name, emoji: '✂️', imageUrl: typeof raw === 'string' ? raw : raw?.url, extraCost: s.price };
+  };
+  const productParts = new Set(
+    (product?.clothing?.styles ?? []).map((st) => stylePart(st as ApiStyle)).filter(Boolean) as string[],
+  );
+
   const findApiStyle = (id: string | null) => {
     if (!id) return null;
     const apiMatch = apiStyles.find((s) => s._id === id);
@@ -1432,14 +1467,17 @@ export default function ProductDetailsPage() {
             {isCustomizable && (
               <div className="flex lg:hidden overflow-x-auto" style={{ gap: '8px', paddingBottom: '4px' }}>
                 {[
-                  { id: customization.selectedNeckline, cat: 'Neckline', section: 'styles', fallbackEmoji: '👗' },
-                  { id: customization.selectedSleeve, cat: 'Sleeves', section: 'styles', fallbackEmoji: '💪' },
-                  { id: customization.selectedCollar, cat: 'Collar', section: 'styles', fallbackEmoji: '👔' },
-                  { id: customization.selectedSkirt, cat: 'Skirt', section: 'styles', fallbackEmoji: '👗' },
-                  { id: customization.selectedTrouser, cat: 'Trouser', section: 'styles', fallbackEmoji: '👖' },
-                  { id: customization.selectedFullBody, cat: 'Style', section: 'styles', fallbackEmoji: '👘' },
-                ].map(({ id, cat, section, fallbackEmoji }) => {
-                  const style = findApiStyle(id);
+                  { part: 'neckline', id: customization.selectedNeckline, cat: 'Neckline', section: 'styles' },
+                  { part: 'sleeve', id: customization.selectedSleeve, cat: 'Sleeves', section: 'styles' },
+                  { part: 'collar', id: customization.selectedCollar, cat: 'Collar', section: 'styles' },
+                  { part: 'skirt', id: customization.selectedSkirt, cat: 'Skirt', section: 'styles' },
+                  { part: 'trouser', id: customization.selectedTrouser, cat: 'Trouser', section: 'styles' },
+                  { part: 'full_body', id: customization.selectedFullBody, cat: 'Style', section: 'styles' },
+                ]
+                  // Only the parts this outfit offers styles for (no Skirt on an agbada).
+                  .filter(({ part }) => productParts.has(part))
+                  .map(({ id, cat, section }) => {
+                  const style = findProductStyle(id) ?? findApiStyle(id);
                   return (
                     <button
                       key={cat}
@@ -1447,8 +1485,8 @@ export default function ProductDetailsPage() {
                       className="flex items-center flex-shrink-0 transition-all active:scale-95"
                       style={{
                         padding: '6px 12px 6px 6px', borderRadius: '24px',
-                        border: style ? '1.5px solid #2C1810' : '1.5px dashed #CCC',
-                        background: style ? '#FAF6F1' : 'var(--bg-surface-elevated)',
+                        border: style ? '1.5px solid var(--brand-fill)' : '1.5px dashed var(--border-glass)',
+                        background: 'var(--bg-surface-elevated)',
                         cursor: 'pointer', gap: '8px',
                       }}
                     >
@@ -1457,44 +1495,49 @@ export default function ProductDetailsPage() {
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img loading="lazy" decoding="async" src={style.imageUrl} alt={style.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <span style={{ fontSize: '14px' }}>{fallbackEmoji}</span>
+                          <Scissors size={13} color="var(--text-muted)" />
                         )}
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: style ? 'var(--brand-fill)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: style ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {style?.label || cat}
                       </span>
                     </button>
                   );
                 })}
-                {/* Fabric pill */}
-                {(() => {
-                  const selFab = FABRICS.find((f) => f.id === customization.selectedFabric);
+                {/* Fabric pill: the outfit's own fabrics. */}
+                {(product.clothing?.fabrics?.length ?? 0) > 0 && (() => {
+                  const fab = product.clothing?.fabrics?.find((f: { _id?: string }) => f._id === customization.selectedFabric) as
+                    | { name?: string; images?: Array<string | { url?: string }> }
+                    | undefined;
+                  const raw = fab?.images?.[0];
+                  const selFab = fab ? { name: fab.name || 'Fabric', image: typeof raw === 'string' ? raw : raw?.url } : null;
                   return (
                     <button
                       onClick={() => { setShowCustomize(true); customization.setExpandedSection('fabric'); }}
                       className="flex items-center flex-shrink-0 transition-all active:scale-95"
                       style={{
                         padding: '6px 12px 6px 6px', borderRadius: '24px',
-                        border: selFab ? '1.5px solid #2C1810' : '1.5px dashed #CCC',
-                        background: selFab ? '#FAF6F1' : 'var(--bg-surface-elevated)',
+                        border: selFab ? '1.5px solid var(--brand-fill)' : '1.5px dashed var(--border-glass)',
+                        background: 'var(--bg-surface-elevated)',
                         cursor: 'pointer', gap: '8px',
                       }}
                     >
                       <div className="relative overflow-hidden flex-shrink-0" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)' }}>
-                        {selFab ? (
-                          <Image src={selFab.image} alt={selFab.name} fill style={{ objectFit: 'cover' }} sizes="28px" />
+                        {selFab?.image ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img loading="lazy" src={selFab.image} alt={selFab.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <span className="flex items-center justify-center w-full h-full" style={{ fontSize: '14px' }}>🧵</span>
+                          <span className="flex items-center justify-center w-full h-full"><Layers size={13} color="var(--text-muted)" /></span>
                         )}
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: selFab ? 'var(--brand-fill)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: selFab ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {selFab?.name || 'Fabric'}
                       </span>
                     </button>
                   );
                 })()}
                 {/* Accessories pill */}
-                {(() => {
+                {(product.clothing?.accessories?.length ?? 0) > 0 && (() => {
                   const selAccCount = customization.selectedAccessories.length;
                   return (
                     <button
@@ -1502,15 +1545,15 @@ export default function ProductDetailsPage() {
                       className="flex items-center flex-shrink-0 transition-all active:scale-95"
                       style={{
                         padding: '6px 12px 6px 6px', borderRadius: '24px',
-                        border: selAccCount > 0 ? '1.5px solid #7C3AED' : '1.5px dashed #CCC',
-                        background: selAccCount > 0 ? '#F0EDFF' : 'var(--bg-surface-elevated)',
+                        border: selAccCount > 0 ? '1.5px solid var(--brand-fill)' : '1.5px dashed var(--border-glass)',
+                        background: 'var(--bg-surface-elevated)',
                         cursor: 'pointer', gap: '8px',
                       }}
                     >
                       <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-surface-elevated)', flexShrink: 0 }}>
-                        <span style={{ fontSize: '14px' }}>🪢</span>
+                        <Gem size={13} color="var(--text-muted)" />
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: selAccCount > 0 ? '#5B21B6' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: selAccCount > 0 ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {selAccCount > 0 ? `${selAccCount} selected` : 'Accessories'}
                       </span>
                     </button>
@@ -1747,7 +1790,7 @@ export default function ProductDetailsPage() {
                     { id: customization.selectedFullBody, cat: 'Style' },
                     { id: customization.selectedSilhouette, cat: 'Silhouette' },
                   ].map(({ id, cat }) => {
-                    const style = findApiStyle(id);
+                    const style = findProductStyle(id) ?? findApiStyle(id);
                     if (!style) return null;
                     return (
                       <div key={`${cat}-${id}`} className="flex flex-col items-center" style={{ gap: '4px' }}>
