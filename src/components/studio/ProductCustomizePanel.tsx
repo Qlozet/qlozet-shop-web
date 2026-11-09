@@ -15,6 +15,7 @@ import { AddonsPanel } from './AddonsPanel';
 import { InsufficientTokensModal } from './InsufficientTokensModal';
 import { applySnapshot, choicesKey, takeSnapshot, type CustomizeSnapshot } from '@/lib/customize-snapshot';
 import { OutfitSummary, type OutfitSummaryData } from './OutfitSummary';
+import { StepNav, stepCount } from './StepNav';
 
 // ═══════════════════════════════════════════════════════════════
 //  ProductCustomizePanel
@@ -57,6 +58,18 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
     if (isOpen) setAtOpen(takeSnapshot(customization));
   }
   const changed = !!atOpen && choicesKey(atOpen) !== choicesKey(takeSnapshot(customization));
+
+  // The tabs this outfit has, in order; they double as the guided steps.
+  const hasStyles = (product?.clothing?.styles?.length ?? 0) > 0;
+  const hasFabrics = (product?.clothing?.fabrics?.length ?? 0) > 0 || (product?.clothing?.color_variants?.length ?? 0) > 0;
+  const hasAccessories = (product?.clothing?.accessories?.length ?? 0) > 0;
+  const hasAddons = (product?.clothing?.addons?.length ?? 0) > 0;
+  const tabs: SectionTab[] = [];
+  if (hasStyles || !product) tabs.push({ id: 'styles', label: 'STYLE' });
+  if (hasFabrics || !product) tabs.push({ id: 'fabric', label: 'FABRIC' });
+  if (hasAccessories || !product) tabs.push({ id: 'accessories', label: 'ACCESSORIES' });
+  tabs.push({ id: 'fit', label: 'FIT' });
+  if (hasAddons || !product) tabs.push({ id: 'addons', label: 'ADD-ONS' });
 
   const cancel = () => {
     if (atOpen && changed) applySnapshot(customization, atOpen);
@@ -206,7 +219,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
             Customize
           </h3>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            Personalize this outfit to your taste
+            {stepCount(tabs, expandedSection) || 'Personalize this outfit to your taste'}
           </p>
         </div>
         <div className="flex items-center" style={{ gap: '10px' }}>
@@ -245,25 +258,10 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           gap: '20px',
           padding: '8px 24px 14px',
           borderBottom: '1px solid var(--border-glass)',
-          ...(!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {})
         }}
       >
         {(() => {
-          // Build tabs dynamically based on what the product has
-          const hasStyles = (product?.clothing?.styles?.length ?? 0) > 0;
-          const hasFabrics = (product?.clothing?.fabrics?.length ?? 0) > 0 || (product?.clothing?.color_variants?.length ?? 0) > 0;
-          const hasAccessories = (product?.clothing?.accessories?.length ?? 0) > 0;
-          const hasAddons = (product?.clothing?.addons?.length ?? 0) > 0;
-
-          const dynamicTabs: SectionTab[] = [];
-          // Always show STYLE if the product has styles, or if no product is provided (studio mode)
-          if (hasStyles || !product) dynamicTabs.push({ id: 'styles', label: 'STYLE' });
-          if (hasFabrics || !product) dynamicTabs.push({ id: 'fabric', label: 'FABRIC' });
-          if (hasAccessories || !product) dynamicTabs.push({ id: 'accessories', label: 'ACCESSORIES' });
-          dynamicTabs.push({ id: 'fit', label: 'FIT' });
-          if (hasAddons || !product) dynamicTabs.push({ id: 'addons', label: 'ADD-ONS' });
-
-          return dynamicTabs.map((tab: SectionTab) => (
+          return tabs.map((tab: SectionTab) => (
             <button
               key={tab.id}
               onClick={() => setExpandedSection(tab.id)}
@@ -295,8 +293,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       <div
         className="flex-1 overflow-y-auto hide-scrollbar"
         style={{
-          paddingBottom: '16px',
-          ...(!user ? { opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {})
+          paddingBottom: '4px',
         }}
       >
         {expandedSection === 'addons' ? (
@@ -314,32 +311,59 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
         ) : (
           <SectionContent customization={customization} product={product} selectedSize={selectedSize} />
         )}
+        <StepNav
+          steps={tabs}
+          current={expandedSection}
+          onGo={setExpandedSection}
+          lastHint={user ? 'That’s everything. Tap Done to keep it, or Preview to see it.' : 'That’s everything. Tap Done to keep it.'}
+        />
       </div>
+
+      {/* The outfit and its price, for guests too. */}
+      {summary && <OutfitSummary data={summary} onJump={setExpandedSection} />}
 
       {/* Footer CTAs */}
       {!user ? (
-        <div className="shrink-0 flex flex-col gap-3" style={{ padding: '16px 24px 24px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-glass)' }}>
-          <p style={{ fontSize: '11.5px', color: '#8B5A2B', fontWeight: 600, lineHeight: 1.4, margin: 0, textAlign: 'center', fontFamily: 'Outfit, sans-serif' }}>
-            ⚠ You must sign in first to customize this product.
+        // Guests can choose everything; only the paid preview needs an account.
+        <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
+          <div className="flex items-center" style={{ gap: '10px' }}>
+            <Link
+              href="/auth/login"
+              className="flex-1 flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
+              style={{
+                padding: '13px 10px',
+                borderRadius: '14px',
+                border: '1.5px solid #7C3AED',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                gap: '6px',
+              }}
+            >
+              <Sparkles size={14} color="#7C3AED" />
+              <span>Sign in to preview</span>
+            </Link>
+            <button
+              onClick={onClose}
+              className="flex-1 flex items-center justify-center transition-colors hover:opacity-90"
+              style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 800, border: 'none', cursor: 'pointer' }}
+            >
+              Done
+            </button>
+          </div>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>
+            Your choices are kept on this device.
           </p>
-          <Link
-            href="/auth/login"
-            className="w-full flex items-center justify-center transition-all hover:opacity-90 text-center"
-            style={{
-              padding: '13px',
-              borderRadius: '12px',
-              background: 'var(--brand-fill)',
-              color: 'var(--brand-fill-text)',
-              fontSize: '12px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              textDecoration: 'none',
-              fontFamily: 'Outfit, sans-serif',
-            }}
-          >
-            Sign In to Customize
-          </Link>
+          {changed && (
+            <button
+              onClick={cancel}
+              className="w-full transition-opacity hover:opacity-70"
+              style={{ padding: '2px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Cancel changes
+            </button>
+          )}
         </div>
       ) : (
         <div className="shrink-0" style={{ padding: '0 24px' }}>
@@ -350,7 +374,6 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           )}
         </div>
       )}
-      {user && summary && <OutfitSummary data={summary} onJump={setExpandedSection} />}
       {user && (
         <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
           <div className="flex items-center" style={{ gap: '10px' }}>
