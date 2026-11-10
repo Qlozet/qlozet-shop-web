@@ -21,7 +21,6 @@ import {
   Upload,
   X,
   Quote,
-  Users,
   Layout,
   Star,
   ChevronRight,
@@ -83,29 +82,6 @@ interface Template {
   category: string;
   gender: 'men' | 'women';
 }
-
-// Community showcase
-interface CommunityDesign {
-  id: string;
-  image: string;
-  designer: string;
-  avatar: string;
-  name: string;
-  likes: number;
-}
-
-const COMMUNITY: CommunityDesign[] = [
-  { id: 'c1', image: '/image/bespoke-outfit-3.webp', designer: 'Amara', avatar: '🇳🇬', name: 'Wedding Reception Look', likes: 342 },
-  { id: 'c2', image: '/image/bespoke-outfit-4.webp', designer: 'Chioma', avatar: '✨', name: 'Corporate Ankara Set', likes: 218 },
-  { id: 'c3', image: '/image/custom-outfit-1.webp', designer: 'Ngozi', avatar: '👗', name: 'Date Night Kaftan', likes: 567 },
-  { id: 'c4', image: '/image/custom-outfit-2.webp', designer: 'Fatima', avatar: '💎', name: 'Traditional Lace Gown', likes: 189 },
-  { id: 'c5', image: '/image/bespoke-kaftan-brown-1.png', designer: 'Tunde', avatar: '👔', name: 'Classic Brown Kaftan', likes: 421 },
-  { id: 'c6', image: '/image/bespoke-agbada-orange.webp', designer: 'Yemi', avatar: '🔥', name: 'Royal Orange Agbada', likes: 734 },
-  { id: 'c7', image: '/image/bespoke-dress-1.png', designer: 'Adaeze', avatar: '🌸', name: 'Ankara Flare Party', likes: 156 },
-  { id: 'c8', image: '/image/bespoke-kaftan-milk-1.png', designer: 'Bola', avatar: '🤍', name: 'Minimalist Cream Look', likes: 298 },
-  { id: 'c9', image: '/image/bespoke-outfit-2.png', designer: 'Kemi', avatar: '✂️', name: 'Pencil Dress Remix', likes: 445 },
-  { id: 'c10', image: '/image/bespoke-ankara-1.png', designer: 'Ore', avatar: '💙', name: 'Blue Blazer Statement', likes: 312 },
-];
 
 // Quotes
 interface BespokeQuote {
@@ -492,7 +468,7 @@ function BespokeContent() {
   } = useBespokeDesigns();
 
   // Page tabs
-  const [activeTab, setActiveTab] = useState<'designs' | 'templates' | 'community' | 'quotes'>('designs');
+  const [activeTab, setActiveTab] = useState<'designs' | 'templates' | 'quotes'>('designs');
 
   // ─── Platform templates (admin-curated) ───
   const [templates, setTemplates] = useState<Template[] | null>(null);
@@ -618,7 +594,6 @@ function BespokeContent() {
             {([
               { id: 'designs', label: 'Designs', Icon: Scissors },
               { id: 'templates', label: 'Templates', Icon: Layout },
-              { id: 'community', label: 'Community', Icon: Users },
               { id: 'quotes', label: 'Quotes', Icon: Quote },
             ] as const).map(({ id, label, Icon }) => {
               const active = activeTab === id;
@@ -1002,49 +977,6 @@ function BespokeContent() {
                   <div className="flex items-center" style={{ gap: '4px', marginTop: '2px' }}>
                     <TrendingUp size={12} color="#10B981" />
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.uses.toLocaleString()} uses</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ COMMUNITY TAB ═══ */}
-      {activeTab === 'community' && (
-        <div className="flex flex-col animate-fade-in" style={{ gap: '28px' }}>
-          {/* Community hero */}
-          <div
-            className="relative overflow-hidden flex flex-col justify-end"
-            style={{ borderRadius: '20px', padding: '24px 20px', minHeight: '160px', background: 'linear-gradient(135deg, #0F4C3A 0%, #1A7A5E 100%)' }}
-          >
-            <div style={{ position: 'absolute', top: '-30px', right: '-10px', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-            <Users size={28} color="rgba(255,255,255,0.4)" style={{ marginBottom: '10px' }} />
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: '4px' }}>
-              Community Showcase
-            </h3>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', maxWidth: '400px', lineHeight: 1.5 }}>
-              Get inspired by what other designers and customers are creating. Share your own bespoke creations.
-            </p>
-          </div>
-
-          {/* Pinterest-style grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(214px,1fr))] gap-3 lg:gap-6">
-            {COMMUNITY.map((item) => (
-              <Link href={`/bespoke/studio?name=${encodeURIComponent(item.name)}`} key={item.id} className="group flex flex-col cursor-pointer transition-transform hover:-translate-y-1" style={{ gap: '8px', textDecoration: 'none' }}>
-                <div className="relative overflow-hidden bg-[var(--bg-surface-elevated)]" style={{ aspectRatio: '214/264', borderRadius: '20px' }}>
-                  <Image src={item.image} alt={item.name} fill style={{ objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
-                  {/* Like overlay */}
-                  <div className="absolute bottom-3 left-3 flex items-center" style={{ gap: '6px', padding: '6px 12px', borderRadius: '10px', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
-                    <Heart size={16} color="#FFF" fill="#FFF" />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#FFF' }}>{item.likes}</span>
-                  </div>
-                </div>
-                <div className="flex items-center" style={{ gap: '6px' }}>
-                  <span style={{ fontSize: '13px' }}>{item.avatar}</span>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{item.name}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>by {item.designer}</p>
                   </div>
                 </div>
               </Link>
