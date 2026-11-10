@@ -123,8 +123,15 @@ export interface UseProductReturn {
   refetch: () => void;
 }
 
-export function useProduct(id: string | undefined): UseProductReturn {
-  const [state, setState] = useRemembered<UseAsyncState<ApiProduct>>(`product:${id ?? ''}`, {
+/**
+ * `previewToken` comes from a vendor's Preview link (?preview=): the backend
+ * then returns their listing even when it isn't live, marked `preview`.
+ * Remembered apart from the normal copy, so a preview never shows later
+ * without its link.
+ */
+export function useProduct(id: string | undefined, previewToken?: string): UseProductReturn {
+  const [state, setState] = useRemembered<UseAsyncState<ApiProduct>>(
+    `product:${id ?? ''}${previewToken ? ':preview' : ''}`, {
     data: null,
     loading: !!id,
     error: null,
@@ -137,7 +144,9 @@ export function useProduct(id: string | undefined): UseProductReturn {
     }
     setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
     try {
-      const res = await api.get(`/products/${id}`);
+      const res = await api.get(`/products/${id}`, {
+        params: previewToken ? { preview: previewToken } : undefined,
+      });
       const product: ApiProduct = res.data?.data ?? res.data;
       setState({ data: product, loading: false, error: null });
     } catch (err: unknown) {
@@ -145,7 +154,7 @@ export function useProduct(id: string | undefined): UseProductReturn {
         err instanceof Error ? err.message : 'Failed to fetch product';
       setState({ data: null, loading: false, error: message });
     }
-  }, [id]);
+  }, [id, previewToken]);
 
   useEffect(() => {
     fetchProduct();

@@ -70,6 +70,7 @@ import {
   X,
   Layers,
   Gem,
+  Eye as PreviewIcon,
 } from 'lucide-react';
 
 // ─── Loading Skeleton ─────────────────────────────────────────
@@ -97,6 +98,40 @@ function ProductDetailSkeleton() {
           </div>
           <div className="h-12 w-full rounded-[14px]" style={{ background: 'var(--border-glass)' }} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+const PREVIEW_REASON: Record<string, string> = {
+  not_active: 'It is not published yet (draft, scheduled or switched off).',
+  in_review: 'It is waiting for Qlozet to review it.',
+  rejected: 'Qlozet turned it down. Check the reason in your store.',
+  store_not_approved: 'Your store is not approved to sell yet.',
+};
+
+/** Shown on a vendor's preview: what this is, and whether shoppers see it. */
+function PreviewBanner({ live, reason }: { live: boolean; reason: string | null }) {
+  return (
+    <div
+      role="status"
+      className="flex items-start"
+      style={{
+        gap: '10px', padding: '12px 14px', borderRadius: '14px',
+        background: 'var(--bg-surface)', border: '1px solid var(--border-glass)',
+        color: 'var(--text-primary)', fontSize: '13px', lineHeight: 1.45,
+      }}
+    >
+      <PreviewIcon size={16} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden />
+      <div>
+        <strong style={{ fontWeight: 800 }}>
+          {live ? 'Preview: this is how shoppers see your listing.' : 'Preview: only you can see this.'}
+        </strong>{' '}
+        <span style={{ color: 'var(--text-muted)' }}>
+          {live
+            ? 'Buying is switched off on this link.'
+            : `${(reason && PREVIEW_REASON[reason]) || 'Shoppers can’t see it yet.'} Buying is switched off.`}
+        </span>
       </div>
     </div>
   );
@@ -139,7 +174,12 @@ export default function ProductDetailsPage() {
   } | null>(null);
 
   // ── Fetch product from API ─────────────────────────────────────
-  const { product, loading: productLoading, error: productError } = useProduct(productId);
+  // A vendor's Preview link (?preview=<token>): their listing, live or not,
+  // on the real page. Nothing can be bought or saved from it.
+  const previewToken = searchParams.get('preview') || undefined;
+  const { product, loading: productLoading, error: productError } = useProduct(productId, previewToken);
+  const preview = (product as { preview?: { live: boolean; reason: string | null } } | null)?.preview;
+  const isPreview = Boolean(preview);
 
   // Load the applied fabric's min_cut so the yardage defaults to a valid amount
   // (the backend rejects appliedFabricYards < fabric.min_cut).
@@ -246,9 +286,9 @@ export default function ProductDetailsPage() {
   const feedToProducts = (items: ApiFeedItem[]): ApiProduct[] =>
     items.map(i => i.product).filter((p): p is ApiProduct => !!p && p._id !== product?._id);
 
-  // Track product view on mount
+  // Track product view on mount (not the vendor looking at their own preview)
   useEffect(() => {
-    if (product) {
+    if (product && !isPreview) {
       addRecentlyViewed({ id: product._id, image: productImage, href: `/products/${product._id}` });
       trackEvent({
         eventType: 'view_item',
@@ -950,7 +990,7 @@ export default function ProductDetailsPage() {
   const productOutOfStock =
     !isCustomizeGarment && availability?.state === 'out_of_stock';
   const lowStock = availability?.state === 'low_stock';
-  const canAddToCart = !productOutOfStock && !selectedVariantOut;
+  const canAddToCart = !productOutOfStock && !selectedVariantOut && !isPreview;
 
 
   // Whether this garment accepts a customer-supplied external fabric. The
@@ -1147,6 +1187,17 @@ export default function ProductDetailsPage() {
   // ── Loading & Error States ──────────────────────────────────
   if (productLoading) return <ProductDetailSkeleton />;
 
+  if (previewToken && (productError || !product)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in" style={{ gap: '16px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>This preview link has expired</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', maxWidth: '360px' }}>
+          Preview links last 30 minutes. Open the listing in your store and tap Preview again.
+        </p>
+      </div>
+    );
+  }
+
   if (productError || !product) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in" style={{ gap: '16px' }}>
@@ -1190,6 +1241,8 @@ export default function ProductDetailsPage() {
         className="flex flex-col animate-fade-in relative lg:overflow-x-clip"
         style={{ padding: '8px 0 48px', gap: '32px' }}
       >
+        {isPreview && <PreviewBanner live={!!preview?.live} reason={preview?.reason ?? null} />}
+
         {/* ─── Back Button (sticky, matches studio style) ─────────── */}
         <button
           onClick={() => router.back()}
@@ -1617,7 +1670,7 @@ export default function ProductDetailsPage() {
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({totalReviews})</span>
                 )}
               </div>
-              <button
+              {!isPreview && <button
                 type="button"
                 aria-label={isWish ? 'Remove from wishlist' : 'Add to wishlist'}
                 onClick={() => {
@@ -1637,7 +1690,7 @@ export default function ProductDetailsPage() {
                   stroke={isWish ? '#FF2E63' : '#999'}
                   strokeWidth={2}
                 />
-              </button>
+              </button>}
             </div>
 
             {/* Brand */}
@@ -2313,11 +2366,11 @@ export default function ProductDetailsPage() {
                 }}
               >
                 <ShoppingCart size={15} />
-                {productOutOfStock || selectedVariantOut ? 'Sold out' : 'Add to Cart'}
+                {isPreview ? 'Preview only' : productOutOfStock || selectedVariantOut ? 'Sold out' : 'Add to Cart'}
               </button>
               {isCustomizeGarment && <CancellationNotice />}
 
-              {isFabric && (
+              {isFabric && !isPreview && (
                 <button
                   onClick={() => setShowUseFabric(true)}
                   className="w-full flex items-center justify-center transition-all hover:opacity-90"
@@ -2333,7 +2386,7 @@ export default function ProductDetailsPage() {
                 </button>
               )}
 
-              {isFabric && (
+              {isFabric && !isPreview && (
                 <button
                   onClick={() => setShowReserve(true)}
                   className="w-full flex items-center justify-center transition-all hover:opacity-90"
