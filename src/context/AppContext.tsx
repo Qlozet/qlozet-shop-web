@@ -125,7 +125,8 @@ interface AppContextType {
   toggleFollowVendor: (id: string) => void;
   login: (email: string, name?: string) => void;
   authenticateUser: (email: string, password: string) => Promise<User>;
-  authenticateWithGoogle: (idToken: string) => Promise<User>;
+  /** isNewUser: this sign-in created the shopping account (send them to onboarding). */
+  authenticateWithGoogle: (idToken: string) => Promise<{ user: User; isNewUser: boolean }>;
   logout: () => void;
   demoLogin: () => void;
   cart: CartItem[];
@@ -586,9 +587,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
    * Google hands the browser an ID token; the API verifies it and creates the
    * account on first use, so one call covers both signing up and signing in.
    */
-  const authenticateWithGoogle = async (idToken: string): Promise<User> => {
+  const authenticateWithGoogle = async (idToken: string): Promise<{ user: User; isNewUser: boolean }> => {
     const res = await api.post('/auth/google', { id_token: idToken });
-    return completeSignIn(res.data.data);
+    const user = await completeSignIn(res.data.data);
+    return { user, isNewUser: res.data?.data?.is_new_user === true };
   };
 
   const logout = () => {
