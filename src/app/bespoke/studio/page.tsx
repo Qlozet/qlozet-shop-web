@@ -310,6 +310,8 @@ function StudioContent() {
               if (sel.collar) customization.setSelectedCollar(sel.collar);
               if (sel.color) customization.setSelectedColor(sel.color);
               if (sel.fit) customization.setSelectedFit(sel.fit);
+              // An agbada or kaftan template made without trousers.
+              if (sel.no_trousers === true) customization.setWithTrousers(false);
               if (Array.isArray(sel.accessories)) {
                 customization.setSelectedAccessories(
                   sel.accessories
