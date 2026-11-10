@@ -2412,6 +2412,7 @@ export default function ProductDetailsPage() {
                 product={product}
                 selectedSize={selectedSize}
                 summary={outfitSummary}
+                storePreview={isPreview}
               />
             )}
 
