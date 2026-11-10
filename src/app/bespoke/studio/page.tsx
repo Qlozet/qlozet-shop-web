@@ -299,6 +299,12 @@ function StudioContent() {
         if (Array.isArray(t.reference_images) && t.reference_images.length > 0) {
           customization.setReferenceImages(t.reference_images.slice(0, 3));
         }
+        // The backs the stylist drew, so the customer can turn it round too.
+        if (Array.isArray(t.back_views) && t.back_views.length > 0) {
+          const views: Record<string, string> = {};
+          for (const v of t.back_views) if (v?.front && v?.back) views[v.front] = v.back;
+          customization.setBackViews(views);
+        }
         if (t.description) {
           try {
             const parsed = JSON.parse(t.description);
@@ -310,6 +316,8 @@ function StudioContent() {
               if (sel.collar) customization.setSelectedCollar(sel.collar);
               if (sel.color) customization.setSelectedColor(sel.color);
               if (sel.fit) customization.setSelectedFit(sel.fit);
+              // An agbada or kaftan template made without trousers.
+              if (sel.no_trousers === true) customization.setWithTrousers(false);
               if (Array.isArray(sel.accessories)) {
                 customization.setSelectedAccessories(
                   sel.accessories
