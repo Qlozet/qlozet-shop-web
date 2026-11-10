@@ -35,6 +35,12 @@ interface ProductCustomizePanelProps {
   selectedSize?: string | null;
   /** The outfit and its price right now, shown above the buttons. */
   summary?: OutfitSummaryData;
+  /**
+   * A vendor's store preview (?preview=): every choice and the price still
+   * work, but the paid AI picture is off — it would spend whoever is signed
+   * in to the shop's tokens.
+   */
+  storePreview?: boolean;
 }
 
 export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
@@ -44,6 +50,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
   product,
   selectedSize,
   summary,
+  storePreview = false,
 }) => {
   const { user } = useApp();
   const { expandedSection, setExpandedSection } = customization;
@@ -315,7 +322,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           steps={tabs}
           current={expandedSection}
           onGo={setExpandedSection}
-          lastHint={user ? 'That’s everything. Tap Done to keep it, or Preview to see it.' : 'That’s everything. Tap Done to keep it.'}
+          lastHint={user && !storePreview ? 'That’s everything. Tap Done to keep it, or Preview to see it.' : 'That’s everything. Tap Done to keep it.'}
         />
       </div>
 
@@ -323,7 +330,29 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
       {summary && <OutfitSummary data={summary} onJump={setExpandedSection} />}
 
       {/* Footer CTAs */}
-      {!user ? (
+      {storePreview ? (
+        <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
+          <button
+            onClick={onClose}
+            className="w-full flex items-center justify-center transition-colors hover:opacity-90"
+            style={{ padding: '14px', borderRadius: '14px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', fontSize: '13px', fontWeight: 800, border: 'none', cursor: 'pointer' }}
+          >
+            Done
+          </button>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>
+            Shoppers can also make an AI picture of their choices here. It&apos;s off on a store preview.
+          </p>
+          {changed && (
+            <button
+              onClick={cancel}
+              className="w-full transition-opacity hover:opacity-70"
+              style={{ padding: '2px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Cancel changes
+            </button>
+          )}
+        </div>
+      ) : !user ? (
         // Guests can choose everything; only the paid preview needs an account.
         <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
           <div className="flex items-center" style={{ gap: '10px' }}>
@@ -374,7 +403,7 @@ export const ProductCustomizePanel: React.FC<ProductCustomizePanelProps> = ({
           )}
         </div>
       )}
-      {user && (
+      {user && !storePreview && (
         <div className="shrink-0 flex flex-col" style={{ padding: '4px 24px 20px', gap: '8px' }}>
           <div className="flex items-center" style={{ gap: '10px' }}>
             {/* Paid: an AI picture of the outfit as chosen. Optional. */}
