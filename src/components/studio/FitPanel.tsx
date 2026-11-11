@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { AlertCircle, Check, ChevronRight, Loader2, Ruler } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FIT_OPTIONS } from '@/data/studio-options';
+import { FIT_OPTIONS, LENGTH_OPTIONS } from '@/data/studio-options';
 import { FitOptionCard } from './FitOptionCard';
 import { api } from '@/lib/api';
 import { useMeasurements } from '@/hooks/useMeasurements';
@@ -31,7 +31,14 @@ interface FitPanelProps {
   onSelectMeasurementSet?: (name: string | null) => void;
   /** What the outfit is, so the panel can say which measurements it needs. */
   garmentKind?: GarmentKind | null;
+  /** Shown for dresses and skirts in the studio: where the hem falls. */
+  showLength?: boolean;
+  selectedLength?: string | null;
+  onSelectLength?: (id: string | null) => void;
 }
+
+// "Tailor decides" leaves the length off the design.
+const TAILOR_DECIDES = { id: 'tailor', label: 'Tailor decides', desc: 'Talk it over in the quote' };
 
 // The key a missing need is saved under. Height is the one people know for
 // "torso length or height" and "height".
@@ -52,6 +59,9 @@ export const FitPanel: React.FC<FitPanelProps> = ({
   measurementSetName,
   onSelectMeasurementSet,
   garmentKind,
+  showLength = false,
+  selectedLength = null,
+  onSelectLength,
 }) => {
   const router = useRouter();
   const { user } = useApp();
@@ -104,6 +114,27 @@ export const FitPanel: React.FC<FitPanelProps> = ({
           ))}
         </div>
       </div>
+
+      {showLength && onSelectLength && (
+        <div className="flex flex-col" style={{ gap: '12px' }}>
+          <span style={sectionLabel}>Length</span>
+          <div className="grid grid-cols-2" style={{ gap: '8px' }}>
+            {LENGTH_OPTIONS.map((len) => (
+              <FitOptionCard
+                key={len.id}
+                option={len}
+                isSelected={selectedLength === len.id}
+                onSelect={onSelectLength}
+              />
+            ))}
+            <FitOptionCard
+              option={TAILOR_DECIDES}
+              isSelected={!selectedLength}
+              onSelect={() => onSelectLength(null)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Whose measurements ─────────────────────────────────── */}
       <div className="flex flex-col" style={{ gap: '10px' }}>

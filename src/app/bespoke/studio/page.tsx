@@ -22,7 +22,7 @@ import { makeShareCard } from '@/lib/shareCard';
 import { useBespokeDesigns, extraFabricsPayload, type CreateDesignPayload } from '@/hooks/useBespokeDesigns';
 import { rememberFabrics, toFabricOption } from '@/hooks/useFabricLibrary';
 
-import { type ClothingType, type DesignGender, enrichSelections, photoFabricsFrom } from '@/data/studio-options';
+import { type ClothingType, type DesignGender, choiceId, enrichSelections, photoFabricsFrom } from '@/data/studio-options';
 import type { ExtraFabricRole } from '@/data/studio-options';
 
 // ═══════════════════════════════════════════════════════════════
@@ -234,7 +234,8 @@ function StudioContent() {
               if (sel.fabric) customization.setSelectedFabric(sel.fabric);
               // Older designs saved a default colour beside the fabric; the fabric wins.
               if (sel.color && !sel.fabric) customization.setSelectedColor(sel.color);
-              if (sel.fit) customization.setSelectedFit(sel.fit);
+              if (choiceId(sel.fit)) customization.setSelectedFit(choiceId(sel.fit));
+              if (choiceId(sel.length)) customization.setSelectedLength(choiceId(sel.length));
               // Embellishments are saved enriched ({id, name, emoji}[]) —
               // restore the raw ids the panel selects on.
               if (Array.isArray(sel.accessories)) {
@@ -315,7 +316,8 @@ function StudioContent() {
               if (sel.silhouette) customization.setSelectedSilhouette(sel.silhouette);
               if (sel.collar) customization.setSelectedCollar(sel.collar);
               if (sel.color) customization.setSelectedColor(sel.color);
-              if (sel.fit) customization.setSelectedFit(sel.fit);
+              if (choiceId(sel.fit)) customization.setSelectedFit(choiceId(sel.fit));
+              if (choiceId(sel.length)) customization.setSelectedLength(choiceId(sel.length));
               // An agbada or kaftan template made without trousers.
               if (sel.no_trousers === true) customization.setWithTrousers(false);
               if (Array.isArray(sel.accessories)) {

@@ -386,6 +386,35 @@ export const FIT_OPTIONS: FitOption[] = [
   { id: 'fit4', label: 'Oversized', desc: 'Deliberately loose & roomy' },
 ];
 
+// ── Length (where the hem falls) ────────────────────────────────
+// Dresses and skirts only: other garments' length comes with their style
+// (Knee-Length Agbada, Cropped Ankle Trouser). Unset = the tailor decides.
+// `word` goes into the image editor's garment wording, `prompt` to the
+// generator, and the id is what a design or template saves.
+
+export interface LengthOption extends FitOption {
+  word: string;
+  prompt: string;
+}
+
+export const LENGTH_OPTIONS: LengthOption[] = [
+  { id: 'mini', label: 'Mini', desc: 'Well above the knee', word: 'mini', prompt: 'mini length, well above the knee' },
+  { id: 'knee', label: 'Knee', desc: 'At the knee', word: 'knee-length', prompt: 'knee length, the hem at the knee' },
+  { id: 'midi', label: 'Midi', desc: 'Mid-calf', word: 'midi', prompt: 'midi length, the hem at mid-calf' },
+  { id: 'ankle', label: 'Ankle', desc: 'Just above the ankle', word: 'ankle-length', prompt: 'ankle length, the hem just above the ankle' },
+  { id: 'floor', label: 'Floor', desc: 'Touches the floor', word: 'floor-length', prompt: 'floor length, the hem touching the floor' },
+];
+
+export const garmentHasLength = (garment: Garment | null | undefined): boolean =>
+  garment === 'dresses' || garment === 'skirts';
+
+/** A saved length or fit: a plain id, or the {id, name} a design stores. */
+export const choiceId = (saved: unknown): string | null => {
+  if (typeof saved === 'string') return saved || null;
+  const id = (saved as { id?: unknown } | null)?.id;
+  return typeof id === 'string' ? id : null;
+};
+
 // ── Generated Outfit Pool (Studio only) ─────────────────────────
 
 export const OUTFIT_POOL = [
@@ -451,6 +480,7 @@ const SELECTION_CATALOG: Record<string, { id: string; label?: string; name?: str
   neckline: NECKLINES,
   sleeve: SLEEVES,
   fit: FIT_OPTIONS as any,
+  length: LENGTH_OPTIONS,
   accessories: ACCESSORIES,
 };
 

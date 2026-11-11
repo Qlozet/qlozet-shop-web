@@ -22,6 +22,8 @@ export interface DesignSelections {
   extra_fabrics?: { role: ExtraFabricRole; fabric: string | null; color?: string | null }[];
   color?: string | null;
   fit?: string | null;
+  /** Where the hem falls (dresses and skirts): a LENGTH_OPTIONS id. */
+  length?: string | null;
   /** Selected embellishment ids — enriched to {id, name} on save. */
   accessories?: string[];
   userPrompt?: string;
