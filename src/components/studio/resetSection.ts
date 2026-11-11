@@ -34,6 +34,7 @@ export function resetCurrentSection(customization: CustomizationState) {
       break;
     case 'fit':
       customization.setSelectedFit(null);
+      customization.setSelectedLength(null);
       toast('Fit reset');
       break;
     case 'reference':

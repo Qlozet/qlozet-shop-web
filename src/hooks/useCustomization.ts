@@ -11,6 +11,8 @@ import {
   GENERATION_COST,
   ACCESSORIES,
   FIT_OPTIONS,
+  LENGTH_OPTIONS,
+  garmentHasLength,
   type SectionId,
   type ClothingType,
   type DesignGender,
@@ -136,6 +138,11 @@ export interface CustomizationState {
   selectAddon: (addonName: string, variantName: string) => void;
   selectedFit: string | null;
   setSelectedFit: (id: string | null) => void;
+  /** Where the hem falls (null = the tailor decides). Dresses and skirts. */
+  selectedLength: string | null;
+  setSelectedLength: (id: string | null) => void;
+  /** Whether this garment offers a length choice. */
+  lengthApplies: boolean;
   // Whose body the garment is for — the NAME of one of the customer's saved
   // measurement sets (picked in the Fit section; null = active set).
   measurementSetName: string | null;
@@ -304,6 +311,11 @@ export function useCustomization({
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedFit, setSelectedFit] = useState<string | null>('fit1');
+  const [selectedLength, setSelectedLength] = useState<string | null>(null);
+  const lengthApplies = garmentHasLength(garment);
+  const selLengthOption = lengthApplies
+    ? LENGTH_OPTIONS.find((l) => l.id === selectedLength)
+    : undefined;
   const [measurementSetName, setMeasurementSetName] = useState<string | null>(null);
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [selectedAddons, setSelectedAddons] = useState<Record<string, string>>({});
@@ -563,6 +575,8 @@ export function useCustomization({
     if (skirtStyle) constructionSelections.skirt_style = skirtStyle.name;
     if (trouserStyle) constructionSelections.trouser_style = trouserStyle.name;
     if (fullBodyStyle) constructionSelections.full_body_style = fullBodyStyle.name;
+    // Passed through to the generator's metadata as-is.
+    if (selLengthOption) constructionSelections.hemline = selLengthOption.prompt;
 
     const config: Record<string, unknown> = {
       garmentType: garmentType,
@@ -713,6 +727,7 @@ export function useCustomization({
     selectedSkirt, selectedTrouser, selectedFullBody,
     selectedFabric, selectedColor, selectedAccessories, selectedFit, extraFabrics,
     referenceImages, styleLibrary, fabricLibrary, deductTokens, generationCost,
+    selLengthOption,
   ]);
 
   // Product-mode preview via the edit-garment image API. The caller (product
@@ -816,8 +831,10 @@ export function useCustomization({
     if (clothingType === 'two_piece' && garment !== 'suits') {
       return `${who} two-piece set (top and ${selectedSkirt ? 'skirt' : 'trousers'})`;
     }
-    return `${who} ${named[raw] ?? (clothingType ? byType[clothingType] : 'outfit')}`;
-  }, [designGender, clothingType, initialGarment, selectedSkirt, garment, withTrousers]);
+    // "women's midi dress": the editor keeps the length the customer chose.
+    const lengthWord = selLengthOption ? `${selLengthOption.word} ` : '';
+    return `${who} ${lengthWord}${named[raw] ?? (clothingType ? byType[clothingType] : 'outfit')}`;
+  }, [designGender, clothingType, initialGarment, selectedSkirt, garment, withTrousers, selLengthOption]);
 
   const [isRefining, setIsRefining] = useState(false);
   const refineCurrent = useCallback(async (instruction: string) => {
@@ -958,6 +975,7 @@ export function useCustomization({
       if (fabric) setSelectedColor(null);
     }
     setSelectedFit(pick(FIT_OPTIONS)?.id ?? null);
+    if (garmentHasLength(garment)) setSelectedLength(pick(LENGTH_OPTIONS)?.id ?? null);
   }, [styleLibrary, fabricLibrary, designGender, clothingType, initialGarment, appliedFabric, garment, withTrousers]);
 
   const selectionSummary = useMemo(() => {
@@ -983,9 +1001,10 @@ export function useCustomization({
         return name ? `${name} (${x.role})` : undefined;
       }),
       FIT_OPTIONS.find((f) => f.id === selectedFit)?.label,
+      selLengthOption ? `${selLengthOption.label} length` : undefined,
     ].filter((x): x is string => !!x);
   }, [
-    styleLibrary, fabricLibrary, appliedFabric, selectedFabric, selectedFit, extraFabrics,
+    styleLibrary, fabricLibrary, appliedFabric, selectedFabric, selectedFit, extraFabrics, selLengthOption,
     selectedFullBody, selectedSilhouette, selectedNeckline, selectedSleeve,
     selectedCollar, selectedSkirt, selectedTrouser,
   ]);
@@ -1006,6 +1025,7 @@ export function useCustomization({
     extra_fabrics: extraFabricsForSave,
     color: selectedColor,
     fit: selectedFit,
+    length: selLengthOption?.id,
     accessories: selectedAccessories.length ? selectedAccessories : undefined,
     measurement_set: measurementSetName || undefined,
     userPrompt,
@@ -1013,7 +1033,7 @@ export function useCustomization({
     selectedNeckline, selectedSleeve, selectedSilhouette, selectedCollar, selectedSkirt,
     selectedTrouser, selectedFullBody, garment, withTrousers, selectedFabric,
     extraFabricsForSave, selectedColor, selectedFit, selectedAccessories,
-    measurementSetName, userPrompt,
+    measurementSetName, userPrompt, selLengthOption,
   ]);
 
   return {
@@ -1039,6 +1059,7 @@ export function useCustomization({
     selectedAccessories, toggleAccessory, setSelectedAccessories,
     selectedAddons, selectAddon,
     selectedFit, setSelectedFit,
+    selectedLength, setSelectedLength, lengthApplies,
     measurementSetName, setMeasurementSetName,
     referenceImages, setReferenceImages, removeReference,
     handleFileUpload, fileInputRef,

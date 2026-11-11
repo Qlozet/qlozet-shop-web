@@ -99,6 +99,10 @@ export const SectionContent: React.FC<SectionContentProps> = ({ customization, p
         measurementSetName={customization.measurementSetName}
         onSelectMeasurementSet={customization.setMeasurementSetName}
         garmentKind={product?.kind === 'clothing' ? garmentKindOf(product.clothing?.taxonomy) : null}
+        // Studio designs only: a product page's choices don't reach the order yet.
+        showLength={customization.mode === 'studio' && customization.lengthApplies}
+        selectedLength={customization.selectedLength}
+        onSelectLength={customization.setSelectedLength}
       />
     );
   }
