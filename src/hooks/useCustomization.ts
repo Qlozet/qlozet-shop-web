@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { collarAllowed, lengthsThatSuit, sleeveSuits } from '@/lib/style-clashes';
 import { useApp } from '@/context/AppContext';
 import { useUpload } from '@/hooks/useUpload';
 import { useStyleLibrary } from '@/hooks/useStyleLibrary';
@@ -915,58 +916,74 @@ export function useCustomization({
     const forThem = styleLibrary.filter(
       (st) => st.is_active !== false && (!designGender || st.gender === designGender || st.gender === 'unisex'),
     );
-    const of = (cat: string) => pick(forThem.filter((st) => st.category === cat))?._id ?? null;
+    type Style = (typeof forThem)[number];
+    // Picks go in order (outfit, neckline, then what has to suit them), so
+    // a later pick can avoid clashing with an earlier one (lib/style-clashes).
+    const choose = (cat: string, ok: (st: Style) => boolean = () => true): Style | null =>
+      pick(forThem.filter((st) => st.category === cat && ok(st))) ?? null;
+    const idOf = (st: Style | null | undefined) => st?._id ?? null;
     const raw = (initialGarment || '').toLowerCase();
+    let outfit: Style | null = null;
+    let skirt: Style | null = null;
     // The garment's own full-body styles (an agbada's robes, a dress's styles).
-    const fullBodyOf = () =>
-      pick(fullBodyStylesFor(garment, forThem.filter((st) => st.category === 'full_body')))?._id ?? null;
-    const top = () => {
-      setSelectedNeckline(of('neckline'));
-      setSelectedSleeve(of('sleeve'));
+    const outfitOf = () =>
+      pick(fullBodyStylesFor(garment, forThem.filter((st) => st.category === 'full_body'))) ?? null;
+    // Neckline, then a sleeve that suits it; a collar only where one can go.
+    const top = (collar: 'pick' | 'none' | 'leave') => {
+      const neck = choose('neckline');
+      setSelectedNeckline(idOf(neck));
+      setSelectedSleeve(idOf(choose('sleeve', (sl) => sleeveSuits(sl, neck, outfit))));
+      if (collar === 'none') setSelectedCollar(null);
+      if (collar === 'pick') {
+        setSelectedCollar(collarAllowed(neck, outfit) ? idOf(choose('collar')) : null);
+      }
     };
 
     if (garment === 'agbada' || garment === 'kaftan') {
-      setSelectedFullBody(fullBodyOf());
-      top();
-      setSelectedCollar(garment === 'kaftan' ? of('collar') : null);
+      outfit = outfitOf();
+      setSelectedFullBody(idOf(outfit));
+      top(garment === 'kaftan' ? 'pick' : 'none');
       setSelectedSkirt(null);
-      setSelectedTrouser(withTrousers ? of('trouser') : null);
+      setSelectedTrouser(withTrousers ? idOf(choose('trouser')) : null);
     } else if (garment === 'dresses') {
-      setSelectedFullBody(Math.random() < 0.5 ? fullBodyOf() : null);
-      top();
-      setSelectedSkirt(of('skirt'));
+      // A dress style or a skirt shape, not both: a mermaid gown already
+      // decides its skirt.
+      outfit = Math.random() < 0.5 ? outfitOf() : null;
+      setSelectedFullBody(idOf(outfit));
+      top('leave');
+      skirt = outfit ? null : choose('skirt');
+      setSelectedSkirt(idOf(skirt));
       setSelectedTrouser(null);
     } else if (garment === 'jumpsuits') {
-      setSelectedFullBody(fullBodyOf());
-      top();
+      outfit = outfitOf();
+      setSelectedFullBody(idOf(outfit));
+      top('leave');
       setSelectedSkirt(null);
-      setSelectedTrouser(of('trouser'));
+      setSelectedTrouser(idOf(choose('trouser')));
     } else if (garment === 'suits') {
       setSelectedNeckline(null);
       setSelectedSleeve(null);
-      setSelectedCollar(of('collar'));
+      setSelectedCollar(idOf(choose('collar')));
       setSelectedSkirt(null);
-      setSelectedTrouser(of('trouser'));
+      setSelectedTrouser(idOf(choose('trouser')));
     } else if (clothingType === 'top') {
-      setSelectedNeckline(of('neckline'));
-      setSelectedSleeve(of('sleeve'));
-      setSelectedCollar(of('collar'));
+      top('pick');
     } else if (clothingType === 'bottom') {
       // A skirt design gets a skirt style, trousers get a trouser style.
-      if (raw === 'skirts') setSelectedSkirt(of('skirt'));
-      else setSelectedTrouser(of('trouser'));
+      if (raw === 'skirts') {
+        skirt = choose('skirt');
+        setSelectedSkirt(idOf(skirt));
+      } else setSelectedTrouser(idOf(choose('trouser')));
     } else if (clothingType === 'two_piece') {
-      setSelectedNeckline(of('neckline'));
-      setSelectedSleeve(of('sleeve'));
-      setSelectedCollar(of('collar'));
+      top('pick');
       // Women's sets are as often a skirt as trousers; men's are trousers.
-      const skirt = designGender === 'female' && Math.random() < 0.5 ? of('skirt') : null;
-      setSelectedSkirt(skirt);
-      setSelectedTrouser(skirt ? null : of('trouser'));
+      skirt = designGender === 'female' && Math.random() < 0.5 ? choose('skirt') : null;
+      setSelectedSkirt(idOf(skirt));
+      setSelectedTrouser(skirt ? null : idOf(choose('trouser')));
     } else {
-      setSelectedFullBody(of('full_body'));
-      setSelectedNeckline(of('neckline'));
-      setSelectedSleeve(of('sleeve'));
+      outfit = choose('full_body');
+      setSelectedFullBody(idOf(outfit));
+      top('leave');
     }
     // Keep a fabric the customer brought ("Use my fabric"); otherwise pick one.
     if (!appliedFabric) {
@@ -975,7 +992,11 @@ export function useCustomization({
       if (fabric) setSelectedColor(null);
     }
     setSelectedFit(pick(FIT_OPTIONS)?.id ?? null);
-    if (garmentHasLength(garment)) setSelectedLength(pick(LENGTH_OPTIONS)?.id ?? null);
+    if (garmentHasLength(garment)) {
+      // A ball gown is floor-length, a bodycon mini or knee.
+      const suits = lengthsThatSuit(outfit, skirt);
+      setSelectedLength(pick(LENGTH_OPTIONS.filter((l) => !suits || suits.includes(l.id)))?.id ?? null);
+    }
   }, [styleLibrary, fabricLibrary, designGender, clothingType, initialGarment, appliedFabric, garment, withTrousers]);
 
   const selectionSummary = useMemo(() => {
