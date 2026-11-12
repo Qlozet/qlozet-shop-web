@@ -5,6 +5,7 @@ import { CurrencyProvider } from '@/context/CurrencyContext';
 import { ThemeProvider, THEME_INIT_SCRIPT } from '@/context/ThemeContext';
 import { CustomerShell } from '@/components/CustomerShell';
 import { AppToaster } from '@/components/AppToaster';
+import { SITE_URL } from '@/lib/share-meta';
 import './globals.css';
 
 const outfit = Outfit({
@@ -20,6 +21,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Shared-link pictures and canonical links point at the real shop address.
+  metadataBase: new URL(SITE_URL),
   title: 'Qlozet | Luxury Tailored E-Commerce & AI Virtual try-on',
   description: 'Experience bespoke traditional agbadas, custom clothing, fabric yardage, accessories, and AI measurement prediction try-on models at Qlozet.',
 };
