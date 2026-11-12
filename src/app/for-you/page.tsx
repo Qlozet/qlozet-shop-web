@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -300,6 +301,7 @@ export default function ForYouPage() {
               <ProductCard
                 key={product._id}
                 id={product._id}
+                href={productHref(product)}
                 imageUrl={getProductImage(product)}
                 title={getProductName(product)}
                 brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}

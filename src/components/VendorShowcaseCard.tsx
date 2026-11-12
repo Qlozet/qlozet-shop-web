@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -265,7 +266,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
             return (
               <Link
                 key={product._id + '-' + i}
-                href={`/products/${product._id}`}
+                href={productHref(product)}
                 onClick={(e) => e.stopPropagation()}
                 className="relative overflow-hidden group/thumb"
                 style={{

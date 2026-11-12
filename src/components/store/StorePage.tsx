@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -591,7 +592,7 @@ export default function StorePage({ storeKey }: { storeKey: string }) {
               const prodTag = getProductTag(product);
 
               return (
-                <Link href={`/products/${product._id}`} key={product._id} className="flex flex-col group cursor-pointer w-full">
+                <Link href={productHref(product)} key={product._id} className="flex flex-col group cursor-pointer w-full">
                   <ProductThumb
                     imageUrl={prodImage}
                     alt={prodName}
