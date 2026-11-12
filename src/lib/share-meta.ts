@@ -103,13 +103,13 @@ export async function productMetadata(key: string, isPreviewLink = false): Promi
   };
 }
 
-/** Preview for a store page. */
+/** Preview text for a store page; the picture is made by lib/store-share-image. */
 export async function storeMetadata(key: string): Promise<Metadata> {
   const store = await fetchStoreForMeta(key);
   if (!store) return { title: `Store not found · ${SITE_NAME}`, robots: { index: false } };
 
   const name = store.business_name;
-  const where = [store.city, store.state].filter(Boolean).join(', ');
+  const where = [store.city, store.state].map((part) => part?.trim()).filter(Boolean).join(', ');
   const count = Number(store.total_products) || 0;
   const description =
     plain(store.description, 140) ||
@@ -120,7 +120,6 @@ export async function storeMetadata(key: string): Promise<Metadata> {
     ]
       .filter(Boolean)
       .join(' · ');
-  const image = store.cover_image_url || store.business_logo_url || '';
   const url = `${SITE_URL}${storeHref(store)}`;
   const title = `${name} on ${SITE_NAME}`;
 
@@ -134,13 +133,13 @@ export async function storeMetadata(key: string): Promise<Metadata> {
       url,
       title,
       description,
-      ...(image ? { images: [{ url: image, alt: name }] } : {}),
     },
+    // The picture comes from opengraph-image / twitter-image beside the store
+    // pages (lib/store-share-image): cover, logo and name in one.
     twitter: {
-      card: store.cover_image_url ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      ...(image ? { images: [image] } : {}),
     },
   };
 }
