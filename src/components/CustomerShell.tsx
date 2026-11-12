@@ -97,7 +97,9 @@ export const CustomerShell: React.FC<CustomerShellProps> = ({ children }) => {
   const isAuthPage = pathname.startsWith('/auth');
   const isSearchPage = pathname.startsWith('/search');
   const isStudio = pathname.startsWith('/bespoke/studio');
-  const isVendorPage = pathname.startsWith('/vendor');
+  // A store page: the old /vendor/<id> link or the store's /s/<address>.
+  // It draws its own full-bleed, vendor-themed layout, so the shell steps back.
+  const isVendorPage = pathname.startsWith('/vendor') || pathname.startsWith('/s/');
   const isProductDetailPage = /^\/products\/[^/]+$/.test(pathname);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
