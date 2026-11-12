@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import { UserMinus, Check, Heart } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { useVendors } from '@/hooks/useVendors';
@@ -41,7 +42,7 @@ export default function Following() {
       >
         {/* Left: Logo + Name */}
         <Link
-          href={`/vendor/${vendor._id}`}
+          href={storeHref(vendor)}
           className="flex items-center flex-1 min-w-0"
           style={{ gap: '14px', textDecoration: 'none' }}
         >

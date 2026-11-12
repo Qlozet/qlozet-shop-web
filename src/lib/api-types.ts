@@ -269,6 +269,8 @@ export interface ApiSocialLinks {
 export interface ApiBusinessPublic {
   _id: string;
   business_name: string;
+  /** Shop address: /s/<slug>. Missing on stores not given one yet. */
+  slug?: string | null;
   business_logo_url?: string;
   business_logo_svg_url?: string;
   cover_image_url?: string;

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import { useApp } from '@/context/AppContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { ProductCard } from '@/components/ProductCard';
@@ -1695,7 +1696,7 @@ export default function ProductDetailsPage() {
 
             {/* Brand */}
             {vendorId ? (
-              <Link href={`/vendor/${vendorId}`} style={{ textDecoration: 'none' }}>
+              <Link href={storeHref(typeof product?.business === 'object' ? product.business : null, vendorId)} style={{ textDecoration: 'none' }}>
                 <h2
                   className="hover:opacity-70 transition-opacity"
                   style={{

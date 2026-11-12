@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { isStoreHref } from '@/lib/store-link';
 import { ArrowRight, Clock, Store } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
@@ -71,7 +72,7 @@ export default function RecentlyViewedPage() {
     [validItems],
   );
   const vendorItems = useMemo(
-    () => validItems.filter((i) => i.href.startsWith('/vendor/')),
+    () => validItems.filter((i) => isStoreHref(i.href)),
     [validItems],
   );
 

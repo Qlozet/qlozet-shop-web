@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import { Star } from 'lucide-react';
 import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
 import { getProductImage } from '@/lib/api-types';
@@ -60,7 +61,7 @@ export const VendorDealCard: React.FC<VendorDealCardProps> = ({
 
   return (
     <Link
-      href={`/vendor/${vendor._id}`}
+      href={storeHref(vendor)}
       className="flex-shrink-0 flex flex-col overflow-hidden group snap-start"
       style={{ width: '340px', borderRadius: '20px', textDecoration: 'none' }}
     >

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import { ChevronLeft, ChevronRight, Tag } from 'lucide-react';
 import type { ApiBusinessPublic, ApiProduct } from '@/lib/api-types';
 import { getProductImage, getProductImages } from '@/lib/api-types';
@@ -111,7 +112,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
       {/* ── Top Section (Header) ── */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-between" style={{ padding: '15px 15px 0 15px' }}>
         {/* Vendor Logo — left */}
-        <Link href={`/vendor/${vendor._id}`} className="transition-transform hover:scale-110" onClick={(e) => e.stopPropagation()}>
+        <Link href={storeHref(vendor)} className="transition-transform hover:scale-110" onClick={(e) => e.stopPropagation()}>
           {vendorLogo ? (
             <div className="relative overflow-hidden" style={{ width: '48px', height: '52px', borderRadius: '8px' }}>
               <Image src={vendorLogo} alt={vendorName} fill quality={90} style={{ objectFit: 'cover' }} sizes="96px" />
