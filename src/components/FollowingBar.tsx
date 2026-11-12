@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import { ChevronRight } from 'lucide-react';
 import type { ApiBusinessPublic } from '@/lib/api-types';
 
@@ -51,7 +52,7 @@ export function FollowingBar({ followedVendorIds, vendors }: FollowingBarProps) 
           return (
             <Link
               key={vendor._id}
-              href={`/vendor/${vendor._id}`}
+              href={storeHref(vendor)}
               className="relative flex-shrink-0 flex items-center justify-center overflow-hidden transition-all hover:shadow-md active:scale-95"
               style={{
                 width: '56px',

@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import { Tag } from 'lucide-react';
 import type { ApiBusinessPublic } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
@@ -67,7 +68,7 @@ export const VendorShowcaseCard: React.FC<VendorShowcaseCardProps> = ({
   // ─── Inner card (cover fills card, products overlay at bottom) ──
   const innerCard = (
     <Link
-      href={`/vendor/${vendor._id}`}
+      href={storeHref(vendor)}
       className="relative overflow-hidden flex-shrink-0 block group"
       style={{
         width: '100%',

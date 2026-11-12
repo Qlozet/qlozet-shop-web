@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { storeHref } from '@/lib/store-link';
 import Image from 'next/image';
 import { Star, ChevronRight, Store } from 'lucide-react';
 import { useVendorDiscountedProducts } from '@/hooks/useVendors';
@@ -63,7 +64,7 @@ export function VendorDiscountRow({ vendor }: { vendor: ApiBusinessPublic }) {
     <div className="flex flex-col" style={{ gap: '14px' }}>
       {/* Header: logo · name · rating · discount type(s) */}
       <Link
-        href={`/vendor/${vendor._id}`}
+        href={storeHref(vendor)}
         className="flex items-center hover:opacity-90 transition-opacity"
         style={{ gap: '12px', textDecoration: 'none' }}
       >
@@ -113,7 +114,7 @@ export function VendorDiscountRow({ vendor }: { vendor: ApiBusinessPublic }) {
       </Link>
 
       {/* Product carousel (header omitted — we render our own above) */}
-      <ProductCarousel title="" products={products} href={`/vendor/${vendor._id}`} />
+      <ProductCarousel title="" products={products} href={storeHref(vendor)} />
     </div>
   );
 }
