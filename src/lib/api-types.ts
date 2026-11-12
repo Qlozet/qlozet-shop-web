@@ -196,6 +196,8 @@ export interface ApiAvailability {
 
 export interface ApiProduct {
   _id: string;
+  /** Short code in the shop address /p/<name>-<code>; missing on old products until backfilled. */
+  code?: string;
   kind: 'clothing' | 'fabric' | 'accessory';
   base_price: number;
   status: 'active' | 'draft' | 'archived';

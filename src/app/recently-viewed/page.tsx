@@ -1,5 +1,6 @@
 'use client';
 
+import { isProductHref, productHref } from '@/lib/product-link';
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -68,7 +69,7 @@ export default function RecentlyViewedPage() {
   );
 
   const productItems = useMemo(
-    () => validItems.filter((i) => i.href.startsWith('/products/')),
+    () => validItems.filter((i) => isProductHref(i.href)),
     [validItems],
   );
   const vendorItems = useMemo(
@@ -177,6 +178,7 @@ export default function RecentlyViewedPage() {
                   <ProductCard
                     key={item.id}
                     id={p._id}
+                    href={productHref(p)}
                     imageUrl={getProductImage(p) || item.image}
                     title={getProductName(p)}
                     brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}

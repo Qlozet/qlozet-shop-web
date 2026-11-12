@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -467,7 +468,7 @@ export default function HomePage() {
       eyebrow: 'Trending now',
       title: getProductName(heroTrending[0]),
       cta: 'Shop trending',
-      href: `/products/${heroTrending[0]._id}`,
+      href: productHref(heroTrending[0]),
       image: getProductImage(heroTrending[0]),
     });
   }
@@ -481,7 +482,7 @@ export default function HomePage() {
       eyebrow: 'Limited-time deal',
       title: getProductName(heroDeal),
       cta: 'Grab the deal',
-      href: `/products/${heroDeal._id}`,
+      href: productHref(heroDeal),
       image: getProductImage(heroDeal),
       badge: pct > 0 ? `${pct}% off` : undefined,
     });

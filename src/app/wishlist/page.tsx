@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
@@ -223,6 +224,7 @@ export default function WishlistPage() {
             <ProductCard
               key={product._id}
               id={product._id}
+              href={productHref(product)}
               imageUrl={getProductImage(product)}
               title={getProductName(product)}
               brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}

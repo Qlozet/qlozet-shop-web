@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React, { useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -81,6 +82,7 @@ export function ProductCarousel({ title, products, href, onHeaderClick }: Produc
             <div key={product._id} className="flex-shrink-0 snap-start" style={{ width: '214px' }}>
               <ProductCard
                 id={product._id}
+                href={productHref(product)}
                 imageUrl={getProductImage(product)}
                 title={getProductName(product)}
                 brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}

@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
@@ -356,6 +357,7 @@ export default function DiscoverSlugPage() {
               <div key={product._id} className="w-full">
                 <ProductCard
                   id={product._id}
+                  href={productHref(product)}
                   imageUrl={getProductImage(product)}
                   title={getProductName(product)}
                   brand={typeof product.business === 'object' ? product.business?.business_name ?? '' : ''}

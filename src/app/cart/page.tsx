@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -528,6 +529,7 @@ export default function CartPage() {
                 <div className="animate-fade-in" style={{ marginTop: '16px', maxWidth: '180px' }}>
                   <ProductCard
                     id={lookingProduct._id}
+                    href={productHref(lookingProduct)}
                     imageUrl={getProductImage(lookingProduct)}
                     title={getProductName(lookingProduct)}
                     brand={typeof lookingProduct.business === 'object' ? lookingProduct.business?.business_name ?? '' : ''}
@@ -562,6 +564,7 @@ export default function CartPage() {
                   <div key={p._id} style={{ minWidth: '150px', maxWidth: '170px', flexShrink: 0 }}>
                     <ProductCard
                       id={p._id}
+                      href={productHref(p)}
                       imageUrl={getProductImage(p)}
                       title={getProductName(p)}
                       brand={typeof p.business === 'object' ? p.business?.business_name ?? '' : ''}

@@ -12,6 +12,8 @@ import { CustomizableBadge } from '@/components/ProductThumb';
 
 export interface ProductCardProps {
   id: string | number;
+  /** The product's page; defaults to /products/<id>. Pass productHref(product) for its /p/ address. */
+  href?: string;
   imageUrl: string;
   title: string;
   brand: string;
@@ -31,6 +33,7 @@ export interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   id,
+  href,
   imageUrl,
   title,
   brand,
@@ -74,7 +77,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <Link 
-      href={`/products/${id}`} 
+      href={href ?? `/products/${id}`} 
       className="group flex flex-col w-full cursor-pointer transition-transform duration-300 hover:-translate-y-1"
       style={{ gap: '12px' }}
       onClick={handleClick}

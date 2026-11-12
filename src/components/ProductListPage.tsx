@@ -1,5 +1,6 @@
 'use client';
 
+import { productHref } from '@/lib/product-link';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -176,6 +177,7 @@ export function ProductListPage({ title, subtitle, products, loading, emptyText,
             <ProductCard
               key={product._id}
               id={product._id}
+              href={productHref(product)}
               imageUrl={getProductImage(product)}
               title={getProductName(product)}
               brand={businessName(product)}
