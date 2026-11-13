@@ -665,14 +665,18 @@ export default function OrdersSection({
         setCancellingRef(null);
         return;
       }
-      if (q && q.fee_total > 0) {
+      const keptDelivery = Number(q?.kept_delivery) || 0;
+      if (q && (q.fee_total > 0 || keptDelivery > 0)) {
         type Line = { name: string; fee: number; kind?: string };
         const lines: Line[] = q.lines ?? [];
         const list = (ls: Line[]) =>
           ls.map((l) => `• ${l.name}: ₦${Number(l.fee).toLocaleString()}`).join('\n');
         // Older backends send no kind: every line was the tailor's work share.
         const work = lines.filter((l) => (l.kind ?? 'work') === 'work');
-        const fabric = lines.filter((l) => l.kind && l.kind !== 'work');
+        const fabric: Line[] = lines.filter((l) => l.kind && l.kind !== 'work');
+        if (keptDelivery > 0) {
+          fabric.push({ name: 'Its delivery to your tailor', fee: keptDelivery, kind: 'delivery' });
+        }
         const parts: string[] = [];
         if (work.length) {
           parts.push(

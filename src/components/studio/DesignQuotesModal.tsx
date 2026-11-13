@@ -84,7 +84,11 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   // Delivery from each tailor to the chosen address, keyed `${quoteId}:${addressId}`.
   // Priced by the backend at acceptance and paid with the deposit; fetched here
   // so the customer sees it before paying (the backend charges the same price).
-  const [deliveries, setDeliveries] = useState<Record<string, { fee: number; unpriced: boolean } | 'failed'>>({});
+  // `fee` is every courier leg (the outfit to you + other-shop fabric to the
+  // tailor); `fabric_fee` is the fabric part of it.
+  const [deliveries, setDeliveries] = useState<
+    Record<string, { fee: number; fabric_fee: number; unpriced: boolean } | 'failed'>
+  >({});
 
   useEffect(() => setMounted(true), []);
 
@@ -103,7 +107,14 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         .then((res) => {
           const d = res.data?.data ?? res.data;
           if (active) {
-            setDeliveries((prev) => ({ ...prev, [key]: { fee: Math.round(Number(d?.fee) || 0), unpriced: Boolean(d?.unpriced) } }));
+            setDeliveries((prev) => ({
+              ...prev,
+              [key]: {
+                fee: Math.round(Number(d?.fee) || 0),
+                fabric_fee: Math.round(Number(d?.fabric_fee) || 0),
+                unpriced: Boolean(d?.unpriced),
+              },
+            }));
           }
         })
         .catch(() => {
@@ -311,6 +322,11 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const deliveryFeeOf = (q: BespokeQuote): number => {
     const d = deliveryOf(q);
     return typeof d === 'number' ? d : 0;
+  };
+  const fabricDeliveryOf = (q: BespokeQuote): number => {
+    if (q.status !== 'submitted' || !addressId) return 0;
+    const d = deliveries[`${q._id}:${addressId}`];
+    return d && d !== 'failed' ? d.fabric_fee : 0;
   };
   const payableFor = (q: BespokeQuote): number => {
     const preview = (q as BespokeQuote & { payment_preview?: { deposit_amount: number } | null }).payment_preview;
@@ -675,7 +691,9 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             : delivery === null
                               ? 'Delivery to your address is added when you pay.'
                               : delivery > 0
-                                ? `Delivery to your address: ${naira(delivery)}, paid now with the deposit.`
+                                ? fabricDeliveryOf(q) > 0
+                                  ? `Delivery: ${naira(delivery)}, paid now with the deposit (${naira(delivery - fabricDeliveryOf(q))} to your address, ${naira(fabricDeliveryOf(q))} for the fabric to your tailor).`
+                                  : `Delivery to your address: ${naira(delivery)}, paid now with the deposit.`
                                 : 'Delivery to your address is free on this order.'}
                         </p>
                         <CancellationNotice variant="bespoke" style={{ justifyContent: 'center' }} />
