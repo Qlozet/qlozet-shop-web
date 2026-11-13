@@ -666,13 +666,28 @@ export default function OrdersSection({
         return;
       }
       if (q && q.fee_total > 0) {
-        const kept = (q.lines ?? [])
-          .map((l: { name: string; fee: number }) => `• ${l.name}: ₦${Number(l.fee).toLocaleString()}`)
-          .join('\n');
+        type Line = { name: string; fee: number; kind?: string };
+        const lines: Line[] = q.lines ?? [];
+        const list = (ls: Line[]) =>
+          ls.map((l) => `• ${l.name}: ₦${Number(l.fee).toLocaleString()}`).join('\n');
+        // Older backends send no kind: every line was the tailor's work share.
+        const work = lines.filter((l) => (l.kind ?? 'work') === 'work');
+        const fabric = lines.filter((l) => l.kind && l.kind !== 'work');
+        const parts: string[] = [];
+        if (work.length) {
+          parts.push(
+            `Your tailor has already started work, so ${q.fee_percent}% of these pieces is kept to cover it:\n${list(work)}`
+          );
+        }
+        if (fabric.length) {
+          parts.push(
+            `The fabric has already been sent to your tailor, so it isn't refunded:\n${list(fabric)}`
+          );
+        }
         message =
           `Cancel order ${o.orderNumber}?\n\n` +
-          `Your tailor has already started work, so ${q.fee_percent}% of these pieces is kept to cover it:\n${kept}\n\n` +
-          `₦${Number(q.refund_total).toLocaleString()} will be refunded to your wallet.`;
+          parts.join('\n\n') +
+          `\n\n₦${Number(q.refund_total).toLocaleString()} will be refunded to your wallet.`;
       } else if (q && q.paid_total > 0) {
         message = `Cancel order ${o.orderNumber}? ₦${Number(q.refund_total).toLocaleString()} will be refunded to your wallet.`;
       }
