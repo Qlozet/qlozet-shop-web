@@ -375,6 +375,7 @@ export function mapApiOrder(o: ApiCustomerOrder): Order {
     type: o.type,
     preship: (o as any).preship ?? null,
     paymentPlan: (o as any).payment_plan ?? null,
+    agreement: (o as any).agreement ?? null,
     fitFeedback: (o as any).fit_feedback ?? null,
     // Same rule as the backend's isMadeToFit: fit feedback applies to these.
     madeToFit:

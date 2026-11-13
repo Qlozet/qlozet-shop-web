@@ -19,6 +19,7 @@ import { ReportProblemModal } from '@/components/ReportProblemModal';
 import { MeasurementQuestionsCard } from '@/components/MeasurementQuestionsCard';
 import { OrderChatModal } from '@/components/chat/OrderChatModal';
 import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
+import { OrderAgreementView } from '@/components/OrderAgreementView';
 import { useWallet } from '@/hooks/useWallet';
 import { useUnreadOrderMessages } from '@/hooks/useUnreadOrderMessages';
 import { useCustomerReturns, findReturnFor, RETURN_STATUS_LABELS } from '@/hooks/useCustomerReturns';
@@ -1102,6 +1103,7 @@ export default function OrdersSection({
 
         {/* Bespoke: approve the finished piece before it ships. Keyed on the
             preship state so a fresh submission remounts with the new photos. */}
+        {isBespokeOrder && order.agreement && <OrderAgreementView agreement={order.agreement} />}
         {isBespokeOrder && order.paymentPlan && <PaymentPlanCard order={order} />}
         {isBespokeOrder && order.preship && (
           <PreshipCard key={`${order.orderNumber}-${order.preship.status}-${order.preship.submitted_at ?? ''}`} order={order} refetch={refetch} />

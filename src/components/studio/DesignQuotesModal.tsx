@@ -14,6 +14,7 @@ import { useCurrency } from '@/context/CurrencyContext';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
 import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
+import { OrderAgreementView, type OrderAgreement } from '@/components/OrderAgreementView';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import {
   ADD_MEASUREMENTS_HREF,
@@ -81,6 +82,10 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [reloadKey, setReloadKey] = useState(0);
   // The quote and method waiting on the confirm-payment dialog.
   const [confirming, setConfirming] = useState<{ quote: BespokeQuote; method: 'wallet' | 'paystack' } | null>(null);
+  // The order agreement for the quote being paid for, and the customer's tick.
+  const [agreement, setAgreement] = useState<OrderAgreement | null>(null);
+  const [agreementState, setAgreementState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [agreed, setAgreed] = useState(false);
   // Delivery from each tailor to the chosen address, keyed `${quoteId}:${addressId}`.
   // Priced by the backend at acceptance and paid with the deposit; fetched here
   // so the customer sees it before paying (the backend charges the same price).
@@ -253,6 +258,27 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
 
   // Runs from the confirm dialog. Throws a readable message on failure so the
   // dialog can show it; resolves 'done' for wallet, 'redirected' for card.
+  // Open the confirm sheet and load the order agreement the customer agrees to.
+  const openConfirm = (quote: BespokeQuote, method: 'wallet' | 'paystack') => {
+    setConfirming({ quote, method });
+    setAgreement(null);
+    setAgreed(false);
+    setAgreementState('loading');
+    api
+      .get(`/bespoke/quotes/${quote._id}/agreement`, {
+        params: {
+          ...(addressId ? { address_id: addressId } : {}),
+          ...(designSetName ? { measurement_set_name: designSetName } : {}),
+        },
+      })
+      .then((res) => {
+        const a = (res.data?.data ?? res.data) as OrderAgreement;
+        setAgreement(a);
+        setAgreementState(a?.version ? 'ready' : 'failed');
+      })
+      .catch(() => setAgreementState('failed'));
+  };
+
   const accept = async (quoteId: string, method: 'wallet' | 'paystack'): Promise<'done' | 'redirected'> => {
     setAcceptingId(quoteId);
     setErr(null);
@@ -262,6 +288,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         method,
         addressId ?? undefined,
         designSetName,
+        agreed && agreement ? agreement.version : undefined,
       );
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
       if (method === 'paystack') {
@@ -640,7 +667,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                     ) : submitted ? (
                       <div className='flex flex-col' style={{ gap: '8px' }}>
                         <button
-                          onClick={() => setConfirming({ quote: q, method: 'wallet' })}
+                          onClick={() => openConfirm(q, 'wallet')}
                           disabled={acceptingId === q._id || walletBalance < payable || delivery === 'loading'}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
@@ -667,7 +694,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             : `Wallet balance: ₦${walletBalance.toLocaleString()}`}
                         </p>
                         <button
-                          onClick={() => setConfirming({ quote: q, method: 'paystack' })}
+                          onClick={() => openConfirm(q, 'paystack')}
                           disabled={acceptingId === q._id || delivery === 'loading'}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
@@ -836,6 +863,39 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                 : <>Paying accepts this quote and {tailor} starts on your outfit.</>
             }
             onConfirm={() => accept(q._id, confirming.method)}
+            confirmDisabled={!agreed || agreementState !== 'ready'}
+            extra={
+              agreementState === 'loading' ? (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Loading the order agreement…</p>
+              ) : agreementState === 'failed' || !agreement ? (
+                <p style={{ fontSize: '12px', color: '#B91C1C', margin: 0 }}>
+                  The order agreement could not be loaded.{' '}
+                  <button
+                    type="button"
+                    onClick={() => openConfirm(q, confirming.method)}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}
+                  >
+                    Try again
+                  </button>
+                </p>
+              ) : (
+                <div className="flex flex-col" style={{ gap: '10px' }}>
+                  <OrderAgreementView agreement={agreement} />
+                  <label className="flex items-start" style={{ gap: '10px', cursor: 'pointer' }}>
+                    <input
+                      id={`agree-${q._id}`}
+                      type="checkbox"
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                      style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#064E3B', flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+                      I agree to this order agreement: the design, fabric, price and terms above.
+                    </span>
+                  </label>
+                </div>
+              )
+            }
             success={{
               title: 'Order confirmed',
               body: preview && preview.balance_amount > 0
