@@ -244,6 +244,8 @@ export interface Order {
   type?: string;
   /** Bespoke orders paid as a deposit, then a balance at the pre-ship photos. */
   paymentPlan?: PaymentPlanView | null;
+  /** Bespoke: the order agreement both sides agreed to, frozen at the deposit. */
+  agreement?: import('@/components/OrderAgreementView').OrderAgreement | null;
   /** Bespoke pre-ship checkpoint — photos the tailor sent for approval. */
   preship?: PreshipReview | null;
   /** Post-delivery fit feedback, once given; `issues` say where it was off. */

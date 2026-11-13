@@ -14,6 +14,7 @@ import { useCurrency } from '@/context/CurrencyContext';
 import { api } from '@/lib/api';
 import { CancellationNotice } from '@/components/CancellationNotice';
 import { PaymentConfirmDialog } from '@/components/PaymentConfirmDialog';
+import { OrderAgreementView, type OrderAgreement } from '@/components/OrderAgreementView';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import {
   ADD_MEASUREMENTS_HREF,
@@ -81,8 +82,54 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
   const [reloadKey, setReloadKey] = useState(0);
   // The quote and method waiting on the confirm-payment dialog.
   const [confirming, setConfirming] = useState<{ quote: BespokeQuote; method: 'wallet' | 'paystack' } | null>(null);
+  // The order agreement for the quote being paid for, and the customer's tick.
+  const [agreement, setAgreement] = useState<OrderAgreement | null>(null);
+  const [agreementState, setAgreementState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [agreed, setAgreed] = useState(false);
+  // Delivery from each tailor to the chosen address, keyed `${quoteId}:${addressId}`.
+  // Priced by the backend at acceptance and paid with the deposit; fetched here
+  // so the customer sees it before paying (the backend charges the same price).
+  // `fee` is every courier leg (the outfit to you + other-shop fabric to the
+  // tailor); `fabric_fee` is the fabric part of it.
+  const [deliveries, setDeliveries] = useState<
+    Record<string, { fee: number; fabric_fee: number; unpriced: boolean } | 'failed'>
+  >({});
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!isOpen || !addressId || !design) return;
+    type Detail = { quotes?: BespokeQuote[]; design?: { quotes?: BespokeQuote[] } };
+    const raw = design as unknown as Detail & { data?: Detail };
+    const detail: Detail = raw?.data && (raw.data.design || Array.isArray(raw.data.quotes)) ? raw.data : raw;
+    const list: BespokeQuote[] = detail?.quotes ?? detail?.design?.quotes ?? [];
+    const waiting = list.filter((q) => q?.status === 'submitted' && q?._id);
+    let active = true;
+    for (const q of waiting) {
+      const key = `${q._id}:${addressId}`;
+      api
+        .get(`/bespoke/quotes/${q._id}/delivery`, { params: { address_id: addressId } })
+        .then((res) => {
+          const d = res.data?.data ?? res.data;
+          if (active) {
+            setDeliveries((prev) => ({
+              ...prev,
+              [key]: {
+                fee: Math.round(Number(d?.fee) || 0),
+                fabric_fee: Math.round(Number(d?.fabric_fee) || 0),
+                unpriced: Boolean(d?.unpriced),
+              },
+            }));
+          }
+        })
+        .catch(() => {
+          if (active) setDeliveries((prev) => ({ ...prev, [key]: 'failed' }));
+        });
+    }
+    return () => {
+      active = false;
+    };
+  }, [isOpen, addressId, design]);
 
   // Load the customer's shipping address so acceptance can pass it explicitly
   // (the tailor needs somewhere to deliver). Prefer the default address.
@@ -211,6 +258,27 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
 
   // Runs from the confirm dialog. Throws a readable message on failure so the
   // dialog can show it; resolves 'done' for wallet, 'redirected' for card.
+  // Open the confirm sheet and load the order agreement the customer agrees to.
+  const openConfirm = (quote: BespokeQuote, method: 'wallet' | 'paystack') => {
+    setConfirming({ quote, method });
+    setAgreement(null);
+    setAgreed(false);
+    setAgreementState('loading');
+    api
+      .get(`/bespoke/quotes/${quote._id}/agreement`, {
+        params: {
+          ...(addressId ? { address_id: addressId } : {}),
+          ...(designSetName ? { measurement_set_name: designSetName } : {}),
+        },
+      })
+      .then((res) => {
+        const a = (res.data?.data ?? res.data) as OrderAgreement;
+        setAgreement(a);
+        setAgreementState(a?.version ? 'ready' : 'failed');
+      })
+      .catch(() => setAgreementState('failed'));
+  };
+
   const accept = async (quoteId: string, method: 'wallet' | 'paystack'): Promise<'done' | 'redirected'> => {
     setAcceptingId(quoteId);
     setErr(null);
@@ -220,6 +288,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
         method,
         addressId ?? undefined,
         designSetName,
+        agreed && agreement ? agreement.version : undefined,
       );
       const url = res?.payment?.authorization_url || res?.payment?.paymentUrl;
       if (method === 'paystack') {
@@ -268,9 +337,27 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
 
   // What paying a quote costs now: the deposit (or the whole quote) plus any
   // other vendor's fabric.
+  // Delivery for a quote waiting on a decision: a number once priced,
+  // 'loading' while asked for, null when it could not be fetched here (the
+  // backend still prices it when the customer pays).
+  const deliveryOf = (q: BespokeQuote): number | 'loading' | null => {
+    if (q.status !== 'submitted' || !addressId) return 0;
+    const d = deliveries[`${q._id}:${addressId}`];
+    if (d === undefined) return 'loading';
+    return d === 'failed' ? null : d.fee;
+  };
+  const deliveryFeeOf = (q: BespokeQuote): number => {
+    const d = deliveryOf(q);
+    return typeof d === 'number' ? d : 0;
+  };
+  const fabricDeliveryOf = (q: BespokeQuote): number => {
+    if (q.status !== 'submitted' || !addressId) return 0;
+    const d = deliveries[`${q._id}:${addressId}`];
+    return d && d !== 'failed' ? d.fabric_fee : 0;
+  };
   const payableFor = (q: BespokeQuote): number => {
     const preview = (q as BespokeQuote & { payment_preview?: { deposit_amount: number } | null }).payment_preview;
-    return (preview ? preview.deposit_amount : quoteTotal(q)) + fabricSurchargeFor(q);
+    return (preview ? preview.deposit_amount : quoteTotal(q)) + fabricSurchargeFor(q) + deliveryFeeOf(q);
   };
   // The ones to decide on first: the accepted quote, then prices waiting
   // (cheapest first), then changes asked for, then still to come; declined
@@ -413,6 +500,7 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                   | null
                   | undefined;
                 const payable = payableFor(q);
+                const delivery = deliveryOf(q);
                 const closed = q.status === 'declined' || q.status === 'rejected' || q.status === 'expired';
                 return (
                   <div
@@ -579,8 +667,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                     ) : submitted ? (
                       <div className='flex flex-col' style={{ gap: '8px' }}>
                         <button
-                          onClick={() => setConfirming({ quote: q, method: 'wallet' })}
-                          disabled={acceptingId === q._id || walletBalance < payable}
+                          onClick={() => openConfirm(q, 'wallet')}
+                          disabled={acceptingId === q._id || walletBalance < payable || delivery === 'loading'}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
                             padding: '12px', borderRadius: '12px',
@@ -606,8 +694,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                             : `Wallet balance: ₦${walletBalance.toLocaleString()}`}
                         </p>
                         <button
-                          onClick={() => setConfirming({ quote: q, method: 'paystack' })}
-                          disabled={acceptingId === q._id}
+                          onClick={() => openConfirm(q, 'paystack')}
+                          disabled={acceptingId === q._id || delivery === 'loading'}
                           className='w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]'
                           style={{
                             padding: '12px', borderRadius: '12px', background: 'var(--bg-surface-elevated)',
@@ -620,10 +708,21 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                         </button>
                         {preview && (
                           <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
-                            {naira(payable)} now ({preview.deposit_covers_fabric ? 'deposit covers the fabric' : `${preview.deposit_percent}% deposit`}{fabricSurcharge > 0 ? ' + fabric' : ''}).
+                            {naira(payable)} now ({preview.deposit_covers_fabric ? 'deposit covers the fabric' : `${preview.deposit_percent}% deposit`}{fabricSurcharge > 0 ? ' + fabric' : ''}{typeof delivery === 'number' && delivery > 0 ? ` + ${naira(delivery)} delivery` : ''}).
                             {' '}{naira(preview.balance_amount)} when your outfit is ready and you&apos;ve seen the photos.
                           </p>
                         )}
+                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+                          {delivery === 'loading'
+                            ? 'Working out delivery to your address…'
+                            : delivery === null
+                              ? 'Delivery to your address is added when you pay.'
+                              : delivery > 0
+                                ? fabricDeliveryOf(q) > 0
+                                  ? `Delivery: ${naira(delivery)}, paid now with the deposit (${naira(delivery - fabricDeliveryOf(q))} to your address, ${naira(fabricDeliveryOf(q))} for the fabric to your tailor).`
+                                  : `Delivery to your address: ${naira(delivery)}, paid now with the deposit.`
+                                : 'Delivery to your address is free on this order.'}
+                        </p>
                         <CancellationNotice variant="bespoke" style={{ justifyContent: 'center' }} />
                         {isConverted && (
                           <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -744,6 +843,8 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
           { label: 'Design', value: designObj?.name || 'Your design' },
           { label: 'Quote', value: naira(quoteTotal(q) + surcharge) },
         ];
+        const deliveryFee = deliveryFeeOf(q);
+        if (deliveryFee > 0) lines.push({ label: 'Delivery', value: naira(deliveryFee) });
         if (preview && preview.balance_amount > 0) {
           lines.push({ label: 'Balance later', value: naira(preview.balance_amount) });
         }
@@ -762,6 +863,39 @@ export const DesignQuotesModal: React.FC<DesignQuotesModalProps> = ({
                 : <>Paying accepts this quote and {tailor} starts on your outfit.</>
             }
             onConfirm={() => accept(q._id, confirming.method)}
+            confirmDisabled={!agreed || agreementState !== 'ready'}
+            extra={
+              agreementState === 'loading' ? (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Loading the order agreement…</p>
+              ) : agreementState === 'failed' || !agreement ? (
+                <p style={{ fontSize: '12px', color: '#B91C1C', margin: 0 }}>
+                  The order agreement could not be loaded.{' '}
+                  <button
+                    type="button"
+                    onClick={() => openConfirm(q, confirming.method)}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}
+                  >
+                    Try again
+                  </button>
+                </p>
+              ) : (
+                <div className="flex flex-col" style={{ gap: '10px' }}>
+                  <OrderAgreementView agreement={agreement} />
+                  <label className="flex items-start" style={{ gap: '10px', cursor: 'pointer' }}>
+                    <input
+                      id={`agree-${q._id}`}
+                      type="checkbox"
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                      style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#064E3B', flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+                      I agree to this order agreement: the design, fabric, price and terms above.
+                    </span>
+                  </label>
+                </div>
+              )
+            }
             success={{
               title: 'Order confirmed',
               body: preview && preview.balance_amount > 0
