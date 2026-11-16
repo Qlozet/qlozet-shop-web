@@ -11,7 +11,6 @@ import { QlozetLogo } from '@/components/QlozetLogo';
 import { GenderToggle } from '@/components/GenderToggle';
 import { HeroCarousel, type HeroSlide } from '@/components/HeroCarousel';
 import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
-import { PromoBanner } from '@/components/PromoBanner';
 import { FabricToOutfitBanner } from '@/components/FabricToOutfitBanner';
 import { ShopByCategory } from '@/components/ShopByCategory';
 import { FollowingBar } from '@/components/FollowingBar';
@@ -551,8 +550,6 @@ export default function HomePage() {
         <ForYouSection recentlyViewed={recentlyViewed} heroImage={forYouHeroImage} />
       )}
 
-      {/* Promo Banner */}
-      <PromoBanner />
 
     </div>
   );
