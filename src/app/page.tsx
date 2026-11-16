@@ -12,6 +12,7 @@ import { GenderToggle } from '@/components/GenderToggle';
 import { HeroCarousel, type HeroSlide } from '@/components/HeroCarousel';
 import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
 import { PromoBanner } from '@/components/PromoBanner';
+import { FabricToOutfitBanner } from '@/components/FabricToOutfitBanner';
 import { ShopByCategory } from '@/components/ShopByCategory';
 import { FollowingBar } from '@/components/FollowingBar';
 import { ForYouSection } from '@/components/ForYouSection';
@@ -541,6 +542,9 @@ export default function HomePage() {
           <ProductCarousel title="What's New" products={newProducts} href="/whats-new" />
         ) : null;
       })()}
+
+      {/* Fabric + style = your outfit, into the bespoke hub (as in the app) */}
+      <FabricToOutfitBanner />
 
       {/* For You Hero + Recently Seen — signed-in users only */}
       {user && (
