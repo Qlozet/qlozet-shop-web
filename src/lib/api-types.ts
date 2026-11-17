@@ -295,6 +295,8 @@ export interface ApiBusinessPublic {
   has_active_discount?: boolean;
   /** Count of the vendor's active products (0 → empty shop). */
   total_products?: number;
+  /** Takes made-to-measure (bespoke) requests; missing means yes. */
+  accepts_bespoke?: boolean;
   createdAt: string;
 }
 
@@ -471,6 +473,8 @@ export interface VendorQueryParams {
   search?: string;
   /** Only vendors who take bespoke work — for the quote-request picker. */
   bespoke?: boolean;
+  /** Order: 'active' (most sold, the default), 'newest', or 'name' (A to Z). */
+  sort?: 'active' | 'newest' | 'name';
 }
 
 // ─── Vendor Collection Pagination ─────────────────────────────
