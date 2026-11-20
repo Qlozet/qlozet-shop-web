@@ -36,7 +36,7 @@ function reviewDate(id?: string): string {
 }
 import {
   Search, SlidersHorizontal, ChevronDown, Menu, Star, Heart, X, Tag, Clock,
-  Camera, PlayCircle
+  Camera, PlayCircle, BadgeCheck
 } from 'lucide-react';
 import { socialProfiles } from '@/lib/social';
 
@@ -387,6 +387,13 @@ export default function StorePage({ storeKey }: { storeKey: string }) {
                 override, so on a light vendor theme it would stay white and vanish. */}
             <Star size={12} color={isLightTheme ? '#1A1A1A' : '#FFFFFF'} fill={isLightTheme ? '#1A1A1A' : '#FFFFFF'} />
             <span>{vendorReviewCount} Reviews</span>
+            {vendor.verified && (
+              <>
+                <span aria-hidden className="opacity-60">·</span>
+                <BadgeCheck size={14} color={isLightTheme ? '#1A1A1A' : '#FFFFFF'} aria-hidden />
+                <span>Verified by Qlozet</span>
+              </>
+            )}
           </div>
 
           {/* Social handles — credibility, deliberately placed beside the
@@ -645,6 +652,7 @@ export default function StorePage({ storeKey }: { storeKey: string }) {
         vendor={vendor}
         collections={collections}
         onShowReviews={() => { setShowSidebar(false); setTimeout(() => setShowReviews(true), 300); }}
+        onSelectCollection={(id) => { setActiveFilter(id); setShowSidebar(false); }}
         isLightTheme={isLightTheme}
       />
 

@@ -311,6 +311,8 @@ export interface ApiBusinessPublicDetail extends ApiBusinessPublic {
    * the storefront says so up front rather than letting it surprise anyone.
    */
   at_capacity?: boolean;
+  /** Verified by Qlozet (the platform's verification tier). */
+  verified?: boolean;
 }
 
 // ─── Ratings / Reviews ────────────────────────────────────────
