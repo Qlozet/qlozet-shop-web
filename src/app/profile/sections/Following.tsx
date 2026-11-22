@@ -7,14 +7,14 @@ import { storeHref } from '@/lib/store-link';
 import { UserMinus, Check, Heart } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { useVendors } from '@/hooks/useVendors';
+import { useFollowedStores } from '@/hooks/useFollowedStores';
 import type { ApiBusinessPublic } from '@/lib/api-types';
 import { cardStyle, sectionTitle } from '../styles';
 
 export default function Following() {
   const { followedVendors: followedIds, toggleFollowVendor } = useApp();
-  const { vendors: allVendors, loading } = useVendors({ limit: 20 });
-
-  const followedVendors = allVendors.filter((v) => followedIds.includes(v._id));
+  const { vendors: allVendors } = useVendors({ limit: 20 });
+  const { stores: followedVendors } = useFollowedStores(followedIds, true, allVendors);
   const suggestedVendors = allVendors.filter((v) => !followedIds.includes(v._id)).slice(0, 4);
 
   // ─── Reusable Vendor Row ──────────────────────────────────────

@@ -44,6 +44,8 @@ export function notificationTarget(n: NotificationLike): string | null {
   if (orderRef) {
     const base = `/profile?tab=orders&order=${encodeURIComponent(orderRef)}`;
     if (n.type === 'new_message') return `${base}&view=chat${nonce}`;
+    // "How did it fit?": the order, scrolled to its fit card.
+    if (n.type === 'fit_feedback_request') return `${base}&view=fit${nonce}`;
     if (n.category === 'shipping' && TRACKING_TYPES.has(n.type)) {
       return `${base}&view=track${nonce}`;
     }
