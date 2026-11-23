@@ -334,6 +334,8 @@ export function useBespokeDesigns() {
     addressId?: string,
     /** Saved measurement set to sew to (e.g. a friend's) — defaults to active. */
     measurementSetName?: string,
+    /** The order agreement version the customer ticked "I agree" to. */
+    agreementVersion?: string,
   ): Promise<AcceptQuoteResult | null> => {
     try {
       const res = await api.post(`/bespoke/quotes/${quoteId}/accept`, {
@@ -342,6 +344,7 @@ export function useBespokeDesigns() {
         ...(measurementSetName
           ? { measurement_set_name: measurementSetName }
           : {}),
+        ...(agreementVersion ? { agreement_version: agreementVersion } : {}),
       });
       const payload = res?.data?.data ?? res?.data;
       await fetchDesigns();

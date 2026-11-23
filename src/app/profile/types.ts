@@ -212,6 +212,8 @@ export interface OrderItem {
   /** Name of the measurement set this garment was locked to at order time
    *  (e.g. "Dad") — from the per-item body_profile snapshot. */
   measurementSetName?: string;
+  /** The order line's own id (Order again for one item). */
+  itemId?: string;
   /** Catalog product id — used to review the item after delivery. */
   productId?: string;
   /** Vendor business id — used to scope a return request to the right vendor. */
@@ -244,6 +246,8 @@ export interface Order {
   type?: string;
   /** Bespoke orders paid as a deposit, then a balance at the pre-ship photos. */
   paymentPlan?: PaymentPlanView | null;
+  /** Bespoke: the order agreement both sides agreed to, frozen at the deposit. */
+  agreement?: import('@/components/OrderAgreementView').OrderAgreement | null;
   /** Bespoke pre-ship checkpoint — photos the tailor sent for approval. */
   preship?: PreshipReview | null;
   /** Post-delivery fit feedback, once given; `issues` say where it was off. */

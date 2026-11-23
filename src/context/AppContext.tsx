@@ -134,6 +134,8 @@ interface AppContextType {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
   clearCart: () => void;
+  /** Show the account's cart again (after the server changed it, e.g. Order again). */
+  reloadCart: () => Promise<void>;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
   jobs: TryOnJob[];
@@ -760,6 +762,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         eventType: exists ? 'wishlist_remove' : 'wishlist_add',
         properties: { itemId: id },
       });
+      // save_item is the event the recommender weighs (taste profile and
+      // trending, 2.0); wishlist_add on its own is stored but weighs nothing.
+      if (!exists) {
+        trackEventDirect(user.id, {
+          eventType: 'save_item',
+          properties: { itemId: id },
+          context: { surface: 'wishlist' },
+        });
+      }
     }
   };
 
@@ -911,6 +922,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         claimReservation,
         recentlyViewed,
         addRecentlyViewed,
+        reloadCart: reloadServerCart,
       }}
     >
       {children}

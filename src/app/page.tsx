@@ -11,9 +11,10 @@ import { QlozetLogo } from '@/components/QlozetLogo';
 import { GenderToggle } from '@/components/GenderToggle';
 import { HeroCarousel, type HeroSlide } from '@/components/HeroCarousel';
 import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
-import { PromoBanner } from '@/components/PromoBanner';
+import { FabricToOutfitBanner } from '@/components/FabricToOutfitBanner';
 import { ShopByCategory } from '@/components/ShopByCategory';
 import { FollowingBar } from '@/components/FollowingBar';
+import { YourTailors } from '@/components/YourTailors';
 import { ForYouSection } from '@/components/ForYouSection';
 import { useProducts } from '@/hooks/useProducts';
 import {
@@ -501,6 +502,9 @@ export default function HomePage() {
         <FollowingBar followedVendorIds={followedVendors} vendors={allVendors} />
       )}
 
+      {/* Your tailors — stores this shopper has bought from, with Order again */}
+      <YourTailors enabled={!!user} />
+
       {/* Home hero carousel */}
       <HeroCarousel slides={heroSlides} />
 
@@ -542,13 +546,14 @@ export default function HomePage() {
         ) : null;
       })()}
 
+      {/* Fabric + style = your outfit, into the bespoke hub (as in the app) */}
+      <FabricToOutfitBanner />
+
       {/* For You Hero + Recently Seen — signed-in users only */}
       {user && (
         <ForYouSection recentlyViewed={recentlyViewed} heroImage={forYouHeroImage} />
       )}
 
-      {/* Promo Banner */}
-      <PromoBanner />
 
     </div>
   );

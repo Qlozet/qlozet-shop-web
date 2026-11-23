@@ -295,6 +295,13 @@ export interface ApiBusinessPublic {
   has_active_discount?: boolean;
   /** Count of the vendor's active products (0 → empty shop). */
   total_products?: number;
+  /** Takes made-to-measure (bespoke) requests; missing means yes. */
+  accepts_bespoke?: boolean;
+  /**
+   * What the store says it sells: made_to_measure, ready_to_wear, fabric,
+   * accessories. Empty for stores that haven't answered yet.
+   */
+  offerings?: string[];
   createdAt: string;
 }
 
@@ -309,6 +316,8 @@ export interface ApiBusinessPublicDetail extends ApiBusinessPublic {
    * the storefront says so up front rather than letting it surprise anyone.
    */
   at_capacity?: boolean;
+  /** Verified by Qlozet (the platform's verification tier). */
+  verified?: boolean;
 }
 
 // ─── Ratings / Reviews ────────────────────────────────────────
@@ -471,6 +480,8 @@ export interface VendorQueryParams {
   search?: string;
   /** Only vendors who take bespoke work — for the quote-request picker. */
   bespoke?: boolean;
+  /** Order: 'active' (most sold, the default), 'newest', or 'name' (A to Z). */
+  sort?: 'active' | 'newest' | 'name';
 }
 
 // ─── Vendor Collection Pagination ─────────────────────────────

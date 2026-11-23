@@ -32,6 +32,10 @@ interface PaymentConfirmDialogProps {
   success: { title: string; body: React.ReactNode };
   /** Called when the person closes the success screen. */
   onDone?: () => void;
+  /** Shown above the buttons (e.g. an agreement to tick). */
+  extra?: React.ReactNode;
+  /** Keeps Pay disabled (e.g. until "I agree" is ticked). */
+  confirmDisabled?: boolean;
 }
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString()}`;
@@ -53,6 +57,8 @@ export function PaymentConfirmDialog({
   onConfirm,
   success,
   onDone,
+  extra,
+  confirmDisabled = false,
 }: PaymentConfirmDialogProps) {
   // Render it only while needed (`{x && <PaymentConfirmDialog open … />}`),
   // so each payment starts fresh at the confirm step.
@@ -160,6 +166,7 @@ export function PaymentConfirmDialog({
             </div>
 
             {note && <p style={{ fontSize: '12px', lineHeight: 1.6, color: 'var(--text-secondary)', margin: 0 }}>{note}</p>}
+            {extra}
             {error && (
               <p role="alert" style={{ fontSize: '12px', lineHeight: 1.5, color: '#B91C1C', margin: 0 }}>{error}</p>
             )}
@@ -177,8 +184,8 @@ export function PaymentConfirmDialog({
               <button
                 type="button"
                 onClick={pay}
-                disabled={step === 'paying'}
-                className="flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-70"
+                disabled={step === 'paying' || confirmDisabled}
+                className="flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ flex: 2, gap: '8px', padding: '12px', borderRadius: '12px', border: 'none', background: '#064E3B', color: '#FFF', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer' }}
               >
                 {step === 'paying' ? (
