@@ -6,10 +6,12 @@ import Image from 'next/image';
 import type { ApiBusinessPublic, ApiCollection } from '@/lib/api-types';
 import { api } from '@/lib/api';
 import {
-  X, Share, ChevronRight, Info, DollarSign, Calendar,
+  X, Share, ChevronRight, ChevronLeft, Info, DollarSign, Calendar,
   Camera, PlayCircle, AlertCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { socialProfiles, type SocialPlatformKey } from '@/lib/social';
+import { storeHref } from '@/lib/store-link';
 import { ReportStoreModal } from './ReportStoreModal';
 
 /**
@@ -48,7 +50,75 @@ interface VendorSidebarModalProps {
   vendor: ApiBusinessPublic;
   collections?: ApiCollection[];
   onShowReviews?: () => void;
+  /** Filter the store to a collection ('All' for everything) and close. */
+  onSelectCollection?: (id: string) => void;
   isLightTheme?: boolean;
+}
+
+/**
+ * The rules every store on Qlozet follows. Vendors don't write their own
+ * policies, so these are the platform's, with the numbers read from the
+ * admin's platform settings (the same ones the backend enforces).
+ */
+interface PlatformRules {
+  returnDays: number;
+  latePerDay: number;
+  lateMax: number;
+  abandonDays: number;
+  cancelFee: number;
+}
+let rulesCache: Promise<PlatformRules> | null = null;
+const DEFAULT_RULES: PlatformRules = { returnDays: 7, latePerDay: 5, lateMax: 25, abandonDays: 7, cancelFee: 30 };
+function loadRules(): Promise<PlatformRules> {
+  if (!rulesCache) {
+    rulesCache = api
+      .get('/users/platform-settings')
+      .then((res) => {
+        const b = res.data?.data ?? res.data ?? {};
+        const num = (v: unknown, d: number) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : d);
+        return {
+          returnDays: num(b.return_window_days, DEFAULT_RULES.returnDays),
+          latePerDay: num(b.late_penalty_percent_per_day, DEFAULT_RULES.latePerDay),
+          lateMax: num(b.late_penalty_max_percent, DEFAULT_RULES.lateMax),
+          abandonDays: num(b.abandon_after_days, DEFAULT_RULES.abandonDays),
+          cancelFee: num(b.custom_cancellation_fee_percent, DEFAULT_RULES.cancelFee),
+        };
+      })
+      .catch(() => {
+        rulesCache = null;
+        return DEFAULT_RULES;
+      });
+  }
+  return rulesCache;
+}
+
+type PolicyKey = 'refund' | 'shipping';
+
+function policyText(key: PolicyKey, r: PlatformRules, store: string): { title: string; paragraphs: string[] } {
+  if (key === 'refund') {
+    return {
+      title: 'Refund policy',
+      paragraphs: [
+        `Ready-to-wear pieces from ${store} can be returned within ${r.returnDays} days of delivery. Start a return from the order in your account.`,
+        "Pieces made to your measurements, and bespoke orders, can't be returned. If something is wrong with one, report a problem on the order and we will look into it with the store.",
+        'Refunds go to your Qlozet wallet, ready to spend straight away.',
+        r.cancelFee > 0
+          ? `A made-to-order piece is free to cancel until ${store} confirms it. After that, cancelling costs ${r.cancelFee}% of its price, shown before you pay.`
+          : `A made-to-order piece can be cancelled for free.`,
+      ],
+    };
+  }
+  return {
+    title: 'Shipping policy',
+    paragraphs: [
+      `${store} ships from their own address. At checkout you choose the courier and see the price and arrival dates before you pay.`,
+      'Every order shows when it should ship. You get updates as the courier collects it, while it is on its way, and when it is delivered.',
+      `If an order ships late, ${r.latePerDay}% of the items' price is credited to your wallet for each day late, up to ${r.lateMax}%. You don't need to ask.`,
+      ...(r.abandonDays > 0
+        ? [`If an order still hasn't shipped ${r.abandonDays} days after its date, it is cancelled and you are refunded in full.`]
+        : []),
+    ],
+  };
 }
 
 function reviewDate(id?: string): string {
@@ -63,7 +133,7 @@ function reviewDate(id?: string): string {
   return new Date(secs * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 }
 
-export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], onShowReviews, isLightTheme = false }: VendorSidebarModalProps) {
+export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], onShowReviews, onSelectCollection, isLightTheme = false }: VendorSidebarModalProps) {
   const vendorName = vendor.business_name;
   const vendorLogo = vendor.business_logo_url;
 
@@ -74,6 +144,42 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
   const [latestReview, setLatestReview] = useState<any | null>(null);
   const [loadedReviews, setLoadedReviews] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [policy, setPolicy] = useState<PolicyKey | null>(null);
+  const [rules, setRules] = useState<PlatformRules>(DEFAULT_RULES);
+
+  useEffect(() => {
+    if (!policy) return;
+    let live = true;
+    loadRules().then((r) => live && setRules(r));
+    return () => {
+      live = false;
+    };
+  }, [policy]);
+
+  // Back to the main view whenever the panel closes (adjusted during render,
+  // not in an effect, so there is no extra render with the stale view).
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (!isOpen) setPolicy(null);
+  }
+
+  const shareStore = async () => {
+    const url = `${window.location.origin}${storeHref(vendor)}`;
+    const title = `${vendor.business_name} on Qlozet`;
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({ title, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success('Store link copied');
+    } catch (err) {
+      // Closing the share sheet is not an error worth telling anyone about.
+      if ((err as { name?: string })?.name === 'AbortError') return;
+      toast.error('Could not share the link. Copy it from the address bar instead.');
+    }
+  };
 
   const vendorRating = liveAvg ?? vendor.average_rating ?? 0;
   const vendorReviewCount = liveTotal ?? vendor.total_ratings ?? 0;
@@ -120,13 +226,28 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
         <button onClick={onClose} className="w-10 h-10 flex items-center justify-center transition-colors" style={{ borderRadius: '9999px', backgroundColor: sSubtle, color: sText }}>
           <X size={20} />
         </button>
-        <button className="w-10 h-10 flex items-center justify-center transition-colors" style={{ borderRadius: '9999px', backgroundColor: sSubtle, color: sText }}>
+        <button type="button" onClick={shareStore} aria-label={`Share ${vendorName}`} className="w-10 h-10 flex items-center justify-center transition-colors" style={{ borderRadius: '9999px', backgroundColor: sSubtle, color: sText }}>
           <Share size={20} />
         </button>
       </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto hide-scrollbar" style={{ padding: '0 24px 24px' }}>
+        {policy ? (() => {
+          const p = policyText(policy, rules, vendorName);
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <button type="button" onClick={() => setPolicy(null)} className="flex items-center gap-1 text-sm font-bold w-fit" style={{ color: sText }}>
+                <ChevronLeft size={16} /> Back
+              </button>
+              <h3 style={{ color: sText, fontSize: '22px', fontWeight: 700 }}>{p.title}</h3>
+              {p.paragraphs.map((t) => (
+                <p key={t} style={{ color: sMuted, fontSize: '14px', lineHeight: 1.6 }}>{t}</p>
+              ))}
+              <p style={{ color: sMuted, fontSize: '12px', lineHeight: 1.6 }}>These are Qlozet&apos;s rules, the same for every store.</p>
+            </div>
+          );
+        })() : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Vendor Info Header */}
           <div className="flex items-center gap-4">
@@ -145,14 +266,14 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
 
           {/* Collections Block */}
           <div style={{ backgroundColor: sSubtle, borderRadius: '24px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <button className="flex items-center w-full text-left group" style={{ gap: '12px' }}>
+            <button type="button" onClick={() => onSelectCollection?.('All')} className="flex items-center w-full text-left group" style={{ gap: '12px' }}>
               <div className="flex items-center justify-center overflow-hidden bg-white" style={{ width: '32px', height: '32px', borderRadius: '9999px' }}>
                 <Image src={coverImage} alt="Shop all" width={32} height={32} className="object-cover" />
               </div>
               <span style={{ color: sText, fontWeight: 700 }}>Shop all</span>
             </button>
             {collections.slice(0, 3).map((col) => (
-              <button key={col._id} className="flex items-center gap-3 w-full text-left group">
+              <button type="button" key={col._id} onClick={() => onSelectCollection?.(col._id)} className="flex items-center gap-3 w-full text-left group">
                 <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs" style={{ backgroundColor: sSubtle, color: sText }}>
                   {(col.title || col.name || '?')[0]}
                 </div>
@@ -215,15 +336,15 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
           <div style={{ backgroundColor: sSubtle, borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h3 style={{ color: sText, fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Policies</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <button className="w-full flex items-center justify-between text-sm" style={{ color: sText }}>
+              <button type="button" onClick={() => window.open('https://www.qlozet.app/privacy', '_blank', 'noopener')} className="w-full flex items-center justify-between text-sm" style={{ color: sText }}>
                 <span>Privacy policy</span>
                 <Info size={16} />
               </button>
-              <button className="w-full flex items-center justify-between text-sm" style={{ color: sText }}>
+              <button type="button" onClick={() => setPolicy('refund')} className="w-full flex items-center justify-between text-sm" style={{ color: sText }}>
                 <span>Refund policy</span>
                 <DollarSign size={16} />
               </button>
-              <button className="w-full flex items-center justify-between text-sm" style={{ color: sText }}>
+              <button type="button" onClick={() => setPolicy('shipping')} className="w-full flex items-center justify-between text-sm" style={{ color: sText }}>
                 <span>Shipping policy</span>
                 <Calendar size={16} />
               </button>
@@ -295,6 +416,7 @@ export function VendorSidebarModal({ isOpen, onClose, vendor, collections = [], 
             businessName={vendorName}
           />
         </div>
+        )}
       </div>
     </>
   );

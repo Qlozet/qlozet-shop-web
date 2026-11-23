@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronRight, Store } from 'lucide-react';
 import { GenderToggle } from '@/components/GenderToggle';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -333,6 +334,22 @@ export default function DiscoverPage() {
           <DealCarousel title="Vendor Deals" vendors={allVendors} allProducts={allProducts} />
         </>
       )}
+
+      {/* Every store, A to Z */}
+      <Link
+        href="/stores"
+        className="flex items-center transition-colors hover:bg-[var(--bg-surface-elevated)]"
+        style={{ gap: '14px', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--border-glass)', textDecoration: 'none' }}
+      >
+        <Store size={22} color="var(--text-primary)" />
+        <span className="flex-1 flex flex-col" style={{ gap: '2px' }}>
+          <span className="font-display" style={{ fontSize: '12px', fontWeight: 900, letterSpacing: '0.04em', color: 'var(--text-primary)' }}>
+            SEE ALL SHOPS
+          </span>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Every store on Qlozet, A to Z</span>
+        </span>
+        <ChevronRight size={20} color="var(--text-primary)" />
+      </Link>
 
     </div>
   );

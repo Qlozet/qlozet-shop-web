@@ -25,24 +25,14 @@ import { missingMeasurementsMessage } from '@/lib/garment-measurements';
 import { openPaystackModal } from '@/lib/paystack';
 import type { CheckoutPreviewResponse } from '@/lib/api-types';
 import {
-  ChevronUp,
-  ChevronDown,
   Info,
   CreditCard,
   AlertCircle,
-  CheckCircle2,
   Truck,
   Wallet,
   Check,
   X,
 } from 'lucide-react';
-
-type PromoTab = 'promo' | 'voucher' | 'rewards';
-
-// Promo/voucher UI is hidden until codes are validated server-side. The old
-// flow checked a hardcoded code client-side and granted a flat discount to
-// anyone who found it. Flip to true once a real promo endpoint exists.
-const SHOW_PROMO = false;
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -51,13 +41,6 @@ export default function CheckoutPage() {
   // when enabled; otherwise the hook falls back to a ₦/Paystack charge.
   const { fmt: fmtMoney, isConverted, currency } = useCurrency();
   const checkout = useCheckout();
-
-  // Promo section
-  const [showPromo, setShowPromo] = useState(true);
-  const [promoTab, setPromoTab] = useState<PromoTab>('promo');
-  const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [promoError, setPromoError] = useState('');
 
   // Delivery address
   const [deliveryName, setDeliveryName] = useState(user?.name || 'Guest User');
@@ -247,9 +230,8 @@ export default function CheckoutPage() {
   // subtotal matches what createOrder will actually charge (the checkout preview
   // could be stale after a re-configuration).
   const subtotal = cart.reduce((acc, item) => acc + effectivePrice(item) * item.quantity, 0);
-  const discount = promoApplied ? Math.round(subtotal * 0.15) : 0;
   const shipping = checkout.totalShipping;
-  const total = subtotal - discount + shipping;
+  const total = subtotal + shipping;
 
   // Whole naira: the wallet and Paystack both work in ₦. Unknown until the
   // balance has loaded, so the option is never disabled on a guess.
@@ -303,15 +285,6 @@ export default function CheckoutPage() {
     (acc, item) => acc + (breakdowns[cartLineId(item)]?.discount ?? 0) * item.quantity,
     0,
   );
-
-  const handleApplyPromo = () => {
-    setPromoError('');
-    if (promoCode.toUpperCase() === '2773672') {
-      setPromoApplied(true);
-    } else {
-      setPromoError('Invalid promo code');
-    }
-  };
 
   const handleBuyNow = async (override?: 'wallet') => {
     const selected = override ?? chosenMethod;
@@ -515,111 +488,6 @@ export default function CheckoutPage() {
 
         {/* ══════ LEFT COLUMN ══════ */}
         <div className="flex-1 min-w-0 flex flex-col gap-5">
-
-          {/* ── PROMO, VOUCHERS OR REWARD ─────────────────────── */}
-          {/* Hidden until promo codes are validated server-side — the previous
-              client-side check granted a flat discount to anyone with the code. */}
-          {SHOW_PROMO && (
-          <div style={cardStyle}>
-            <button
-              onClick={() => setShowPromo(!showPromo)}
-              className="w-full flex items-center justify-between"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              <h3 style={sectionTitle}>Promo, Vouchers or Reward</h3>
-              {showPromo ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
-            </button>
-
-            {showPromo && (
-              <div className="animate-fade-in" style={{ marginTop: '16px' }}>
-                {/* Tabs */}
-                <div className="flex gap-0" style={{ marginBottom: '16px' }}>
-                  {(['promo', 'voucher', 'rewards'] as PromoTab[]).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setPromoTab(tab)}
-                      className="transition-colors"
-                      style={{
-                        padding: '8px 18px',
-                        fontSize: '10px',
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        border: '1px solid var(--border-glass)',
-                        borderRight: tab !== 'rewards' ? 'none' : '1px solid var(--border-glass)',
-                        background: promoTab === tab ? 'var(--text-primary)' : 'var(--bg-base)',
-                        color: promoTab === tab ? 'var(--bg-base)' : 'var(--text-primary)',
-                        cursor: 'pointer',
-                        borderRadius: tab === 'promo' ? '8px 0 0 8px' : tab === 'rewards' ? '0 8px 8px 0' : '0',
-                      }}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Input + Button */}
-                <div className="flex gap-2" style={{ marginBottom: '12px' }}>
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    placeholder="Enter code"
-                    className="flex-1"
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-glass)',
-                      fontSize: '13px',
-                      outline: 'none',
-                      background: 'var(--bg-surface-elevated)',
-                      color: 'var(--text-primary)',
-                    }}
-                  />
-                  <button
-                    onClick={handleApplyPromo}
-                    type="button"
-                    className="transition-all hover:bg-[var(--bg-surface-elevated)]"
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-glass)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      background: 'var(--bg-base)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Apply
-                  </button>
-                </div>
-
-                {promoApplied && (
-                  <p style={{ fontSize: '12px', color: '#2D6A4F', fontWeight: 600, marginBottom: '8px' }}>
-                    ✓ 15% discount applied!
-                  </p>
-                )}
-                {promoError && (
-                  <p style={{ fontSize: '12px', color: '#E8430A', fontWeight: 600, marginBottom: '8px' }}>
-                    {promoError}
-                  </p>
-                )}
-
-                {/* Need to Know */}
-                <h4 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-                  Need to Know
-                </h4>
-                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
-                  <li>You can only use one discount/promo code per order. This applies to our free-delivery codes, too.</li>
-                  <li>Discount/promo codes cannot be used when buying gift vouchers.</li>
-                </ul>
-              </div>
-            )}
-          </div>
-          )}
 
           {/* ── DELIVERY ADDRESS ───────────────────────────────── */}
           <div style={cardStyle}>
@@ -1067,14 +935,6 @@ export default function CheckoutPage() {
                         {fmtMoney(effectivePrice(item) * item.quantity)}
                       </span>
                     </div>
-                    {/* Discount tags */}
-                    {promoApplied && (
-                      <div className="flex gap-1 mt-1.5">
-                        <span style={{ fontSize: '8px', fontWeight: 800, color: '#FFF', background: '#E8430A', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
-                          15% off
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
@@ -1092,12 +952,6 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-between">
                   <span style={{ fontSize: '12px', color: '#2D6A4F' }}>Item savings</span>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-{fmtMoney(itemSavings)}</span>
-                </div>
-              )}
-              {discount > 0 && (
-                <div className="flex items-center justify-between">
-                  <span style={{ fontSize: '12px', color: '#2D6A4F' }}>Discount</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#2D6A4F' }}>-{fmtMoney(discount)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
