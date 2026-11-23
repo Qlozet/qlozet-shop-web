@@ -297,6 +297,11 @@ export interface ApiBusinessPublic {
   total_products?: number;
   /** Takes made-to-measure (bespoke) requests; missing means yes. */
   accepts_bespoke?: boolean;
+  /**
+   * What the store says it sells: made_to_measure, ready_to_wear, fabric,
+   * accessories. Empty for stores that haven't answered yet.
+   */
+  offerings?: string[];
   createdAt: string;
 }
 
