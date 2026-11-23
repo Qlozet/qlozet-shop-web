@@ -362,7 +362,7 @@ export default function HomePage() {
             className="relative block text-left rounded-[20px] lg:rounded-[30px] overflow-hidden group cursor-pointer w-full h-[300px] lg:h-[600px] shadow-lg hover:shadow-2xl transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             <Image
-              src="/image/seun.png"
+              src="/image/home-men.webp"
               alt="Men Collection"
               fill
               style={{ objectFit: 'cover', objectPosition: 'top center' }}
@@ -392,7 +392,7 @@ export default function HomePage() {
             className="relative block text-left rounded-[20px] lg:rounded-[30px] overflow-hidden group cursor-pointer w-full h-[300px] lg:h-[600px] shadow-lg hover:shadow-2xl transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             <Image
-              src="/image/slim-girl-1.jpg"
+              src="/image/home-women.webp"
               alt="Women Collection"
               fill
               style={{ objectFit: 'cover', objectPosition: 'top center' }}
