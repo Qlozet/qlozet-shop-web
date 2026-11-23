@@ -14,6 +14,7 @@ import { VendorShowcaseCard } from '@/components/VendorShowcaseCard';
 import { FabricToOutfitBanner } from '@/components/FabricToOutfitBanner';
 import { ShopByCategory } from '@/components/ShopByCategory';
 import { FollowingBar } from '@/components/FollowingBar';
+import { YourTailors } from '@/components/YourTailors';
 import { ForYouSection } from '@/components/ForYouSection';
 import { useProducts } from '@/hooks/useProducts';
 import {
@@ -500,6 +501,9 @@ export default function HomePage() {
       {user && followedVendors.length > 0 && (
         <FollowingBar followedVendorIds={followedVendors} vendors={allVendors} />
       )}
+
+      {/* Your tailors — stores this shopper has bought from, with Order again */}
+      <YourTailors enabled={!!user} />
 
       {/* Home hero carousel */}
       <HeroCarousel slides={heroSlides} />

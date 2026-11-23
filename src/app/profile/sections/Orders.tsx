@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { cardStyle, statusColors } from '../styles';
 import { useCustomerOrders, fetchCustomerOrder } from '../useCustomerOrders';
 import { consumeDeepLink } from '@/lib/deep-link';
+import { useOrderAgain } from '@/hooks/useOrderAgain';
 import type { ActiveSection, Order, OrderStatus, ProductType } from '../types';
 import { WriteReviewModal } from '@/components/WriteReviewModal';
 import { ReportProblemModal } from '@/components/ReportProblemModal';
@@ -385,6 +386,15 @@ function PreshipCard({ order, refetch }: { order: Order; refetch: () => void }) 
   );
 }
 
+/** A paid order with at least one listing (bespoke designs are made, not reordered). */
+function canOrderAgain(order: Order): boolean {
+  return (
+    order.paymentStatus === 'paid' &&
+    order.type !== 'bespoke' &&
+    order.items.some((i) => !!i.productId && i.productType !== 'bespoke')
+  );
+}
+
 // ─── Fit feedback (made to fit, post-delivery) ───────────────
 // Bespoke orders and orders with a custom line. One rating per order; it
 // aggregates onto the vendor's fit track record. When it wasn't perfect the
@@ -603,6 +613,7 @@ export default function OrdersSection({
   const [cancellingRef, setCancellingRef] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<{ orderReference: string; vendorName?: string; canSend: boolean } | null>(null);
   const { orders, loading, loadingMore, error, totalItems, hasMore, loadMore, refetch } = useCustomerOrders();
+  const { orderAgain, busy: reorderBusy } = useOrderAgain();
 
   // A link that opens one order (a notification): ?tab=orders&order=REF,
   // optionally &view=track for its delivery timeline or &view=chat for the
@@ -634,6 +645,12 @@ export default function OrdersSection({
         return;
       }
       setActiveSection(linkedView === 'track' ? 'track-order' : 'order-detail');
+      // "How did it fit?": bring its card into view once the order is open.
+      if (linkedView === 'fit') {
+        setTimeout(() => {
+          document.getElementById('fit-feedback')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 350);
+      }
     });
   }, [linkedRef, linkedView, linkNonce, loading, orders, setSelectedOrder, setSelectedItemIdx, setActiveSection]);
   // Return requests — powers the item-level return-status banner.
@@ -931,6 +948,15 @@ export default function OrdersSection({
                       <span style={{ fontSize: '10px', color: FAINT }}>Vendor</span>
                     </div>
                   </div>
+                  {!order.bespoke && item.productId && order.paymentStatus === 'paid' && (
+                    <button
+                      onClick={() => orderAgain(order.orderNumber, item.itemId)}
+                      disabled={reorderBusy === `${order.orderNumber}:${item.itemId ?? ''}`}
+                      className="flex items-center transition-all hover:opacity-80 flex-shrink-0 disabled:opacity-60"
+                      style={{ gap: '6px', padding: '7px 14px', borderRadius: '100px', border: '1px solid var(--border-glass)', background: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: INK }}>
+                      <RotateCcw size={13} /> Order again
+                    </button>
+                  )}
                   {order.bespoke && (
                     <button
                       onClick={() => setChatFor({ orderReference: order.orderNumber, vendorName: item.vendor, canSend: chatCanSend(order) })}
@@ -1111,7 +1137,9 @@ export default function OrdersSection({
 
         {/* Bespoke: post-delivery fit rating (once per order). */}
         {(order.madeToFit || isBespokeOrder) && order.status === 'Delivered' && (
-          <FitFeedbackCard key={`fit-${order.orderNumber}`} order={order} refetch={refetch} />
+          <div id="fit-feedback" style={{ scrollMarginTop: '90px' }}>
+            <FitFeedbackCard key={`fit-${order.orderNumber}`} order={order} refetch={refetch} />
+          </div>
         )}
 
         {/* Items */}
@@ -1136,6 +1164,19 @@ export default function OrdersSection({
             </div>
           </button>
         ))}
+
+        {/* Order again: every listing on this order back in the cart, as it was. */}
+        {canOrderAgain(order) && (
+          <button
+            onClick={() => orderAgain(order.orderNumber)}
+            disabled={reorderBusy === `${order.orderNumber}:`}
+            className="w-full flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ gap: '8px', padding: '12px', borderRadius: '12px', background: 'var(--brand-fill)', color: 'var(--brand-fill-text)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+          >
+            {reorderBusy === `${order.orderNumber}:` ? <Loader2 size={15} className="animate-spin" /> : <RotateCcw size={15} />}
+            Order again
+          </button>
+        )}
 
         {/* Payment */}
         <Section title="Payment" right={<span style={{ fontSize: '10px', fontWeight: 800, color: pay.text, background: pay.bg, padding: '3px 10px', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{pay.label}</span>}>
@@ -1278,6 +1319,11 @@ export default function OrdersSection({
                 <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
                   <StatusPill status={order.status} />
                   <span style={{ fontSize: '11px', color: MUTE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.orderNumber} · {order.date}</span>
+                  {order.madeToFit && order.status === 'Delivered' && !order.fitFeedback && (
+                    <span className="flex-shrink-0" style={{ padding: '2px 8px', borderRadius: '100px', border: '1px solid var(--border-glass)', color: INK, fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      How did it fit?
+                    </span>
+                  )}
                   {(unreadByOrder[order.orderNumber] ?? 0) > 0 && (
                     <span
                       title={`${unreadByOrder[order.orderNumber]} unread message${unreadByOrder[order.orderNumber] === 1 ? '' : 's'}`}

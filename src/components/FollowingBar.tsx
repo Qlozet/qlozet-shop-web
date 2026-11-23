@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { storeHref } from '@/lib/store-link';
 import { ChevronRight } from 'lucide-react';
 import type { ApiBusinessPublic } from '@/lib/api-types';
+import { useFollowedStores } from '@/hooks/useFollowedStores';
 
 interface FollowingBarProps {
   followedVendorIds: string[];
@@ -13,9 +14,9 @@ interface FollowingBarProps {
 }
 
 export function FollowingBar({ followedVendorIds, vendors }: FollowingBarProps) {
-  const followedVendors = vendors.filter((v) =>
-    followedVendorIds.includes(v._id)
-  );
+  // The account's own list, so a followed store outside the first page of
+  // public stores still shows.
+  const { stores: followedVendors } = useFollowedStores(followedVendorIds, true, vendors);
 
   // Don't render if no followed vendors
   if (followedVendors.length === 0) return null;
