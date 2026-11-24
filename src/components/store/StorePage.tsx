@@ -84,17 +84,6 @@ export default function StorePage({ storeKey }: { storeKey: string }) {
 
   // ── Fetch live data ─────────────────────────────────────────
   const { vendor, loading: vendorLoading } = useVendor(storeKey);
-  // Labels under the store name, in a fixed order (backend offerings.ts).
-  const storeSells = (
-    [
-      ['made_to_measure', 'Made to measure'],
-      ['ready_to_wear', 'Ready to wear'],
-      ['fabric', 'Fabric'],
-      ['accessories', 'Accessories'],
-    ] as const
-  )
-    .filter(([key]) => vendor?.offerings?.includes(key))
-    .map(([, label]) => label);
   // Everything else is fetched by the store id: known straight away on an
   // id link, once the store has loaded on an address link.
   const vendorId = vendor?._id ?? (/^[0-9a-f]{24}$/i.test(storeKey) ? storeKey : undefined);
@@ -406,17 +395,6 @@ export default function StorePage({ storeKey }: { storeKey: string }) {
               </>
             )}
           </div>
-
-          {/* What the store sells, as the vendor told us. Lets a shopper see
-              straight away whether they can ask this store for a custom piece. */}
-          {storeSells.length > 0 && (
-            <p
-              className="text-xs font-semibold"
-              style={{ marginTop: '10px', letterSpacing: '0.04em', color: isLightTheme ? 'rgba(26,26,26,0.75)' : 'rgba(255,255,255,0.8)' }}
-            >
-              {storeSells.join(' · ')}
-            </p>
-          )}
 
           {/* Social handles — credibility, deliberately placed beside the
               rating rather than near the order controls. In this market a
