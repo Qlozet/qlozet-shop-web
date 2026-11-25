@@ -19,6 +19,9 @@ export default function WishlistPage() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed load is not an empty wishlist: say so and offer a retry.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Fetch wishlist products from backend
   useEffect(() => {
@@ -34,6 +37,7 @@ export default function WishlistPage() {
     }
 
     setLoading(true);
+    setLoadFailed(false);
     api.get('/users/wishlist')
       .then((res) => {
         const data = res.data;
@@ -51,11 +55,11 @@ export default function WishlistPage() {
         setProducts(unique);
       })
       .catch(() => {
-        // Fallback: clear products on error
         setProducts([]);
+        setLoadFailed(true);
       })
       .finally(() => setLoading(false));
-  }, [user, wishlist.length]); // re-fetch when wishlist changes
+  }, [user, wishlist.length, retryKey]); // re-fetch when wishlist changes
 
   if (!user) {
     return (
@@ -111,8 +115,9 @@ export default function WishlistPage() {
 
   // Sort products
   const sortedProducts = [...wishlistedProducts].sort((a, b) => {
-    if (sortBy === 'priceAsc') return a.base_price - b.base_price;
-    if (sortBy === 'priceDesc') return b.base_price - a.base_price;
+    // The price the card shows (discounted when there is one), not base_price.
+    if (sortBy === 'priceAsc') return getProductPrice(a) - getProductPrice(b);
+    if (sortBy === 'priceDesc') return getProductPrice(b) - getProductPrice(a);
     if (sortBy === 'name') return getProductName(a).localeCompare(getProductName(b));
     // 'recent' — reverse order (last added first)
     return wishlist.indexOf(b._id) - wishlist.indexOf(a._id);
@@ -216,6 +221,23 @@ export default function WishlistPage() {
               </div>
             </div>
           ))}
+        </div>
+      ) : loadFailed ? (
+        <div className="flex flex-col items-center justify-center text-center" style={{ padding: '80px 24px', gap: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+            Couldn&apos;t load your wishlist
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', maxWidth: '300px', lineHeight: 1.6 }}>
+            Check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((k) => k + 1)}
+            className="btn-primary"
+            style={{ marginTop: '8px', padding: '12px 32px', fontSize: '13px', borderRadius: '100px' }}
+          >
+            Try again
+          </button>
         </div>
       ) : sortedProducts.length > 0 ? (
         /* ─── Product Grid ───────────────────────────────────────── */
