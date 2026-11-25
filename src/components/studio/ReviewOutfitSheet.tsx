@@ -28,6 +28,8 @@ interface Props {
   garmentKind: GarmentKind | null;
   /** "19 – 22 Sep" from the page's delivery estimate. */
   deliveryLabel?: string | null;
+  /** The main button's words: "Update item" when editing a cart line. */
+  confirmLabel?: string;
 }
 
 // One look at the whole outfit before it goes in the cart: what was chosen,
@@ -47,6 +49,7 @@ export function ReviewOutfitSheet({
   measurementSetName,
   garmentKind,
   deliveryLabel,
+  confirmLabel = 'Add to cart',
 }: Props) {
   const { user } = useApp();
   const { profiles, isLoading } = useMeasurements();
@@ -181,7 +184,7 @@ export function ReviewOutfitSheet({
             style={{ padding: '15px', borderRadius: '14px', border: 'none', background: '#064E3B', color: '#FFFFFF', fontSize: '13px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', gap: '8px' }}
           >
             <ShoppingCart size={15} />
-            Add to cart
+            {confirmLabel}
           </button>
           <button
             type="button"
