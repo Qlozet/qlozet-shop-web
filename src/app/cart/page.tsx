@@ -24,6 +24,10 @@ import {
   ShoppingBag,
   Heart,
   Pen,
+  Minus,
+  Plus,
+  Loader2,
+  ArrowRight,
 } from 'lucide-react';
 
 // "Qlozet Premiere" subscription is hidden until it's built (its CTA was a
@@ -31,7 +35,7 @@ import {
 const SHOW_PREMIERE = false;
 
 export default function CartPage() {
-  const { cart, removeFromCart, toggleWishlist, wishlist, user } = useApp();
+  const { cart, removeFromCart, updateQuantity, toggleWishlist, wishlist, user } = useApp();
   const { fmt: fmtMoney } = useCurrency();
   const router = useRouter();
   const { fetchPreview, loading: previewLoading, error: previewError } = useCheckout();
@@ -42,6 +46,15 @@ export default function CartPage() {
   const [showPremiere, setShowPremiere] = useState(false);
   const [showLooking, setShowLooking] = useState(false);
   const [showSuggested, setShowSuggested] = useState(false);
+  // Lines whose price breakdown is open (closed by default).
+  const [openLadders, setOpenLadders] = useState<Set<string>>(new Set());
+  const toggleLadder = (lineId: string) =>
+    setOpenLadders((prev) => {
+      const next = new Set(prev);
+      if (next.has(lineId)) next.delete(lineId);
+      else next.add(lineId);
+      return next;
+    });
 
   // Per-item pricing breakdown (authoritative, from the server) for the §8 ladder.
   const [breakdowns, setBreakdowns] = useState<Record<string, any>>({});
@@ -144,6 +157,8 @@ export default function CartPage() {
 
   // Computations
   const subtotal = cart.reduce((acc, item) => acc + effectivePrice(item) * item.quantity, 0);
+  const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const itemsLabel = `${itemCount} item${itemCount === 1 ? '' : 's'}`;
 
   const { products: allProducts } = useProducts({ size: 20 });
 
@@ -178,11 +193,11 @@ export default function CartPage() {
             <ShoppingBag size={32} color="var(--brand-brown)" strokeWidth={1.5} />
           </div>
           <div className="flex flex-col" style={{ gap: '8px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Sign In Required
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+              Sign in to see your cart
             </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '400px' }}>
-              You must sign in first before being able to view or manage your shopping cart.
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '320px' }}>
+              Your cart is saved to your account, so it follows you to any device.
             </p>
           </div>
           <Link
@@ -237,7 +252,7 @@ export default function CartPage() {
             Your cart is empty
           </h3>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', maxWidth: '300px', lineHeight: 1.6 }}>
-            Browse our collection and add items to your cart.
+            Browse the collection and add the pieces you love.
           </p>
           <Link href="/products" className="btn-primary" style={{ marginTop: '8px', padding: '12px 32px', fontSize: '13px', borderRadius: '100px' }}>
             Explore Products
@@ -258,6 +273,9 @@ export default function CartPage() {
         style={{ fontSize: '22px' }}
       >
         My Cart
+        <span style={{ marginLeft: '10px', fontSize: '13px', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-muted)', textTransform: 'none', fontFamily: 'var(--font-body, inherit)' }}>
+          {itemsLabel}
+        </span>
       </h1>
 
       {/* ─── Two-Column Layout ───────────────────────────────────── */}
@@ -283,22 +301,6 @@ export default function CartPage() {
                       fill
                       style={{ objectFit: 'cover' }}
                     />
-                    {/* Item number badge */}
-                    <span
-                      className="absolute flex items-center justify-center"
-                      style={{
-                        top: '6px', left: '6px',
-                        width: '20px', height: '20px',
-                        borderRadius: '50%',
-                        background: 'var(--brand-fill)',
-                        color: 'var(--brand-fill-text)',
-                        fontSize: '10px',
-                        fontWeight: 800,
-                        lineHeight: 1,
-                      }}
-                    >
-                      {item.quantity}
-                    </span>
                   </Link>
 
                   {/* Product Info */}
@@ -312,9 +314,12 @@ export default function CartPage() {
                           toast('Removed from cart', { description: item.title });
                         }}
                         aria-label={`Remove ${item.title} from cart`}
-                        className="text-[var(--text-muted)] hover:text-red-500 transition-colors flex-shrink-0 p-1"
+                        title="Remove"
+                        className="flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:bg-[var(--bg-surface-elevated)] transition-colors flex-shrink-0"
+                        // Inline: the shop's global reset beats Tailwind padding/margin.
+                        style={{ width: '36px', height: '36px', margin: '-8px -8px 0 0', borderRadius: '10px', background: 'none', border: 'none', cursor: 'pointer' }}
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={17} />
                       </button>
                     </div>
 
@@ -329,9 +334,31 @@ export default function CartPage() {
                       )}
                     </div>
 
-                    {/* Pricing breakdown (§8) */}
+                    {/* Pricing breakdown (§8), folded behind a toggle */}
                     {breakdowns[cartLineId(item)] && (
-                      <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', fontSize: '11px' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleLadder(cartLineId(item))}
+                        aria-expanded={openLadders.has(cartLineId(item))}
+                        className="flex items-center gap-1 self-start hover:underline"
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                          fontSize: '12px', fontWeight: 600,
+                          color: breakdowns[cartLineId(item)].discount > 0 ? '#059669' : 'var(--text-secondary)',
+                        }}
+                      >
+                        {breakdowns[cartLineId(item)].discount > 0
+                          ? `Price breakdown · ${fmtMoney(breakdowns[cartLineId(item)].discount)} off`
+                          : 'Price breakdown'}
+                        <ChevronDown
+                          size={14}
+                          className="transition-transform duration-200"
+                          style={{ transform: openLadders.has(cartLineId(item)) ? 'rotate(180deg)' : 'none' }}
+                        />
+                      </button>
+                    )}
+                    {breakdowns[cartLineId(item)] && openLadders.has(cartLineId(item)) && (
+                      <div className="animate-fade-in" style={{ marginTop: '2px', padding: '8px 10px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-glass)', fontSize: '11px' }}>
                         {(
                           [
                             ['Base', breakdowns[cartLineId(item)].base],
@@ -407,20 +434,57 @@ export default function CartPage() {
                     {item.kind === 'clothing' && (
                       <div className="flex items-center gap-1.5" style={{ marginTop: '2px' }}>
                         <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#E8430A' }} />
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#E8430A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          Ready edit for customization
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#E8430A' }}>
+                          Can be customised
                         </span>
                       </div>
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2" style={{ marginTop: '8px' }}>
+                    <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: '10px' }}>
+                      {/* Quantity; fabric's amount lives in its yards/pieces. */}
+                      {item.kind !== 'fabric' && (
+                        <div
+                          className="flex items-center"
+                          role="group"
+                          aria-label={`Quantity of ${item.title}`}
+                          style={{ height: '34px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(cartLineId(item), item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            aria-label="Decrease quantity"
+                            className="flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)] disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ width: '34px', height: '32px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px 0 0 8px', color: 'var(--text-primary)' }}
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span
+                            aria-live="polite"
+                            style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                          >
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(cartLineId(item), item.quantity + 1)}
+                            disabled={item.quantity >= 999}
+                            aria-label="Increase quantity"
+                            className="flex items-center justify-center transition-colors hover:bg-[var(--bg-surface-elevated)] disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ width: '34px', height: '32px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '0 8px 8px 0', color: 'var(--text-primary)' }}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      )}
                       <Link
                         href={`/products/${item.id}`}
                         className="flex items-center gap-1.5 transition-colors hover:bg-[var(--bg-surface-elevated)]"
                         style={{
-                          padding: '5px 14px',
-                          borderRadius: '6px',
+                          height: '34px',
+                          padding: '0 12px',
+                          borderRadius: '8px',
                           border: '1px solid var(--border-glass)',
                           fontSize: '10px',
                           fontWeight: 800,
@@ -434,11 +498,14 @@ export default function CartPage() {
                         Edit
                       </Link>
                       <button
+                        type="button"
                         onClick={() => toggleWishlist(item.id)}
+                        aria-label={wishlist.includes(item.id) ? `Remove ${item.title} from wishlist` : `Save ${item.title} to wishlist`}
+                        aria-pressed={wishlist.includes(item.id)}
                         className="flex items-center justify-center transition-all hover:opacity-90 active:scale-90"
                         style={{
-                          width: '30px',
-                          height: '30px',
+                          width: '34px',
+                          height: '34px',
                           borderRadius: '8px',
                           background: wishlist.includes(item.id) ? 'var(--brand-fill)' : 'none',
                           border: wishlist.includes(item.id) ? 'none' : '1px solid var(--border-glass)',
@@ -591,7 +658,7 @@ export default function CartPage() {
 
             {/* Sub-total */}
             <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Sub-total</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Sub-total ({itemsLabel})</span>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtMoney(subtotal)}</span>
             </div>
 
@@ -635,10 +702,13 @@ export default function CartPage() {
                 }
               }}
               disabled={previewLoading || cart.length === 0}
-              className="w-full flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98]"
+              className="w-full flex items-center transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
-                padding: '13px',
-                borderRadius: '10px',
+                height: '48px',
+                padding: '0 16px',
+                gap: '8px',
+                justifyContent: previewLoading ? 'center' : 'space-between',
+                borderRadius: '12px',
                 background: previewLoading ? '#999' : '#064E3B',
                 color: '#FFFFFF',
                 fontSize: '12px',
@@ -651,7 +721,20 @@ export default function CartPage() {
                 opacity: cart.length === 0 ? 0.5 : 1,
               }}
             >
-              {previewLoading ? 'Loading Shipping Rates…' : 'Check Out'}
+              {previewLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Getting delivery options
+                </>
+              ) : (
+                <>
+                  <span>Check Out</span>
+                  <span className="flex items-center" style={{ gap: '6px', fontSize: '14px', letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtMoney(subtotal)}
+                    <ArrowRight size={15} />
+                  </span>
+                </>
+              )}
             </button>
             {previewError && (
               <p style={{ fontSize: '11px', color: '#DC2626', textAlign: 'center', marginBottom: '10px' }}>
