@@ -479,7 +479,12 @@ export default function CartPage() {
                         </div>
                       )}
                       <Link
-                        href={`/products/${item.id}`}
+                        // Opens the product with this line's choices; saving
+                        // there changes this line instead of adding another.
+                        href={`/products/${item.id}?edit=${encodeURIComponent(cartLineId(item))}${
+                          item.applied_fabric_id ? `&fabric=${item.applied_fabric_id}` : ''
+                        }`}
+                        aria-label={`Edit ${item.title}`}
                         className="flex items-center gap-1.5 transition-colors hover:bg-[var(--bg-surface-elevated)]"
                         style={{
                           height: '34px',

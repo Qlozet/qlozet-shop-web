@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { storeHref } from '@/lib/store-link';
 import { productHref } from '@/lib/product-link';
-import { useApp } from '@/context/AppContext';
+import { useApp, cartLineId, type CartItem } from '@/context/AppContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { ProductCard } from '@/components/ProductCard';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -156,7 +156,7 @@ function sizeGuideAudience(product: unknown): string {
  */
 export default function ProductDetailsPage({ productKey }: { productKey: string }) {
   const router = useRouter();
-  const { wishlist, toggleWishlist, addToCart, addRecentlyViewed, user } = useApp();
+  const { wishlist, toggleWishlist, addToCart, replaceCartLine, cart, addRecentlyViewed, user } = useApp();
   const { fmt: fmtMoney } = useCurrency();
   const trackEvent = useTrackEvent();
 
@@ -168,6 +168,10 @@ export default function ProductDetailsPage({ productKey }: { productKey: string 
   // so it goes to /cart/add as appliedFabricId + appliedFabricYards.
   const searchParams = useSearchParams();
   const appliedFabricId = searchParams.get('fabric') || undefined;
+  // Opened from the cart's Edit: ?edit=<line key>. The page opens with that
+  // line's choices and its button saves over the line instead of adding one.
+  const editKey = searchParams.get('edit') || undefined;
+  const editingLine = editKey ? cart.find((i) => cartLineId(i) === editKey) : undefined;
   const [appliedFabricMinCut, setAppliedFabricMinCut] = useState<number>(1);
   const [appliedFabricYards, setAppliedFabricYards] = useState<number | undefined>(undefined);
   // Identity of the applied fabric, so the customer can see WHICH fabric they
@@ -616,6 +620,69 @@ export default function ProductDetailsPage({ productKey }: { productKey: string 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshotJson]);
 
+  // Editing a cart line: put its choices back once, after the defaults and
+  // any saved snapshot above, so the line's own choices win.
+  const editAppliedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!product || !editingLine || editingLine.id !== product._id) return;
+    const mark = `${product._id}:${editKey}`;
+    if (editAppliedFor.current === mark) return;
+    editAppliedFor.current = mark;
+    const sel = editingLine.selections ?? {};
+    if (editingLine.size) setSelectedSize(editingLine.size);
+    if (editingLine.color) setSelectedColor(editingLine.color);
+    if (editingLine.applied_fabric_yards) setAppliedFabricYards(editingLine.applied_fabric_yards);
+
+    if (product.kind === 'fabric') {
+      const fs = sel.fabric_selections?.[0];
+      if (fs && Number(fs.pieces) > 0) {
+        setFabricMode('piece');
+        setFabricPieces(Number(fs.pieces));
+      } else if (fs?.yardage) {
+        setFabricMode('yard');
+        setFabricYards(Number(fs.yardage));
+      }
+      return;
+    }
+
+    if (product.kind === 'clothing' && product.clothing?.type === 'customize') {
+      const clothing = product.clothing;
+      const slots: Record<string, (id: string | null) => void> = {
+        silhouette: customization.setSelectedSilhouette,
+        neckline: customization.setSelectedNeckline,
+        sleeve: customization.setSelectedSleeve,
+        collar: customization.setSelectedCollar,
+        skirt: customization.setSelectedSkirt,
+        trouser: customization.setSelectedTrouser,
+        full_body: customization.setSelectedFullBody,
+      };
+      // Clear first: a part the line left empty must not keep a default.
+      Object.values(slots).forEach((set) => set(null));
+      for (const { style_id } of sel.style_selections ?? []) {
+        const style = clothing.styles?.find((st) => st._id === style_id);
+        const part = stylePart(style);
+        if (part && slots[part]) slots[part](style_id);
+      }
+      const fabricId = sel.fabric_selections?.[0]?.fabric_id;
+      customization.setSelectedFabric(
+        fabricId && clothing.fabrics?.some((f: { _id?: string }) => f._id === fabricId) ? fabricId : null,
+      );
+      customization.setSelectedAccessories(
+        (sel.accessory_selections ?? []).map((a) => a.accessory_id).filter(Boolean) as string[],
+      );
+      for (const name of Object.keys(customization.selectedAddons)) {
+        customization.selectAddon(name, customization.selectedAddons[name]);
+      }
+      for (const a of sel.addon_selections ?? []) {
+        const addon = clothing.addons?.find((x) => x._id === a.addon_id);
+        const variant = addon?.variants?.find((v) => v._id === a.variant_id);
+        if (addon?.name && variant?.name) customization.selectAddon(addon.name, variant.name);
+      }
+      customization.setMeasurementSetName(editingLine.measurement_set ?? null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?._id, editingLine, editKey]);
+
   // Look up selected styles from API cache or hardcoded fallback
   const { all: apiStyles } = useStyleLibrary();
 
@@ -1054,7 +1121,7 @@ export default function ProductDetailsPage({ productKey }: { productKey: string 
     if (!product || !canAddToCart) return;
     const selections = buildSelections();
 
-    addToCart({
+    const item: Omit<CartItem, 'quantity'> = {
       id: product._id,
       title: productName,
       price: displayPrice,
@@ -1092,7 +1159,20 @@ export default function ProductDetailsPage({ productKey }: { productKey: string 
       ...(isCustomizeGarment && product.kind === 'clothing'
         ? { garment: garmentKindOf(product.clothing?.taxonomy) ?? undefined }
         : {}),
-    });
+    };
+
+    if (editingLine && editKey) {
+      replaceCartLine(editKey, item);
+      toast.success('Cart updated', {
+        description: [productName, selectedSize && `Size ${selectedSize}`, selectedColor]
+          .filter(Boolean)
+          .join(' · '),
+      });
+      router.push('/cart');
+      return;
+    }
+
+    addToCart(item);
 
     // Confirm the core action — without this the tap gave no visible signal.
     toast.success('Added to your cart', {
@@ -2383,8 +2463,16 @@ export default function ProductDetailsPage({ productKey }: { productKey: string 
                 }}
               >
                 <ShoppingCart size={15} />
-                {isPreview ? 'Preview only' : productOutOfStock || selectedVariantOut ? 'Sold out' : 'Add to Cart'}
+                {isPreview ? 'Preview only' : productOutOfStock || selectedVariantOut ? 'Sold out' : editingLine ? 'Update item' : 'Add to Cart'}
               </button>
+              {editingLine && (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5 }}>
+                  Editing an item in your cart.{' '}
+                  <Link href="/cart" style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'underline' }}>
+                    Back to cart
+                  </Link>
+                </p>
+              )}
               {isCustomizeGarment && <CancellationNotice />}
 
               {isFabric && !isPreview && (
@@ -2456,6 +2544,7 @@ export default function ProductDetailsPage({ productKey }: { productKey: string 
                 measurementSetName={customization.measurementSetName}
                 garmentKind={garmentKindOf(product.clothing?.taxonomy)}
                 deliveryLabel={deliveryEstimate?.label}
+                confirmLabel={editingLine ? 'Update item' : undefined}
               />
             )}
 

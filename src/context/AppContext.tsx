@@ -133,6 +133,11 @@ interface AppContextType {
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
+  /**
+   * The cart's Edit: swap one line's choices for new ones, keeping its
+   * quantity and place. If the new choices match another line, the two merge.
+   */
+  replaceCartLine: (lineId: string, item: Omit<CartItem, 'quantity'>) => void;
   clearCart: () => void;
   /** Show the account's cart again (after the server changed it, e.g. Order again). */
   reloadCart: () => Promise<void>;
@@ -712,6 +717,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const replaceCartLine = (lineId: string, newItem: Omit<CartItem, 'quantity'>) => {
+    const target = cartRef.current.find((i) => cartLineId(i) === lineId);
+    if (!target) {
+      addToCart(newItem);
+      return;
+    }
+    // The new identity comes from the new choices, not the old fixed key.
+    const fresh: Omit<CartItem, 'quantity'> = { ...newItem };
+    delete fresh.line_key;
+    delete fresh.line_id;
+    const newKey = cartLineId(fresh);
+    const keyed = { ...fresh, line_key: newKey };
+    const twin = cartRef.current.find((i) => i !== target && cartLineId(i) === newKey);
+    const updated = twin
+      ? cartRef.current
+          .filter((i) => i !== target)
+          .map((i) => (i === twin ? { ...i, quantity: i.quantity + target.quantity } : i))
+      : cartRef.current.map((i) =>
+          i === target ? { ...keyed, line_id: target.line_id, quantity: target.quantity } : i,
+        );
+    cartRef.current = updated;
+    setCart(updated);
+    writeLocal(updated);
+
+    if (isAuthenticated.current) {
+      const request = async () => {
+        let serverLineId = target.line_id;
+        if (!serverLineId) {
+          // Added a moment ago and not saved yet: find its server line by key.
+          const res = await api.get('/cart');
+          serverLineId = cartFromResponse(res.data).find((i) => cartLineId(i) === lineId)?.line_id;
+          if (!serverLineId) return null;
+        }
+        // Same body as an add, less the product and quantity the line keeps.
+        const body: Partial<ReturnType<typeof cartLinePayload>> = cartLinePayload(keyed, target.quantity);
+        delete body.productId;
+        delete body.quantity;
+        return api.put(`/cart/lines/${serverLineId}`, body);
+      };
+      request()
+        .then((res) => {
+          if (res) applyServerCart(res.data);
+          else void reloadServerCart();
+        })
+        .catch((error) => {
+          const msg = error.response?.data?.message || error.message;
+          toast.error(`Could not update ${target.title}: ${msg}`);
+          void reloadServerCart();
+        });
+    }
+  };
+
   const clearCart = () => {
     setCart([]);
     cartRef.current = [];
@@ -909,6 +966,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addToCart,
         removeFromCart,
         updateQuantity,
+        replaceCartLine,
         clearCart,
         wishlist,
         toggleWishlist,
