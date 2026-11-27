@@ -160,8 +160,8 @@ export function usePersonalizedFeed(
     try {
       const cleanParams: Record<string, string | number> = {};
       for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null) {
-          cleanParams[key] = value;
+        if (value !== undefined && value !== null && value !== false) {
+          cleanParams[key] = typeof value === 'boolean' ? String(value) : value;
         }
       }
       // The /feed endpoint keys personalization off userId. Newer backends read
@@ -481,4 +481,55 @@ export function useAskFashion(): UseAskFashionReturn {
     conversationId,
     resume,
   };
+}
+
+// ─── useFitsMe ────────────────────────────────────────────────
+// Products whose size guide fits the signed-in shopper's measurements, best
+// fit first, each with the size it fits in ("Fits your measurements").
+
+export interface FitPick {
+  product: ApiProduct;
+  /** The size label from the vendor's size guide, when it names one. */
+  bestSize?: string;
+}
+
+export function useFitsMe(limit = 24) {
+  const { user } = useApp();
+  const [state, setState] = useRemembered<UseAsyncState<FitPick[]>>(`fits-me:${limit}`, {
+    data: null,
+    loading: false,
+    error: null,
+  });
+
+  const fetchFits = useCallback(async () => {
+    if (!user) {
+      setState({ data: null, loading: false, error: null });
+      return;
+    }
+    setState((prev) => ({ ...prev, loading: !prev.data, error: null }));
+    try {
+      const res = await api.get('/recommends/fits-me', { params: { limit } });
+      const payload = res.data?.data ?? res.data;
+      const items: unknown[] = Array.isArray(payload?.items) ? payload.items : [];
+      const picks: FitPick[] = [];
+      for (const raw of items) {
+        const it = raw as { product?: ApiProduct; fit?: { bestSize?: string } };
+        if (!it?.product) continue;
+        const size = it.fit?.bestSize;
+        picks.push({ product: it.product, bestSize: size && size !== 'Unknown' ? size : undefined });
+      }
+      setState({ data: picks, loading: false, error: null });
+    } catch (err: unknown) {
+      // Older backends have no /fits-me: the row just stays hidden.
+      const message = err instanceof Error ? err.message : 'Failed to fetch fits';
+      setState({ data: [], loading: false, error: message });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, limit]);
+
+  useEffect(() => {
+    fetchFits();
+  }, [fetchFits]);
+
+  return { picks: state.data ?? [], loading: state.loading, error: state.error, refetch: fetchFits };
 }
