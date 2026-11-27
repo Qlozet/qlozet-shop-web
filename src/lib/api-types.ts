@@ -523,6 +523,8 @@ export interface FeedQueryParams {
   deadlineDays?: number;
   category?: string;
   gender?: string;
+  /** Only sale items, still ranked for this shopper (For You). */
+  onSale?: boolean;
 }
 
 export interface ApiSizeMeasurement {
