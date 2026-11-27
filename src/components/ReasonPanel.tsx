@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -24,12 +24,142 @@ export const REASON_COLORS = {
   sage: '#5E9474',
   tan: '#8E7B57',
   wine: '#7F4F4F',
+  teal: '#4F7472',
 } as const;
+
+interface PanelBoxProps {
+  title: string;
+  subtitle?: string;
+  /** Leave out for a plain box: the shopper's own things. */
+  color?: string;
+  /** Where VIEW ALL goes. */
+  href?: string;
+  /** Cards for the sideways row. */
+  children?: ReactNode;
+  /** In place of the row (an empty state, say). */
+  body?: ReactNode;
+  /** How many cards, to know whether arrows help. */
+  count?: number;
+}
+
+/**
+ * The box every For You row sits in: title, why it is here, a sideways row
+ * (arrows with a mouse) and VIEW ALL. Coloured for what Qlozet picked for the
+ * shopper, plain for their own things, as in the app.
+ */
+export function PanelBox({ title, subtitle, color, href, children, body, count = 0 }: PanelBoxProps) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const plain = !color;
+  const ink = plain ? 'var(--text-primary)' : '#FFFFFF';
+  const soft = plain ? 'var(--text-muted)' : 'rgba(255,255,255,0.72)';
+  const scrollBy = (dir: 1 | -1) => {
+    const row = rowRef.current;
+    if (row) row.scrollBy({ left: dir * row.clientWidth * 0.8, behavior: 'smooth' });
+  };
+
+  return (
+    <section
+      className="relative overflow-hidden flex flex-col"
+      style={{
+        background: plain ? 'var(--bg-surface-elevated)' : color,
+        border: plain ? '1px solid var(--border-glass)' : 'none',
+        borderRadius: '24px',
+        minWidth: 0,
+        flex: 1,
+      }}
+    >
+      <div className="flex items-start justify-between" style={{ padding: '20px 20px 0', gap: '12px' }}>
+        <div className="flex flex-col" style={{ gap: '4px', minWidth: 0 }}>
+          <h2
+            style={{
+              fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+              fontSize: '15px',
+              fontWeight: 800,
+              color: ink,
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {title}
+          </h2>
+          {subtitle && (
+            <span className="truncate" style={{ fontSize: '12px', color: soft }}>
+              {subtitle}
+            </span>
+          )}
+        </div>
+        {/* Arrows for a mouse; a phone swipes. */}
+        {!body && count > 2 && (
+          <div className="hidden lg:flex flex-shrink-0" style={{ gap: '8px' }}>
+            {([-1, 1] as const).map((dir) => (
+              <button
+                key={dir}
+                type="button"
+                onClick={() => scrollBy(dir)}
+                aria-label={dir < 0 ? 'Scroll back' : 'Scroll on'}
+                className={`flex items-center justify-center transition-colors ${plain ? 'hover:opacity-70' : 'hover:bg-white/25'}`}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  border: plain ? '1px solid var(--border-glass)' : '1px solid rgba(255,255,255,0.25)',
+                  background: plain ? 'var(--bg-surface)' : 'rgba(255,255,255,0.12)',
+                  color: ink,
+                  cursor: 'pointer',
+                }}
+              >
+                {dir < 0 ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {body ? (
+        <div style={{ padding: '16px 20px 0' }}>{body}</div>
+      ) : (
+        <div
+          ref={rowRef}
+          className="flex overflow-x-auto hide-scrollbar snap-x"
+          style={{ gap: '12px', padding: '16px 20px 0', scrollPaddingLeft: '20px' }}
+        >
+          {children}
+        </div>
+      )}
+
+      {/* Beside a taller box, VIEW ALL keeps to the bottom. */}
+      <div style={{ flex: 1 }} />
+      {href ? (
+        <Link
+          href={href}
+          className="flex items-center justify-between group/all"
+          style={{ padding: '14px 20px 18px', textDecoration: 'none' }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+              fontSize: '22px',
+              fontWeight: 900,
+              color: ink,
+              letterSpacing: '0.01em',
+            }}
+          >
+            VIEW ALL
+          </span>
+          <ArrowRight size={26} color={ink} className="transition-transform group-hover/all:translate-x-1" />
+        </Link>
+      ) : (
+        <div style={{ height: '20px' }} />
+      )}
+    </section>
+  );
+}
 
 interface ReasonPanelProps {
   title: string;
   subtitle?: string;
-  color: string;
+  /** Leave out for a plain box. */
+  color?: string;
   products: ApiProduct[];
   /** Where VIEW ALL goes. */
   href?: string;
@@ -43,97 +173,12 @@ interface ReasonPanelProps {
  * built from these, as in the app.
  */
 export function ReasonPanel({ title, subtitle, color, products, href, note }: ReasonPanelProps) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const scrollBy = (dir: 1 | -1) => {
-    const row = rowRef.current;
-    if (row) row.scrollBy({ left: dir * row.clientWidth * 0.8, behavior: 'smooth' });
-  };
-
   return (
-    <section
-      className="relative overflow-hidden flex flex-col"
-      style={{ background: color, borderRadius: '24px', minWidth: 0 }}
-    >
-      <div className="flex items-start justify-between" style={{ padding: '20px 20px 0', gap: '12px' }}>
-        <div className="flex flex-col" style={{ gap: '4px', minWidth: 0 }}>
-          <h2
-            style={{
-              fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
-              fontSize: '15px',
-              fontWeight: 800,
-              color: '#FFFFFF',
-              textTransform: 'uppercase',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {title}
-          </h2>
-          {subtitle && (
-            <span className="truncate" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.72)' }}>
-              {subtitle}
-            </span>
-          )}
-        </div>
-        {/* Arrows for a mouse; a phone swipes. */}
-        {products.length > 2 && (
-          <div className="hidden lg:flex flex-shrink-0" style={{ gap: '8px' }}>
-            {([-1, 1] as const).map((dir) => (
-              <button
-                key={dir}
-                type="button"
-                onClick={() => scrollBy(dir)}
-                aria-label={dir < 0 ? 'Scroll back' : 'Scroll on'}
-                className="flex items-center justify-center transition-colors hover:bg-white/25"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  background: 'rgba(255,255,255,0.12)',
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                }}
-              >
-                {dir < 0 ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div
-        ref={rowRef}
-        className="flex overflow-x-auto hide-scrollbar snap-x"
-        style={{ gap: '12px', padding: '16px 20px 0', scrollPaddingLeft: '20px' }}
-      >
-        {products.map((p) => (
-          <PanelCard key={p._id} product={p} note={note?.(p)} />
-        ))}
-      </div>
-
-      {href ? (
-        <Link
-          href={href}
-          className="flex items-center justify-between group/all"
-          style={{ padding: '14px 20px 18px', textDecoration: 'none' }}
-        >
-          <span
-            style={{
-              fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
-              fontSize: '22px',
-              fontWeight: 900,
-              color: '#FFFFFF',
-              letterSpacing: '0.01em',
-            }}
-          >
-            VIEW ALL
-          </span>
-          <ArrowRight size={26} color="#FFFFFF" className="transition-transform group-hover/all:translate-x-1" />
-        </Link>
-      ) : (
-        <div style={{ height: '20px' }} />
-      )}
-    </section>
+    <PanelBox title={title} subtitle={subtitle} color={color} href={href} count={products.length}>
+      {products.map((p) => (
+        <PanelCard key={p._id} product={p} note={note?.(p)} />
+      ))}
+    </PanelBox>
   );
 }
 

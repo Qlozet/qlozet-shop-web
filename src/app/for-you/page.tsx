@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ChevronRight, Ruler, Scissors, Plus, Store } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   usePersonalizedFeed,
@@ -13,11 +14,14 @@ import {
   useFitsMe,
 } from '@/hooks/useRecommendations';
 import { useMeasurements } from '@/hooks/useMeasurements';
-import { ReasonPanel, ReasonPanelSkeleton, REASON_COLORS } from '@/components/ReasonPanel';
+import { PanelBox, ReasonPanel, ReasonPanelSkeleton, REASON_COLORS } from '@/components/ReasonPanel';
 import { useBespokeDesigns } from '@/hooks/useBespokeDesigns';
 import { useProducts } from '@/hooks/useProducts';
 import { getProductImage, hasDiscount } from '@/lib/api-types';
 import type { ApiProduct } from '@/lib/api-types';
+
+// A design tile in the "Your bespoke designs" box.
+const DESIGN_TILE: CSSProperties = { width: '150px', aspectRatio: '150/188', borderRadius: '16px', flexShrink: 0 };
 
 // Bespoke design status → readable badge
 const BESPOKE_STATUS: Record<string, { label: string; bg: string }> = {
@@ -30,51 +34,6 @@ const BESPOKE_STATUS: Record<string, { label: string; bg: string }> = {
   in_production: { label: 'In progress', bg: 'rgba(124,58,237,0.92)' },
   completed: { label: 'Ready', bg: 'rgba(5,150,105,0.92)' },
 };
-
-// ── Small section header ─────────────────────────────────────
-function SectionHead({ title, subtitle, href }: { title: string; subtitle?: string; href?: string }) {
-  return (
-    <div className="flex items-end justify-between" style={{ gap: '16px' }}>
-      <div className="flex flex-col" style={{ gap: '3px' }}>
-        <h2
-          style={{
-            fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
-            fontSize: '15px',
-            fontWeight: 900,
-            color: 'var(--text-primary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}
-        >
-          {title}
-        </h2>
-        {subtitle && (
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{subtitle}</span>
-        )}
-      </div>
-      {href && (
-        <Link
-          href={href}
-          className="flex items-center flex-shrink-0 hover:opacity-70 transition-opacity"
-          style={{ gap: '4px', textDecoration: 'none' }}
-        >
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 800,
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            View all
-          </span>
-          <ChevronRight size={14} color="var(--text-secondary)" />
-        </Link>
-      )}
-    </div>
-  );
-}
 
 /**
  * Panels down the page; two side by side on a wide screen, an odd last one
@@ -89,7 +48,7 @@ function PanelGrid({ children }: { children: ReactNode[] }) {
         <div
           key={i}
           className={i === panels.length - 1 && panels.length % 2 === 1 ? '2xl:col-span-2' : ''}
-          style={{ minWidth: 0 }}
+          style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}
         >
           {panel}
         </div>
@@ -273,83 +232,86 @@ export default function ForYouPage() {
         />
       )}
 
-      {/* ─────────────────────── FROM YOUR STUDIO (bespoke) ─────────────────────── */}
+      {/* ─────────────── YOUR BESPOKE DESIGNS (a plain box: the shopper's own) ─────────────── */}
       {user && (studioDesigns.length > 0 || !designsLoading) && (
-        <section className="flex flex-col" style={{ gap: '16px' }}>
-          <SectionHead
+        studioDesigns.length > 0 || designsLoading ? (
+          <PanelBox
             title="Your bespoke designs"
             subtitle="Pick up a design or start a new one"
             href="/bespoke"
-          />
-          {designsLoading ? (
-            <div className="flex overflow-x-auto hide-scrollbar" style={{ gap: '14px' }}>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '150px', aspectRatio: '150/188', borderRadius: '18px', background: 'var(--bg-surface-elevated)' }} />
-              ))}
-            </div>
-          ) : studioDesigns.length > 0 ? (
-            <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '14px', paddingBottom: '4px' }}>
-              {studioDesigns.map((d) => {
-                const status = BESPOKE_STATUS[d.status] || BESPOKE_STATUS.draft;
-                const href = `/bespoke/studio?name=${encodeURIComponent(d.name)}&type=${encodeURIComponent(d.category || 'Design')}&designId=${d._id}`;
-                return (
-                  <Link
-                    key={d._id}
-                    href={href}
-                    className="group flex-shrink-0 snap-start flex flex-col transition-transform hover:-translate-y-1"
-                    style={{ width: '150px', gap: '8px', textDecoration: 'none' }}
-                  >
-                    <div className="relative overflow-hidden" style={{ aspectRatio: '150/188', borderRadius: '18px', background: 'var(--bg-surface-elevated)' }}>
-                      <Image
-                        src={d.design_images?.[0] || '/image/bespoke-agbada-green.webp'}
-                        alt={d.name}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        sizes="150px"
-                      />
-                      <span
-                        className="absolute"
-                        style={{ top: '8px', left: '8px', padding: '3px 9px', borderRadius: '6px', fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#FFF', background: status.bg }}
+            count={studioDesigns.length + 1}
+          >
+            {designsLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex-shrink-0 animate-pulse" style={{ ...DESIGN_TILE, background: 'var(--bg-surface)' }} />
+                ))
+              : [
+                  ...studioDesigns.map((d) => {
+                    const status = BESPOKE_STATUS[d.status] || BESPOKE_STATUS.draft;
+                    const href = `/bespoke/studio?name=${encodeURIComponent(d.name)}&type=${encodeURIComponent(d.category || 'Design')}&designId=${d._id}`;
+                    return (
+                      <Link
+                        key={d._id}
+                        href={href}
+                        className="group flex-shrink-0 snap-start flex flex-col transition-transform hover:-translate-y-1"
+                        style={{ width: '150px', gap: '8px', textDecoration: 'none' }}
                       >
-                        {status.label}
-                      </span>
+                        <div className="relative overflow-hidden" style={{ ...DESIGN_TILE, background: 'var(--bg-surface)' }}>
+                          <Image
+                            src={d.design_images?.[0] || '/image/bespoke-agbada-green.webp'}
+                            alt={d.name}
+                            fill
+                            className="object-contain transition-transform duration-700 group-hover:scale-105"
+                            sizes="150px"
+                          />
+                          <span
+                            className="absolute"
+                            style={{ top: '8px', left: '8px', padding: '3px 9px', borderRadius: '6px', fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#FFF', background: status.bg }}
+                          >
+                            {status.label}
+                          </span>
+                        </div>
+                        <span className="truncate" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{d.name}</span>
+                      </Link>
+                    );
+                  }),
+                  <Link
+                    key="new"
+                    href="/bespoke"
+                    className="flex-shrink-0 snap-start flex flex-col items-center justify-center transition-all hover:opacity-80"
+                    style={{ ...DESIGN_TILE, border: '1.5px dashed var(--border-glass)', background: 'transparent', gap: '10px', textDecoration: 'none' }}
+                  >
+                    <div className="flex items-center justify-center" style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--brand-brown-tint, rgba(139,90,43,0.1))' }}>
+                      <Plus size={20} color="var(--brand-brown)" />
                     </div>
-                    <span className="truncate" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{d.name}</span>
-                  </Link>
-                );
-              })}
-
-              {/* New design tile */}
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>New design</span>
+                  </Link>,
+                ]}
+          </PanelBox>
+        ) : (
+          <PanelBox
+            title="Your bespoke designs"
+            subtitle="Turn your ideas into a made-to-fit outfit"
+            body={
               <Link
                 href="/bespoke"
-                className="flex-shrink-0 snap-start flex flex-col items-center justify-center transition-all hover:opacity-80"
-                style={{ width: '150px', aspectRatio: '150/188', borderRadius: '18px', border: '1.5px dashed var(--border-glass)', background: 'transparent', gap: '10px', textDecoration: 'none' }}
+                className="flex items-center justify-between transition-all hover:opacity-90"
+                style={{ padding: '16px 18px', borderRadius: '16px', background: 'var(--bg-surface)', gap: '16px', textDecoration: 'none' }}
               >
-                <div className="flex items-center justify-center" style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--brand-brown-tint, rgba(139,90,43,0.1))' }}>
-                  <Plus size={20} color="var(--brand-brown)" />
+                <div className="flex items-center" style={{ gap: '14px' }}>
+                  <div className="flex items-center justify-center" style={{ width: '46px', height: '46px', borderRadius: '50%', background: 'var(--brand-brown-tint, rgba(139,90,43,0.1))', flexShrink: 0 }}>
+                    <Scissors size={20} color="var(--brand-brown)" />
+                  </div>
+                  <div className="flex flex-col" style={{ gap: '3px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>Design something bespoke</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Start from a template or your own idea</span>
+                  </div>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--brand-brown)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>New design</span>
+                <ArrowRight size={18} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
               </Link>
-            </div>
-          ) : (
-            <Link
-              href="/bespoke"
-              className="flex items-center justify-between transition-all hover:opacity-90"
-              style={{ padding: '20px 22px', borderRadius: '20px', background: 'var(--bg-surface-elevated)', gap: '16px', textDecoration: 'none' }}
-            >
-              <div className="flex items-center" style={{ gap: '14px' }}>
-                <div className="flex items-center justify-center" style={{ width: '46px', height: '46px', borderRadius: '50%', background: 'var(--brand-brown-tint, rgba(139,90,43,0.1))', flexShrink: 0 }}>
-                  <Scissors size={20} color="var(--brand-brown)" />
-                </div>
-                <div className="flex flex-col" style={{ gap: '3px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>Design something bespoke</span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Turn your ideas into a made-to-fit outfit</span>
-                </div>
-              </div>
-              <ArrowRight size={18} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-            </Link>
-          )}
-        </section>
+            }
+          />
+        )
       )}
 
       {/* ─────────────────────── NEW + TRENDING ─────────────────────── */}
@@ -378,87 +340,93 @@ export default function ForYouPage() {
         ]}
       </PanelGrid>
 
-      {/* ─────────────────────── VENDORS MADE FOR YOU ─────────────────────── */}
-      {user && vendors.length > 0 && (
-        <section className="flex flex-col" style={{ gap: '16px' }}>
-          <SectionHead title="Stores made for you" subtitle="Makers that match your taste" />
-          <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '14px', paddingBottom: '4px' }}>
-            {vendors.map((v) => {
-              const cover = v.products?.find((p) => p.product)?.product;
-              // The hydrated product carries the real vendor info; fall back to
-              // the feed's own fields. (The feed's vendorName was "Unknown
-              // Vendor" because the backend read business.name — the field is
-              // business_name.)
-              const biz = cover && typeof cover.business === 'object' ? cover.business : undefined;
-              const vendorName = biz?.business_name || v.vendorName || 'Vendor';
-              const logo = biz?.business_logo_url || v.vendorLogo;
-              return (
+      {/* ───────── STORES MADE FOR YOU (a pick) + WHERE YOU LEFT OFF (yours) ───────── */}
+      <PanelGrid>
+        {[
+          user && vendors.length > 0 && (
+            <PanelBox
+              key="stores"
+              title="Stores made for you"
+              subtitle="Makers that match your taste"
+              color={REASON_COLORS.teal}
+              href="/stores"
+              count={vendors.length}
+            >
+              {vendors.map((v) => {
+                const cover = v.products?.find((p) => p.product)?.product;
+                // The hydrated product carries the real store; the feed's own
+                // name can be "Unknown Vendor".
+                const biz = cover && typeof cover.business === 'object' ? cover.business : undefined;
+                const vendorName = biz?.business_name || v.vendorName || 'Store';
+                const logo = biz?.business_logo_url || v.vendorLogo;
+                return (
+                  <Link
+                    key={v.vendorId}
+                    href={`/vendor/${v.vendorId}`}
+                    className="group relative flex-shrink-0 snap-start overflow-hidden flex flex-col justify-end"
+                    style={{ width: '210px', height: '150px', borderRadius: '16px', background: 'rgba(255,255,255,0.12)', textDecoration: 'none' }}
+                  >
+                    {cover ? (
+                      <Image
+                        src={getProductImage(cover)}
+                        alt={vendorName}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        sizes="210px"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Store size={28} color="rgba(255,255,255,0.7)" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
+                    <div className="relative flex items-center" style={{ padding: '14px', gap: '10px' }}>
+                      <div
+                        className="flex items-center justify-center overflow-hidden flex-shrink-0"
+                        style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#FFF', border: '1.5px solid rgba(255,255,255,0.8)' }}
+                      >
+                        {logo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img loading="lazy" decoding="async" src={logo} alt={vendorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <Store size={15} color="var(--brand-brown)" />
+                        )}
+                      </div>
+                      <div className="flex flex-col" style={{ gap: '2px', minWidth: 0, flex: 1 }}>
+                        <span className="truncate" style={{ fontFamily: "var(--font-outfit), 'Outfit', sans-serif", fontSize: '13px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{vendorName}</span>
+                        {v.explanations?.[0] && (
+                          <span className="truncate" style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.7)' }}>{v.explanations[0]}</span>
+                        )}
+                      </div>
+                      <ChevronRight size={16} color="#FFF" style={{ flexShrink: 0 }} />
+                    </div>
+                  </Link>
+                );
+              })}
+            </PanelBox>
+          ),
+          validRecent.length > 0 && (
+            <PanelBox
+              key="recent"
+              title="Pick up where you left off"
+              subtitle="The pieces you opened last"
+              href="/recently-viewed"
+              count={Math.min(validRecent.length, 12)}
+            >
+              {validRecent.slice(0, 12).map((item, idx) => (
                 <Link
-                  key={v.vendorId}
-                  href={`/vendor/${v.vendorId}`}
-                  className="group relative flex-shrink-0 snap-start overflow-hidden flex flex-col justify-end transition-transform hover:-translate-y-1"
-                  style={{ width: '210px', height: '150px', borderRadius: '18px', background: 'var(--bg-surface-elevated)', textDecoration: 'none' }}
+                  key={`${item.id}-${idx}`}
+                  href={item.href}
+                  className="group relative flex-shrink-0 snap-start overflow-hidden w-[160px] h-[216px] lg:w-[190px] lg:h-[256px]"
+                  style={{ borderRadius: '16px', background: 'var(--bg-surface)' }}
                 >
-                  {cover ? (
-                    <Image
-                      src={getProductImage(cover)}
-                      alt={vendorName}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      sizes="210px"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Store size={28} color="var(--text-muted)" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
-                  <div className="relative flex items-center" style={{ padding: '14px', gap: '10px' }}>
-                    {/* Vendor logo avatar */}
-                    <div
-                      className="flex items-center justify-center overflow-hidden flex-shrink-0"
-                      style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#FFF', border: '1.5px solid rgba(255,255,255,0.8)' }}
-                    >
-                      {logo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img loading="lazy" decoding="async" src={logo} alt={vendorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <Store size={15} color="var(--brand-brown)" />
-                      )}
-                    </div>
-                    <div className="flex flex-col" style={{ gap: '2px', minWidth: 0, flex: 1 }}>
-                      <span className="truncate" style={{ fontFamily: "var(--font-outfit), 'Outfit', sans-serif", fontSize: '13px', fontWeight: 800, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{vendorName}</span>
-                      {v.explanations?.[0] && (
-                        <span className="truncate" style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.7)' }}>{v.explanations[0]}</span>
-                      )}
-                    </div>
-                    <ChevronRight size={16} color="#FFF" style={{ flexShrink: 0 }} />
-                  </div>
+                  <Image src={item.image} alt="" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" sizes="190px" />
                 </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ─────────────────────── RECENTLY VIEWED ─────────────────────── */}
-      {validRecent.length > 0 && (
-        <section className="flex flex-col" style={{ gap: '16px' }}>
-          <SectionHead title="Pick up where you left off" href="/recently-viewed" />
-          <div className="flex overflow-x-auto hide-scrollbar snap-x" style={{ gap: '12px', paddingBottom: '4px' }}>
-            {validRecent.slice(0, 12).map((item, idx) => (
-              <Link
-                key={`${item.id}-${idx}`}
-                href={item.href}
-                className="relative flex-shrink-0 snap-start overflow-hidden transition-all hover:opacity-85 active:scale-95"
-                style={{ width: '104px', aspectRatio: '104/130', borderRadius: '14px', background: 'var(--bg-surface-elevated)' }}
-              >
-                <Image src={item.image} alt="" fill className="object-cover" sizes="104px" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </PanelBox>
+          ),
+        ]}
+      </PanelGrid>
     </div>
   );
 }
